@@ -1,22 +1,12 @@
-// Main exports
-export { ask, text, confirm, group } from './core.js';
+import { createRuntime } from './core.js';
+import { ui } from './ui.js';
+import { simpleUI } from './simple-ui.js';
 
-// Type exports
-export type {
-  FieldConfig,
-  TextFieldConfig,
-  ConfirmFieldConfig,
-  GroupConfig,
-  HistoryEntry,
-  FlowState,
-  FieldFunction,
-  GroupFunction,
-  FlowFunction
-} from './types.js';
+// Export runtime with Ink UI by default
+const { ask, group, text, confirm, BACK } = createRuntime(ui);
 
-// Component exports
-export { TextField, ConfirmField } from './fields/index.js';
-export { PromptApp, GroupPrompt } from './components/index.js';
+export { ask, group, text, confirm, BACK };
 
-// Flow manager for advanced usage
-export { FlowManager } from './flow-manager.js';
+// Export runtime factory and alternative UIs
+export { createRuntime } from './core.js';
+export { ui, simpleUI };

@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 
-import { ask, group, text, confirm } from './index.js';
+import { createRuntime } from './core.js';
+import { simpleUI } from './simple-ui.js';
+
+const { ask, group, text, confirm } = createRuntime(simpleUI);
 
 const flow = async () => {
   // Group 1: Profile
@@ -26,6 +29,7 @@ const flow = async () => {
 
 (async () => {
   try {
+    console.log('Welcome to Askeroo CLI Demo!\n');
     const result = await ask(flow);
     console.log('\nResult:', JSON.stringify(result, null, 2));
   } catch (error) {

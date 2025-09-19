@@ -1,16 +1,15 @@
 # Askeroo
 
-A modern CLI prompt library with flow control, history navigation, and conditional fields. Built with TypeScript, Ink (React for CLI), and ES Modules.
+A modern CLI prompt library with flow control, back navigation, and conditional fields using Ink.
 
 ## Features
 
-- ✅ **Flow-based**: Define complex prompt flows with groups and conditional logic
-- ✅ **History Navigation**: Navigate backwards with Escape key following smart rules
-- ✅ **TypeScript**: Full TypeScript support with type safety
-- ✅ **React/Ink**: Beautiful CLI interfaces using React components
-- ✅ **Generator-powered**: Under the hood uses generators for flow control
-- ✅ **Validation**: Built-in validation support for all field types
-- ✅ **ES Modules**: Modern ESM syntax throughout
+- = **Flow Control**: Advanced conditional prompts with dynamic branching
+-  **Back Navigation**: Intelligent back button with replay functionality
+- <� **Beautiful UI**: Powered by Ink for rich terminal interfaces
+- =� **TypeScript**: Full type safety and IntelliSense support
+- =� **Modern ESM**: Uses ES modules for better tree-shaking
+- = **Replay Engine**: Smart prompt replay with conditional branching
 
 ## Installation
 
@@ -18,9 +17,7 @@ A modern CLI prompt library with flow control, history navigation, and condition
 npm install askeroo
 ```
 
-## Usage
-
-### Basic Example
+## Quick Start
 
 ```typescript
 import { ask, group, text, confirm } from "askeroo/core";
@@ -51,136 +48,126 @@ const result = await ask(flow);
 console.log(result);
 ```
 
-### With Validation
+## How It Works
 
-```typescript
-import { ask, text } from "askeroo/core";
-import { validateRequired, validateEmail } from "askeroo/utils";
+Askeroo uses a **replay-based engine** that re-runs your flow function each time you navigate or provide answers. This enables:
 
-const flow = async () => {
-  const email = await text({
-    message: "Email address",
-    placeholder: "your@email.com",
-    validate: (value: string) => {
-      const required = validateRequired(value);
-      if (required !== true) return required;
-      return validateEmail(value);
-    }
-  });
+- **Dynamic branching**: Conditionals like `if (role === "admin")` are re-evaluated each replay
+- **Intelligent back navigation**: Type `<` to go back one step, automatically clearing dependent answers
+- **Linear visible sequence**: Only prompts actually reached in the current path are shown
+- **Automatic pruning**: Answers from paths no longer taken are removed
 
-  return { email };
-};
-```
-
-## API
+## API Reference
 
 ### Core Functions
 
-#### `ask<T>(flow: () => Promise<T>): Promise<T>`
-Executes a flow and returns the collected results.
-
-#### `text(config: TextFieldConfig): Promise<string>`
-Creates a text input field.
+#### `ask(flow: FlowFunction): Promise<T>`
+Executes a prompt flow with replay and navigation support.
 
 ```typescript
-interface TextFieldConfig {
-  message: string;
-  placeholder?: string;
-  validate?: (value: string) => boolean | string;
-}
+const result = await ask(async () => {
+  const name = await text({ message: "Name" });
+  return { name };
+});
 ```
 
-#### `confirm(config: ConfirmFieldConfig): Promise<boolean>`
-Creates a confirm (yes/no) field.
+#### `group(options: PromptOpts, body: () => Promise<T>): Promise<T>`
+Creates a visual group of related prompts.
 
 ```typescript
-interface ConfirmFieldConfig {
-  message: string;
-  initial?: boolean;
-}
+const profile = await group({ message: "Profile" }, async () => {
+  const first = await text({ message: "First name" });
+  const last = await text({ message: "Last name" });
+  return { first, last };
+});
 ```
 
-#### `group<T>(config: GroupConfig, fn: () => Promise<T>): Promise<T>`
-Creates a group of related fields.
+#### `text(options: PromptOpts): Promise<string>`
+Prompts for text input.
 
 ```typescript
-interface GroupConfig {
-  message: string;
-}
+const name = await text({ message: "What's your name?" });
+const email = await text({ message: "Email", name: "user_email" }); // with stable ID
 ```
 
-### Navigation Rules
-
-The navigation system follows these rules:
-
-- **Within a group on first field + Escape**: Takes user back to the last field in the previous group
-- **Within a group on later field + Escape**: Takes user back to the previous field in the same group
-- **Enter**: Moves to the next field or completes the flow
-- **Ctrl+C**: Gracefully exits the CLI with a goodbye message
-
-### Validation Utilities
+#### `confirm(options: PromptOpts): Promise<boolean>`
+Prompts for yes/no confirmation.
 
 ```typescript
-import { validateRequired, validateEmail, validateMinLength } from "askeroo/utils";
+const subscribe = await confirm({ message: "Subscribe to newsletter?" });
+```
 
-// Built-in validators
-validateRequired(value)           // Ensures value is not empty
-validateEmail(value)              // Validates email format
-validateMinLength(5)(value)       // Ensures minimum length
+### Types
 
-// Custom validation
-const validate = (value: string) => {
-  if (value.length < 3) return "Must be at least 3 characters";
-  return true;
+```typescript
+type PromptOpts = {
+  message: string;
+  name?: string;  // Optional stable ID for the prompt
 };
 ```
 
-## Field Types
+## Back Navigation
 
-### Text Field
-- Accepts text input
-- Supports placeholder text
-- Custom validation support
-- Real-time input feedback
-- Navigation: Escape (back), Enter (submit), Ctrl+C (exit)
+- Type `<` at any prompt to go back to the previous step
+- The engine automatically:
+  - Decrements the cursor position
+  - Clears answers that are no longer reachable
+  - Replays the flow from the beginning with the new cursor position
+  - Re-evaluates all conditionals with current answers
 
-### Confirm Field
-- Yes/No selection
-- Keyboard navigation (y/n, arrows)
-- Initial value support
-- Navigation: Escape (back), Enter (submit), Ctrl+C (exit)
+## Alternative UIs
+
+### Simple UI (for non-Ink environments)
+
+If you need to run without Ink's rich interface:
+
+```typescript
+import { createRuntime, simpleUI } from "askeroo";
+
+const { ask, group, text, confirm } = createRuntime(simpleUI);
+
+// Use the same API
+const result = await ask(myFlow);
+```
+
+### Custom UI
+
+Create your own UI implementation:
+
+```typescript
+import { createRuntime } from "askeroo";
+
+const customUI = {
+  async text(msg: string): Promise<string | { __back: true }> {
+    // Your custom text input implementation
+  },
+  async confirm(msg: string): Promise<boolean | { __back: true }> {
+    // Your custom confirm implementation
+  },
+  showGroup(label: string): void {
+    // Your custom group display
+  }
+};
+
+const { ask, group, text, confirm } = createRuntime(customUI);
+```
+
+## Examples
+
+Run the included examples:
+
+```bash
+npm run example       # Simple readline-based UI
+npm run example:ink   # Full Ink UI (requires compatible terminal)
+```
 
 ## Development
 
-### Building
-
 ```bash
+npm install
 npm run build
+npm run dev          # Watch mode
 ```
-
-### Development Mode
-
-```bash
-npm run dev
-```
-
-### Running Example
-
-```bash
-npm run build && node dist/example.js
-```
-
-## Architecture
-
-- **Flow Manager**: Handles state, history, and navigation
-- **Generator-based**: Uses generators for flow control under the hood
-- **React Components**: Each field type is a React component using Ink
-- **Type Safety**: Full TypeScript coverage for all APIs
-
-## Requirements
-
-- Node.js >= 18.0.0
-- Terminal that supports ANSI escape sequences
 
 ## License
 

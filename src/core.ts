@@ -1,304 +1,134 @@
-import { render } from 'ink';
-import React from 'react';
-import { FlowManager } from './flow-manager.js';
-import type { FlowFunction, FieldConfig, GroupConfig, TextFieldConfig, ConfirmFieldConfig } from './types.js';
-import { PromptApp } from './components/PromptApp.js';
+export type Answers = Record<string, unknown>;
 
-let globalFlowManager: FlowManager | null = null;
+type PromptKind = "text" | "confirm" | "group";
+type PromptOpts = { message: string; name?: string };
 
-// Global state for current prompt
-let currentPromptResolve: ((value: any) => void) | null = null;
-let currentPromptConfig: any = null;
-let currentPromptType: 'text' | 'confirm' | null = null;
-let flowExecutionStarted: boolean = false;
+type UI = {
+  text(msg: string, initial?: string): Promise<string | BackToken>;
+  confirm(msg: string, initial?: boolean): Promise<boolean | BackToken>;
+  showGroup(label: string): Promise<void> | void;
+};
 
-// Simple back navigation state
-interface PromptHistoryEntry {
-  type: 'text' | 'confirm';
-  config: any;
-  value: any;
-}
+type BackToken = { __back: true };
+const BACK: BackToken = { __back: true };
 
-let promptHistory: PromptHistoryEntry[] = [];
-let currentPromptIndex: number = -1; // -1 means "next new prompt", 0+ means "at history index N"
+type Engine = {
+  step<T>(kind: PromptKind, opts: PromptOpts, askFn: () => Promise<T | BackToken>): Promise<T>;
+  BACK: BackToken;
+};
 
-export async function ask<T>(flowFn: FlowFunction<T>): Promise<T> {
-  return new Promise((resolve, reject) => {
-    let appUnmounted = false;
+export function createRuntime(ui: UI) {
+  const answers: Answers = {};
+  let interactivePrompts: string[] = [];
+  let currentStep = 0;
+  let asking = false;
 
-    // Reset back navigation state
-    promptHistory = [];
-    currentPromptIndex = -1;
+  const engine: Engine = {
+    BACK,
+    async step<T>(kind: PromptKind, opts: PromptOpts, askFn: () => Promise<T | BackToken>) {
+      const id = opts.name ?? `${kind}:${opts.message}`;
 
-    const cleanup = () => {
-      if (appUnmounted) return;
-      appUnmounted = true;
-
-      // Restore stdin
-      if (process.stdin.setRawMode) {
-        process.stdin.setRawMode(false);
-      }
-      process.stdin.pause();
-
-      // Remove any remaining listeners
-      process.stdin.removeAllListeners('data');
-
-      // Clear history
-      promptHistory = [];
-      currentPromptIndex = -1;
-    };
-
-    try {
-      globalFlowManager = new FlowManager();
-
-      // Render the Ink app
-      const { unmount } = render(
-        React.createElement(PromptApp, {
-          flowManager: globalFlowManager,
-          flowFunction: flowFn,
-          onComplete: (result: T) => {
-            cleanup();
-            unmount();
-            resolve(result);
-          },
-          onError: (error: Error) => {
-            cleanup();
-            unmount();
-            reject(error);
-          },
-          onExit: () => {
-            cleanup();
-            unmount();
-
-            // Exit gracefully with exit code 130 (Ctrl+C)
-            console.log('\n👋 Goodbye!');
-            process.exit(130);
-          }
-        })
-      );
-
-      // Handle process signals
-      const handleSignal = () => {
-        if (!appUnmounted) {
-          cleanup();
-          unmount();
-          console.log('\n👋 Goodbye!');
-          process.exit(130);
-        }
-      };
-
-      process.once('SIGINT', handleSignal);
-      process.once('SIGTERM', handleSignal);
-
-    } catch (error) {
-      cleanup();
-      reject(error);
-    }
-  });
-}
-
-export async function text(config: TextFieldConfig): Promise<string> {
-  if (!globalFlowManager) {
-    throw new Error('text() can only be called within an ask() flow');
-  }
-
-  console.log(`🔹 text() called: ${config.message}, currentPromptIndex: ${currentPromptIndex}, historyLength: ${promptHistory.length}`);
-
-  // Check if we should use a value from history
-  if (currentPromptIndex >= 0 && currentPromptIndex < promptHistory.length) {
-    const historyEntry = promptHistory[currentPromptIndex];
-    console.log(`🔸 Checking history entry ${currentPromptIndex}: ${historyEntry.config.message} vs ${config.message}`);
-
-    if (historyEntry.type === 'text' && promptsMatch(historyEntry.config, config)) {
-      console.log(`🔸 Using historical value: ${historyEntry.value}`);
-      currentPromptIndex++;
-      return historyEntry.value;
-    }
-  }
-
-  // This is a new prompt or we're at the target prompt
-  return new Promise((resolve) => {
-    const wrappedResolve = (value: string) => {
-      console.log(`🔸 User entered value: ${value}`);
-
-      if (currentPromptIndex >= 0) {
-        // We're replacing a value in history
-        console.log(`🔸 Updating history at index ${currentPromptIndex}`);
-        if (currentPromptIndex < promptHistory.length) {
-          promptHistory[currentPromptIndex].value = value;
-        } else {
-          // Extending history
-          promptHistory.push({
-            type: 'text',
-            config: { ...config },
-            value
-          });
-        }
-        // Truncate any future history
-        promptHistory.length = currentPromptIndex + 1;
-        currentPromptIndex = -1; // Move to "forward" mode
-      } else {
-        // We're adding a new prompt to history
-        promptHistory.push({
-          type: 'text',
-          config: { ...config },
-          value
-        });
+      if (kind === "group") {
+        await ui.showGroup?.(opts.message);
+        return undefined as T;
       }
 
-      resolve(value);
-    };
+      // This is an interactive prompt
+      const stepIndex = interactivePrompts.length;
+      interactivePrompts.push(id);
 
-    currentPromptResolve = wrappedResolve;
-    currentPromptConfig = config;
-    currentPromptType = 'text';
-  });
-}
-
-export async function confirm(config: ConfirmFieldConfig): Promise<boolean> {
-  if (!globalFlowManager) {
-    throw new Error('confirm() can only be called within an ask() flow');
-  }
-
-  console.log(`🔹 confirm() called: ${config.message}, currentPromptIndex: ${currentPromptIndex}, historyLength: ${promptHistory.length}`);
-
-  // Check if we should use a value from history
-  if (currentPromptIndex >= 0 && currentPromptIndex < promptHistory.length) {
-    const historyEntry = promptHistory[currentPromptIndex];
-    console.log(`🔸 Checking history entry ${currentPromptIndex}: ${historyEntry.config.message} vs ${config.message}`);
-
-    if (historyEntry.type === 'confirm' && promptsMatch(historyEntry.config, config)) {
-      console.log(`🔸 Using historical value: ${historyEntry.value}`);
-      currentPromptIndex++;
-      return historyEntry.value;
-    }
-  }
-
-  // This is a new prompt or we're at the target prompt
-  return new Promise((resolve) => {
-    const wrappedResolve = (value: boolean) => {
-      console.log(`🔸 User entered value: ${value}`);
-
-      if (currentPromptIndex >= 0) {
-        // We're replacing a value in history
-        console.log(`🔸 Updating history at index ${currentPromptIndex}`);
-        if (currentPromptIndex < promptHistory.length) {
-          promptHistory[currentPromptIndex].value = value;
-        } else {
-          // Extending history
-          promptHistory.push({
-            type: 'confirm',
-            config: { ...config },
-            value
-          });
-        }
-        // Truncate any future history
-        promptHistory.length = currentPromptIndex + 1;
-        currentPromptIndex = -1; // Move to "forward" mode
-      } else {
-        // We're adding a new prompt to history
-        promptHistory.push({
-          type: 'confirm',
-          config: { ...config },
-          value
-        });
+      // If we already have an answer and we're replaying past this step, use it
+      if (stepIndex < currentStep && id in answers) {
+        return answers[id] as T;
       }
 
-      resolve(value);
-    };
+      // If this is the current step to ask, prompt the user
+      if (stepIndex === currentStep) {
+        const result = await askFn();
+        if (isBack(result)) throw BACK;
+        answers[id] = result;
+        currentStep += 1;
+        return result as T;
+      }
 
-    currentPromptResolve = wrappedResolve;
-    currentPromptConfig = config;
-    currentPromptType = 'confirm';
-  });
-}
+      // If we have an answer for this step, use it
+      if (id in answers) {
+        return answers[id] as T;
+      }
 
-export async function group<T>(config: GroupConfig, fn: () => Promise<T>): Promise<T> {
-  if (!globalFlowManager) {
-    throw new Error('group() can only be called within an ask() flow');
-  }
-
-  // This will be intercepted by the PromptApp component during flow execution
-  // For now, execute the function directly
-  return await fn();
-}
-
-// Export the flow manager for internal use
-export function getFlowManager(): FlowManager | null {
-  return globalFlowManager;
-}
-
-// Functions for PromptApp to interact with current prompt
-export function getCurrentPrompt(): { type: typeof currentPromptType; config: any } | null {
-  if (!currentPromptType || !currentPromptConfig) return null;
-  return {
-    type: currentPromptType,
-    config: currentPromptConfig
+      // This shouldn't happen in normal flow, but handle it defensively
+      const result = await askFn();
+      if (isBack(result)) throw BACK;
+      answers[id] = result;
+      currentStep = stepIndex + 1;
+      return result as T;
+    },
   };
-}
 
-export function resolveCurrentPrompt(value: any): void {
-  if (currentPromptResolve) {
-    const resolve = currentPromptResolve;
-
-    // Clear current prompt state
-    currentPromptResolve = null;
-    currentPromptConfig = null;
-    currentPromptType = null;
-
-    // Resolve the promise
-    resolve(value);
-  }
-}
-
-export function hasCurrentPrompt(): boolean {
-  return currentPromptResolve !== null;
-}
-
-// Helper function to check if two prompt configs match
-function promptsMatch(config1: any, config2: any): boolean {
-  return config1.message === config2.message;
-}
-
-// Back navigation functions
-export function canGoBack(): boolean {
-  return promptHistory.length > 0;
-}
-
-export function goBack(): boolean {
-  console.log(`🔹 goBack() called, canGoBack: ${canGoBack()}, historyLength: ${promptHistory.length}, currentPromptIndex: ${currentPromptIndex}`);
-
-  if (!canGoBack()) {
-    return false;
+  function isBack<T>(x: T | BackToken): x is BackToken {
+    return typeof x === "object" && x !== null && (x as any).__back === true;
   }
 
-  // Determine where to go back to
-  if (currentPromptIndex === -1) {
-    // We're at a "new" prompt, go back to the last prompt in history
-    currentPromptIndex = promptHistory.length - 1;
-  } else if (currentPromptIndex > 0) {
-    // We're in history, go back one more step
-    currentPromptIndex--;
-  } else {
-    // Already at first prompt
-    console.log(`🔸 Cannot go back further - already at first prompt`);
-    return false;
+  async function group(opts: PromptOpts, body: () => Promise<any>) {
+    if (!asking) throw new Error("group() must be called inside ask()");
+    await engine.step("group", opts, async () => undefined);
+    return body();
   }
 
-  console.log(`🔸 Going back to prompt index ${currentPromptIndex}: ${promptHistory[currentPromptIndex]?.config.message}`);
+  async function text(opts: PromptOpts): Promise<string> {
+    if (!asking) throw new Error("text() must be called inside ask()");
+    return engine.step("text", opts, () => ui.text(opts.message));
+  }
 
-  // Clear current prompt and trigger re-execution
-  currentPromptResolve = null;
-  currentPromptConfig = null;
-  currentPromptType = null;
+  async function confirm(opts: PromptOpts): Promise<boolean> {
+    if (!asking) throw new Error("confirm() must be called inside ask()");
+    return engine.step("confirm", opts, () => ui.confirm(opts.message));
+  }
 
-  return true;
+  async function ask<T>(flow: (api: { group: typeof group; text: typeof text; confirm: typeof confirm; BACK: BackToken }) => Promise<T>): Promise<T> {
+    while (true) {
+      interactivePrompts = [];
+      try {
+        asking = true;
+        const result = await flow({ group, text, confirm, BACK });
+        asking = false;
+
+        // If we've asked all interactive prompts in this path, we're done
+        if (currentStep >= interactivePrompts.length) {
+          return result;
+        }
+      } catch (e) {
+        asking = false;
+        if (e === BACK) {
+          // Go back one step
+          if (currentStep > 0) {
+            currentStep -= 1;
+
+            // Remove answers from prompts that are no longer reachable
+            // We'll collect the new set of reachable prompts on the next replay
+            const currentPrompts = new Set(interactivePrompts);
+            for (const key of Object.keys(answers)) {
+              if (!currentPrompts.has(key)) {
+                delete answers[key];
+              }
+            }
+          }
+        } else {
+          throw e;
+        }
+      }
+
+      // Clean up answers for prompts that were not reached in this replay
+      const reachablePrompts = new Set(interactivePrompts);
+      for (const key of Object.keys(answers)) {
+        if (!reachablePrompts.has(key)) {
+          delete answers[key];
+        }
+      }
+    }
+  }
+
+  return { ask, group, text, confirm, BACK };
 }
 
-export function getPromptHistory(): PromptHistoryEntry[] {
-  return [...promptHistory];
-}
-
-export function resetBackNavigation(): void {
-  currentPromptIndex = -1;
-}
+export { createRuntime as default };
