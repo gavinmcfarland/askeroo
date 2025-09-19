@@ -21,7 +21,7 @@ export function TextField({ message, onSubmit, initial = '' }: TextFieldProps) {
       onSubmit(value);
     } else if (key.backspace || key.delete) {
       setValue(prev => prev.slice(0, -1));
-    } else if (input === '<') {
+    } else if (key.escape) {
       setSubmitted(true);
       onSubmit({ __back: true });
     } else if (!key.ctrl && !key.meta && input) {
@@ -35,7 +35,7 @@ export function TextField({ message, onSubmit, initial = '' }: TextFieldProps) {
       <Text>
         {'> '}
         <Text color="yellow">{value}</Text>
-        <Text dimColor> (type '&lt;' to go back)</Text>
+        <Text dimColor> (press Esc to go back)</Text>
       </Text>
     </Box>
   );

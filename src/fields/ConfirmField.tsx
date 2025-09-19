@@ -19,7 +19,7 @@ export function ConfirmField({ message, onSubmit, initial = false }: ConfirmFiel
     if (key.return && value !== null) {
       setSubmitted(true);
       onSubmit(value);
-    } else if (input === '<') {
+    } else if (key.escape) {
       setSubmitted(true);
       onSubmit({ __back: true });
     } else if (input.toLowerCase() === 'y') {
@@ -37,7 +37,7 @@ export function ConfirmField({ message, onSubmit, initial = false }: ConfirmFiel
         <Text color="yellow">
           {value === null ? '' : value ? 'yes' : 'no'}
         </Text>
-        <Text dimColor> [y/n] (type '&lt;' to go back)</Text>
+        <Text dimColor> [y/n] (press Esc to go back)</Text>
       </Text>
     </Box>
   );
