@@ -1,22 +1,20 @@
-import React from 'react';
-import { Text, Box } from 'ink';
+import React from "react";
+import { Text, Box } from "ink";
 
 interface GroupContainerProps {
-  groupName: string;
-  children: React.ReactNode;
+	groupName: string;
+	children: React.ReactNode;
 }
 
 export function GroupContainer({ groupName, children }: GroupContainerProps) {
-  return (
-    <Box flexDirection="column">
-      <Box marginTop={1} marginBottom={1}>
-        <Text color="green" bold>
-          {groupName}:
-        </Text>
-      </Box>
-      <Box paddingLeft={2}>
-        {children}
-      </Box>
-    </Box>
-  );
+	return (
+		<Box flexDirection="column">
+			<Box marginTop={1} marginBottom={1}>
+				<Text color="green" bold>
+					{groupName}:
+				</Text>
+			</Box>
+			<Box>{children}</Box>
+		</Box>
+	);
 }

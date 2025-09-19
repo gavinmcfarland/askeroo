@@ -1,60 +1,59 @@
 {
-  "name": "askeroo",
-  "version": "1.0.0",
-  "description": "A modern CLI prompt library with flow control, history navigation, and conditional fields",
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+    "name": "askeroo",
+    "version": "1.0.0",
+    "description": "A modern CLI prompt library with flow control, history navigation, and conditional fields",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        },
+        "./core": {
+            "types": "./dist/core.d.ts",
+            "import": "./dist/core.js"
+        },
+        "./fields": {
+            "types": "./dist/fields/index.d.ts",
+            "import": "./dist/fields/index.js"
+        }
     },
-    "./core": {
-      "types": "./dist/core.d.ts",
-      "import": "./dist/core.js"
+    "files": [
+        "dist/**/*.js",
+        "dist/**/*.d.ts",
+        "dist/**/*.js.map"
+    ],
+    "scripts": {
+        "build": "npm run clean && tsc",
+        "clean": "rm -rf ./dist/*",
+        "dev": "tsc --watch",
+        "example": "node dist/example.js",
+        "prepublishOnly": "npm run build"
     },
-    "./fields": {
-      "types": "./dist/fields/index.d.ts",
-      "import": "./dist/fields/index.js"
+    "keywords": [
+        "cli",
+        "prompt",
+        "ink",
+        "react",
+        "typescript",
+        "esm",
+        "flow",
+        "navigation",
+        "interactive"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "ink": "^4.4.0",
+        "react": "^18.2.0"
+    },
+    "devDependencies": {
+        "@types/node": "^22.0.0",
+        "@types/react": "^18.2.0",
+        "typescript": "^5.5.0"
+    },
+    "engines": {
+        "node": ">=18.0.0"
     }
-  },
-  "files": [
-    "dist/**/*.js",
-    "dist/**/*.d.ts",
-    "dist/**/*.js.map"
-  ],
-  "scripts": {
-    "build": "npm run clean && tsc",
-    "clean": "rm -rf ./dist/*",
-    "dev": "tsc --watch",
-    "example": "npm run build && node dist/simple-example.js",
-    "example:ink": "npm run build && node dist/example.js",
-    "prepublishOnly": "npm run build"
-  },
-  "keywords": [
-    "cli",
-    "prompt",
-    "ink",
-    "react",
-    "typescript",
-    "esm",
-    "flow",
-    "navigation",
-    "interactive"
-  ],
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "ink": "^4.4.0",
-    "react": "^18.2.0"
-  },
-  "devDependencies": {
-    "@types/node": "^22.0.0",
-    "@types/react": "^18.2.0",
-    "typescript": "^5.5.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  }
 }
