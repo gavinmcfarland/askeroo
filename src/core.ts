@@ -19,6 +19,38 @@ type Engine = {
   BACK: BackToken;
 };
 
+// Generate stable, deterministic ID based on execution context
+function generateStableId(kind: PromptKind, message: string, groupStack: string[], stepIndex: number): string {
+  const parts: string[] = [kind];
+
+  // Add group context if we're in a group
+  if (groupStack.length > 0) {
+    const currentGroup = groupStack[groupStack.length - 1];
+    parts.push(`group:${currentGroup}`);
+  }
+
+  // Add step index to ensure uniqueness within the same group
+  parts.push(`step:${stepIndex}`);
+
+  // Optionally add a hash of the message for additional uniqueness
+  // This helps when fields have similar positions but different messages
+  const messageHash = simpleHash(message);
+  parts.push(`msg:${messageHash}`);
+
+  return parts.join('|');
+}
+
+// Simple hash function for generating short, stable hashes
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash).toString(36);
+}
+
 export function createRuntime(ui: UI) {
   const answers: Answers = {};
   let interactivePrompts: string[] = [];
@@ -38,13 +70,6 @@ export function createRuntime(ui: UI) {
   let groupStack: string[] = []; // Track current group nesting
   let lastProcessedGroups: Set<string> = new Set(); // Track which groups were already processed
 
-  // Checkpoint system: save flow state at group boundaries
-  let checkpoints: Map<string, {
-    answers: Answers;
-    interactivePrompts: string[];
-    executionPath: typeof executionPath;
-    step: number;
-  }> = new Map();
 
   const engine: Engine = {
     BACK,
@@ -76,8 +101,9 @@ export function createRuntime(ui: UI) {
 
       // This is an interactive prompt
       const stepIndex = interactivePrompts.length;
-      // Use consistent ID format that matches UI layer
-      const id = opts.id ?? `${kind}|${opts.message}`;
+
+      // Generate stable, deterministic ID
+      const id = opts.id ?? generateStableId(kind, opts.message, groupStack, stepIndex);
 
 
       interactivePrompts.push(id);
