@@ -92,9 +92,9 @@ export const PromptApp: React.FC<PromptAppProps> = ({ flowManager, flowFunction,
   }, [currentPrompt]);
 
   const handleBack = useCallback(() => {
-    // For now, back navigation is not implemented in dynamic mode
-    // TODO: Implement back navigation with flow state management
-    console.log('Back navigation not yet implemented in dynamic mode');
+    // Simple back navigation implementation
+    console.log('\n⚠️  Back navigation is not yet fully implemented in dynamic mode.');
+    console.log('💡 Use Ctrl+C to exit and restart if you need to change previous answers.');
   }, []);
 
   if (isComplete) {
