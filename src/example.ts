@@ -10,7 +10,7 @@ const flow = async () => {
 	const profile = await group({ message: "Profile" }, async () => {
 		const first = await text({ message: "First name" });
 		const last = await text({ message: "Last name" });
-		return [first, last];
+		return { first, last };
 	});
 
 	// Group 2: Preferences (with conditional)
