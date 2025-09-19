@@ -4,8 +4,8 @@ type PromptKind = "text" | "confirm" | "group";
 type PromptOpts = { message: string; name?: string };
 
 type UI = {
-  text(msg: string, initial?: string, groupContext?: string): Promise<string | BackToken>;
-  confirm(msg: string, initial?: boolean, groupContext?: string): Promise<boolean | BackToken>;
+  text(msg: string, initial?: string, groupContext?: string, id?: string): Promise<string | BackToken>;
+  confirm(msg: string, initial?: boolean, groupContext?: string, id?: string): Promise<boolean | BackToken>;
   showGroup(label: string): Promise<void> | void;
   clearGroup?(): void;
   cleanup?(): void;
@@ -15,7 +15,7 @@ type BackToken = { __back: true };
 const BACK: BackToken = { __back: true };
 
 type Engine = {
-  step<T>(kind: PromptKind, opts: PromptOpts, askFn: () => Promise<T | BackToken>): Promise<T>;
+  step<T>(kind: PromptKind, opts: PromptOpts, askFn: (id: string) => Promise<T | BackToken>): Promise<T>;
   BACK: BackToken;
 };
 
@@ -48,7 +48,7 @@ export function createRuntime(ui: UI) {
 
   const engine: Engine = {
     BACK,
-    async step<T>(kind: PromptKind, opts: PromptOpts, askFn: () => Promise<T | BackToken>) {
+    async step<T>(kind: PromptKind, opts: PromptOpts, askFn: (id: string) => Promise<T | BackToken>) {
       if (kind === "group") {
         let shouldShowGroup: boolean;
 
@@ -79,6 +79,7 @@ export function createRuntime(ui: UI) {
       // Use consistent ID format that matches UI layer
       const id = opts.name ?? `${kind}|${opts.message}`;
 
+
       interactivePrompts.push(id);
 
       // Track execution path for smart replay
@@ -97,7 +98,7 @@ export function createRuntime(ui: UI) {
 
       // If this is the current step to ask, prompt the user
       if (stepIndex === currentStep) {
-        const result = await askFn();
+        const result = await askFn(id);
         if (isBack(result)) throw BACK;
         answers[id] = result;
         currentStep += 1;
@@ -110,7 +111,7 @@ export function createRuntime(ui: UI) {
       }
 
       // This shouldn't happen in normal flow, but handle it defensively
-      const result = await askFn();
+      const result = await askFn(id);
       if (isBack(result)) throw BACK;
       answers[id] = result;
       currentStep = stepIndex + 1;
@@ -134,17 +135,17 @@ export function createRuntime(ui: UI) {
 
   async function text(opts: PromptOpts): Promise<string> {
     if (!asking) throw new Error("text() must be called inside ask()");
-    return engine.step("text", opts, () => {
+    return engine.step("text", opts, (id) => {
       const currentGroup = groupStack[groupStack.length - 1];
-      return ui.text(opts.message, undefined, currentGroup);
+      return ui.text(opts.message, undefined, currentGroup, id);
     });
   }
 
   async function confirm(opts: PromptOpts): Promise<boolean> {
     if (!asking) throw new Error("confirm() must be called inside ask()");
-    return engine.step("confirm", opts, () => {
+    return engine.step("confirm", opts, (id) => {
       const currentGroup = groupStack[groupStack.length - 1];
-      return ui.confirm(opts.message, undefined, currentGroup);
+      return ui.confirm(opts.message, undefined, currentGroup, id);
     });
   }
 

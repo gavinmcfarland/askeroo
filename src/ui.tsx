@@ -42,20 +42,20 @@ function ensureApp(): Promise<(request: PromptRequest) => Promise<any>> {
 }
 
 export const ui = {
-  async text(msg: string, initial?: string, groupContext?: string): Promise<string | BackToken> {
+  async text(msg: string, initial?: string, groupContext?: string, id?: string): Promise<string | BackToken> {
     if (groupContext) {
       appInstance.currentGroup = groupContext;
     }
     const promptFn = await ensureApp();
-    return promptFn({ type: 'text', id: generatePromptId('text', msg), message: msg, initial, groupName: appInstance.currentGroup });
+    return promptFn({ type: 'text', id: id || generatePromptId('text', msg), message: msg, initial, groupName: appInstance.currentGroup });
   },
 
-  async confirm(msg: string, initial?: boolean, groupContext?: string): Promise<boolean | BackToken> {
+  async confirm(msg: string, initial?: boolean, groupContext?: string, id?: string): Promise<boolean | BackToken> {
     if (groupContext) {
       appInstance.currentGroup = groupContext;
     }
     const promptFn = await ensureApp();
-    return promptFn({ type: 'confirm', id: generatePromptId('confirm', msg), message: msg, initial, groupName: appInstance.currentGroup });
+    return promptFn({ type: 'confirm', id: id || generatePromptId('confirm', msg), message: msg, initial, groupName: appInstance.currentGroup });
   },
 
   async showGroup(label: string): Promise<void> {
