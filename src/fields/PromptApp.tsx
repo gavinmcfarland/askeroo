@@ -3,8 +3,6 @@ import { TextField } from "./TextField.js";
 import { ConfirmField } from "./ConfirmField.js";
 import { GroupContainer } from "./GroupContainer.js";
 
-type BackToken = { __back: true };
-
 type PromptRequest =
 	| {
 			type: "text";
@@ -53,9 +51,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				// ⬇️ assign without rendering
 				resolverRef.current = resolve;
 
-				if (request.type === "group") {
-					setCurrentGroup(request.message);
-				} else if (request.groupName) {
+				// Only update currentGroup for actual fields, not group prompts
+				// Group prompts are processed for flow control but shouldn't affect UI
+				if (request.type !== "group" && request.groupName) {
 					setCurrentGroup(request.groupName);
 				}
 			});
@@ -63,7 +61,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 		onReady(promptFn);
 	}, [onReady]);
-
 
 	const handleSubmit = (value: any) => {
 		if (resolverRef.current && currentPrompt) {
@@ -118,7 +115,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	}, [currentPrompt]);
 
 	// Completely ignore group prompts in render
-	const effectivePrompt = currentPrompt?.type === "group" ? null : currentPrompt;
+	const effectivePrompt =
+		currentPrompt?.type === "group" ? null : currentPrompt;
 
 	if (!effectivePrompt) {
 		// Keep a stable shell so layout doesn't jump
@@ -169,7 +167,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		}
 
 		default:
-			return <GroupContainer groupName={currentGroup}>{null}</GroupContainer>;
+			return (
+				<GroupContainer groupName={currentGroup}>{null}</GroupContainer>
+			);
 	}
 
 	return (

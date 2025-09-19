@@ -24,6 +24,26 @@ const flow = async () => {
 		return { role, news };
 	});
 
+	const prefs2 = await group({ message: "What" }, async () => {
+		const role = await text({ message: "Role (user/admin)" });
+		if (role === "admin") {
+			const code = await text({ message: "Access code" });
+			return { role, code };
+		}
+		const news = await confirm({ message: "Subscribe to newsletter?" });
+		return { role, news };
+	});
+
+	const prefs3 = await group({ message: "Yoopooo" }, async () => {
+		const role = await text({ message: "Role (user/admin)" });
+		if (role === "admin") {
+			const code = await text({ message: "Access code" });
+			return { role, code };
+		}
+		const news = await confirm({ message: "Subscribe to newsletter?" });
+		return { role, news };
+	});
+
 	return { profile, prefs };
 };
 
