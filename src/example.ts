@@ -3,9 +3,9 @@
 import { ask, group, text, confirm } from "./index.js";
 
 const flow = async () => {
-	let test = await text({ message: "Test" });
+	// let test = await text({ message: "Test" });
 
-	let test2 = await text({ message: "Test" });
+	// let test2 = await text({ message: "Test s" });
 	// Group 1: Profile
 	const profile = await group({ message: "Profile" }, async () => {
 		const first = await text({ message: "First name" });

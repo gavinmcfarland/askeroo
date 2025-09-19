@@ -28,8 +28,6 @@ export function createRuntime(ui: UI) {
   const engine: Engine = {
     BACK,
     async step<T>(kind: PromptKind, opts: PromptOpts, askFn: () => Promise<T | BackToken>) {
-      const id = opts.name ?? `${kind}:${opts.message}`;
-
       if (kind === "group") {
         await ui.showGroup?.(opts.message);
         return undefined as T;
@@ -37,6 +35,7 @@ export function createRuntime(ui: UI) {
 
       // This is an interactive prompt
       const stepIndex = interactivePrompts.length;
+      const id = opts.name ?? `${kind}:${opts.message}:${stepIndex}`;
       interactivePrompts.push(id);
 
       // If we already have an answer and we're replaying past this step, use it
