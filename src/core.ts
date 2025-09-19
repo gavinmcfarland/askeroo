@@ -1,7 +1,7 @@
 export type Answers = Record<string, unknown>;
 
 type PromptKind = "text" | "confirm" | "group";
-type PromptOpts = { message: string; name?: string };
+type PromptOpts = { message: string; id?: string };
 
 type UI = {
   text(msg: string, initial?: string, groupContext?: string, id?: string): Promise<string | BackToken>;
@@ -77,7 +77,7 @@ export function createRuntime(ui: UI) {
       // This is an interactive prompt
       const stepIndex = interactivePrompts.length;
       // Use consistent ID format that matches UI layer
-      const id = opts.name ?? `${kind}|${opts.message}`;
+      const id = opts.id ?? `${kind}|${opts.message}`;
 
 
       interactivePrompts.push(id);

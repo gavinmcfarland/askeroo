@@ -8,39 +8,39 @@ const flow = async () => {
 	// let test2 = await text({ message: "Test s" });
 	// Group 1: Profile
 	const profile = await group({ message: "Profile" }, async () => {
-		const first = await text({ message: "First name", name: "profile-first" });
-		const last = await text({ message: "Last name", name: "profile-last" });
+		const first = await text({ message: "First name", id: "profile-first" });
+		const last = await text({ message: "Last name", id: "profile-last" });
 		return [first, last];
 	});
 
 	// Group 2: Preferences (with conditional)
 	const prefs = await group({ message: "Preferences" }, async () => {
-		const role = await text({ message: "Role (user/admin)", name: "prefs-role" });
+		const role = await text({ message: "Role (user/admin)", id: "prefs-role" });
 		if (role === "admin") {
-			const code = await text({ message: "Access code", name: "prefs-code" });
+			const code = await text({ message: "Access code", id: "prefs-code" });
 			return { role, code };
 		}
-		const news = await confirm({ message: "Subscribe to newsletter?", name: "prefs-news" });
+		const news = await confirm({ message: "Subscribe to newsletter?", id: "prefs-news" });
 		return { role, news };
 	});
 
 	const prefs2 = await group({ message: "What" }, async () => {
-		const role = await text({ message: "Role (user/admin)", name: "what-role" });
+		const role = await text({ message: "Role (user/admin)", id: "what-role" });
 		if (role === "admin") {
-			const code = await text({ message: "Access code", name: "what-code" });
+			const code = await text({ message: "Access code", id: "what-code" });
 			return { role, code };
 		}
-		const news = await confirm({ message: "Subscribe to newsletter?", name: "what-news" });
+		const news = await confirm({ message: "Subscribe to newsletter?", id: "what-news" });
 		return { role, news };
 	});
 
 	const prefs3 = await group({ message: "Yoopooo" }, async () => {
-		const role = await text({ message: "Role (user/admin)", name: "yoopooo-role" });
+		const role = await text({ message: "Role (user/admin)", id: "yoopooo-role" });
 		if (role === "admin") {
-			const code = await text({ message: "Access code", name: "yoopooo-code" });
+			const code = await text({ message: "Access code", id: "yoopooo-code" });
 			return { role, code };
 		}
-		const news = await confirm({ message: "Subscribe to newsletter?", name: "yoopooo-news" });
+		const news = await confirm({ message: "Subscribe to newsletter?", id: "yoopooo-news" });
 		return { role, news };
 	});
 
