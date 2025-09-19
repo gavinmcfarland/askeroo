@@ -17,6 +17,7 @@ interface PromptAppProps {
 export function PromptApp({ onReady }: PromptAppProps) {
   const [currentPrompt, setCurrentPrompt] = useState<PromptRequest | null>(null);
   const [resolvePrompt, setResolvePrompt] = useState<((value: any) => void) | null>(null);
+  const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
 
   useEffect(() => {
     const promptFn = (request: PromptRequest): Promise<any> => {
@@ -29,8 +30,20 @@ export function PromptApp({ onReady }: PromptAppProps) {
     onReady(promptFn);
   }, [onReady]);
 
+  const isBackToken = (value: any): value is BackToken => {
+    return typeof value === "object" && value !== null && value.__back === true;
+  };
+
   const handleSubmit = (value: any) => {
-    if (resolvePrompt) {
+    if (resolvePrompt && currentPrompt) {
+      // Only store actual values, not back tokens
+      if (currentPrompt.type !== 'group' && !isBackToken(value)) {
+        setFieldValues(prev => ({
+          ...prev,
+          [currentPrompt.message]: value
+        }));
+      }
+
       resolvePrompt(value);
       setCurrentPrompt(null);
       setResolvePrompt(null);
@@ -55,7 +68,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
       return (
         <TextField
           message={currentPrompt.message}
-          initial={currentPrompt.initial}
+          initial={fieldValues[currentPrompt.message] ?? currentPrompt.initial}
           onSubmit={handleSubmit}
         />
       );
@@ -64,7 +77,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
       return (
         <ConfirmField
           message={currentPrompt.message}
-          initial={currentPrompt.initial}
+          initial={fieldValues[currentPrompt.message] ?? currentPrompt.initial}
           onSubmit={handleSubmit}
         />
       );
