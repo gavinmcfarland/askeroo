@@ -1,0 +1,42 @@
+import React, { useState } from 'react';
+import { Text, Box, useInput } from 'ink';
+
+type BackToken = { __back: true };
+
+interface TextFieldProps {
+  message: string;
+  onSubmit: (value: string | BackToken) => void;
+  initial?: string;
+}
+
+export function TextField({ message, onSubmit, initial = '' }: TextFieldProps) {
+  const [value, setValue] = useState(initial);
+  const [submitted, setSubmitted] = useState(false);
+
+  useInput((input, key) => {
+    if (submitted) return;
+
+    if (key.return) {
+      setSubmitted(true);
+      onSubmit(value);
+    } else if (key.backspace || key.delete) {
+      setValue(prev => prev.slice(0, -1));
+    } else if (input === '<') {
+      setSubmitted(true);
+      onSubmit({ __back: true });
+    } else if (!key.ctrl && !key.meta && input) {
+      setValue(prev => prev + input);
+    }
+  });
+
+  return (
+    <Box flexDirection="column">
+      <Text color="cyan">{message}</Text>
+      <Text>
+        {'> '}
+        <Text color="yellow">{value}</Text>
+        <Text dimColor> (type '&lt;' to go back)</Text>
+      </Text>
+    </Box>
+  );
+}

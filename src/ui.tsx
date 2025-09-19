@@ -1,134 +1,53 @@
-import React, { useState } from 'react';
-import { render, Text, Box, useInput } from 'ink';
+import React from "react";
+import { render } from "ink";
+import { PromptApp } from "./fields/index.js";
 
 type BackToken = { __back: true };
-const BACK: BackToken = { __back: true };
 
-interface TextPromptProps {
-  message: string;
-  onSubmit: (value: string | BackToken) => void;
-  initial?: string;
-}
+type PromptRequest =
+  | { type: 'text'; message: string; initial?: string }
+  | { type: 'confirm'; message: string; initial?: boolean }
+  | { type: 'group'; message: string };
 
-function TextPrompt({ message, onSubmit, initial = '' }: TextPromptProps) {
-  const [value, setValue] = useState(initial);
-  const [submitted, setSubmitted] = useState(false);
+let appInstance: {
+  promptFn?: (request: PromptRequest) => Promise<any>;
+  unmount?: () => void;
+} = {};
 
-  useInput((input, key) => {
-    if (submitted) return;
-
-    if (key.return) {
-      setSubmitted(true);
-      onSubmit(value);
-    } else if (key.backspace || key.delete) {
-      setValue(prev => prev.slice(0, -1));
-    } else if (input === '<') {
-      setSubmitted(true);
-      onSubmit(BACK);
-    } else if (!key.ctrl && !key.meta && input) {
-      setValue(prev => prev + input);
+function ensureApp(): Promise<(request: PromptRequest) => Promise<any>> {
+  return new Promise((resolve) => {
+    if (appInstance.promptFn) {
+      resolve(appInstance.promptFn);
+      return;
     }
+
+    const { unmount } = render(
+      <PromptApp
+        onReady={(promptFn) => {
+          appInstance.promptFn = promptFn;
+          appInstance.unmount = unmount;
+          resolve(promptFn);
+        }}
+      />
+    );
   });
-
-  return (
-    <Box flexDirection="column">
-      <Text color="cyan">{message}</Text>
-      <Text>
-        {'> '}
-        <Text color="yellow">{value}</Text>
-        <Text dimColor> (type '&lt;' to go back)</Text>
-      </Text>
-    </Box>
-  );
-}
-
-interface ConfirmPromptProps {
-  message: string;
-  onSubmit: (value: boolean | BackToken) => void;
-  initial?: boolean;
-}
-
-function ConfirmPrompt({ message, onSubmit, initial = false }: ConfirmPromptProps) {
-  const [value, setValue] = useState<boolean | null>(initial);
-  const [submitted, setSubmitted] = useState(false);
-
-  useInput((input, key) => {
-    if (submitted) return;
-
-    if (key.return && value !== null) {
-      setSubmitted(true);
-      onSubmit(value);
-    } else if (input === '<') {
-      setSubmitted(true);
-      onSubmit(BACK);
-    } else if (input.toLowerCase() === 'y') {
-      setValue(true);
-    } else if (input.toLowerCase() === 'n') {
-      setValue(false);
-    }
-  });
-
-  return (
-    <Box flexDirection="column">
-      <Text color="cyan">{message}</Text>
-      <Text>
-        {'> '}
-        <Text color="yellow">
-          {value === null ? '' : value ? 'yes' : 'no'}
-        </Text>
-        <Text dimColor> [y/n] (type '&lt;' to go back)</Text>
-      </Text>
-    </Box>
-  );
-}
-
-interface GroupHeaderProps {
-  message: string;
-}
-
-function GroupHeader({ message }: GroupHeaderProps) {
-  return (
-    <Box marginTop={1} marginBottom={1}>
-      <Text color="green" bold>
-        {message}:
-      </Text>
-    </Box>
-  );
 }
 
 export const ui = {
-  text(msg: string, initial?: string): Promise<string | BackToken> {
-    return new Promise((resolve) => {
-      const { unmount } = render(
-        <TextPrompt
-          message={msg}
-          initial={initial}
-          onSubmit={(value) => {
-            unmount();
-            resolve(value);
-          }}
-        />
-      );
-    });
+  async text(msg: string, initial?: string): Promise<string | BackToken> {
+    const promptFn = await ensureApp();
+    return promptFn({ type: 'text', message: msg, initial });
   },
 
-  confirm(msg: string, initial?: boolean): Promise<boolean | BackToken> {
-    return new Promise((resolve) => {
-      const { unmount } = render(
-        <ConfirmPrompt
-          message={msg}
-          initial={initial}
-          onSubmit={(value) => {
-            unmount();
-            resolve(value);
-          }}
-        />
-      );
-    });
+  async confirm(msg: string, initial?: boolean): Promise<boolean | BackToken> {
+    const promptFn = await ensureApp();
+    return promptFn({ type: 'confirm', message: msg, initial });
   },
 
-  showGroup(label: string): void {
-    const { unmount } = render(<GroupHeader message={label} />);
-    setTimeout(() => unmount(), 100);
+  async showGroup(label: string): Promise<void> {
+    const promptFn = await ensureApp();
+    await promptFn({ type: 'group', message: label });
+    // Brief delay to show the group header
+    await new Promise(resolve => setTimeout(resolve, 100));
   }
 };
