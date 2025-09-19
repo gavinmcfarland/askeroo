@@ -18,6 +18,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
   const [currentPrompt, setCurrentPrompt] = useState<PromptRequest | null>(null);
   const [resolvePrompt, setResolvePrompt] = useState<((value: any) => void) | null>(null);
   const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
+  const [visitedPrompts, setVisitedPrompts] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const promptFn = (request: PromptRequest): Promise<any> => {
@@ -42,6 +43,17 @@ export function PromptApp({ onReady }: PromptAppProps) {
           ...prev,
           [currentPrompt.message]: value
         }));
+        // Mark this prompt as visited when we store a value
+        setVisitedPrompts(prev => new Set(prev).add(currentPrompt.message));
+      }
+
+      // If going back, clean up visited prompts that are no longer reachable
+      if (isBackToken(value)) {
+        setVisitedPrompts(prev => {
+          const newVisited = new Set(prev);
+          newVisited.delete(currentPrompt.message);
+          return newVisited;
+        });
       }
 
       resolvePrompt(value);
@@ -68,7 +80,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
       return (
         <TextField
           message={currentPrompt.message}
-          initial={fieldValues[currentPrompt.message] ?? currentPrompt.initial}
+          initial={visitedPrompts.has(currentPrompt.message) ? fieldValues[currentPrompt.message] ?? currentPrompt.initial : currentPrompt.initial}
           onSubmit={handleSubmit}
         />
       );
@@ -77,7 +89,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
       return (
         <ConfirmField
           message={currentPrompt.message}
-          initial={fieldValues[currentPrompt.message] ?? currentPrompt.initial}
+          initial={visitedPrompts.has(currentPrompt.message) ? fieldValues[currentPrompt.message] ?? currentPrompt.initial : currentPrompt.initial}
           onSubmit={handleSubmit}
         />
       );
