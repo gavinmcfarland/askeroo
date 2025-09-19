@@ -28,7 +28,7 @@
         "build": "npm run clean && tsc",
         "clean": "rm -rf ./dist/*",
         "dev": "tsc --watch",
-        "example": "node dist/example.js",
+        "example": "npm run build && node dist/example.js",
         "prepublishOnly": "npm run build"
     },
     "keywords": [

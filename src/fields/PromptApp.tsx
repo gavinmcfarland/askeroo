@@ -1,151 +1,191 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { TextField } from './TextField.js';
-import { ConfirmField } from './ConfirmField.js';
-import { GroupContainer } from './GroupContainer.js';
+import React, { useState, useEffect, useRef } from "react";
+import { TextField } from "./TextField.js";
+import { ConfirmField } from "./ConfirmField.js";
+import { GroupContainer } from "./GroupContainer.js";
 
 type BackToken = { __back: true };
 
 type PromptRequest =
-  | { type: 'text'; message: string; initial?: string; groupName?: string }
-  | { type: 'confirm'; message: string; initial?: boolean; groupName?: string }
-  | { type: 'group'; message: string };
+	| {
+			type: "text";
+			id: string;
+			message: string;
+			initial?: string;
+			groupName?: string;
+	  }
+	| {
+			type: "confirm";
+			id: string;
+			message: string;
+			initial?: boolean;
+			groupName?: string;
+	  }
+	| { type: "group"; id: string; message: string };
 
 interface PromptAppProps {
-  onReady: (promptFn: (request: PromptRequest) => Promise<any>) => void;
+	onReady: (promptFn: (request: PromptRequest) => Promise<any>) => void;
 }
 
 export function PromptApp({ onReady }: PromptAppProps) {
-  const [currentPrompt, setCurrentPrompt] = useState<PromptRequest | null>(null);
-  const [resolvePrompt, setResolvePrompt] = useState<((value: any) => void) | null>(null);
-  const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
-  const [visitedPrompts, setVisitedPrompts] = useState<Set<string>>(new Set());
-  const [currentGroup, setCurrentGroup] = useState<string | null>(null);
-  const firstFieldMessageRef = useRef<string | null>(null);
+	const [currentPrompt, setCurrentPrompt] = useState<PromptRequest | null>(
+		null
+	);
+	const [resolvePrompt, setResolvePrompt] = useState<
+		((value: any) => void) | null
+	>(null);
+	const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
+	const [visitedPrompts, setVisitedPrompts] = useState<Set<string>>(
+		new Set()
+	);
+	const [currentGroup, setCurrentGroup] = useState<string | null>(null);
+	const firstFieldIdRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    const promptFn = (request: PromptRequest): Promise<any> => {
-      return new Promise((resolve) => {
-        // Track the first interactive field (only set once per app lifecycle)
-        if (request.type !== 'group' && firstFieldMessageRef.current === null) {
-          firstFieldMessageRef.current = request.message;
-        }
+	useEffect(() => {
+		const promptFn = (request: PromptRequest): Promise<any> => {
+			return new Promise((resolve) => {
+				// Track the first interactive field (only set once per app lifecycle)
+				if (
+					request.type !== "group" &&
+					firstFieldIdRef.current === null
+				) {
+					firstFieldIdRef.current = request.id;
+				}
 
-        setCurrentPrompt(request);
-        setResolvePrompt(() => resolve);
+				setCurrentPrompt(request);
+				setResolvePrompt(() => resolve);
 
-        // Update current group state
-        if (request.type === 'group') {
-          setCurrentGroup(request.message);
-        } else if (request.groupName) {
-          setCurrentGroup(request.groupName);
-        } else {
-          setCurrentGroup(null);
-        }
-      });
-    };
+				// Update current group state - only set, don't clear within groups
+				if (request.type === "group") {
+					setCurrentGroup(request.message);
+				} else if (request.groupName) {
+					setCurrentGroup(request.groupName);
+				}
+				// Don't automatically clear currentGroup - let it persist within the group
+			});
+		};
 
-    onReady(promptFn);
-  }, [onReady]);
+		onReady(promptFn);
+	}, [onReady]);
 
-  const isBackToken = (value: any): value is BackToken => {
-    return typeof value === "object" && value !== null && value.__back === true;
-  };
+	const isBackToken = (value: any): value is BackToken => {
+		return (
+			typeof value === "object" && value !== null && value.__back === true
+		);
+	};
 
-  const handleSubmit = (value: any) => {
-    if (resolvePrompt && currentPrompt) {
-      // Only store actual values, not back tokens
-      if (currentPrompt.type !== 'group' && !isBackToken(value)) {
-        setFieldValues(prev => ({
-          ...prev,
-          [currentPrompt.message]: value
-        }));
-        // Mark this prompt as visited when we store a value
-        setVisitedPrompts(prev => new Set(prev).add(currentPrompt.message));
-      }
+	const handleSubmit = (value: any) => {
+		if (resolvePrompt && currentPrompt) {
+			// Store the actual value
+			if (currentPrompt.type !== "group") {
+				setFieldValues((prev) => ({
+					...prev,
+					[currentPrompt.id]: value,
+				}));
+				// Mark this prompt as visited when we store a value
+				setVisitedPrompts((prev) =>
+					new Set(prev).add(currentPrompt.id)
+				);
+			}
 
-      // If going back, clean up visited prompts that are no longer reachable
-      // Only update visited prompts if this prompt was actually visited before
-      if (isBackToken(value) && visitedPrompts.has(currentPrompt.message)) {
-        setVisitedPrompts(prev => {
-          const newVisited = new Set(prev);
-          newVisited.delete(currentPrompt.message);
-          return newVisited;
-        });
-      }
+			resolvePrompt(value);
+			setResolvePrompt(null);
+		}
+	};
 
-      resolvePrompt(value);
-      setResolvePrompt(null);
-      // Don't clear currentPrompt for back navigation within groups
-      // Let the next prompt replace it to avoid flickering
-    }
-  };
+	const handleBack = () => {
+		if (resolvePrompt && currentPrompt) {
+			// Clean up visited prompts that are no longer reachable
+			// Only update visited prompts if this prompt was actually visited before
+			console.log("handleBack", visitedPrompts);
+			if (visitedPrompts.has(currentPrompt.id)) {
+				setVisitedPrompts((prev) => {
+					const newVisited = new Set(prev);
+					newVisited.delete(currentPrompt.id);
+					return newVisited;
+				});
+			}
 
-  // Auto-resolve group prompts since they don't need user input
-  useEffect(() => {
-    if (currentPrompt?.type === 'group' && resolvePrompt) {
-      resolvePrompt(undefined);
-      setResolvePrompt(null);
-      // Don't clear currentPrompt immediately - let the next prompt replace it
-    }
-  }, [currentPrompt, resolvePrompt]);
+			resolvePrompt({ __back: true });
+			setResolvePrompt(null);
+		}
+	};
 
-  if (!currentPrompt) {
-    return null;
-  }
+	// Auto-resolve group prompts since they don't need user input
+	useEffect(() => {
+		if (currentPrompt?.type === "group" && resolvePrompt) {
+			resolvePrompt(undefined);
+			setResolvePrompt(null);
+			// Don't clear currentPrompt immediately - let the next prompt replace it
+		}
+	}, [currentPrompt, resolvePrompt]);
 
-  const renderField = () => {
-    if (!currentPrompt) return null;
+	if (!currentPrompt) {
+		return null;
+	}
 
-    let field: React.ReactNode;
+	const renderField = () => {
+		if (!currentPrompt) return null;
 
-    switch (currentPrompt.type) {
-      case 'text':
-        const textAllowBack = currentPrompt.message !== firstFieldMessageRef.current;
-        field = (
-          <TextField
-            key={currentPrompt.message}
-            message={currentPrompt.message}
-            initial={visitedPrompts.has(currentPrompt.message) ? fieldValues[currentPrompt.message] ?? currentPrompt.initial : currentPrompt.initial}
-            allowBack={textAllowBack}
-            onSubmit={handleSubmit}
-          />
-        );
-        break;
+		let field: React.ReactNode;
 
-      case 'confirm':
-        const confirmAllowBack = currentPrompt.message !== firstFieldMessageRef.current;
-        field = (
-          <ConfirmField
-            key={currentPrompt.message}
-            message={currentPrompt.message}
-            initial={visitedPrompts.has(currentPrompt.message) ? fieldValues[currentPrompt.message] ?? currentPrompt.initial : currentPrompt.initial}
-            allowBack={confirmAllowBack}
-            onSubmit={handleSubmit}
-          />
-        );
-        break;
+		switch (currentPrompt.type) {
+			case "text":
+				const textAllowBack =
+					currentPrompt.id !== firstFieldIdRef.current;
+				field = (
+					<TextField
+						key={currentPrompt.id}
+						message={currentPrompt.message}
+						initial={
+							visitedPrompts.has(currentPrompt.id)
+								? fieldValues[currentPrompt.id] ??
+								  currentPrompt.initial
+								: currentPrompt.initial
+						}
+						allowBack={textAllowBack}
+						onSubmit={handleSubmit}
+						onBack={handleBack}
+					/>
+				);
+				break;
 
-      case 'group':
-        // Group headers are now handled by GroupContainer wrapping fields
-        // Render a placeholder that will be wrapped by GroupContainer
-        field = <React.Fragment key={currentPrompt.message} />;
-        break;
+			case "confirm":
+				const confirmAllowBack =
+					currentPrompt.id !== firstFieldIdRef.current;
+				field = (
+					<ConfirmField
+						key={currentPrompt.id}
+						message={currentPrompt.message}
+						initial={
+							visitedPrompts.has(currentPrompt.id)
+								? fieldValues[currentPrompt.id] ??
+								  currentPrompt.initial
+								: currentPrompt.initial
+						}
+						allowBack={confirmAllowBack}
+						onSubmit={handleSubmit}
+						onBack={handleBack}
+					/>
+				);
+				break;
 
-      default:
-        return null;
-    }
+			case "group":
+				// Group headers are now handled by GroupContainer wrapping fields
+				// Render a placeholder that will be wrapped by GroupContainer
+				field = <React.Fragment key={currentPrompt.id} />;
+				break;
 
-    // Wrap field in GroupContainer if we're in a group
-    if (currentGroup && field) {
-      return (
-        <GroupContainer key={`group-${currentGroup}`} groupName={currentGroup}>
-          {field}
-        </GroupContainer>
-      );
-    }
+			default:
+				return null;
+		}
 
-    return field;
-  };
+		// Always wrap in GroupContainer for consistent rendering
+		return (
+			<GroupContainer key="group-container" groupName={currentGroup}>
+				{field}
+			</GroupContainer>
+		);
+	};
 
-  return renderField();
+	return renderField();
 }

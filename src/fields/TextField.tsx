@@ -5,12 +5,19 @@ type BackToken = { __back: true };
 
 interface TextFieldProps {
 	message: string;
-	onSubmit: (value: string | BackToken) => void;
+	onSubmit: (value: string) => void;
+	onBack?: () => void;
 	initial?: string;
 	allowBack?: boolean;
 }
 
-export function TextField({ message, onSubmit, initial = "", allowBack = true }: TextFieldProps) {
+export function TextField({
+	message,
+	onSubmit,
+	onBack,
+	initial = "",
+	allowBack = true,
+}: TextFieldProps) {
 	const [value, setValue] = useState(initial);
 	const [submitted, setSubmitted] = useState(false);
 
@@ -23,8 +30,8 @@ export function TextField({ message, onSubmit, initial = "", allowBack = true }:
 		} else if (key.backspace || key.delete) {
 			setValue((prev) => prev.slice(0, -1));
 		} else if (key.escape) {
-			if (allowBack) {
-				onSubmit({ __back: true });
+			if (allowBack && onBack) {
+				onBack();
 			}
 		} else if (!key.ctrl && !key.meta && input) {
 			setValue((prev) => prev + input);

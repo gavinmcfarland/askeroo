@@ -5,7 +5,8 @@ type BackToken = { __back: true };
 
 interface ConfirmFieldProps {
 	message: string;
-	onSubmit: (value: boolean | BackToken) => void;
+	onSubmit: (value: boolean) => void;
+	onBack?: () => void;
 	initial?: boolean;
 	allowBack?: boolean;
 }
@@ -13,6 +14,7 @@ interface ConfirmFieldProps {
 export function ConfirmField({
 	message,
 	onSubmit,
+	onBack,
 	initial = false,
 	allowBack = true,
 }: ConfirmFieldProps) {
@@ -26,8 +28,8 @@ export function ConfirmField({
 			setSubmitted(true);
 			onSubmit(value);
 		} else if (key.escape) {
-			if (allowBack) {
-				onSubmit({ __back: true });
+			if (allowBack && onBack) {
+				onBack();
 			}
 		} else if (input.toLowerCase() === "y") {
 			setValue(true);
