@@ -20,7 +20,6 @@ export function ConfirmField({ message, onSubmit, initial = false }: ConfirmFiel
       setSubmitted(true);
       onSubmit(value);
     } else if (key.escape) {
-      setSubmitted(true);
       onSubmit({ __back: true });
     } else if (input.toLowerCase() === 'y') {
       setValue(true);

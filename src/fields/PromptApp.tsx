@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TextField } from './TextField.js';
 import { ConfirmField } from './ConfirmField.js';
-import { GroupHeader } from './GroupHeader.js';
 import { GroupContainer } from './GroupContainer.js';
 
 type BackToken = { __back: true };
@@ -20,12 +19,22 @@ export function PromptApp({ onReady }: PromptAppProps) {
   const [resolvePrompt, setResolvePrompt] = useState<((value: any) => void) | null>(null);
   const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
   const [visitedPrompts, setVisitedPrompts] = useState<Set<string>>(new Set());
+  const [currentGroup, setCurrentGroup] = useState<string | null>(null);
 
   useEffect(() => {
     const promptFn = (request: PromptRequest): Promise<any> => {
       return new Promise((resolve) => {
         setCurrentPrompt(request);
         setResolvePrompt(() => resolve);
+
+        // Update current group state
+        if (request.type === 'group') {
+          setCurrentGroup(request.message);
+        } else if (request.groupName) {
+          setCurrentGroup(request.groupName);
+        } else {
+          setCurrentGroup(null);
+        }
       });
     };
 
@@ -59,7 +68,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
       resolvePrompt(value);
       setResolvePrompt(null);
-      // Don't clear currentPrompt immediately - let the next prompt replace it
+      // Don't clear currentPrompt for back navigation within groups
+      // Let the next prompt replace it to avoid flickering
     }
   };
 
@@ -105,22 +115,19 @@ export function PromptApp({ onReady }: PromptAppProps) {
         break;
 
       case 'group':
-        field = (
-          <GroupHeader
-            key={currentPrompt.message}
-            message={currentPrompt.message}
-          />
-        );
+        // Group headers are now handled by GroupContainer wrapping fields
+        // Render a placeholder that will be wrapped by GroupContainer
+        field = <React.Fragment key={currentPrompt.message} />;
         break;
 
       default:
         return null;
     }
 
-    // Wrap field in GroupContainer if it belongs to a group
-    if (currentPrompt.type !== 'group' && currentPrompt.groupName) {
+    // Wrap field in GroupContainer if we're in a group
+    if (currentGroup && field) {
       return (
-        <GroupContainer key={`group-${currentPrompt.groupName}`} groupName={currentPrompt.groupName}>
+        <GroupContainer key={`group-${currentGroup}`} groupName={currentGroup}>
           {field}
         </GroupContainer>
       );

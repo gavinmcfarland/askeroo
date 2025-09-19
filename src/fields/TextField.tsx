@@ -22,7 +22,6 @@ export function TextField({ message, onSubmit, initial = '' }: TextFieldProps) {
     } else if (key.backspace || key.delete) {
       setValue(prev => prev.slice(0, -1));
     } else if (key.escape) {
-      setSubmitted(true);
       onSubmit({ __back: true });
     } else if (!key.ctrl && !key.meta && input) {
       setValue(prev => prev + input);
