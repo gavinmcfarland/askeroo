@@ -6,9 +6,9 @@ import { GroupContainer } from './GroupContainer.js';
 type BackToken = { __back: true };
 
 type PromptRequest =
-  | { type: 'text'; message: string; initial?: string; groupName?: string }
-  | { type: 'confirm'; message: string; initial?: boolean; groupName?: string }
-  | { type: 'group'; message: string };
+  | { type: 'text'; message: string; initial?: string; groupName?: string; fieldId?: string }
+  | { type: 'confirm'; message: string; initial?: boolean; groupName?: string; fieldId?: string }
+  | { type: 'group'; message: string; fieldId?: string };
 
 interface PromptAppProps {
   onReady: (promptFn: (request: PromptRequest) => Promise<any>) => void;
@@ -20,17 +20,26 @@ export function PromptApp({ onReady }: PromptAppProps) {
   const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
   const [visitedPrompts, setVisitedPrompts] = useState<Set<string>>(new Set());
   const [currentGroup, setCurrentGroup] = useState<string | null>(null);
-  const firstFieldMessageRef = useRef<string | null>(null);
+  const firstFieldIdRef = useRef<string | null>(null);
+  const interactiveFieldCountRef = useRef<number>(0);
 
   useEffect(() => {
     const promptFn = (request: PromptRequest): Promise<any> => {
       return new Promise((resolve) => {
-        // Track the first interactive field (only set once per app lifecycle)
-        if (request.type !== 'group' && firstFieldMessageRef.current === null) {
-          firstFieldMessageRef.current = request.message;
+        // Create a unique ID for this field request
+        let fieldId: string | undefined;
+        if (request.type !== 'group') {
+          fieldId = `${request.type}:${request.message}:${interactiveFieldCountRef.current}`;
+
+          // Track the first interactive field (only set once per app lifecycle)
+          if (firstFieldIdRef.current === null) {
+            firstFieldIdRef.current = fieldId;
+          }
+
+          interactiveFieldCountRef.current++;
         }
 
-        setCurrentPrompt(request);
+        setCurrentPrompt({...request, fieldId});
         setResolvePrompt(() => resolve);
 
         // Update current group state
@@ -100,10 +109,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
     switch (currentPrompt.type) {
       case 'text':
-        const textAllowBack = currentPrompt.message !== firstFieldMessageRef.current;
+        const textAllowBack = currentPrompt.fieldId !== firstFieldIdRef.current;
         field = (
           <TextField
-            key={currentPrompt.message}
+            key={currentPrompt.fieldId}
             message={currentPrompt.message}
             initial={visitedPrompts.has(currentPrompt.message) ? fieldValues[currentPrompt.message] ?? currentPrompt.initial : currentPrompt.initial}
             allowBack={textAllowBack}
@@ -113,10 +122,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
         break;
 
       case 'confirm':
-        const confirmAllowBack = currentPrompt.message !== firstFieldMessageRef.current;
+        const confirmAllowBack = currentPrompt.fieldId !== firstFieldIdRef.current;
         field = (
           <ConfirmField
-            key={currentPrompt.message}
+            key={currentPrompt.fieldId}
             message={currentPrompt.message}
             initial={visitedPrompts.has(currentPrompt.message) ? fieldValues[currentPrompt.message] ?? currentPrompt.initial : currentPrompt.initial}
             allowBack={confirmAllowBack}
