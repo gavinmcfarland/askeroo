@@ -13,12 +13,14 @@ export interface TextFieldProps {
 export const TextField: React.FC<TextFieldProps> = ({ config, onSubmit, onBack, onExit, isActive }) => {
   const [value, setValue] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // Reset field state when becoming active again (e.g., after going back)
   useEffect(() => {
     if (isActive && submitted) {
       setValue('');
       setSubmitted(false);
+      setValidationError(null);
     }
   }, [isActive, submitted]);
 
@@ -50,10 +52,13 @@ export const TextField: React.FC<TextFieldProps> = ({ config, onSubmit, onBack, 
         if (config.validate) {
           const validation = config.validate(value);
           if (validation !== true) {
-            // Handle validation error
+            // Set validation error message
+            setValidationError(typeof validation === 'string' ? validation : 'Invalid input');
             return;
           }
         }
+        // Clear any previous validation error
+        setValidationError(null);
         setSubmitted(true);
         onSubmit(value);
         return;
@@ -62,12 +67,20 @@ export const TextField: React.FC<TextFieldProps> = ({ config, onSubmit, onBack, 
       // Handle backspace
       if (input === '\u007f' || input === '\b') {
         setValue(prev => prev.slice(0, -1));
+        // Clear validation error when user modifies input
+        if (validationError) {
+          setValidationError(null);
+        }
         return;
       }
 
       // Handle regular characters
       if (input.length === 1 && input.charCodeAt(0) >= 32 && input.charCodeAt(0) <= 126) {
         setValue(prev => prev + input);
+        // Clear validation error when user starts typing
+        if (validationError) {
+          setValidationError(null);
+        }
       }
     };
 
@@ -81,7 +94,7 @@ export const TextField: React.FC<TextFieldProps> = ({ config, onSubmit, onBack, 
         process.stdin.setRawMode(false);
       }
     };
-  }, [isActive, value, config, onSubmit, onBack, onExit]);
+  }, [isActive, value, config, onSubmit, onBack, onExit, validationError]);
 
   if (submitted) {
     return (
@@ -103,13 +116,20 @@ export const TextField: React.FC<TextFieldProps> = ({ config, onSubmit, onBack, 
   }
 
   return (
-    <Box>
-      <Text color="blue">? </Text>
-      <Text>{config.message}: </Text>
-      <Text color="cyan">{value}</Text>
-      <Text color="gray">|</Text>
-      {config.placeholder && value === '' && (
-        <Text dimColor> ({config.placeholder})</Text>
+    <Box flexDirection="column">
+      <Box>
+        <Text color="blue">? </Text>
+        <Text>{config.message}: </Text>
+        <Text color="cyan">{value}</Text>
+        <Text color="gray">|</Text>
+        {config.placeholder && value === '' && (
+          <Text dimColor> ({config.placeholder})</Text>
+        )}
+      </Box>
+      {validationError && (
+        <Box marginLeft={2}>
+          <Text color="red">✗ {validationError}</Text>
+        </Box>
       )}
     </Box>
   );
