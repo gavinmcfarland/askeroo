@@ -7,6 +7,8 @@ type UI = {
   text(msg: string, initial?: string): Promise<string | BackToken>;
   confirm(msg: string, initial?: boolean): Promise<boolean | BackToken>;
   showGroup(label: string): Promise<void> | void;
+  clearGroup?(): void;
+  cleanup?(): void;
 };
 
 type BackToken = { __back: true };
@@ -72,7 +74,11 @@ export function createRuntime(ui: UI) {
   async function group(opts: PromptOpts, body: () => Promise<any>) {
     if (!asking) throw new Error("group() must be called inside ask()");
     await engine.step("group", opts, async () => undefined);
-    return body();
+    try {
+      return await body();
+    } finally {
+      ui.clearGroup?.();
+    }
   }
 
   async function text(opts: PromptOpts): Promise<string> {
@@ -95,6 +101,7 @@ export function createRuntime(ui: UI) {
 
         // If we've asked all interactive prompts in this path, we're done
         if (currentStep >= interactivePrompts.length) {
+          ui.cleanup?.();
           return result;
         }
       } catch (e) {

@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { TextField } from './TextField.js';
 import { ConfirmField } from './ConfirmField.js';
 import { GroupHeader } from './GroupHeader.js';
+import { GroupContainer } from './GroupContainer.js';
 
 type BackToken = { __back: true };
 
 type PromptRequest =
-  | { type: 'text'; message: string; initial?: string }
-  | { type: 'confirm'; message: string; initial?: boolean }
+  | { type: 'text'; message: string; initial?: string; groupName?: string }
+  | { type: 'confirm'; message: string; initial?: boolean; groupName?: string }
   | { type: 'group'; message: string };
 
 interface PromptAppProps {
@@ -57,8 +58,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
       }
 
       resolvePrompt(value);
-      setCurrentPrompt(null);
       setResolvePrompt(null);
+      // Don't clear currentPrompt immediately - let the next prompt replace it
     }
   };
 
@@ -66,8 +67,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
   useEffect(() => {
     if (currentPrompt?.type === 'group' && resolvePrompt) {
       resolvePrompt(undefined);
-      setCurrentPrompt(null);
       setResolvePrompt(null);
+      // Don't clear currentPrompt immediately - let the next prompt replace it
     }
   }, [currentPrompt, resolvePrompt]);
 
@@ -75,33 +76,58 @@ export function PromptApp({ onReady }: PromptAppProps) {
     return null;
   }
 
-  switch (currentPrompt.type) {
-    case 'text':
-      return (
-        <TextField
-          message={currentPrompt.message}
-          initial={visitedPrompts.has(currentPrompt.message) ? fieldValues[currentPrompt.message] ?? currentPrompt.initial : currentPrompt.initial}
-          onSubmit={handleSubmit}
-        />
-      );
+  const renderField = () => {
+    if (!currentPrompt) return null;
 
-    case 'confirm':
-      return (
-        <ConfirmField
-          message={currentPrompt.message}
-          initial={visitedPrompts.has(currentPrompt.message) ? fieldValues[currentPrompt.message] ?? currentPrompt.initial : currentPrompt.initial}
-          onSubmit={handleSubmit}
-        />
-      );
+    let field: React.ReactNode;
 
-    case 'group':
-      return (
-        <GroupHeader
-          message={currentPrompt.message}
-        />
-      );
+    switch (currentPrompt.type) {
+      case 'text':
+        field = (
+          <TextField
+            key={currentPrompt.message}
+            message={currentPrompt.message}
+            initial={visitedPrompts.has(currentPrompt.message) ? fieldValues[currentPrompt.message] ?? currentPrompt.initial : currentPrompt.initial}
+            onSubmit={handleSubmit}
+          />
+        );
+        break;
 
-    default:
-      return null;
-  }
+      case 'confirm':
+        field = (
+          <ConfirmField
+            key={currentPrompt.message}
+            message={currentPrompt.message}
+            initial={visitedPrompts.has(currentPrompt.message) ? fieldValues[currentPrompt.message] ?? currentPrompt.initial : currentPrompt.initial}
+            onSubmit={handleSubmit}
+          />
+        );
+        break;
+
+      case 'group':
+        field = (
+          <GroupHeader
+            key={currentPrompt.message}
+            message={currentPrompt.message}
+          />
+        );
+        break;
+
+      default:
+        return null;
+    }
+
+    // Wrap field in GroupContainer if it belongs to a group
+    if (currentPrompt.type !== 'group' && currentPrompt.groupName) {
+      return (
+        <GroupContainer key={`group-${currentPrompt.groupName}`} groupName={currentPrompt.groupName}>
+          {field}
+        </GroupContainer>
+      );
+    }
+
+    return field;
+  };
+
+  return renderField();
 }
