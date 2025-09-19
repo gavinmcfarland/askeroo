@@ -4,7 +4,7 @@ import { FlowManager } from '../flow-manager.js';
 import { TextField } from '../fields/TextField.js';
 import { ConfirmField } from '../fields/ConfirmField.js';
 import { GroupSection } from './GroupSection.js';
-import { getCurrentPrompt, resolveCurrentPrompt, hasCurrentPrompt } from '../core.js';
+import { getCurrentPrompt, resolveCurrentPrompt, hasCurrentPrompt, canGoBack, goBack } from '../core.js';
 
 export interface PromptAppProps {
   flowManager: FlowManager;
@@ -92,9 +92,22 @@ export const PromptApp: React.FC<PromptAppProps> = ({ flowManager, flowFunction,
   }, [currentPrompt]);
 
   const handleBack = useCallback(() => {
-    // Simple back navigation implementation
-    console.log('\n⚠️  Back navigation is not yet fully implemented in dynamic mode.');
-    console.log('💡 Use Ctrl+C to exit and restart if you need to change previous answers.');
+    if (!canGoBack()) {
+      console.log('\n⚠️  Cannot go back - no previous prompts.');
+      return;
+    }
+
+    const success = goBack();
+    if (success) {
+      console.log('\n🔄 Going back to previous prompt...');
+
+      // Clear current prompt to trigger re-execution
+      setCurrentPrompt(null);
+
+      // Restart the flow execution
+      setIsComplete(false);
+      setFlowStarted(false);
+    }
   }, []);
 
   if (isComplete) {
@@ -137,7 +150,9 @@ export const PromptApp: React.FC<PromptAppProps> = ({ flowManager, flowFunction,
       )}
 
       <Box marginTop={1}>
-        <Text dimColor>(Use Esc to go back, Enter to continue, Ctrl+C to exit)</Text>
+        <Text dimColor>
+          (Use {canGoBack() ? 'Esc to go back, ' : ''}Enter to continue, Ctrl+C to exit)
+        </Text>
       </Box>
     </Box>
   );

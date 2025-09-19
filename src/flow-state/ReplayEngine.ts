@@ -22,13 +22,15 @@ export class ReplayEngine {
   // Execute flow starting from a specific step
   private async executeWithReplay<T>(flowFn: FlowFunction<T>, fromStepId: string): Promise<T> {
     // Find the target step and restore state
-    const targetStepIndex = this.stateManager.getAllSteps().findIndex(s => s.id === fromStepId);
+    const allSteps = this.stateManager.getAllSteps();
+    const targetStepIndex = allSteps.findIndex(s => s.id === fromStepId);
     if (targetStepIndex === -1) {
       throw new Error(`Step ${fromStepId} not found`);
     }
 
-    // Get steps that should be replayed automatically
-    this.replaySteps = this.stateManager.getStepsAfter(fromStepId);
+    // Get all steps up to (but not including) the target step for replay
+    // This will replay all previous prompts automatically
+    this.replaySteps = allSteps.slice(0, targetStepIndex).filter(step => step.type === 'prompt');
     this.replayIndex = 0;
     this.isReplaying = true;
 

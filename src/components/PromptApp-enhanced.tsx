@@ -163,13 +163,10 @@ export const EnhancedPromptApp: React.FC<EnhancedPromptAppProps> = ({
       // Clear current prompt to force re-render
       setCurrentPrompt(null);
 
-      // Set the current prompt to the previous step immediately
-      setCurrentPrompt({
-        type: previousStep.promptType as 'text' | 'confirm',
-        config: previousStep.config,
-        stepId: previousStep.id,
-        isActive: true
-      });
+      // Trigger replay from the previous step
+      setBackNavigationRequested(true);
+      setIsComplete(false);
+      setFlowStarted(false);
     }
   }, [enableBackNavigation, stateManager]);
 

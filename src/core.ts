@@ -12,9 +12,23 @@ let currentPromptConfig: any = null;
 let currentPromptType: 'text' | 'confirm' | null = null;
 let flowExecutionStarted: boolean = false;
 
+// Simple back navigation state
+interface PromptHistoryEntry {
+  type: 'text' | 'confirm';
+  config: any;
+  value: any;
+}
+
+let promptHistory: PromptHistoryEntry[] = [];
+let currentPromptIndex: number = -1; // -1 means "next new prompt", 0+ means "at history index N"
+
 export async function ask<T>(flowFn: FlowFunction<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     let appUnmounted = false;
+
+    // Reset back navigation state
+    promptHistory = [];
+    currentPromptIndex = -1;
 
     const cleanup = () => {
       if (appUnmounted) return;
@@ -28,6 +42,10 @@ export async function ask<T>(flowFn: FlowFunction<T>): Promise<T> {
 
       // Remove any remaining listeners
       process.stdin.removeAllListeners('data');
+
+      // Clear history
+      promptHistory = [];
+      currentPromptIndex = -1;
     };
 
     try {
@@ -84,8 +102,54 @@ export async function text(config: TextFieldConfig): Promise<string> {
     throw new Error('text() can only be called within an ask() flow');
   }
 
+  console.log(`🔹 text() called: ${config.message}, currentPromptIndex: ${currentPromptIndex}, historyLength: ${promptHistory.length}`);
+
+  // Check if we should use a value from history
+  if (currentPromptIndex >= 0 && currentPromptIndex < promptHistory.length) {
+    const historyEntry = promptHistory[currentPromptIndex];
+    console.log(`🔸 Checking history entry ${currentPromptIndex}: ${historyEntry.config.message} vs ${config.message}`);
+
+    if (historyEntry.type === 'text' && promptsMatch(historyEntry.config, config)) {
+      console.log(`🔸 Using historical value: ${historyEntry.value}`);
+      currentPromptIndex++;
+      return historyEntry.value;
+    }
+  }
+
+  // This is a new prompt or we're at the target prompt
   return new Promise((resolve) => {
-    currentPromptResolve = resolve;
+    const wrappedResolve = (value: string) => {
+      console.log(`🔸 User entered value: ${value}`);
+
+      if (currentPromptIndex >= 0) {
+        // We're replacing a value in history
+        console.log(`🔸 Updating history at index ${currentPromptIndex}`);
+        if (currentPromptIndex < promptHistory.length) {
+          promptHistory[currentPromptIndex].value = value;
+        } else {
+          // Extending history
+          promptHistory.push({
+            type: 'text',
+            config: { ...config },
+            value
+          });
+        }
+        // Truncate any future history
+        promptHistory.length = currentPromptIndex + 1;
+        currentPromptIndex = -1; // Move to "forward" mode
+      } else {
+        // We're adding a new prompt to history
+        promptHistory.push({
+          type: 'text',
+          config: { ...config },
+          value
+        });
+      }
+
+      resolve(value);
+    };
+
+    currentPromptResolve = wrappedResolve;
     currentPromptConfig = config;
     currentPromptType = 'text';
   });
@@ -96,8 +160,54 @@ export async function confirm(config: ConfirmFieldConfig): Promise<boolean> {
     throw new Error('confirm() can only be called within an ask() flow');
   }
 
+  console.log(`🔹 confirm() called: ${config.message}, currentPromptIndex: ${currentPromptIndex}, historyLength: ${promptHistory.length}`);
+
+  // Check if we should use a value from history
+  if (currentPromptIndex >= 0 && currentPromptIndex < promptHistory.length) {
+    const historyEntry = promptHistory[currentPromptIndex];
+    console.log(`🔸 Checking history entry ${currentPromptIndex}: ${historyEntry.config.message} vs ${config.message}`);
+
+    if (historyEntry.type === 'confirm' && promptsMatch(historyEntry.config, config)) {
+      console.log(`🔸 Using historical value: ${historyEntry.value}`);
+      currentPromptIndex++;
+      return historyEntry.value;
+    }
+  }
+
+  // This is a new prompt or we're at the target prompt
   return new Promise((resolve) => {
-    currentPromptResolve = resolve;
+    const wrappedResolve = (value: boolean) => {
+      console.log(`🔸 User entered value: ${value}`);
+
+      if (currentPromptIndex >= 0) {
+        // We're replacing a value in history
+        console.log(`🔸 Updating history at index ${currentPromptIndex}`);
+        if (currentPromptIndex < promptHistory.length) {
+          promptHistory[currentPromptIndex].value = value;
+        } else {
+          // Extending history
+          promptHistory.push({
+            type: 'confirm',
+            config: { ...config },
+            value
+          });
+        }
+        // Truncate any future history
+        promptHistory.length = currentPromptIndex + 1;
+        currentPromptIndex = -1; // Move to "forward" mode
+      } else {
+        // We're adding a new prompt to history
+        promptHistory.push({
+          type: 'confirm',
+          config: { ...config },
+          value
+        });
+      }
+
+      resolve(value);
+    };
+
+    currentPromptResolve = wrappedResolve;
     currentPromptConfig = config;
     currentPromptType = 'confirm';
   });
@@ -143,4 +253,52 @@ export function resolveCurrentPrompt(value: any): void {
 
 export function hasCurrentPrompt(): boolean {
   return currentPromptResolve !== null;
+}
+
+// Helper function to check if two prompt configs match
+function promptsMatch(config1: any, config2: any): boolean {
+  return config1.message === config2.message;
+}
+
+// Back navigation functions
+export function canGoBack(): boolean {
+  return promptHistory.length > 0;
+}
+
+export function goBack(): boolean {
+  console.log(`🔹 goBack() called, canGoBack: ${canGoBack()}, historyLength: ${promptHistory.length}, currentPromptIndex: ${currentPromptIndex}`);
+
+  if (!canGoBack()) {
+    return false;
+  }
+
+  // Determine where to go back to
+  if (currentPromptIndex === -1) {
+    // We're at a "new" prompt, go back to the last prompt in history
+    currentPromptIndex = promptHistory.length - 1;
+  } else if (currentPromptIndex > 0) {
+    // We're in history, go back one more step
+    currentPromptIndex--;
+  } else {
+    // Already at first prompt
+    console.log(`🔸 Cannot go back further - already at first prompt`);
+    return false;
+  }
+
+  console.log(`🔸 Going back to prompt index ${currentPromptIndex}: ${promptHistory[currentPromptIndex]?.config.message}`);
+
+  // Clear current prompt and trigger re-execution
+  currentPromptResolve = null;
+  currentPromptConfig = null;
+  currentPromptType = null;
+
+  return true;
+}
+
+export function getPromptHistory(): PromptHistoryEntry[] {
+  return [...promptHistory];
+}
+
+export function resetBackNavigation(): void {
+  currentPromptIndex = -1;
 }
