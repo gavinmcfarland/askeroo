@@ -7,9 +7,10 @@ interface TextFieldProps {
 	message: string;
 	onSubmit: (value: string | BackToken) => void;
 	initial?: string;
+	allowBack?: boolean;
 }
 
-export function TextField({ message, onSubmit, initial = "" }: TextFieldProps) {
+export function TextField({ message, onSubmit, initial = "", allowBack = true }: TextFieldProps) {
 	const [value, setValue] = useState(initial);
 	const [submitted, setSubmitted] = useState(false);
 
@@ -22,7 +23,9 @@ export function TextField({ message, onSubmit, initial = "" }: TextFieldProps) {
 		} else if (key.backspace || key.delete) {
 			setValue((prev) => prev.slice(0, -1));
 		} else if (key.escape) {
-			onSubmit({ __back: true });
+			if (allowBack) {
+				onSubmit({ __back: true });
+			}
 		} else if (!key.ctrl && !key.meta && input) {
 			setValue((prev) => prev + input);
 		}

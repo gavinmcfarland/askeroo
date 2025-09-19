@@ -119,6 +119,8 @@ export function createRuntime(ui: UI) {
                 delete answers[key];
               }
             }
+          } else {
+            // If we're at the first step, ignore the back operation completely
           }
         } else {
           throw e;

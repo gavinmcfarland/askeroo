@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { TextField } from './TextField.js';
 import { ConfirmField } from './ConfirmField.js';
 import { GroupContainer } from './GroupContainer.js';
@@ -20,10 +20,16 @@ export function PromptApp({ onReady }: PromptAppProps) {
   const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
   const [visitedPrompts, setVisitedPrompts] = useState<Set<string>>(new Set());
   const [currentGroup, setCurrentGroup] = useState<string | null>(null);
+  const firstFieldMessageRef = useRef<string | null>(null);
 
   useEffect(() => {
     const promptFn = (request: PromptRequest): Promise<any> => {
       return new Promise((resolve) => {
+        // Track the first interactive field (only set once per app lifecycle)
+        if (request.type !== 'group' && firstFieldMessageRef.current === null) {
+          firstFieldMessageRef.current = request.message;
+        }
+
         setCurrentPrompt(request);
         setResolvePrompt(() => resolve);
 
@@ -58,7 +64,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
       }
 
       // If going back, clean up visited prompts that are no longer reachable
-      if (isBackToken(value)) {
+      // Only update visited prompts if this prompt was actually visited before
+      if (isBackToken(value) && visitedPrompts.has(currentPrompt.message)) {
         setVisitedPrompts(prev => {
           const newVisited = new Set(prev);
           newVisited.delete(currentPrompt.message);
@@ -93,22 +100,26 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
     switch (currentPrompt.type) {
       case 'text':
+        const textAllowBack = currentPrompt.message !== firstFieldMessageRef.current;
         field = (
           <TextField
             key={currentPrompt.message}
             message={currentPrompt.message}
             initial={visitedPrompts.has(currentPrompt.message) ? fieldValues[currentPrompt.message] ?? currentPrompt.initial : currentPrompt.initial}
+            allowBack={textAllowBack}
             onSubmit={handleSubmit}
           />
         );
         break;
 
       case 'confirm':
+        const confirmAllowBack = currentPrompt.message !== firstFieldMessageRef.current;
         field = (
           <ConfirmField
             key={currentPrompt.message}
             message={currentPrompt.message}
             initial={visitedPrompts.has(currentPrompt.message) ? fieldValues[currentPrompt.message] ?? currentPrompt.initial : currentPrompt.initial}
+            allowBack={confirmAllowBack}
             onSubmit={handleSubmit}
           />
         );

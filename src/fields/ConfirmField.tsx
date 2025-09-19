@@ -7,12 +7,14 @@ interface ConfirmFieldProps {
 	message: string;
 	onSubmit: (value: boolean | BackToken) => void;
 	initial?: boolean;
+	allowBack?: boolean;
 }
 
 export function ConfirmField({
 	message,
 	onSubmit,
 	initial = false,
+	allowBack = true,
 }: ConfirmFieldProps) {
 	const [value, setValue] = useState<boolean | null>(initial);
 	const [submitted, setSubmitted] = useState(false);
@@ -24,7 +26,9 @@ export function ConfirmField({
 			setSubmitted(true);
 			onSubmit(value);
 		} else if (key.escape) {
-			onSubmit({ __back: true });
+			if (allowBack) {
+				onSubmit({ __back: true });
+			}
 		} else if (input.toLowerCase() === "y") {
 			setValue(true);
 		} else if (input.toLowerCase() === "n") {
