@@ -4,8 +4,8 @@ type PromptKind = "text" | "confirm" | "group";
 type PromptOpts = { message: string; name?: string };
 
 type UI = {
-  text(msg: string, initial?: string): Promise<string | BackToken>;
-  confirm(msg: string, initial?: boolean): Promise<boolean | BackToken>;
+  text(msg: string, initial?: string, groupContext?: string): Promise<string | BackToken>;
+  confirm(msg: string, initial?: boolean, groupContext?: string): Promise<boolean | BackToken>;
   showGroup(label: string): Promise<void> | void;
   clearGroup?(): void;
   cleanup?(): void;
@@ -24,7 +24,8 @@ export function createRuntime(ui: UI) {
   let interactivePrompts: string[] = [];
   let currentStep = 0;
   let asking = false;
-  let isReplaying = false; // Track if we're in replay mode
+  let isReplaying: boolean | "smart" = false; // Track replay mode: false, true, or "smart"
+  let targetGroup: string | undefined; // For smart replay mode
 
   // Track execution context to avoid unnecessary replays
   let executionPath: Array<{
@@ -49,14 +50,24 @@ export function createRuntime(ui: UI) {
     BACK,
     async step<T>(kind: PromptKind, opts: PromptOpts, askFn: () => Promise<T | BackToken>) {
       if (kind === "group") {
-        // Only call showGroup if we're not replaying or if this group hasn't been processed
-        const shouldShowGroup = !isReplaying && (!lastProcessedGroups.has(opts.message) || currentStep >= interactivePrompts.length);
+        let shouldShowGroup: boolean;
 
-        console.log("👥 Group step:", opts.message, "shouldShow:", shouldShowGroup, "alreadyProcessed:", lastProcessedGroups.has(opts.message), "isReplaying:", isReplaying);
+        if (isReplaying === "smart") {
+          // Smart replay: show only the target group, fast replay others
+          shouldShowGroup = opts.message === targetGroup && !lastProcessedGroups.has(opts.message);
+        } else {
+          // Normal logic: show if not replaying and not already processed
+          shouldShowGroup = !isReplaying && (!lastProcessedGroups.has(opts.message) || currentStep >= interactivePrompts.length);
+        }
+
 
         if (shouldShowGroup) {
           await ui.showGroup?.(opts.message);
           lastProcessedGroups.add(opts.message);
+        } else if (isReplaying === "smart" && opts.message === targetGroup) {
+          // For smart replay, still call showGroup for the target group to update UI state
+          // even if it was already processed, to ensure correct group display
+          await ui.showGroup?.(opts.message);
         }
 
         groupStack.push(opts.message);
@@ -65,7 +76,9 @@ export function createRuntime(ui: UI) {
 
       // This is an interactive prompt
       const stepIndex = interactivePrompts.length;
-      const id = opts.name ?? `${kind}:${opts.message}:${stepIndex}`;
+      // Use consistent ID format that matches UI layer
+      const id = opts.name ?? `${kind}|${opts.message}`;
+
       interactivePrompts.push(id);
 
       // Track execution path for smart replay
@@ -75,6 +88,7 @@ export function createRuntime(ui: UI) {
         groupContext: groupStack[groupStack.length - 1],
         stepIndex
       });
+
 
       // If we already have an answer and we're replaying past this step, use it
       if (stepIndex < currentStep && id in answers) {
@@ -120,50 +134,54 @@ export function createRuntime(ui: UI) {
 
   async function text(opts: PromptOpts): Promise<string> {
     if (!asking) throw new Error("text() must be called inside ask()");
-    return engine.step("text", opts, () => ui.text(opts.message));
+    return engine.step("text", opts, () => {
+      const currentGroup = groupStack[groupStack.length - 1];
+      return ui.text(opts.message, undefined, currentGroup);
+    });
   }
 
   async function confirm(opts: PromptOpts): Promise<boolean> {
     if (!asking) throw new Error("confirm() must be called inside ask()");
-    return engine.step("confirm", opts, () => ui.confirm(opts.message));
+    return engine.step("confirm", opts, () => {
+      const currentGroup = groupStack[groupStack.length - 1];
+      return ui.confirm(opts.message, undefined, currentGroup);
+    });
   }
 
   async function ask<T>(flow: (api: { group: typeof group; text: typeof text; confirm: typeof confirm; BACK: BackToken }) => Promise<T>): Promise<T> {
     while (true) {
-      // Check if we can optimize back navigation within same group
-      // We need to check if the step we're going back TO (currentStep) is in the same group
-      // as the step we came FROM (currentStep + 1, before we decremented)
+      // Check what kind of navigation optimization we can use
       const targetStepGroup = executionPath[currentStep]?.groupContext;
       const sourceStepGroup = executionPath[currentStep + 1]?.groupContext;
 
-      const canOptimizeBack = currentStep >= 0 &&
+      const isSameGroupNav = currentStep >= 0 &&
         targetStepGroup &&
         sourceStepGroup &&
         targetStepGroup === sourceStepGroup;
 
-      console.log("🔄 Navigation check:", {
-        currentStep,
-        canOptimizeBack,
-        targetStepGroup,
-        sourceStepGroup,
-        executionPathLength: executionPath.length,
-        targetStep: executionPath[currentStep],
-        sourceStep: executionPath[currentStep + 1]
-      });
+      const isCrossGroupNav = currentStep >= 0 &&
+        targetStepGroup &&
+        sourceStepGroup &&
+        targetStepGroup !== sourceStepGroup;
 
-      // For simple back navigation within same group, keep execution context
-      if (!canOptimizeBack) {
-        console.log("📍 Using FULL REPLAY");
+      const canOptimize = isSameGroupNav || isCrossGroupNav;
+
+
+      // Choose navigation strategy
+      if (!canOptimize) {
         isReplaying = false;
         // Full replay - reset all tracking
         interactivePrompts = [];
         executionPath = [];
         groupStack = [];
         // Don't clear lastProcessedGroups - let groups stay "processed" to avoid re-showing
-      } else {
-        console.log("⚡ Using OPTIMIZED BACK NAVIGATION - FAST REPLAY MODE");
-        isReplaying = true; // Enable fast replay mode
-        // Optimized back - just reset the current execution state
+      } else if (isSameGroupNav) {
+        isReplaying = true; // All groups in fast replay mode
+        interactivePrompts = [];
+        groupStack = [];
+      } else if (isCrossGroupNav) {
+        isReplaying = "smart"; // Smart mode: fast replay until target group
+        targetGroup = targetStepGroup; // Set the target group for smart replay
         interactivePrompts = [];
         groupStack = [];
       }
@@ -173,6 +191,7 @@ export function createRuntime(ui: UI) {
         const result = await flow({ group, text, confirm, BACK });
         asking = false;
         isReplaying = false; // Always clear replay mode after flow completes
+        targetGroup = undefined; // Clear target group
 
         // If we've asked all interactive prompts in this path, we're done
         if (currentStep >= interactivePrompts.length) {
@@ -184,12 +203,10 @@ export function createRuntime(ui: UI) {
         if (e === BACK) {
           // Go back one step
           if (currentStep > 0) {
-            console.log("⬅️ Going back from step", currentStep, "to", currentStep - 1);
             currentStep -= 1;
 
             // Only clean up answers if doing full replay
-            if (!canOptimizeBack) {
-              console.log("🧹 Cleaning up unreachable answers");
+            if (!canOptimize) {
               // Remove answers from prompts that are no longer reachable
               const currentPrompts = new Set(interactivePrompts);
               for (const key of Object.keys(answers)) {
@@ -198,10 +215,8 @@ export function createRuntime(ui: UI) {
                 }
               }
             } else {
-              console.log("✅ Skipping cleanup for optimized navigation");
             }
           } else {
-            console.log("🚫 Already at first step, ignoring back");
             // If we're at the first step, ignore the back operation completely
           }
         } else {
@@ -210,7 +225,7 @@ export function createRuntime(ui: UI) {
       }
 
       // Clean up answers for prompts that were not reached in this replay
-      if (!canOptimizeBack) {
+      if (!canOptimize) {
         const reachablePrompts = new Set(interactivePrompts);
         for (const key of Object.keys(answers)) {
           if (!reachablePrompts.has(key)) {

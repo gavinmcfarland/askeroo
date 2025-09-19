@@ -51,10 +51,13 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				// ⬇️ assign without rendering
 				resolverRef.current = resolve;
 
-				// Only update currentGroup for actual fields, not group prompts
-				// Group prompts are processed for flow control but shouldn't affect UI
+				// Update currentGroup based on the request
 				if (request.type !== "group" && request.groupName) {
+					// Field prompts always update the group (most accurate)
 					setCurrentGroup(request.groupName);
+				} else if (request.type === "group") {
+					// Group prompts update the group (needed for initial display and cross-group nav)
+					setCurrentGroup(request.message);
 				}
 			});
 		};
@@ -128,16 +131,16 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	switch (effectivePrompt.type) {
 		case "text": {
 			const allowBack = effectivePrompt.id !== firstFieldIdRef.current;
+			const initialValue = visitedPrompts.has(effectivePrompt.id)
+				? fieldValues[effectivePrompt.id] ?? effectivePrompt.initial
+				: effectivePrompt.initial;
+
+
 			field = (
 				<TextField
 					key={effectivePrompt.id}
 					message={effectivePrompt.message}
-					initial={
-						visitedPrompts.has(effectivePrompt.id)
-							? fieldValues[effectivePrompt.id] ??
-							  effectivePrompt.initial
-							: effectivePrompt.initial
-					}
+					initial={initialValue}
 					allowBack={allowBack}
 					onSubmit={handleSubmit}
 					onBack={handleBack}

@@ -42,22 +42,26 @@ function ensureApp(): Promise<(request: PromptRequest) => Promise<any>> {
 }
 
 export const ui = {
-  async text(msg: string, initial?: string): Promise<string | BackToken> {
+  async text(msg: string, initial?: string, groupContext?: string): Promise<string | BackToken> {
+    if (groupContext) {
+      appInstance.currentGroup = groupContext;
+    }
     const promptFn = await ensureApp();
-    return promptFn({ type: 'text', id: generatePromptId('text', msg, appInstance.currentGroup), message: msg, initial, groupName: appInstance.currentGroup });
+    return promptFn({ type: 'text', id: generatePromptId('text', msg), message: msg, initial, groupName: appInstance.currentGroup });
   },
 
-  async confirm(msg: string, initial?: boolean): Promise<boolean | BackToken> {
+  async confirm(msg: string, initial?: boolean, groupContext?: string): Promise<boolean | BackToken> {
+    if (groupContext) {
+      appInstance.currentGroup = groupContext;
+    }
     const promptFn = await ensureApp();
-    return promptFn({ type: 'confirm', id: generatePromptId('confirm', msg, appInstance.currentGroup), message: msg, initial, groupName: appInstance.currentGroup });
+    return promptFn({ type: 'confirm', id: generatePromptId('confirm', msg), message: msg, initial, groupName: appInstance.currentGroup });
   },
 
   async showGroup(label: string): Promise<void> {
     appInstance.currentGroup = label;
     const promptFn = await ensureApp();
     await promptFn({ type: 'group', id: generatePromptId('group', label), message: label });
-    // Brief delay to show the group header
-    await new Promise(resolve => setTimeout(resolve, 100));
   },
 
   clearGroup(): void {
