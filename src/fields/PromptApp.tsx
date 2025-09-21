@@ -123,21 +123,19 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			// Resolve first (previous prompt will be pushed synchronously/soon).
 			r({ __back: true });
 
-			// Cleanup visited prompts and completed fields on the next tick so it batches with the new prompt render.
-			queueMicrotask(() => {
-				setVisitedPrompts((prev) => {
-					if (!prev.has(toMaybeDelete)) return prev;
-					const next = new Set(prev);
-					next.delete(toMaybeDelete);
-					return next;
-				});
+			// Cleanup visited prompts and completed fields immediately
+			setVisitedPrompts((prev) => {
+				if (!prev.has(toMaybeDelete)) return prev;
+				const next = new Set(prev);
+				next.delete(toMaybeDelete);
+				return next;
+			});
 
-				setCompletedFields((prev) => {
-					if (!prev.has(toMaybeDelete)) return prev;
-					const next = new Set(prev);
-					next.delete(toMaybeDelete);
-					return next;
-				});
+			setCompletedFields((prev) => {
+				if (!prev.has(toMaybeDelete)) return prev;
+				const next = new Set(prev);
+				next.delete(toMaybeDelete);
+				return next;
 			});
 		}
 	};
@@ -164,7 +162,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 		const groupFields = groupFieldHistory.get(currentGroup) || [];
 		return groupFields
-			.filter(field => completedFields.has(field.id))
+			.filter(field => completedFields.has(field.id) && field.id !== effectivePrompt?.id)
 			.map(field => {
 				const fieldValue = fieldValues[field.id];
 

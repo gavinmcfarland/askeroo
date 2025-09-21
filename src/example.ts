@@ -13,8 +13,9 @@ const flow = async () => {
 		{ message: "Profile", flow: "sequential" },
 		async () => {
 			const first = await text({ message: "First name" });
+			const middle = await text({ message: "Middle name" });
 			const last = await text({ message: "Last name" });
-			return { first, last };
+			return { first, middle, last };
 		}
 	);
 
