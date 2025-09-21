@@ -18,7 +18,7 @@ type PromptRequest =
 			initial?: boolean;
 			groupName?: string;
 	  }
-	| { type: "group"; id: string; message: string; flow?: 'sequential' };
+	| { type: "group"; id: string; message: string; flow?: 'stack' };
 
 interface PromptAppProps {
 	onReady: (promptFn: (request: PromptRequest) => Promise<any>) => void;
@@ -37,7 +37,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	);
 	const [currentGroup, setCurrentGroup] = useState<string | null>(null);
 	const [completedFields, setCompletedFields] = useState<Set<string>>(new Set());
-	const [sequentialGroups, setSequentialGroups] = useState<Set<string>>(new Set());
+	const [stackGroups, setStackGroups] = useState<Set<string>>(new Set());
 	const [groupFieldHistory, setGroupFieldHistory] = useState<Map<string, Array<{id: string, message: string, type: string}>>>(new Map());
 	const firstFieldIdRef = useRef<string | null>(null);
 
@@ -62,9 +62,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					// Group prompts update the group (needed for initial display and cross-group nav)
 					setCurrentGroup(request.message);
 
-					// Track sequential groups
-					if (request.flow === 'sequential') {
-						setSequentialGroups(prev => new Set(prev).add(request.message));
+					// Track stack groups (non-default behavior)
+					if (request.flow === 'stack') {
+						setStackGroups(prev => new Set(prev).add(request.message));
 					}
 				}
 			});
@@ -84,8 +84,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					new Set(prev).add(currentPrompt.id)
 				);
 
-				// For sequential groups, mark the field as completed
-				if (currentPrompt.groupName && sequentialGroups.has(currentPrompt.groupName)) {
+				// For all groups (sequential by default), mark the field as completed unless it's a stack group
+				if (currentPrompt.groupName && !stackGroups.has(currentPrompt.groupName)) {
 					setCompletedFields(prev => new Set(prev).add(currentPrompt.id));
 
 					// Track field order in the group
@@ -154,9 +154,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const effectivePrompt =
 		currentPrompt?.type === "group" ? null : currentPrompt;
 
-	// Render completed fields for sequential groups
+	// Render completed fields for all groups (sequential by default)
 	const renderCompletedFields = () => {
-		if (!currentGroup || !sequentialGroups.has(currentGroup)) {
+		if (!currentGroup || stackGroups.has(currentGroup)) {
 			return null;
 		}
 
@@ -205,8 +205,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	switch (effectivePrompt.type) {
 		case "text": {
-			// In sequential groups, allow going back even on the first field if there are completed fields
-			const isSequentialGroup = !!(effectivePrompt.groupName && sequentialGroups.has(effectivePrompt.groupName));
+			// In all groups (sequential by default), allow going back even on the first field if there are completed fields
+			const isSequentialGroup = !!(effectivePrompt.groupName && !stackGroups.has(effectivePrompt.groupName));
 			const hasCompletedFields = isSequentialGroup && completedFields.size > 0;
 			const allowBack = effectivePrompt.id !== firstFieldIdRef.current || hasCompletedFields;
 
@@ -228,8 +228,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		}
 
 		case "confirm": {
-			// In sequential groups, allow going back even on the first field if there are completed fields
-			const isSequentialGroup = !!(effectivePrompt.groupName && sequentialGroups.has(effectivePrompt.groupName));
+			// In all groups (sequential by default), allow going back even on the first field if there are completed fields
+			const isSequentialGroup = !!(effectivePrompt.groupName && !stackGroups.has(effectivePrompt.groupName));
 			const hasCompletedFields = isSequentialGroup && completedFields.size > 0;
 			const allowBack = effectivePrompt.id !== firstFieldIdRef.current || hasCompletedFields;
 
