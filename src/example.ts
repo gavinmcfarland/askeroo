@@ -9,7 +9,7 @@ const flow = async () => {
 
 	// Group 1: Profile (sequential by default)
 	const profile = await group(
-		{ message: "Profile", flow: "stack" },
+		{ message: "Profile", flow: "phase" },
 		async () => {
 			const first = await text({ message: "First name" });
 			const middle = await text({ message: "Middle name" });
@@ -18,9 +18,9 @@ const flow = async () => {
 		}
 	);
 
-	// Group 2: Preferences (explicit stack behavior)
+	// Group 2: Preferences (explicit phase behavior)
 	const prefs = await group(
-		{ message: "Preferences", flow: "stack" },
+		{ message: "Preferences", flow: "phase" },
 		async () => {
 			const role = await text({ message: "Role (user/admin)" });
 			if (role === "admin") {

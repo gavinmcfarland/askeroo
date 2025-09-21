@@ -2,12 +2,12 @@ export type Answers = Record<string, unknown>;
 
 type PromptKind = "text" | "confirm" | "group";
 type PromptOpts = { message: string; id?: string };
-type GroupOpts = { message: string; id?: string; flow?: 'stack' };
+type GroupOpts = { message: string; id?: string; flow?: 'phase' };
 
 type UI = {
   text(msg: string, initial?: string, groupContext?: string, id?: string): Promise<string | BackToken>;
   confirm(msg: string, initial?: boolean, groupContext?: string, id?: string): Promise<boolean | BackToken>;
-  showGroup(label: string, flow?: 'stack'): Promise<void> | void;
+  showGroup(label: string, flow?: 'phase'): Promise<void> | void;
   clearGroup?(): void;
   cleanup?(): void;
 };
@@ -70,7 +70,7 @@ export function createRuntime(ui: UI) {
 
   let groupStack: string[] = []; // Track current group nesting
   let lastProcessedGroups: Set<string> = new Set(); // Track which groups were already processed
-  let stackGroups: Map<string, 'stack'> = new Map(); // Track groups with stack flow
+  let phaseGroups: Map<string, 'phase'> = new Map(); // Track groups with phase flow
 
 
   const engine: Engine = {
@@ -80,9 +80,9 @@ export function createRuntime(ui: UI) {
         const groupOpts = opts as GroupOpts;
         let shouldShowGroup: boolean;
 
-        // Track stack groups (non-default behavior)
-        if (groupOpts.flow === 'stack') {
-          stackGroups.set(groupOpts.message, 'stack');
+        // Track phase groups (non-default behavior)
+        if (groupOpts.flow === 'phase') {
+          phaseGroups.set(groupOpts.message, 'phase');
         }
 
         if (isReplaying === "smart") {
