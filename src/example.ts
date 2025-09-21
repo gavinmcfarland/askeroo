@@ -8,30 +8,24 @@ const flow = async () => {
 	let test2 = await text({ message: "Test2" });
 
 	// Group 1: Profile (sequential by default)
-	const profile = await group(
-		{ message: "Profile", flow: "phase" },
-		async () => {
-			const first = await text({ message: "First name" });
-			const middle = await text({ message: "Middle name" });
-			const last = await text({ message: "Last name" });
-			return { first, middle, last };
-		}
-	);
+	const profile = await group({ message: "Profile" }, async () => {
+		const first = await text({ message: "First name" });
+		const middle = await text({ message: "Middle name" });
+		const last = await text({ message: "Last name" });
+		return { first, middle, last };
+	});
 
 	// Group 2: Preferences (explicit phase behavior)
-	const prefs = await group(
-		{ message: "Preferences", flow: "phase" },
-		async () => {
-			const role = await text({ message: "Role (user/admin)" });
-			if (role === "admin") {
-				const code = await text({ message: "Access code" });
-				const email = await text({ message: "Email" });
-				return { role, code, email };
-			}
-			const news = await confirm({ message: "Subscribe to newsletter?" });
-			return { role, news };
+	const prefs = await group({ message: "Preferences" }, async () => {
+		const role = await text({ message: "Role (user/admin)" });
+		if (role === "admin") {
+			const code = await text({ message: "Access code" });
+			const email = await text({ message: "Email" });
+			return { role, code, email };
 		}
-	);
+		const news = await confirm({ message: "Subscribe to newsletter?" });
+		return { role, news };
+	});
 
 	const prefs2 = await group({ message: "What" }, async () => {
 		const role = await text({ message: "Role (user/admin)" });
