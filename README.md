@@ -6,9 +6,9 @@ A modern CLI prompt library with flow control, back navigation, and conditional 
 
 - = **Flow Control**: Advanced conditional prompts with dynamic branching
 -  **Back Navigation**: Intelligent back button with replay functionality
-- <¨ **Beautiful UI**: Powered by Ink for rich terminal interfaces
-- =Ý **TypeScript**: Full type safety and IntelliSense support
-- =€ **Modern ESM**: Uses ES modules for better tree-shaking
+- <ï¿½ **Beautiful UI**: Powered by Ink for rich terminal interfaces
+- =ï¿½ **TypeScript**: Full type safety and IntelliSense support
+- =ï¿½ **Modern ESM**: Uses ES modules for better tree-shaking
 - = **Replay Engine**: Smart prompt replay with conditional branching
 
 ## Installation
@@ -115,22 +115,7 @@ type PromptOpts = {
   - Replays the flow from the beginning with the new cursor position
   - Re-evaluates all conditionals with current answers
 
-## Alternative UIs
-
-### Simple UI (for non-Ink environments)
-
-If you need to run without Ink's rich interface:
-
-```typescript
-import { createRuntime, simpleUI } from "askeroo";
-
-const { ask, group, text, confirm } = createRuntime(simpleUI);
-
-// Use the same API
-const result = await ask(myFlow);
-```
-
-### Custom UI
+## Custom UI
 
 Create your own UI implementation:
 
@@ -154,11 +139,10 @@ const { ask, group, text, confirm } = createRuntime(customUI);
 
 ## Examples
 
-Run the included examples:
+Run the included example:
 
 ```bash
-npm run example       # Simple readline-based UI
-npm run example:ink   # Full Ink UI (requires compatible terminal)
+npm run example       # Ink UI example
 ```
 
 ## Development
