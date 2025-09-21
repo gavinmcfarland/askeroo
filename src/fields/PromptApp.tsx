@@ -55,9 +55,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				resolverRef.current = resolve;
 
 				// Update currentGroup based on the request
-				if (request.type !== "group" && request.groupName) {
+				if (request.type !== "group") {
 					// Field prompts always update the group (most accurate)
-					setCurrentGroup(request.groupName);
+					setCurrentGroup(request.groupName || null);
 				} else if (request.type === "group") {
 					// Group prompts update the group (needed for initial display and cross-group nav)
 					setCurrentGroup(request.message);
