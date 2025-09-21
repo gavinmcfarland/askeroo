@@ -93,14 +93,12 @@ export function createRuntime(ui: UI) {
           shouldShowGroup = !isReplaying && (!lastProcessedGroups.has(groupOpts.message) || currentStep >= interactivePrompts.length);
         }
 
-
+        // Only call askFn (which creates UI prompts) if we should show the group
         if (shouldShowGroup) {
           await ui.showGroup?.(groupOpts.message, groupOpts.flow);
           lastProcessedGroups.add(groupOpts.message);
-        } else if (isReplaying === "smart" && groupOpts.message === targetGroup) {
-          // For smart replay, still call showGroup for the target group to update UI state
-          // even if it was already processed, to ensure correct group display
-          await ui.showGroup?.(groupOpts.message, groupOpts.flow);
+          // Call askFn to create the interactive prompt
+          await askFn(generateStableId("group", groupOpts.message, groupStack, 0));
         }
 
         groupStack.push(groupOpts.message);
