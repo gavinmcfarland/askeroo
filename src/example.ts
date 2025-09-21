@@ -5,24 +5,32 @@ import { ask, group, text, confirm } from "./index.js";
 const flow = async () => {
 	// let test = await text({ message: "Test" });
 
+	// let test2 = await text({ message: "Test2" });
+
 	// let test2 = await text({ message: "Test s" });
-	// Group 1: Profile
-	const profile = await group({ message: "Profile" }, async () => {
-		const first = await text({ message: "First name" });
-		const last = await text({ message: "Last name" });
-		return { first, last };
-	});
+	// Group 1: Profile (with sequential flow)
+	const profile = await group(
+		{ message: "Profile", flow: "sequential" },
+		async () => {
+			const first = await text({ message: "First name" });
+			const last = await text({ message: "Last name" });
+			return { first, last };
+		}
+	);
 
 	// Group 2: Preferences (with conditional)
-	const prefs = await group({ message: "Preferences" }, async () => {
-		const role = await text({ message: "Role (user/admin)" });
-		if (role === "admin") {
-			const code = await text({ message: "Access code" });
-			return { role, code };
+	const prefs = await group(
+		{ message: "Preferences", flow: "sequential" },
+		async () => {
+			const role = await text({ message: "Role (user/admin)" });
+			if (role === "admin") {
+				const code = await text({ message: "Access code" });
+				return { role, code };
+			}
+			const news = await confirm({ message: "Subscribe to newsletter?" });
+			return { role, news };
 		}
-		const news = await confirm({ message: "Subscribe to newsletter?" });
-		return { role, news };
-	});
+	);
 
 	const prefs2 = await group({ message: "What" }, async () => {
 		const role = await text({ message: "Role (user/admin)" });

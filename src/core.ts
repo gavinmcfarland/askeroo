@@ -2,11 +2,12 @@ export type Answers = Record<string, unknown>;
 
 type PromptKind = "text" | "confirm" | "group";
 type PromptOpts = { message: string; id?: string };
+type GroupOpts = { message: string; id?: string; flow?: 'sequential' };
 
 type UI = {
   text(msg: string, initial?: string, groupContext?: string, id?: string): Promise<string | BackToken>;
   confirm(msg: string, initial?: boolean, groupContext?: string, id?: string): Promise<boolean | BackToken>;
-  showGroup(label: string): Promise<void> | void;
+  showGroup(label: string, flow?: 'sequential'): Promise<void> | void;
   clearGroup?(): void;
   cleanup?(): void;
 };
@@ -15,7 +16,7 @@ type BackToken = { __back: true };
 const BACK: BackToken = { __back: true };
 
 type Engine = {
-  step<T>(kind: PromptKind, opts: PromptOpts, askFn: (id: string) => Promise<T | BackToken>): Promise<T>;
+  step<T>(kind: PromptKind, opts: PromptOpts | GroupOpts, askFn: (id: string) => Promise<T | BackToken>): Promise<T>;
   BACK: BackToken;
 };
 
@@ -69,33 +70,40 @@ export function createRuntime(ui: UI) {
 
   let groupStack: string[] = []; // Track current group nesting
   let lastProcessedGroups: Set<string> = new Set(); // Track which groups were already processed
+  let sequentialGroups: Map<string, 'sequential'> = new Map(); // Track groups with sequential flow
 
 
   const engine: Engine = {
     BACK,
-    async step<T>(kind: PromptKind, opts: PromptOpts, askFn: (id: string) => Promise<T | BackToken>) {
+    async step<T>(kind: PromptKind, opts: PromptOpts | GroupOpts, askFn: (id: string) => Promise<T | BackToken>) {
       if (kind === "group") {
+        const groupOpts = opts as GroupOpts;
         let shouldShowGroup: boolean;
+
+        // Track sequential groups
+        if (groupOpts.flow === 'sequential') {
+          sequentialGroups.set(groupOpts.message, 'sequential');
+        }
 
         if (isReplaying === "smart") {
           // Smart replay: show only the target group, fast replay others
-          shouldShowGroup = opts.message === targetGroup && !lastProcessedGroups.has(opts.message);
+          shouldShowGroup = groupOpts.message === targetGroup && !lastProcessedGroups.has(groupOpts.message);
         } else {
           // Normal logic: show if not replaying and not already processed
-          shouldShowGroup = !isReplaying && (!lastProcessedGroups.has(opts.message) || currentStep >= interactivePrompts.length);
+          shouldShowGroup = !isReplaying && (!lastProcessedGroups.has(groupOpts.message) || currentStep >= interactivePrompts.length);
         }
 
 
         if (shouldShowGroup) {
-          await ui.showGroup?.(opts.message);
-          lastProcessedGroups.add(opts.message);
-        } else if (isReplaying === "smart" && opts.message === targetGroup) {
+          await ui.showGroup?.(groupOpts.message, groupOpts.flow);
+          lastProcessedGroups.add(groupOpts.message);
+        } else if (isReplaying === "smart" && groupOpts.message === targetGroup) {
           // For smart replay, still call showGroup for the target group to update UI state
           // even if it was already processed, to ensure correct group display
-          await ui.showGroup?.(opts.message);
+          await ui.showGroup?.(groupOpts.message, groupOpts.flow);
         }
 
-        groupStack.push(opts.message);
+        groupStack.push(groupOpts.message);
         return undefined as T;
       }
 
@@ -149,7 +157,7 @@ export function createRuntime(ui: UI) {
     return typeof x === "object" && x !== null && (x as any).__back === true;
   }
 
-  async function group(opts: PromptOpts, body: () => Promise<any>) {
+  async function group(opts: GroupOpts, body: () => Promise<any>) {
     if (!asking) throw new Error("group() must be called inside ask()");
     await engine.step("group", opts, async () => undefined);
     try {

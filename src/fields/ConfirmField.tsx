@@ -9,6 +9,8 @@ interface ConfirmFieldProps {
 	onBack?: () => void;
 	initial?: boolean;
 	allowBack?: boolean;
+	completed?: boolean;
+	completedValue?: boolean;
 }
 
 export function ConfirmField({
@@ -17,12 +19,14 @@ export function ConfirmField({
 	onBack,
 	initial = false,
 	allowBack = true,
+	completed = false,
+	completedValue,
 }: ConfirmFieldProps) {
 	const [value, setValue] = useState<boolean | null>(initial);
 	const [submitted, setSubmitted] = useState(false);
 
 	useInput((input, key) => {
-		if (submitted) return;
+		if (submitted || completed) return;
 
 		if (key.return && value !== null) {
 			setSubmitted(true);
@@ -37,6 +41,19 @@ export function ConfirmField({
 			setValue(false);
 		}
 	});
+
+	if (completed) {
+		const displayValue = completedValue !== undefined ? completedValue : value;
+		return (
+			<Box flexDirection="column">
+				<Text>{message}</Text>
+				<Text>
+					<Text color="green">✓ </Text>
+					<Text color="gray">{displayValue ? "yes" : "no"}</Text>
+				</Text>
+			</Box>
+		);
+	}
 
 	return (
 		<Box flexDirection="column">

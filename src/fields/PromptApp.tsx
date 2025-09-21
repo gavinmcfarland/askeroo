@@ -18,7 +18,7 @@ type PromptRequest =
 			initial?: boolean;
 			groupName?: string;
 	  }
-	| { type: "group"; id: string; message: string };
+	| { type: "group"; id: string; message: string; flow?: 'sequential' };
 
 interface PromptAppProps {
 	onReady: (promptFn: (request: PromptRequest) => Promise<any>) => void;
@@ -36,6 +36,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		new Set()
 	);
 	const [currentGroup, setCurrentGroup] = useState<string | null>(null);
+	const [completedFields, setCompletedFields] = useState<Set<string>>(new Set());
+	const [sequentialGroups, setSequentialGroups] = useState<Set<string>>(new Set());
+	const [groupFieldHistory, setGroupFieldHistory] = useState<Map<string, Array<{id: string, message: string, type: string}>>>(new Map());
 	const firstFieldIdRef = useRef<string | null>(null);
 
 	useEffect(() => {
@@ -58,6 +61,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				} else if (request.type === "group") {
 					// Group prompts update the group (needed for initial display and cross-group nav)
 					setCurrentGroup(request.message);
+
+					// Track sequential groups
+					if (request.flow === 'sequential') {
+						setSequentialGroups(prev => new Set(prev).add(request.message));
+					}
 				}
 			});
 		};
@@ -75,6 +83,26 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				setVisitedPrompts((prev) =>
 					new Set(prev).add(currentPrompt.id)
 				);
+
+				// For sequential groups, mark the field as completed
+				if (currentPrompt.groupName && sequentialGroups.has(currentPrompt.groupName)) {
+					setCompletedFields(prev => new Set(prev).add(currentPrompt.id));
+
+					// Track field order in the group
+					setGroupFieldHistory(prev => {
+						const newMap = new Map(prev);
+						const groupFields = newMap.get(currentPrompt.groupName!) || [];
+						const fieldInfo = {
+							id: currentPrompt.id,
+							message: currentPrompt.message,
+							type: currentPrompt.type
+						};
+						if (!groupFields.some(f => f.id === currentPrompt.id)) {
+							newMap.set(currentPrompt.groupName!, [...groupFields, fieldInfo]);
+						}
+						return newMap;
+					});
+				}
 			}
 			const r = resolverRef.current;
 			resolverRef.current = null;
@@ -85,7 +113,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	const handleBack = () => {
 		if (resolverRef.current && currentPrompt) {
-			// ⬇️ Defer cleanup so there’s no intermediate frame before the controller
+			// ⬇️ Defer cleanup so there's no intermediate frame before the controller
 			// installs the previous prompt. This avoids the flicker.
 			const toMaybeDelete = currentPrompt.id;
 
@@ -95,9 +123,16 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			// Resolve first (previous prompt will be pushed synchronously/soon).
 			r({ __back: true });
 
-			// Cleanup visited prompts on the next tick so it batches with the new prompt render.
+			// Cleanup visited prompts and completed fields on the next tick so it batches with the new prompt render.
 			queueMicrotask(() => {
 				setVisitedPrompts((prev) => {
+					if (!prev.has(toMaybeDelete)) return prev;
+					const next = new Set(prev);
+					next.delete(toMaybeDelete);
+					return next;
+				});
+
+				setCompletedFields((prev) => {
 					if (!prev.has(toMaybeDelete)) return prev;
 					const next = new Set(prev);
 					next.delete(toMaybeDelete);
@@ -121,21 +156,65 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const effectivePrompt =
 		currentPrompt?.type === "group" ? null : currentPrompt;
 
+	// Render completed fields for sequential groups
+	const renderCompletedFields = () => {
+		if (!currentGroup || !sequentialGroups.has(currentGroup)) {
+			return null;
+		}
+
+		const groupFields = groupFieldHistory.get(currentGroup) || [];
+		return groupFields
+			.filter(field => completedFields.has(field.id))
+			.map(field => {
+				const fieldValue = fieldValues[field.id];
+
+				if (field.type === 'text') {
+					return (
+						<TextField
+							key={`completed-${field.id}`}
+							message={field.message}
+							completed={true}
+							completedValue={fieldValue}
+							onSubmit={() => {}}
+							allowBack={false}
+						/>
+					);
+				} else {
+					return (
+						<ConfirmField
+							key={`completed-${field.id}`}
+							message={field.message}
+							completed={true}
+							completedValue={fieldValue}
+							onSubmit={() => {}}
+							allowBack={false}
+						/>
+					);
+				}
+			});
+	};
+
 	if (!effectivePrompt) {
-		// Keep a stable shell so layout doesn't jump
-		return <GroupContainer groupName={currentGroup}>{null}</GroupContainer>;
+		// Keep a stable shell so layout doesn't jump, but show completed fields
+		return (
+			<GroupContainer groupName={currentGroup}>
+				{renderCompletedFields()}
+			</GroupContainer>
+		);
 	}
 
 	let field: React.ReactNode;
 
 	switch (effectivePrompt.type) {
 		case "text": {
-			const allowBack = effectivePrompt.id !== firstFieldIdRef.current;
+			// In sequential groups, allow going back even on the first field if there are completed fields
+			const isSequentialGroup = !!(effectivePrompt.groupName && sequentialGroups.has(effectivePrompt.groupName));
+			const hasCompletedFields = isSequentialGroup && completedFields.size > 0;
+			const allowBack = effectivePrompt.id !== firstFieldIdRef.current || hasCompletedFields;
+
 			const initialValue = visitedPrompts.has(effectivePrompt.id)
 				? fieldValues[effectivePrompt.id] ?? effectivePrompt.initial
 				: effectivePrompt.initial;
-
-
 
 			field = (
 				<TextField
@@ -151,7 +230,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		}
 
 		case "confirm": {
-			const allowBack = effectivePrompt.id !== firstFieldIdRef.current;
+			// In sequential groups, allow going back even on the first field if there are completed fields
+			const isSequentialGroup = !!(effectivePrompt.groupName && sequentialGroups.has(effectivePrompt.groupName));
+			const hasCompletedFields = isSequentialGroup && completedFields.size > 0;
+			const allowBack = effectivePrompt.id !== firstFieldIdRef.current || hasCompletedFields;
+
 			field = (
 				<ConfirmField
 					key={effectivePrompt.id}
@@ -178,6 +261,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	return (
 		<GroupContainer key="group-container" groupName={currentGroup}>
+			{renderCompletedFields()}
 			{field}
 		</GroupContainer>
 	);

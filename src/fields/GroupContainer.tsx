@@ -16,7 +16,7 @@ export function GroupContainer({ groupName, children }: GroupContainerProps) {
 					</Text>
 				</Box>
 			)}
-			<Box>{children}</Box>
+			<Box gap={2}>{children}</Box>
 		</Box>
 	);
 }

@@ -9,6 +9,8 @@ interface TextFieldProps {
 	onBack?: () => void;
 	initial?: string;
 	allowBack?: boolean;
+	completed?: boolean;
+	completedValue?: string;
 }
 
 export function TextField({
@@ -17,12 +19,14 @@ export function TextField({
 	onBack,
 	initial = "",
 	allowBack = true,
+	completed = false,
+	completedValue,
 }: TextFieldProps) {
 	const [value, setValue] = useState(initial);
 	const [submitted, setSubmitted] = useState(false);
 
 	useInput((input, key) => {
-		if (submitted) return;
+		if (submitted || completed) return;
 
 		if (key.return) {
 			setSubmitted(true);
@@ -37,6 +41,18 @@ export function TextField({
 			setValue((prev) => prev + input);
 		}
 	});
+
+	if (completed) {
+		return (
+			<Box flexDirection="column">
+				<Text>{message}</Text>
+				<Text>
+					<Text color="green">✓ </Text>
+					<Text color="gray">{completedValue || value}</Text>
+				</Text>
+			</Box>
+		);
+	}
 
 	return (
 		<Box flexDirection="column">
