@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { TextField } from "./TextField.js";
 import { ConfirmField } from "./ConfirmField.js";
 import { GroupContainer } from "./GroupContainer.js";
+import { RootContainer } from "./RootContainer.js";
+import { CompletedGroup } from "./CompletedGroup.js";
 
 type PromptRequest =
 	| {
@@ -39,6 +41,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const [completedFields, setCompletedFields] = useState<Set<string>>(new Set());
 	const [stackGroups, setStackGroups] = useState<Set<string>>(new Set());
 	const [groupFieldHistory, setGroupFieldHistory] = useState<Map<string, Array<{id: string, message: string, type: string}>>>(new Map());
+	const [completedGroups, setCompletedGroups] = useState<Set<string>>(new Set());
+	const [groupOrder, setGroupOrder] = useState<string[]>([]);
+	const [rootPromptOrder, setRootPromptOrder] = useState<Array<{id: string, type: 'field' | 'group', groupName?: string}>>([]);
+	const [rootFieldHistory, setRootFieldHistory] = useState<Array<{id: string, message: string, type: string}>>([]);
 	const firstFieldIdRef = useRef<string | null>(null);
 
 	useEffect(() => {
@@ -53,6 +59,33 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				setCurrentPrompt(request);
 				// ⬇️ assign without rendering
 				resolverRef.current = resolve;
+
+				// Track root-level prompt order
+				if (request.type !== "group") {
+					setRootPromptOrder(prev => {
+						const entry = { id: request.id, type: 'field' as const, groupName: request.groupName };
+						if (!prev.some(p => p.id === request.id)) {
+							return [...prev, entry];
+						}
+						return prev;
+					});
+				} else if (request.type === "group") {
+					setRootPromptOrder(prev => {
+						const entry = { id: request.id, type: 'group' as const, groupName: request.message };
+						if (!prev.some(p => p.id === request.id)) {
+							return [...prev, entry];
+						}
+						return prev;
+					});
+
+					// Track group order
+					setGroupOrder(prev => {
+						if (!prev.includes(request.message)) {
+							return [...prev, request.message];
+						}
+						return prev;
+					});
+				}
 
 				// Update currentGroup based on the request
 				if (request.type !== "group") {
@@ -84,23 +117,54 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					new Set(prev).add(currentPrompt.id)
 				);
 
-				// For all groups (sequential by default), mark the field as completed unless it's a stack group
-				if (currentPrompt.groupName && !stackGroups.has(currentPrompt.groupName)) {
-					setCompletedFields(prev => new Set(prev).add(currentPrompt.id));
+				// Mark field as completed and track history
+				setCompletedFields(prev => new Set(prev).add(currentPrompt.id));
 
-					// Track field order in the group
-					setGroupFieldHistory(prev => {
-						const newMap = new Map(prev);
-						const groupFields = newMap.get(currentPrompt.groupName!) || [];
+				if (currentPrompt.groupName) {
+					// For grouped fields, track in group history (unless it's a stack group)
+					// Double-check that this field actually belongs to a group
+					if (!stackGroups.has(currentPrompt.groupName)) {
+						setGroupFieldHistory(prev => {
+							const newMap = new Map(prev);
+							const groupFields = newMap.get(currentPrompt.groupName!) || [];
+							const fieldInfo = {
+								id: currentPrompt.id,
+								message: currentPrompt.message,
+								type: currentPrompt.type
+							};
+
+							// Extra validation: ensure this field ID doesn't already exist in any other group
+							// This prevents cross-contamination between groups with similar conditional logic
+							let fieldExistsInOtherGroup = false;
+							for (const [existingGroupName, existingFields] of newMap.entries()) {
+								if (existingGroupName !== currentPrompt.groupName &&
+								    existingFields.some(f => f.id === currentPrompt.id)) {
+									fieldExistsInOtherGroup = true;
+									break;
+								}
+							}
+
+							if (!groupFields.some(f => f.id === currentPrompt.id) && !fieldExistsInOtherGroup) {
+								newMap.set(currentPrompt.groupName!, [...groupFields, fieldInfo]);
+							}
+							return newMap;
+						});
+					}
+				} else {
+					// For root-level fields, track in root history
+					setRootFieldHistory(prev => {
 						const fieldInfo = {
 							id: currentPrompt.id,
 							message: currentPrompt.message,
 							type: currentPrompt.type
 						};
-						if (!groupFields.some(f => f.id === currentPrompt.id)) {
-							newMap.set(currentPrompt.groupName!, [...groupFields, fieldInfo]);
+
+						// Extra validation: ensure this field doesn't get added multiple times
+						// and doesn't conflict with any group fields
+						if (!prev.some(f => f.id === currentPrompt.id)) {
+							return [...prev, fieldInfo];
 						}
-						return newMap;
+						return prev;
 					});
 				}
 			}
@@ -137,8 +201,65 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				next.delete(toMaybeDelete);
 				return next;
 			});
+
+			// When navigating back, unmark any groups that should no longer be considered completed
+			const currentPromptGroup = currentPrompt.type === 'group' ? currentPrompt.message : currentPrompt.groupName;
+
+			// Consolidate group completion cleanup in a single state update
+			if (currentPromptGroup) {
+				const currentGroupIndex = groupOrder.indexOf(currentPromptGroup);
+				setCompletedGroups((prev) => {
+					const next = new Set(prev);
+
+					// Remove the current group if it was marked as completed
+					if (next.has(currentPromptGroup)) {
+						next.delete(currentPromptGroup);
+					}
+
+					// Remove any groups that come after the current group in the sequence
+					if (currentGroupIndex >= 0) {
+						groupOrder.forEach((groupName, index) => {
+							if (index > currentGroupIndex) {
+								next.delete(groupName);
+							}
+						});
+					}
+
+					return next;
+				});
+			}
 		}
 	};
+
+	// Track previous group to detect group completion
+	const previousGroupRef = useRef<string | null>(null);
+
+	// Detect group completion when transitioning between groups
+	useEffect(() => {
+		const prevGroup = previousGroupRef.current;
+
+		// Only mark a group as completed when moving to a LATER group in the sequence
+		// This prevents marking groups as completed when navigating backwards
+		if (prevGroup && currentGroup && prevGroup !== currentGroup) {
+			const prevGroupIndex = groupOrder.indexOf(prevGroup);
+			const currentGroupIndex = groupOrder.indexOf(currentGroup);
+
+			// Only mark as completed if we're moving forward in the sequence
+			if (prevGroupIndex >= 0 && currentGroupIndex >= 0 && currentGroupIndex > prevGroupIndex) {
+				setCompletedGroups(prev => new Set(prev).add(prevGroup));
+			}
+		}
+
+		// Also handle the case where we complete a group and move to a non-group prompt
+		// This catches cases where the last group isn't followed by another group
+		if (prevGroup && !currentGroup) {
+			// When moving from a group to no group (root-level), mark the group as completed
+			// Use a simpler check to avoid dependency issues
+			setCompletedGroups(prev => new Set(prev).add(prevGroup));
+		}
+
+		previousGroupRef.current = currentGroup;
+	}, [currentGroup, stackGroups, groupOrder]);
 
 	// ⬇️ Auto-resolve group prompts without touching resolver state
 	useEffect(() => {
@@ -153,6 +274,92 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// Completely ignore group prompts in render
 	const effectivePrompt =
 		currentPrompt?.type === "group" ? null : currentPrompt;
+
+	// Render completed root-level fields
+	const renderCompletedRootFields = () => {
+		// Only show root fields that come before the current prompt in the root order
+		const currentPromptIndex = rootPromptOrder.findIndex(p => p.id === effectivePrompt?.id);
+		const fieldsToShow = currentPromptIndex >= 0 ? rootPromptOrder.slice(0, currentPromptIndex) : rootPromptOrder;
+
+		return fieldsToShow
+			.filter(entry => entry.type === 'field' && !entry.groupName && completedFields.has(entry.id))
+			.map(entry => {
+				const fieldInfo = rootFieldHistory.find(f => f.id === entry.id);
+				if (!fieldInfo) return null;
+
+				const fieldValue = fieldValues[entry.id];
+
+				if (fieldInfo.type === 'text') {
+					return (
+						<TextField
+							key={`completed-root-${entry.id}`}
+							message={fieldInfo.message}
+							completed={true}
+							completedValue={fieldValue}
+							onSubmit={() => {}}
+							allowBack={false}
+						/>
+					);
+				} else {
+					return (
+						<ConfirmField
+							key={`completed-root-${entry.id}`}
+							message={fieldInfo.message}
+							completed={true}
+							completedValue={fieldValue}
+							onSubmit={() => {}}
+							allowBack={false}
+						/>
+					);
+				}
+			})
+			.filter(Boolean);
+	};
+
+	// Render completed groups at root level
+	const renderCompletedGroups = () => {
+		const currentGroupIndex = groupOrder.indexOf(currentGroup || '');
+
+		return groupOrder
+			.slice(0, currentGroupIndex)
+			.filter(groupName => completedGroups.has(groupName))
+			.map(groupName => {
+				if (stackGroups.has(groupName)) {
+					// For stack groups, show a simple completion indicator
+					return (
+						<CompletedGroup
+							key={`completed-group-${groupName}`}
+							groupName={groupName}
+							completedFields={[{ id: 'stack-completed', message: 'Completed', value: '✓', type: 'completed' }]}
+						/>
+					);
+				} else {
+					// For sequential groups, show detailed field completion
+					const groupFields = groupFieldHistory.get(groupName) || [];
+					const completedGroupFields = groupFields
+						.filter(field => {
+							// Only include fields that are actually completed AND belong to this group
+							// Additional safety check to prevent root-level fields from appearing in groups
+							const belongsToGroup = rootPromptOrder.find(p => p.id === field.id)?.groupName === groupName;
+							return completedFields.has(field.id) && belongsToGroup;
+						})
+						.map(field => ({
+							id: field.id,
+							message: field.message,
+							value: fieldValues[field.id],
+							type: field.type
+						}));
+
+					return (
+						<CompletedGroup
+							key={`completed-group-${groupName}`}
+							groupName={groupName}
+							completedFields={completedGroupFields}
+						/>
+					);
+				}
+			});
+	};
 
 	// Render completed fields for all groups (sequential by default)
 	const renderCompletedFields = () => {
@@ -193,11 +400,15 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	};
 
 	if (!effectivePrompt) {
-		// Keep a stable shell so layout doesn't jump, but show completed fields
+		// Keep a stable shell so layout doesn't jump, but show completed groups and fields
 		return (
-			<GroupContainer groupName={currentGroup}>
-				{renderCompletedFields()}
-			</GroupContainer>
+			<RootContainer>
+				{renderCompletedRootFields()}
+				{renderCompletedGroups()}
+				<GroupContainer groupName={currentGroup}>
+					{renderCompletedFields()}
+				</GroupContainer>
+			</RootContainer>
 		);
 	}
 
@@ -258,9 +469,13 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	}
 
 	return (
-		<GroupContainer key="group-container" groupName={currentGroup}>
-			{renderCompletedFields()}
-			{field}
-		</GroupContainer>
+		<RootContainer>
+			{renderCompletedRootFields()}
+			{renderCompletedGroups()}
+			<GroupContainer key="group-container" groupName={currentGroup}>
+				{renderCompletedFields()}
+				{field}
+			</GroupContainer>
+		</RootContainer>
 	);
 }
