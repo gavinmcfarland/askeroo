@@ -321,7 +321,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		const currentGroupIndex = groupOrder.indexOf(currentGroup || '');
 
 		return groupOrder
-			.slice(0, currentGroupIndex)
+			.slice(0, currentGroupIndex >= 0 ? currentGroupIndex : 0)
 			.filter(groupName => completedGroups.has(groupName))
 			.map(groupName => {
 				if (stackGroups.has(groupName)) {
