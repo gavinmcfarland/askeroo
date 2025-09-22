@@ -7,8 +7,6 @@ const flow = async () => {
 
 	let test2 = await text({ message: "Test2" });
 
-	// Group 1: Profile (sequential by default)
-
 	const profile = await group(
 		{ message: "Profile", flow: "phase" },
 		async () => {
@@ -22,7 +20,6 @@ const flow = async () => {
 		}
 	);
 
-	// Group 2: Preferences (explicit phase behavior)
 	const prefs = await group({ message: "Preferences" }, async () => {
 		const role = await text({ message: "Role (user/admin)" });
 		if (role === "admin") {
