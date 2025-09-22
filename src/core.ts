@@ -1,3 +1,5 @@
+import { debugLogger } from './debug.js';
+
 export type Answers = Record<string, unknown>;
 
 type PromptKind = "text" | "confirm" | "group";
@@ -53,6 +55,8 @@ function simpleHash(str: string): string {
 }
 
 export function createRuntime(ui: UI) {
+  debugLogger.log('RUNTIME_CREATE', { ui: typeof ui });
+
   const answers: Answers = {};
   let interactivePrompts: string[] = [];
   let currentStep = 0;
@@ -76,6 +80,8 @@ export function createRuntime(ui: UI) {
   const engine: Engine = {
     BACK,
     async step<T>(kind: PromptKind, opts: PromptOpts | GroupOpts, askFn: (id: string) => Promise<T | BackToken>) {
+      debugLogger.log('ENGINE_STEP', { kind, opts, currentStep, groupStack: [...groupStack], isReplaying });
+
       if (kind === "group") {
         const groupOpts = opts as GroupOpts;
         let shouldShowGroup: boolean;
@@ -95,10 +101,13 @@ export function createRuntime(ui: UI) {
 
         // Only call askFn (which creates UI prompts) if we should show the group
         if (shouldShowGroup) {
+          debugLogger.log('GROUP_SHOW', { groupMessage: groupOpts.message, flow: groupOpts.flow, shouldShowGroup });
           await ui.showGroup?.(groupOpts.message, groupOpts.flow);
           lastProcessedGroups.add(groupOpts.message);
           // Call askFn to create the interactive prompt
           await askFn(generateStableId("group", groupOpts.message, groupStack, 0));
+        } else {
+          debugLogger.log('GROUP_SKIP', { groupMessage: groupOpts.message, shouldShowGroup, isReplaying });
         }
 
         groupStack.push(groupOpts.message);
@@ -125,13 +134,19 @@ export function createRuntime(ui: UI) {
 
       // If we already have an answer and we're replaying past this step, use it
       if (stepIndex < currentStep && id in answers) {
+        debugLogger.log('PROMPT_REPLAY', { id, stepIndex, currentStep, answer: answers[id] });
         return answers[id] as T;
       }
 
       // If this is the current step to ask, prompt the user
       if (stepIndex === currentStep) {
+        debugLogger.log('PROMPT_ASK', { id, stepIndex, message: opts.message });
         const result = await askFn(id);
-        if (isBack(result)) throw BACK;
+        if (isBack(result)) {
+          debugLogger.log('PROMPT_BACK', { id, stepIndex });
+          throw BACK;
+        }
+        debugLogger.log('PROMPT_ANSWER', { id, stepIndex, result });
         answers[id] = result;
         currentStep += 1;
         return result as T;
@@ -139,6 +154,7 @@ export function createRuntime(ui: UI) {
 
       // If we have an answer for this step, use it
       if (id in answers) {
+        debugLogger.log('PROMPT_CACHED', { id, stepIndex, answer: answers[id] });
         return answers[id] as T;
       }
 
@@ -182,6 +198,8 @@ export function createRuntime(ui: UI) {
   }
 
   async function ask<T>(flow: (api: { group: typeof group; text: typeof text; confirm: typeof confirm; BACK: BackToken }) => Promise<T>): Promise<T> {
+    debugLogger.log('ASK_START', { currentStep, answersCount: Object.keys(answers).length });
+
     while (true) {
       // Check what kind of navigation optimization we can use
       const targetStepGroup = executionPath[currentStep]?.groupContext;
@@ -221,6 +239,7 @@ export function createRuntime(ui: UI) {
 
       try {
         asking = true;
+        debugLogger.log('FLOW_START', { isReplaying, targetGroup, currentStep });
         const result = await flow({ group, text, confirm, BACK });
         asking = false;
         isReplaying = false; // Always clear replay mode after flow completes
@@ -228,12 +247,14 @@ export function createRuntime(ui: UI) {
 
         // If we've asked all interactive prompts in this path, we're done
         if (currentStep >= interactivePrompts.length) {
+          debugLogger.log('FLOW_COMPLETE', { result, totalSteps: interactivePrompts.length });
           ui.cleanup?.();
           return result;
         }
       } catch (e) {
         asking = false;
         if (e === BACK) {
+          debugLogger.log('NAVIGATION_BACK', { currentStep, totalSteps: interactivePrompts.length });
           // Go back one step
           if (currentStep > 0) {
             currentStep -= 1;

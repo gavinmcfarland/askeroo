@@ -1,6 +1,7 @@
 import React from "react";
 import { render } from "ink";
 import { PromptApp } from "./prompts/shared/PromptApp.js";
+import { debugLogger } from "./debug.js";
 
 type BackToken = { __back: true };
 
@@ -70,10 +71,13 @@ export const ui = {
 
   cleanup(): void {
     if (appInstance.unmount) {
+      debugLogger.log('UI_CLEANUP', 'UI cleanup triggered');
       appInstance.unmount();
       appInstance.promptFn = undefined;
       appInstance.unmount = undefined;
       appInstance.currentGroup = undefined;
+      // Show debug file location when UI cleanup happens (user exiting)
+      debugLogger.cleanup();
     }
   }
 };

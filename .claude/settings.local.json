@@ -6,7 +6,10 @@
       "Bash(node:*)",
       "Bash(npm run dev:*)",
       "Bash(rm:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(find:*)",
+      "Bash(timeout:*)",
+      "Bash(gtimeout:*)"
     ],
     "deny": [],
     "ask": []
