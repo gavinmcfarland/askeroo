@@ -49,6 +49,7 @@ const flow = async () => {
 		const news = await confirm({ message: "Subscribe to newsletter?" });
 		return { role, news };
 	});
+	debugLogger.log('GROUP_COMPLETE', { groupName: 'What', result: prefs2 });
 
 	const prefs3 = await group({ message: "Yoopooo" }, async () => {
 		const role = await text({ message: "Role (user/admin)" });
@@ -59,6 +60,7 @@ const flow = async () => {
 		const news = await confirm({ message: "Subscribe to newsletter?" });
 		return { role, news };
 	});
+	debugLogger.log('GROUP_COMPLETE', { groupName: 'Yoopooo', result: prefs3 });
 
 	debugLogger.log('FLOW_FUNCTION_END', { profile, prefs });
 	return { profile, prefs };

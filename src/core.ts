@@ -92,8 +92,10 @@ export function createRuntime(ui: UI) {
         }
 
         if (isReplaying === "smart") {
-          // Smart replay: show only the target group, fast replay others
-          shouldShowGroup = groupOpts.message === targetGroup && !lastProcessedGroups.has(groupOpts.message);
+          // Smart replay: show the target group and any groups that come after it
+          const isTargetOrAfter = groupOpts.message === targetGroup ||
+                                 (!!targetGroup && lastProcessedGroups.has(targetGroup));
+          shouldShowGroup = isTargetOrAfter && !lastProcessedGroups.has(groupOpts.message);
         } else {
           // Normal logic: show if not replaying and not already processed
           shouldShowGroup = !isReplaying && (!lastProcessedGroups.has(groupOpts.message) || currentStep >= interactivePrompts.length);
@@ -258,6 +260,22 @@ export function createRuntime(ui: UI) {
           // Go back one step
           if (currentStep > 0) {
             currentStep -= 1;
+
+            // Clean up group state for steps that are no longer reachable
+            // Find groups associated with steps after the current step
+            const unreachableGroups = new Set<string>();
+            for (let i = currentStep; i < executionPath.length; i++) {
+              const pathItem = executionPath[i];
+              if (pathItem.groupContext) {
+                unreachableGroups.add(pathItem.groupContext);
+              }
+            }
+
+            // Remove unreachable groups from lastProcessedGroups
+            for (const groupName of unreachableGroups) {
+              lastProcessedGroups.delete(groupName);
+              debugLogger.log('GROUP_UNPROCESSED', { groupName, reason: 'navigation_back', currentStep });
+            }
 
             // Only clean up answers if doing full replay
             if (!canOptimize) {
