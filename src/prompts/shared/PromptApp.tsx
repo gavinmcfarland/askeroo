@@ -20,7 +20,7 @@ type PromptRequest =
 			initial?: boolean;
 			groupName?: string;
 	  }
-	| { type: "group"; id: string; message?: string; flow?: "phase" };
+	| { type: "group"; id: string; message?: string; flow?: "phase" | "static"; discoveredFields?: Array<{id: string, message: string, type: string}> };
 
 interface PromptAppProps {
 	onReady: (promptFn: (request: PromptRequest) => Promise<any>) => void;
@@ -42,6 +42,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		new Set()
 	);
 	const [phaseGroups, setPhaseGroups] = useState<Set<string>>(new Set());
+	const [staticGroups, setStaticGroups] = useState<Set<string>>(new Set());
+	const [staticGroupFields, setStaticGroupFields] = useState<
+		Map<string, Array<{ id: string; message: string; type: string }>>
+	>(new Map());
 	const [groupFieldHistory, setGroupFieldHistory] = useState<
 		Map<string, Array<{ id: string; message: string; type: string }>>
 	>(new Map());
@@ -57,6 +61,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		Array<{ id: string; message: string; type: string }>
 	>([]);
 	const firstFieldIdRef = useRef<string | null>(null);
+	const staticGroupsRef = useRef<Set<string>>(new Set());
 
 	// Helper function to get display name for a group
 	const getGroupDisplayName = (groupId: string | null): string | null => {
@@ -90,6 +95,27 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						}
 						return prev;
 					});
+
+					// For fields in static groups, track them immediately in the static fields store
+					console.log("Field request - groupName:", request.groupName, "staticGroupsRef:", Array.from(staticGroupsRef.current));
+					if (request.groupName && staticGroupsRef.current.has(request.groupName)) {
+						console.log("Adding field to static group:", request.groupName, request.message);
+						setStaticGroupFields((prev) => {
+							const newMap = new Map(prev);
+							const groupFields = newMap.get(request.groupName!) || [];
+							const fieldInfo = {
+								id: request.id,
+								message: request.message,
+								type: request.type,
+							};
+
+							// Only add if not already present (check by message and type to avoid duplicates from discovery vs execution)
+							if (!groupFields.some((f) => f.message === request.message && f.type === request.type)) {
+								newMap.set(request.groupName!, [...groupFields, fieldInfo]);
+							}
+							return newMap;
+						});
+					}
 				} else if (request.type === "group") {
 					setRootPromptOrder((prev) => {
 						const entry = {
@@ -133,6 +159,24 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							new Set(prev).add(request.id)
 						);
 					}
+
+					// Track static groups (non-default behavior)
+					if (request.flow === "static") {
+						console.log("Marking group as static:", request.id, "discoveredFields:", request.discoveredFields);
+						staticGroupsRef.current.add(request.id);
+						setStaticGroups((prev) =>
+							new Set(prev).add(request.id)
+						);
+
+						// Pre-populate static group fields from discovery
+						if (request.discoveredFields && request.discoveredFields.length > 0) {
+							setStaticGroupFields((prev) => {
+								const newMap = new Map(prev);
+								newMap.set(request.id, request.discoveredFields!);
+								return newMap;
+							});
+						}
+					}
 				}
 			});
 		};
@@ -157,9 +201,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				);
 
 				if (currentPrompt.groupName) {
-					// For grouped fields, track in group history (unless it's a phase group)
-					// Double-check that this field actually belongs to a group
-					if (!phaseGroups.has(currentPrompt.groupName)) {
+					// For grouped fields, track in group history
+					// Phase groups don't track history, static groups track all fields
+					const isPhaseGroup = phaseGroups.has(currentPrompt.groupName);
+					const isStaticGroup = staticGroups.has(currentPrompt.groupName);
+
+					if (!isPhaseGroup) {
 						setGroupFieldHistory((prev) => {
 							const newMap = new Map(prev);
 							const groupFields =
@@ -505,40 +552,99 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			return null;
 		}
 
-		const groupFields = groupFieldHistory.get(currentGroup) || [];
-		return groupFields
-			.filter(
-				(field) =>
-					completedFields.has(field.id) &&
-					field.id !== effectivePrompt?.id
-			)
-			.map((field) => {
-				const fieldValue = fieldValues[field.id];
+		const isStaticGroup = staticGroups.has(currentGroup);
+		const groupFields = isStaticGroup
+			? staticGroupFields.get(currentGroup) || []
+			: groupFieldHistory.get(currentGroup) || [];
 
-				if (field.type === "text") {
-					return (
-						<TextField
-							key={`completed-${field.id}`}
-							message={field.message}
-							completed={true}
-							completedValue={fieldValue}
-							onSubmit={() => {}}
-							allowBack={false}
-						/>
-					);
-				} else {
-					return (
-						<ConfirmField
-							key={`completed-${field.id}`}
-							message={field.message}
-							completed={true}
-							completedValue={fieldValue}
-							onSubmit={() => {}}
-							allowBack={false}
-						/>
-					);
-				}
-			});
+		if (isStaticGroup) {
+			console.log("Rendering static group fields:", currentGroup, groupFields);
+			// For static groups, render all fields (completed and future) at once
+			return groupFields
+				.map((field) => {
+					const fieldValue = fieldValues[field.id];
+					const isCompleted = completedFields.has(field.id);
+
+					// For static groups, match fields based on message and type since IDs might differ between discovery and execution
+					const isActive = effectivePrompt ?
+						(field.id === effectivePrompt.id ||
+						 (field.message === effectivePrompt.message && field.type === effectivePrompt.type))
+						: false;
+
+					if (field.type === "text") {
+						const initialValue = isActive && visitedPrompts.has(field.id)
+							? fieldValues[field.id] ?? ""
+							: "";
+
+						return (
+							<TextField
+								key={`static-${field.id}`}
+								message={field.message}
+								initial={initialValue}
+								completed={isCompleted}
+								completedValue={isCompleted ? fieldValue : undefined}
+								disabled={!isActive}
+								onSubmit={isActive ? handleSubmit : () => {}}
+								onBack={isActive ? handleBack : undefined}
+								allowBack={isActive}
+							/>
+						);
+					} else {
+						const initialValue = isActive && visitedPrompts.has(field.id)
+							? fieldValues[field.id] ?? false
+							: false;
+
+						return (
+							<ConfirmField
+								key={`static-${field.id}`}
+								message={field.message}
+								initial={initialValue}
+								completed={isCompleted}
+								completedValue={isCompleted ? fieldValue : undefined}
+								disabled={!isActive}
+								onSubmit={isActive ? handleSubmit : () => {}}
+								onBack={isActive ? handleBack : undefined}
+								allowBack={isActive}
+							/>
+						);
+					}
+				});
+		} else {
+			// For sequential groups, only show completed fields
+			return groupFields
+				.filter(
+					(field) =>
+						completedFields.has(field.id) &&
+						field.id !== effectivePrompt?.id
+				)
+				.map((field) => {
+					const fieldValue = fieldValues[field.id];
+
+					if (field.type === "text") {
+						return (
+							<TextField
+								key={`completed-${field.id}`}
+								message={field.message}
+								completed={true}
+								completedValue={fieldValue}
+								onSubmit={() => {}}
+								allowBack={false}
+							/>
+						);
+					} else {
+						return (
+							<ConfirmField
+								key={`completed-${field.id}`}
+								message={field.message}
+								completed={true}
+								completedValue={fieldValue}
+								onSubmit={() => {}}
+								allowBack={false}
+							/>
+						);
+					}
+				});
+		}
 	};
 
 	if (!effectivePrompt) {
@@ -554,72 +660,76 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		);
 	}
 
-	let field: React.ReactNode;
+	// For static groups, don't render the active field separately - it's part of the static group rendering
+	const isCurrentGroupStatic = currentGroup && staticGroups.has(currentGroup);
+	let field: React.ReactNode = null;
 
-	switch (effectivePrompt.type) {
-		case "text": {
-			// In all groups (sequential by default), allow going back even on the first field if there are completed fields
-			const isSequentialGroup = !!(
-				effectivePrompt.groupName &&
-				!phaseGroups.has(effectivePrompt.groupName)
-			);
-			const hasCompletedFields =
-				isSequentialGroup && completedFields.size > 0;
-			const allowBack =
-				effectivePrompt.id !== firstFieldIdRef.current ||
-				hasCompletedFields;
+	if (!isCurrentGroupStatic) {
+		switch (effectivePrompt.type) {
+			case "text": {
+				// In all groups (sequential by default), allow going back even on the first field if there are completed fields
+				const isSequentialGroup = !!(
+					effectivePrompt.groupName &&
+					!phaseGroups.has(effectivePrompt.groupName)
+				);
+				const hasCompletedFields =
+					isSequentialGroup && completedFields.size > 0;
+				const allowBack =
+					effectivePrompt.id !== firstFieldIdRef.current ||
+					hasCompletedFields;
 
-			const initialValue = visitedPrompts.has(effectivePrompt.id)
-				? fieldValues[effectivePrompt.id] ?? effectivePrompt.initial
-				: effectivePrompt.initial;
+				const initialValue = visitedPrompts.has(effectivePrompt.id)
+					? fieldValues[effectivePrompt.id] ?? effectivePrompt.initial
+					: effectivePrompt.initial;
 
-			field = (
-				<TextField
-					key={effectivePrompt.id}
-					message={effectivePrompt.message}
-					initial={initialValue}
-					allowBack={allowBack}
-					onSubmit={handleSubmit}
-					onBack={handleBack}
-				/>
-			);
-			break;
+				field = (
+					<TextField
+						key={effectivePrompt.id}
+						message={effectivePrompt.message}
+						initial={initialValue}
+						allowBack={allowBack}
+						onSubmit={handleSubmit}
+						onBack={handleBack}
+					/>
+				);
+				break;
+			}
+
+			case "confirm": {
+				// In all groups (sequential by default), allow going back even on the first field if there are completed fields
+				const isSequentialGroup = !!(
+					effectivePrompt.groupName &&
+					!phaseGroups.has(effectivePrompt.groupName)
+				);
+				const hasCompletedFields =
+					isSequentialGroup && completedFields.size > 0;
+				const allowBack =
+					effectivePrompt.id !== firstFieldIdRef.current ||
+					hasCompletedFields;
+
+				field = (
+					<ConfirmField
+						key={effectivePrompt.id}
+						message={effectivePrompt.message}
+						initial={
+							visitedPrompts.has(effectivePrompt.id)
+								? fieldValues[effectivePrompt.id] ??
+								  effectivePrompt.initial
+								: effectivePrompt.initial
+						}
+						allowBack={allowBack}
+						onSubmit={handleSubmit}
+						onBack={handleBack}
+					/>
+				);
+				break;
+			}
+
+			default:
+				return (
+					<GroupContainer groupName={getGroupDisplayName(currentGroup)}>{null}</GroupContainer>
+				);
 		}
-
-		case "confirm": {
-			// In all groups (sequential by default), allow going back even on the first field if there are completed fields
-			const isSequentialGroup = !!(
-				effectivePrompt.groupName &&
-				!phaseGroups.has(effectivePrompt.groupName)
-			);
-			const hasCompletedFields =
-				isSequentialGroup && completedFields.size > 0;
-			const allowBack =
-				effectivePrompt.id !== firstFieldIdRef.current ||
-				hasCompletedFields;
-
-			field = (
-				<ConfirmField
-					key={effectivePrompt.id}
-					message={effectivePrompt.message}
-					initial={
-						visitedPrompts.has(effectivePrompt.id)
-							? fieldValues[effectivePrompt.id] ??
-							  effectivePrompt.initial
-							: effectivePrompt.initial
-					}
-					allowBack={allowBack}
-					onSubmit={handleSubmit}
-					onBack={handleBack}
-				/>
-			);
-			break;
-		}
-
-		default:
-			return (
-				<GroupContainer groupName={getGroupDisplayName(currentGroup)}>{null}</GroupContainer>
-			);
 	}
 
 	return (

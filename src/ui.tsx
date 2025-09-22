@@ -8,7 +8,7 @@ type BackToken = { __back: true };
 type PromptRequest =
   | { type: 'text'; id: string; message: string; initial?: string; groupName?: string }
   | { type: 'confirm'; id: string; message: string; initial?: boolean; groupName?: string }
-  | { type: 'group'; id: string; message?: string; flow?: 'phase' };
+  | { type: 'group'; id: string; message?: string; flow?: 'phase' | 'static'; discoveredFields?: Array<{id: string, message: string, type: string}> };
 
 // Generate stable IDs for prompts based on content and context
 const generatePromptId = (type: string, message: string, groupName?: string) => {
@@ -59,10 +59,10 @@ export const ui = {
     return promptFn({ type: 'confirm', id: id || generatePromptId('confirm', msg), message: msg, initial, groupName: appInstance.currentGroup });
   },
 
-  async showGroup(label: string | undefined, flow?: 'phase', id?: string): Promise<void> {
+  async showGroup(label: string | undefined, flow?: 'phase' | 'static', id?: string, discoveredFields?: Array<{id: string, message: string, type: string}>): Promise<void> {
     appInstance.currentGroup = label;
     const promptFn = await ensureApp();
-    await promptFn({ type: 'group', id: id || generatePromptId('group', label || 'group'), message: label, flow });
+    await promptFn({ type: 'group', id: id || generatePromptId('group', label || 'group'), message: label, flow, discoveredFields });
   },
 
   clearGroup(): void {

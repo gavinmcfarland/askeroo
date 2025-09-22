@@ -4,12 +4,12 @@ export type Answers = Record<string, unknown>;
 
 type PromptKind = "text" | "confirm" | "group";
 type PromptOpts = { message: string; id?: string };
-type GroupOpts = { message?: string; id?: string; flow?: 'phase' };
+type GroupOpts = { message?: string; id?: string; flow?: 'phase' | 'static' };
 
 type UI = {
   text(msg: string, initial?: string, groupContext?: string, id?: string): Promise<string | BackToken>;
   confirm(msg: string, initial?: boolean, groupContext?: string, id?: string): Promise<boolean | BackToken>;
-  showGroup(label: string | undefined, flow?: 'phase', id?: string): Promise<void> | void;
+  showGroup(label: string | undefined, flow?: 'phase' | 'static', id?: string, discoveredFields?: Array<{id: string, message: string, type: string}>): Promise<void> | void;
   clearGroup?(): void;
   cleanup?(): void;
 };
@@ -91,7 +91,10 @@ export function createRuntime(ui: UI) {
   let groupStack: string[] = []; // Track current group nesting
   let lastProcessedGroups: Set<string> = new Set(); // Track which groups were already processed
   let phaseGroups: Map<string, 'phase'> = new Map(); // Track groups with phase flow
+  let staticGroups: Map<string, 'static'> = new Map(); // Track groups with static flow
   let groupCount = 0; // Track total number of groups encountered for stable ID generation
+  let isDiscoveryMode = false; // Track if we're in discovery mode for static groups
+  let discoveredFields: Map<string, Array<{id: string, message: string, type: string}>> = new Map(); // Track discovered fields for static groups
 
 
   const engine: Engine = {
@@ -113,6 +116,11 @@ export function createRuntime(ui: UI) {
           phaseGroups.set(groupId, 'phase');
         }
 
+        // Track static groups (non-default behavior)
+        if (groupOpts.flow === 'static') {
+          staticGroups.set(groupId, 'static');
+        }
+
         if (isReplaying === "smart") {
           // Smart replay: show the target group and any groups that come after it
           const isTargetOrAfter = groupId === targetGroup ||
@@ -126,7 +134,8 @@ export function createRuntime(ui: UI) {
         // Only call askFn (which creates UI prompts) if we should show the group
         if (shouldShowGroup) {
           debugLogger.log('GROUP_SHOW', { groupId, groupMessage: groupOpts.message, flow: groupOpts.flow, shouldShowGroup });
-          await ui.showGroup?.(groupOpts.message, groupOpts.flow, groupId);
+          const fields = groupOpts.flow === 'static' ? discoveredFields.get(groupId) : undefined;
+          await ui.showGroup?.(groupOpts.message, groupOpts.flow, groupId, fields);
           lastProcessedGroups.add(groupId);
           // Call askFn to create the interactive prompt
           await askFn(generateStableId("group", groupId, groupStack, 0));
@@ -144,6 +153,25 @@ export function createRuntime(ui: UI) {
       // Generate stable, deterministic ID
       const id = opts.id ?? generateStableId(kind, opts.message || `${kind}-${stepIndex}`, groupStack, stepIndex);
 
+      // In discovery mode, just track the field and return a placeholder
+      if (isDiscoveryMode) {
+        const currentGroupId = groupStack[groupStack.length - 1];
+        debugLogger.log('DISCOVERY_FIELD', { currentGroupId, id, message: opts.message, kind });
+        if (currentGroupId) {
+          const fields = discoveredFields.get(currentGroupId) || [];
+          if (!fields.some(f => f.id === id)) {
+            fields.push({
+              id,
+              message: opts.message || `${kind} field`,
+              type: kind
+            });
+            discoveredFields.set(currentGroupId, fields);
+            debugLogger.log('DISCOVERY_FIELD_ADDED', { currentGroupId, fieldCount: fields.length });
+          }
+        }
+        // Return a placeholder value based on type
+        return (kind === 'confirm' ? false : '') as T;
+      }
 
       interactivePrompts.push(id);
 
@@ -197,7 +225,40 @@ export function createRuntime(ui: UI) {
 
   async function group(opts: GroupOpts, body: () => Promise<any>) {
     if (!asking) throw new Error("group() must be called inside ask()");
+
+    // For static groups, we need to run discovery first to find all fields
+    // before calling engine.step() which creates the UI
+    if (opts.flow === 'static') {
+      // Pre-generate the group ID that engine.step will use
+      // We need to simulate what engine.step will do
+      const nextGroupCount = groupCount + 1;
+      const discoveryGroupId = getGroupIdentifier(opts, groupStack, { groupCount: nextGroupCount });
+
+      isDiscoveryMode = true;
+      debugLogger.log('DISCOVERY_START', { groupId: discoveryGroupId, groupStack: [...groupStack] });
+
+      // Push group to stack temporarily for discovery
+      groupStack.push(discoveryGroupId);
+      try {
+        await body(); // Run in discovery mode to find all fields
+      } catch (e) {
+        debugLogger.log('DISCOVERY_ERROR', { groupId: discoveryGroupId, error: e });
+        // Ignore errors in discovery mode
+      } finally {
+        // Remove from stack after discovery
+        groupStack.pop();
+      }
+
+      isDiscoveryMode = false;
+      const discoveredFieldsForGroup = discoveredFields.get(discoveryGroupId);
+      debugLogger.log('DISCOVERY_END', { groupId: discoveryGroupId, fields: discoveredFieldsForGroup });
+    }
+
     await engine.step("group", opts, async () => undefined);
+
+    // The group ID should now be on top of the group stack
+    const groupId = groupStack[groupStack.length - 1];
+
     try {
       return await body();
     } finally {

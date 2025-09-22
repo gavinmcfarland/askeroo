@@ -11,6 +11,7 @@ interface TextFieldProps {
 	allowBack?: boolean;
 	completed?: boolean;
 	completedValue?: string;
+	disabled?: boolean;
 }
 
 export function TextField({
@@ -21,12 +22,13 @@ export function TextField({
 	allowBack = true,
 	completed = false,
 	completedValue,
+	disabled = false,
 }: TextFieldProps) {
 	const [value, setValue] = useState(initial);
 	const [submitted, setSubmitted] = useState(false);
 
 	useInput((input, key) => {
-		if (submitted || completed) return;
+		if (submitted || completed || disabled) return;
 
 		if (key.return) {
 			setSubmitted(true);
@@ -49,6 +51,18 @@ export function TextField({
 				<Text>
 					<Text color="green">✓ </Text>
 					<Text color="gray">{completedValue || value}</Text>
+				</Text>
+			</Box>
+		);
+	}
+
+	if (disabled) {
+		return (
+			<Box flexDirection="column">
+				<Text dimColor>{message}</Text>
+				<Text dimColor>
+					{"> "}
+					<Text color="gray">...</Text>
 				</Text>
 			</Box>
 		);

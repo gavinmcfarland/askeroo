@@ -20,19 +20,25 @@ const flow = async () => {
 		}
 	);
 
+	// Static group - shows all prompts at once, only one active
+	const staticForm = await group({ flow: "static" }, async () => {
+		const name = await text({ message: "Name" });
+		const email = await text({ message: "Email" });
+		const phone = await text({ message: "Phone" });
+		const address = await text({ message: "Address" });
+		return { name, email };
+	});
+
 	// Another group without message but with phase flow
-	// No ID needed - automatically generates stable: group_0_2_phase
-	const hiddenPhase = await group(
-		{ flow: "phase" },
-		async () => {
-			const step1 = await text({ message: "Step 1" });
-			const step2 = await text({ message: "Step 2" });
-			return { step1, step2 };
-		}
-	);
+	// No ID needed - automatically generates stable: group_0_3_phase
+	const hiddenPhase = await group({ flow: "phase" }, async () => {
+		const step1 = await text({ message: "Step 1" });
+		const step2 = await text({ message: "Step 2" });
+		return { step1, step2 };
+	});
 
 	// Group with no message - should not show group header in UI
-	// No ID needed - automatically generates stable: group_0_3_sequential
+	// No ID needed - automatically generates stable: group_0_4_sequential
 	const hiddenGroup = await group({}, async () => {
 		const role = await text({ message: "Role (user/admin)" });
 		if (role === "admin") {
@@ -54,7 +60,7 @@ const flow = async () => {
 		return { role, news };
 	});
 
-	return { profile, hiddenGroup, prefs, hiddenPhase };
+	return { profile, staticForm, hiddenPhase, hiddenGroup, prefs };
 };
 
 (async () => {
