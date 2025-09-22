@@ -8,12 +8,15 @@ const flow = async () => {
 	let test2 = await text({ message: "Test2" });
 
 	// Group 1: Profile (sequential by default)
-	const profile = await group({ message: "Profile" }, async () => {
-		const first = await text({ message: "First name" });
-		const middle = await text({ message: "Middle name" });
-		const last = await text({ message: "Last name" });
-		return { first, middle, last };
-	});
+	const profile = await group(
+		{ message: "Profile", flow: "phase" },
+		async () => {
+			const first = await text({ message: "First name" });
+			const middle = await text({ message: "Middle name" });
+			const last = await text({ message: "Last name" });
+			return { first, middle, last };
+		}
+	);
 
 	// Group 2: Preferences (explicit phase behavior)
 	const prefs = await group({ message: "Preferences" }, async () => {

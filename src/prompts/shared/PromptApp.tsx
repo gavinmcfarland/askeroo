@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
-import { TextField } from "./TextField.js";
-import { ConfirmField } from "./ConfirmField.js";
-import { GroupContainer } from "./GroupContainer.js";
+import { TextField } from "../text/TextField.js";
+import { ConfirmField } from "../confirm/ConfirmField.js";
+import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
-import { CompletedGroup } from "./CompletedGroup.js";
+import { CompletedGroup } from "../group/CompletedGroup.js";
 
 type PromptRequest =
 	| {

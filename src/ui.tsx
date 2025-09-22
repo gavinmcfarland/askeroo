@@ -1,6 +1,6 @@
 import React from "react";
 import { render } from "ink";
-import { PromptApp } from "./fields/index.js";
+import { PromptApp } from "./prompts/shared/PromptApp.js";
 
 type BackToken = { __back: true };
 
