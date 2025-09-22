@@ -21,8 +21,9 @@ const flow = async () => {
 	);
 
 	// Another group without message but with phase flow
+	// No ID needed - automatically generates stable: group_0_2_phase
 	const hiddenPhase = await group(
-		{ id: "hidden-phase", flow: "phase" },
+		{ flow: "phase" },
 		async () => {
 			const step1 = await text({ message: "Step 1" });
 			const step2 = await text({ message: "Step 2" });
@@ -31,7 +32,8 @@ const flow = async () => {
 	);
 
 	// Group with no message - should not show group header in UI
-	const hiddenGroup = await group({ id: "hidden-group" }, async () => {
+	// No ID needed - automatically generates stable: group_0_3_sequential
+	const hiddenGroup = await group({}, async () => {
 		const role = await text({ message: "Role (user/admin)" });
 		if (role === "admin") {
 			const code = await text({ message: "Access code" });

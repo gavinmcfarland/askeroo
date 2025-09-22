@@ -44,9 +44,19 @@ function generateStableId(kind: PromptKind, message: string, groupStack: string[
 }
 
 // Generate stable group identifier for tracking
-function getGroupIdentifier(opts: GroupOpts): string {
-  // Use explicit id if provided, otherwise use message, otherwise generate from step count
-  return opts.id || opts.message || `group-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+function getGroupIdentifier(opts: GroupOpts, groupStack: string[], executionContext: { groupCount: number }): string {
+  // Use explicit id if provided
+  if (opts.id) return opts.id;
+
+  // Use message if provided
+  if (opts.message) return opts.message;
+
+  // Generate stable ID based on execution context
+  const depth = groupStack.length;
+  const groupIndex = executionContext.groupCount;
+  const flowType = opts.flow || 'sequential';
+
+  return `group_${depth}_${groupIndex}_${flowType}`;
 }
 
 // Simple hash function for generating short, stable hashes
@@ -81,6 +91,7 @@ export function createRuntime(ui: UI) {
   let groupStack: string[] = []; // Track current group nesting
   let lastProcessedGroups: Set<string> = new Set(); // Track which groups were already processed
   let phaseGroups: Map<string, 'phase'> = new Map(); // Track groups with phase flow
+  let groupCount = 0; // Track total number of groups encountered for stable ID generation
 
 
   const engine: Engine = {
@@ -90,7 +101,11 @@ export function createRuntime(ui: UI) {
 
       if (kind === "group") {
         const groupOpts = opts as GroupOpts;
-        const groupId = getGroupIdentifier(groupOpts);
+
+        // Increment group count for stable ID generation
+        groupCount++;
+
+        const groupId = getGroupIdentifier(groupOpts, groupStack, { groupCount });
         let shouldShowGroup: boolean;
 
         // Track phase groups (non-default behavior)
@@ -234,16 +249,19 @@ export function createRuntime(ui: UI) {
         interactivePrompts = [];
         executionPath = [];
         groupStack = [];
+        groupCount = 0; // Reset group count for stable ID generation
         // Don't clear lastProcessedGroups - let groups stay "processed" to avoid re-showing
       } else if (isSameGroupNav) {
         isReplaying = true; // All groups in fast replay mode
         interactivePrompts = [];
         groupStack = [];
+        groupCount = 0; // Reset group count for stable ID generation
       } else if (isCrossGroupNav) {
         isReplaying = "smart"; // Smart mode: fast replay until target group
         targetGroup = targetStepGroup; // Set the target group for smart replay
         interactivePrompts = [];
         groupStack = [];
+        groupCount = 0; // Reset group count for stable ID generation
       }
 
       try {

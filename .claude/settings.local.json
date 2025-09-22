@@ -9,7 +9,8 @@
       "Bash(tree:*)",
       "Bash(find:*)",
       "Bash(timeout:*)",
-      "Bash(gtimeout:*)"
+      "Bash(gtimeout:*)",
+      "Bash(npm run:*)"
     ],
     "deny": [],
     "ask": []
