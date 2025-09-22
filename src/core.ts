@@ -4,12 +4,12 @@ export type Answers = Record<string, unknown>;
 
 type PromptKind = "text" | "confirm" | "group";
 type PromptOpts = { message: string; id?: string };
-type GroupOpts = { message: string; id?: string; flow?: 'phase' };
+type GroupOpts = { message?: string; id?: string; flow?: 'phase' };
 
 type UI = {
   text(msg: string, initial?: string, groupContext?: string, id?: string): Promise<string | BackToken>;
   confirm(msg: string, initial?: boolean, groupContext?: string, id?: string): Promise<boolean | BackToken>;
-  showGroup(label: string, flow?: 'phase'): Promise<void> | void;
+  showGroup(label: string | undefined, flow?: 'phase', id?: string): Promise<void> | void;
   clearGroup?(): void;
   cleanup?(): void;
 };
@@ -41,6 +41,12 @@ function generateStableId(kind: PromptKind, message: string, groupStack: string[
   parts.push(`msg:${messageHash}`);
 
   return parts.join('|');
+}
+
+// Generate stable group identifier for tracking
+function getGroupIdentifier(opts: GroupOpts): string {
+  // Use explicit id if provided, otherwise use message, otherwise generate from step count
+  return opts.id || opts.message || `group-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
 // Simple hash function for generating short, stable hashes
@@ -84,35 +90,36 @@ export function createRuntime(ui: UI) {
 
       if (kind === "group") {
         const groupOpts = opts as GroupOpts;
+        const groupId = getGroupIdentifier(groupOpts);
         let shouldShowGroup: boolean;
 
         // Track phase groups (non-default behavior)
         if (groupOpts.flow === 'phase') {
-          phaseGroups.set(groupOpts.message, 'phase');
+          phaseGroups.set(groupId, 'phase');
         }
 
         if (isReplaying === "smart") {
           // Smart replay: show the target group and any groups that come after it
-          const isTargetOrAfter = groupOpts.message === targetGroup ||
+          const isTargetOrAfter = groupId === targetGroup ||
                                  (!!targetGroup && lastProcessedGroups.has(targetGroup));
-          shouldShowGroup = isTargetOrAfter && !lastProcessedGroups.has(groupOpts.message);
+          shouldShowGroup = isTargetOrAfter && !lastProcessedGroups.has(groupId);
         } else {
           // Normal logic: show if not replaying and not already processed
-          shouldShowGroup = !isReplaying && (!lastProcessedGroups.has(groupOpts.message) || currentStep >= interactivePrompts.length);
+          shouldShowGroup = !isReplaying && (!lastProcessedGroups.has(groupId) || currentStep >= interactivePrompts.length);
         }
 
         // Only call askFn (which creates UI prompts) if we should show the group
         if (shouldShowGroup) {
-          debugLogger.log('GROUP_SHOW', { groupMessage: groupOpts.message, flow: groupOpts.flow, shouldShowGroup });
-          await ui.showGroup?.(groupOpts.message, groupOpts.flow);
-          lastProcessedGroups.add(groupOpts.message);
+          debugLogger.log('GROUP_SHOW', { groupId, groupMessage: groupOpts.message, flow: groupOpts.flow, shouldShowGroup });
+          await ui.showGroup?.(groupOpts.message, groupOpts.flow, groupId);
+          lastProcessedGroups.add(groupId);
           // Call askFn to create the interactive prompt
-          await askFn(generateStableId("group", groupOpts.message, groupStack, 0));
+          await askFn(generateStableId("group", groupId, groupStack, 0));
         } else {
-          debugLogger.log('GROUP_SKIP', { groupMessage: groupOpts.message, shouldShowGroup, isReplaying });
+          debugLogger.log('GROUP_SKIP', { groupId, groupMessage: groupOpts.message, shouldShowGroup, isReplaying });
         }
 
-        groupStack.push(groupOpts.message);
+        groupStack.push(groupId);
         return undefined as T;
       }
 
@@ -120,7 +127,7 @@ export function createRuntime(ui: UI) {
       const stepIndex = interactivePrompts.length;
 
       // Generate stable, deterministic ID
-      const id = opts.id ?? generateStableId(kind, opts.message, groupStack, stepIndex);
+      const id = opts.id ?? generateStableId(kind, opts.message || `${kind}-${stepIndex}`, groupStack, stepIndex);
 
 
       interactivePrompts.push(id);

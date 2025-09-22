@@ -20,6 +20,27 @@ const flow = async () => {
 		}
 	);
 
+	// Another group without message but with phase flow
+	const hiddenPhase = await group(
+		{ id: "hidden-phase", flow: "phase" },
+		async () => {
+			const step1 = await text({ message: "Step 1" });
+			const step2 = await text({ message: "Step 2" });
+			return { step1, step2 };
+		}
+	);
+
+	// Group with no message - should not show group header in UI
+	const hiddenGroup = await group({ id: "hidden-group" }, async () => {
+		const role = await text({ message: "Role (user/admin)" });
+		if (role === "admin") {
+			const code = await text({ message: "Access code" });
+			return { role, code };
+		}
+		const news = await confirm({ message: "Subscribe to newsletter?" });
+		return { role, news };
+	});
+
 	const prefs = await group({ message: "Preferences" }, async () => {
 		const role = await text({ message: "Role (user/admin)" });
 		if (role === "admin") {
@@ -31,27 +52,7 @@ const flow = async () => {
 		return { role, news };
 	});
 
-	const prefs2 = await group({ message: "What" }, async () => {
-		const role = await text({ message: "Role (user/admin)" });
-		if (role === "admin") {
-			const code = await text({ message: "Access code" });
-			return { role, code };
-		}
-		const news = await confirm({ message: "Subscribe to newsletter?" });
-		return { role, news };
-	});
-
-	const prefs3 = await group({ message: "Yoopooo" }, async () => {
-		const role = await text({ message: "Role (user/admin)" });
-		if (role === "admin") {
-			const code = await text({ message: "Access code" });
-			return { role, code };
-		}
-		const news = await confirm({ message: "Subscribe to newsletter?" });
-		return { role, news };
-	});
-
-	return { profile, prefs };
+	return { profile, hiddenGroup, prefs, hiddenPhase };
 };
 
 (async () => {
@@ -60,11 +61,6 @@ const flow = async () => {
 
 		console.log("\nResult:", JSON.stringify(result, null, 2));
 	} catch (error) {
-		const errorInfo =
-			error instanceof Error
-				? { error: error.message, stack: error.stack }
-				: { error: String(error), stack: "No stack trace available" };
-
 		console.error("Error:", error);
 		process.exit(1);
 	}

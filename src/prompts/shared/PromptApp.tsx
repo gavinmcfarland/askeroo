@@ -20,7 +20,7 @@ type PromptRequest =
 			initial?: boolean;
 			groupName?: string;
 	  }
-	| { type: "group"; id: string; message: string; flow?: "phase" };
+	| { type: "group"; id: string; message?: string; flow?: "phase" };
 
 interface PromptAppProps {
 	onReady: (promptFn: (request: PromptRequest) => Promise<any>) => void;
@@ -49,6 +49,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		new Set()
 	);
 	const [groupOrder, setGroupOrder] = useState<string[]>([]);
+	const [groupIdToMessage, setGroupIdToMessage] = useState<Map<string, string | undefined>>(new Map());
 	const [rootPromptOrder, setRootPromptOrder] = useState<
 		Array<{ id: string; type: "field" | "group"; groupName?: string }>
 	>([]);
@@ -56,6 +57,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		Array<{ id: string; message: string; type: string }>
 	>([]);
 	const firstFieldIdRef = useRef<string | null>(null);
+
+	// Helper function to get display name for a group
+	const getGroupDisplayName = (groupId: string | null): string | null => {
+		if (!groupId) return null;
+		return groupIdToMessage.get(groupId) || null;
+	};
 
 	useEffect(() => {
 		const promptFn = (request: PromptRequest): Promise<any> => {
@@ -88,7 +95,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						const entry = {
 							id: request.id,
 							type: "group" as const,
-							groupName: request.message,
+							groupName: request.id, // Use ID as the stable identifier
 						};
 						if (!prev.some((p) => p.id === request.id)) {
 							return [...prev, entry];
@@ -96,10 +103,17 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						return prev;
 					});
 
-					// Track group order
+					// Track group ID to message mapping
+					setGroupIdToMessage((prev) => {
+						const newMap = new Map(prev);
+						newMap.set(request.id, request.message);
+						return newMap;
+					});
+
+					// Track group order using IDs
 					setGroupOrder((prev) => {
-						if (!prev.includes(request.message)) {
-							return [...prev, request.message];
+						if (!prev.includes(request.id)) {
+							return [...prev, request.id];
 						}
 						return prev;
 					});
@@ -111,12 +125,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					setCurrentGroup(request.groupName || null);
 				} else if (request.type === "group") {
 					// Group prompts update the group (needed for initial display and cross-group nav)
-					setCurrentGroup(request.message);
+					setCurrentGroup(request.id); // Use ID as the stable identifier
 
 					// Track phase groups (non-default behavior)
 					if (request.flow === "phase") {
 						setPhaseGroups((prev) =>
-							new Set(prev).add(request.message)
+							new Set(prev).add(request.id)
 						);
 					}
 				}
@@ -415,14 +429,15 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 		return groupOrder
 			.slice(0, currentGroupIndex >= 0 ? currentGroupIndex : 0)
-			.filter((groupName) => completedGroups.has(groupName))
-			.map((groupName) => {
-				if (phaseGroups.has(groupName)) {
+			.filter((groupId) => completedGroups.has(groupId))
+			.map((groupId) => {
+				const groupDisplayName = getGroupDisplayName(groupId);
+				if (phaseGroups.has(groupId)) {
 					// For phase groups, show a simple completion indicator
 					return (
 						<CompletedGroup
-							key={`completed-group-${groupName}`}
-							groupName={groupName}
+							key={`completed-group-${groupId}`}
+							groupName={groupDisplayName || "Completed"}
 							completedFields={[
 								{
 									id: "phase-completed",
@@ -435,14 +450,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					);
 				} else {
 					// For sequential groups, show detailed field completion
-					const groupFields = groupFieldHistory.get(groupName) || [];
+					const groupFields = groupFieldHistory.get(groupId) || [];
 					const completedGroupFields = groupFields
 						.filter((field) => {
 							// Only include fields that are actually completed AND belong to this group
 							// Additional safety check to prevent root-level fields from appearing in groups
 							const belongsToGroup =
 								rootPromptOrder.find((p) => p.id === field.id)
-									?.groupName === groupName;
+									?.groupName === groupId;
 							return (
 								completedFields.has(field.id) && belongsToGroup
 							);
@@ -456,8 +471,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					return (
 						<CompletedGroup
-							key={`completed-group-${groupName}`}
-							groupName={groupName}
+							key={`completed-group-${groupId}`}
+							groupName={groupDisplayName || "Group"}
 							completedFields={completedGroupFields}
 						/>
 					);
@@ -513,7 +528,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			<RootContainer>
 				{renderCompletedRootFields()}
 				{renderCompletedGroups()}
-				<GroupContainer groupName={currentGroup}>
+				<GroupContainer groupName={getGroupDisplayName(currentGroup)}>
 					{renderCompletedFields()}
 				</GroupContainer>
 			</RootContainer>
@@ -584,7 +599,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 		default:
 			return (
-				<GroupContainer groupName={currentGroup}>{null}</GroupContainer>
+				<GroupContainer groupName={getGroupDisplayName(currentGroup)}>{null}</GroupContainer>
 			);
 	}
 
@@ -592,7 +607,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		<RootContainer>
 			{renderCompletedRootFields()}
 			{renderCompletedGroups()}
-			<GroupContainer key="group-container" groupName={currentGroup}>
+			<GroupContainer key="group-container" groupName={getGroupDisplayName(currentGroup)}>
 				{renderCompletedFields()}
 				{field}
 			</GroupContainer>
