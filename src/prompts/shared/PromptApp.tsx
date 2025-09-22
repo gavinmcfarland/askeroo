@@ -434,20 +434,39 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				const groupDisplayName = getGroupDisplayName(groupId);
 				if (phaseGroups.has(groupId)) {
 					// For phase groups, show a simple completion indicator
-					return (
-						<CompletedGroup
-							key={`completed-group-${groupId}`}
-							groupName={groupDisplayName || "Completed"}
-							completedFields={[
-								{
-									id: "phase-completed",
-									message: "Completed",
-									value: "✓",
-									type: "completed",
-								},
-							]}
-						/>
-					);
+					// Only show if group has a message, otherwise show fields without group header
+					if (groupDisplayName) {
+						return (
+							<CompletedGroup
+								key={`completed-group-${groupId}`}
+								groupName={groupDisplayName}
+								completedFields={[
+									{
+										id: "phase-completed",
+										message: "Completed",
+										value: "✓",
+										type: "completed",
+									},
+								]}
+							/>
+						);
+					} else {
+						// Phase group without message - just show completion indicator without group header
+						return (
+							<CompletedGroup
+								key={`completed-group-${groupId}`}
+								groupName={null}
+								completedFields={[
+									{
+										id: "phase-completed",
+										message: "Completed",
+										value: "✓",
+										type: "completed",
+									},
+								]}
+							/>
+						);
+					}
 				} else {
 					// For sequential groups, show detailed field completion
 					const groupFields = groupFieldHistory.get(groupId) || [];
@@ -472,7 +491,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					return (
 						<CompletedGroup
 							key={`completed-group-${groupId}`}
-							groupName={groupDisplayName || "Group"}
+							groupName={groupDisplayName} // Only show if there's actually a message
 							completedFields={completedGroupFields}
 						/>
 					);
