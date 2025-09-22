@@ -4,12 +4,12 @@ export type Answers = Record<string, unknown>;
 
 type PromptKind = "text" | "confirm" | "group";
 type PromptOpts = { message: string; id?: string };
-type GroupOpts = { message?: string; id?: string; flow?: 'phase' };
+type GroupOpts = { message?: string; id?: string; flow?: 'phase' | 'all' };
 
 type UI = {
   text(msg: string, initial?: string, groupContext?: string, id?: string): Promise<string | BackToken>;
   confirm(msg: string, initial?: boolean, groupContext?: string, id?: string): Promise<boolean | BackToken>;
-  showGroup(label: string | undefined, flow?: 'phase', id?: string): Promise<void> | void;
+  showGroup(label: string | undefined, flow?: 'phase' | 'all', id?: string): Promise<void> | void;
   clearGroup?(): void;
   cleanup?(): void;
 };
@@ -91,7 +91,10 @@ export function createRuntime(ui: UI) {
   let groupStack: string[] = []; // Track current group nesting
   let lastProcessedGroups: Set<string> = new Set(); // Track which groups were already processed
   let phaseGroups: Map<string, 'phase'> = new Map(); // Track groups with phase flow
+  let flowGroups: Map<string, 'all'> = new Map(); // Track groups with all flow
   let groupCount = 0; // Track total number of groups encountered for stable ID generation
+  let isDiscovering = false; // Track if we're in discovery mode for flow groups
+  let discoveryFieldIndex = 0; // Track field index during discovery
 
 
   const engine: Engine = {
@@ -111,6 +114,11 @@ export function createRuntime(ui: UI) {
         // Track phase groups (non-default behavior)
         if (groupOpts.flow === 'phase') {
           phaseGroups.set(groupId, 'phase');
+        }
+
+        // Track flow groups (all fields visible)
+        if (groupOpts.flow === 'all') {
+          flowGroups.set(groupId, 'all');
         }
 
         if (isReplaying === "smart") {
@@ -197,7 +205,30 @@ export function createRuntime(ui: UI) {
 
   async function group(opts: GroupOpts, body: () => Promise<any>) {
     if (!asking) throw new Error("group() must be called inside ask()");
+
+    // For flow groups, run discovery mode first to collect all field definitions
+    // This must happen BEFORE engine.step so fields are discovered before UI shows
+    if (opts.flow === 'all') {
+      const groupId = getGroupIdentifier(opts, groupStack, { groupCount: groupCount + 1 });
+      console.log('Starting flow group discovery for:', groupId);
+      groupStack.push(groupId);
+      flowGroups.set(groupId, 'all'); // Ensure group is tracked as flow group
+      isDiscovering = true;
+      discoveryFieldIndex = 0; // Reset discovery field counter
+      try {
+        await body(); // Execute body in discovery mode to register all fields
+        console.log('Flow group discovery completed for:', groupId, 'found', discoveryFieldIndex, 'fields');
+      } catch (e) {
+        console.log('Flow group discovery error:', e);
+      }
+      isDiscovering = false;
+      groupStack.pop();
+    }
+
     await engine.step("group", opts, async () => undefined);
+
+    const groupId = getGroupIdentifier(opts, groupStack, { groupCount });
+
     try {
       return await body();
     } finally {
@@ -207,16 +238,42 @@ export function createRuntime(ui: UI) {
 
   async function text(opts: PromptOpts): Promise<string> {
     if (!asking) throw new Error("text() must be called inside ask()");
+
+    // If we're in discovery mode, just register the field and return placeholder
+    const currentGroup = groupStack[groupStack.length - 1];
+    if (isDiscovering && currentGroup && flowGroups.has(currentGroup)) {
+      // Use the same ID generation logic as normal mode for consistency
+      const stepIndex = interactivePrompts.length;
+      const id = opts.id ?? generateStableId("text", opts.message, groupStack, stepIndex);
+      console.log('Discovering text field:', opts.message, 'in group:', currentGroup, 'with id:', id);
+      ui.text(opts.message, undefined, currentGroup, `${id}_preview`);
+      // Add to interactivePrompts to maintain consistent step indexing
+      interactivePrompts.push(id);
+      return answers[id] as string || "";
+    }
+
     return engine.step("text", opts, (id) => {
-      const currentGroup = groupStack[groupStack.length - 1];
       return ui.text(opts.message, undefined, currentGroup, id);
     });
   }
 
   async function confirm(opts: PromptOpts): Promise<boolean> {
     if (!asking) throw new Error("confirm() must be called inside ask()");
+
+    // If we're in discovery mode, just register the field and return placeholder
+    const currentGroup = groupStack[groupStack.length - 1];
+    if (isDiscovering && currentGroup && flowGroups.has(currentGroup)) {
+      // Use the same ID generation logic as normal mode for consistency
+      const stepIndex = interactivePrompts.length;
+      const id = opts.id ?? generateStableId("confirm", opts.message, groupStack, stepIndex);
+      console.log('Discovering confirm field:', opts.message, 'in group:', currentGroup, 'with id:', id);
+      ui.confirm(opts.message, undefined, currentGroup, `${id}_preview`);
+      // Add to interactivePrompts to maintain consistent step indexing
+      interactivePrompts.push(id);
+      return answers[id] as boolean || false;
+    }
+
     return engine.step("confirm", opts, (id) => {
-      const currentGroup = groupStack[groupStack.length - 1];
       return ui.confirm(opts.message, undefined, currentGroup, id);
     });
   }

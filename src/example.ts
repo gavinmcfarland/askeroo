@@ -20,6 +20,21 @@ const flow = async () => {
 		}
 	);
 
+	const registration = await group(
+		{ message: "Registration", flow: "all" },
+		async () => {
+			const username = await text({ message: "Username" });
+
+			const email = await text({ message: "Email address" });
+
+			const acceptTerms = await confirm({ message: "Accept terms and conditions?" });
+
+			const newsletter = await confirm({ message: "Subscribe to newsletter?" });
+
+			return { username, email, acceptTerms, newsletter };
+		}
+	);
+
 	// Another group without message but with phase flow
 	// No ID needed - automatically generates stable: group_0_2_phase
 	const hiddenPhase = await group(
@@ -54,7 +69,7 @@ const flow = async () => {
 		return { role, news };
 	});
 
-	return { profile, hiddenGroup, prefs, hiddenPhase };
+	return { profile, registration, hiddenGroup, prefs, hiddenPhase };
 };
 
 (async () => {

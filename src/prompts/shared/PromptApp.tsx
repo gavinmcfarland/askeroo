@@ -4,6 +4,7 @@ import { ConfirmField } from "../confirm/ConfirmField.js";
 import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { CompletedGroup } from "../group/CompletedGroup.js";
+import { FlowGroupContainer } from "../group/FlowGroupContainer.js";
 
 type PromptRequest =
 	| {
@@ -20,7 +21,7 @@ type PromptRequest =
 			initial?: boolean;
 			groupName?: string;
 	  }
-	| { type: "group"; id: string; message?: string; flow?: "phase" };
+	| { type: "group"; id: string; message?: string; flow?: "phase" | "all" };
 
 interface PromptAppProps {
 	onReady: (promptFn: (request: PromptRequest) => Promise<any>) => void;
@@ -42,6 +43,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		new Set()
 	);
 	const [phaseGroups, setPhaseGroups] = useState<Set<string>>(new Set());
+	const [flowGroups, setFlowGroups] = useState<Set<string>>(new Set());
+	const [flowGroupFields, setFlowGroupFields] = useState<
+		Map<string, Array<{ id: string; message: string; type: string; value?: string | boolean; completed: boolean }>>
+	>(new Map());
+	const [activeFlowFieldIndex, setActiveFlowFieldIndex] = useState<Map<string, number>>(new Map());
 	const [groupFieldHistory, setGroupFieldHistory] = useState<
 		Map<string, Array<{ id: string; message: string; type: string }>>
 	>(new Map());
@@ -67,6 +73,41 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	useEffect(() => {
 		const promptFn = (request: PromptRequest): Promise<any> => {
 			return new Promise((resolve) => {
+				// Handle preview requests - register fields but don't create prompts
+				if (request.id.endsWith("_preview")) {
+					console.log('Received preview request:', request.type, request.message, 'for group:', (request as any).groupName);
+
+					// Register the field for flow groups but don't create a prompt
+					if (request.type !== "group" && request.groupName) {
+						setFlowGroupFields((prev) => {
+							const newMap = new Map(prev);
+							const groupFields = newMap.get(request.groupName!) || [];
+
+							// Handle preview fields (from discovery mode)
+							const actualId = request.id.replace("_preview", "");
+
+							const fieldInfo = {
+								id: actualId,
+								message: request.message,
+								type: request.type,
+								completed: false,
+								value: request.type === "text" ? request.initial : request.initial
+							};
+
+							// Only add if not already present
+							if (!groupFields.some(f => f.id === actualId)) {
+								newMap.set(request.groupName!, [...groupFields, fieldInfo]);
+								console.log('Registered preview field:', actualId, 'in group:', request.groupName);
+							}
+
+							return newMap;
+						});
+					}
+
+					resolve(undefined);
+					return;
+				}
+
 				if (
 					request.type !== "group" &&
 					firstFieldIdRef.current === null
@@ -119,6 +160,35 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					});
 				}
 
+
+				// Track ALL fields that have a groupName, we'll filter for flow groups later
+				if (request.type !== "group" && request.groupName) {
+					setFlowGroupFields((prev) => {
+						const newMap = new Map(prev);
+						const groupFields = newMap.get(request.groupName!) || [];
+
+						// Handle preview fields (from discovery mode)
+						let actualId = request.id;
+						if (request.id.endsWith("_preview")) {
+							actualId = request.id.replace("_preview", "");
+						}
+
+						const fieldInfo = {
+							id: actualId,
+							message: request.message,
+							type: request.type,
+							completed: false,
+							value: request.type === "text" ? request.initial : request.initial
+						};
+
+						// Only add if not already present
+						if (!groupFields.some(f => f.id === actualId)) {
+							newMap.set(request.groupName!, [...groupFields, fieldInfo]);
+						}
+						return newMap;
+					});
+				}
+
 				// Update currentGroup based on the request
 				if (request.type !== "group") {
 					// Field prompts always update the group (most accurate)
@@ -133,12 +203,30 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							new Set(prev).add(request.id)
 						);
 					}
+
+					// Track flow groups (all fields visible)
+					if (request.flow === "all") {
+						setFlowGroups((prev) =>
+							new Set(prev).add(request.id)
+						);
+						// Initialize active field index to 0 for new flow groups
+						setActiveFlowFieldIndex((prev) => {
+							if (!prev.has(request.id)) {
+								const newMap = new Map(prev);
+								newMap.set(request.id, 0);
+								return newMap;
+							}
+							return prev;
+						});
+
+					}
 				}
 			});
 		};
 
 		onReady(promptFn);
 	}, [onReady]);
+
 
 	const handleSubmit = (value: any) => {
 		if (resolverRef.current && currentPrompt) {
@@ -156,10 +244,49 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					new Set(prev).add(currentPrompt.id)
 				);
 
+				// Track fields in flow groups
+				if (currentPrompt.groupName && flowGroups.has(currentPrompt.groupName)) {
+					setFlowGroupFields((prev) => {
+						const newMap = new Map(prev);
+						const groupFields = newMap.get(currentPrompt.groupName!) || [];
+
+						const fieldInfo = {
+							id: currentPrompt.id,
+							message: currentPrompt.message,
+							type: currentPrompt.type,
+							completed: true,
+							value: value
+						};
+
+						// Update existing field or add new one
+						const existingIndex = groupFields.findIndex(f => f.id === currentPrompt.id);
+						if (existingIndex >= 0) {
+							groupFields[existingIndex] = fieldInfo;
+						} else {
+							groupFields.push(fieldInfo);
+						}
+
+						newMap.set(currentPrompt.groupName!, groupFields);
+						return newMap;
+					});
+
+					// Update active field index for flow groups
+					setActiveFlowFieldIndex((prev) => {
+						const newMap = new Map(prev);
+						const currentActiveIndex = prev.get(currentPrompt.groupName!) || 0;
+
+						// Move to next field (increment the current active index)
+						const nextIndex = currentActiveIndex + 1;
+						newMap.set(currentPrompt.groupName!, nextIndex);
+
+						return newMap;
+					});
+				}
+
 				if (currentPrompt.groupName) {
-					// For grouped fields, track in group history (unless it's a phase group)
+					// For grouped fields, track in group history (unless it's a phase group or flow group)
 					// Double-check that this field actually belongs to a group
-					if (!phaseGroups.has(currentPrompt.groupName)) {
+					if (!phaseGroups.has(currentPrompt.groupName) && !flowGroups.has(currentPrompt.groupName)) {
 						setGroupFieldHistory((prev) => {
 							const newMap = new Map(prev);
 							const groupFields =
@@ -254,6 +381,38 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				next.delete(toMaybeDelete);
 				return next;
 			});
+
+			// Handle flow group back navigation - decrement active field index
+			if (currentPrompt.type !== "group" && currentPrompt.groupName && flowGroups.has(currentPrompt.groupName)) {
+				setActiveFlowFieldIndex((prev) => {
+					const newMap = new Map(prev);
+					const currentActiveIndex = prev.get(currentPrompt.groupName!) || 0;
+
+					// Move to previous field (decrement the current active index, but don't go below 0)
+					const prevIndex = Math.max(0, currentActiveIndex - 1);
+					newMap.set(currentPrompt.groupName!, prevIndex);
+
+					return newMap;
+				});
+
+				// Also update the flow group field completion state
+				setFlowGroupFields((prev) => {
+					const newMap = new Map(prev);
+					const groupFields = newMap.get(currentPrompt.groupName!) || [];
+
+					// Find and mark the field as not completed
+					const fieldIndex = groupFields.findIndex(f => f.id === currentPrompt.id);
+					if (fieldIndex >= 0) {
+						groupFields[fieldIndex] = {
+							...groupFields[fieldIndex],
+							completed: false
+						};
+						newMap.set(currentPrompt.groupName!, groupFields);
+					}
+
+					return newMap;
+				});
+			}
 
 			// When navigating back, unmark any groups that should no longer be considered completed
 			const currentPromptGroup =
@@ -432,7 +591,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			.filter((groupId) => completedGroups.has(groupId))
 			.map((groupId) => {
 				const groupDisplayName = getGroupDisplayName(groupId);
-				if (phaseGroups.has(groupId)) {
+				if (phaseGroups.has(groupId) || flowGroups.has(groupId)) {
 					// For phase groups, show a simple completion indicator
 					// Only show if group has a message, otherwise show fields without group header
 					if (groupDisplayName) {
@@ -501,7 +660,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	// Render completed fields for all groups (sequential by default)
 	const renderCompletedFields = () => {
-		if (!currentGroup || phaseGroups.has(currentGroup)) {
+		if (!currentGroup || phaseGroups.has(currentGroup) || flowGroups.has(currentGroup)) {
 			return null;
 		}
 
@@ -543,6 +702,28 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	if (!effectivePrompt) {
 		// Keep a stable shell so layout doesn't jump, but show completed groups and fields
+		// Check if we're in a flow group and should render it
+		if (currentGroup && flowGroups.has(currentGroup)) {
+			const groupFields = flowGroupFields.get(currentGroup) || [];
+			const activeIndex = activeFlowFieldIndex.get(currentGroup) || 0;
+
+			return (
+				<RootContainer>
+					{renderCompletedRootFields()}
+					{renderCompletedGroups()}
+					<FlowGroupContainer
+						groupName={getGroupDisplayName(currentGroup)}
+						fields={groupFields}
+						currentActiveIndex={activeIndex}
+						onFieldSubmit={handleSubmit}
+						onNavigateField={handleBack}
+						onBack={handleBack}
+						allowBack={true}
+					/>
+				</RootContainer>
+			);
+		}
+
 		return (
 			<RootContainer>
 				{renderCompletedRootFields()}
@@ -554,6 +735,30 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		);
 	}
 
+	// Check if we're in a flow group and should render the flow container instead
+	if (effectivePrompt.groupName && flowGroups.has(effectivePrompt.groupName)) {
+		const groupFields = flowGroupFields.get(effectivePrompt.groupName) || [];
+
+		// Use the managed active field index instead of calculating from current prompt
+		const activeIndex = activeFlowFieldIndex.get(effectivePrompt.groupName) || 0;
+
+		return (
+			<RootContainer>
+				{renderCompletedRootFields()}
+				{renderCompletedGroups()}
+				<FlowGroupContainer
+					groupName={getGroupDisplayName(effectivePrompt.groupName)}
+					fields={groupFields}
+					currentActiveIndex={activeIndex}
+					onFieldSubmit={handleSubmit}
+					onNavigateField={handleBack}
+					onBack={handleBack}
+					allowBack={true}
+				/>
+			</RootContainer>
+		);
+	}
+
 	let field: React.ReactNode;
 
 	switch (effectivePrompt.type) {
@@ -561,7 +766,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			// In all groups (sequential by default), allow going back even on the first field if there are completed fields
 			const isSequentialGroup = !!(
 				effectivePrompt.groupName &&
-				!phaseGroups.has(effectivePrompt.groupName)
+				!phaseGroups.has(effectivePrompt.groupName) &&
+				!flowGroups.has(effectivePrompt.groupName)
 			);
 			const hasCompletedFields =
 				isSequentialGroup && completedFields.size > 0;
@@ -590,7 +796,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			// In all groups (sequential by default), allow going back even on the first field if there are completed fields
 			const isSequentialGroup = !!(
 				effectivePrompt.groupName &&
-				!phaseGroups.has(effectivePrompt.groupName)
+				!phaseGroups.has(effectivePrompt.groupName) &&
+				!flowGroups.has(effectivePrompt.groupName)
 			);
 			const hasCompletedFields =
 				isSequentialGroup && completedFields.size > 0;

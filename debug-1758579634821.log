@@ -1,0 +1,4199 @@
+Debug Log - 2025-09-22T22:20:34.821Z
+==================================================
+
+[2025-09-22T22:20:34.822Z] DEBUG_INIT
+Data: "Debug logging initialized"
+Stack Trace:
+at DebugLogger.initLogFile (file:///Users/gavinmcfarland/Developer/claude/dist/debug.js:46:14)
+at new DebugLogger (file:///Users/gavinmcfarland/Developer/claude/dist/debug.js:12:18)
+at file:///Users/gavinmcfarland/Developer/claude/dist/debug.js:96:28
+at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5)
+----------------------------------------
+
+[2025-09-22T22:20:34.845Z] RUNTIME_CREATE
+Data: {
+  "ui": "object"
+}
+Stack Trace:
+at createRuntime (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:44:17)
+at file:///Users/gavinmcfarland/Developer/claude/dist/index.js:4:45
+----------------------------------------
+
+[2025-09-22T22:20:34.845Z] ASK_START
+Data: {
+  "currentStep": 0,
+  "answersCount": 0
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:213:21)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:30
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:58:3
+----------------------------------------
+
+[2025-09-22T22:20:34.845Z] FLOW_START
+Data: {
+  "isReplaying": false,
+  "currentStep": 0
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:252:29)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:30
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:58:3
+----------------------------------------
+
+[2025-09-22T22:20:34.845Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Test"
+  },
+  "currentStep": 0,
+  "groupStack": [],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:4:22)
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:38)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:30
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:58:3
+----------------------------------------
+
+[2025-09-22T22:20:34.846Z] PROMPT_ASK
+Data: {
+  "id": "text|step:0|msg:1jsmq",
+  "stepIndex": 0,
+  "message": "Test"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:4:22)
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:38)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:30
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:58:3
+----------------------------------------
+
+[2025-09-22T22:20:35.722Z] PROMPT_ANSWER
+Data: {
+  "id": "text|step:0|msg:1jsmq",
+  "stepIndex": 0,
+  "result": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:127:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:4:16)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:35.723Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Test2"
+  },
+  "currentStep": 1,
+  "groupStack": [],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:5:23)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:35.724Z] PROMPT_ASK
+Data: {
+  "id": "text|step:1|msg:1c1nls",
+  "stepIndex": 1,
+  "message": "Test2"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:5:23)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:36.155Z] PROMPT_ANSWER
+Data: {
+  "id": "text|step:1|msg:1c1nls",
+  "stepIndex": 1,
+  "result": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:127:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:5:17)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:36.156Z] ENGINE_STEP
+Data: {
+  "kind": "group",
+  "opts": {
+    "message": "Profile",
+    "flow": "phase"
+  },
+  "currentStep": 2,
+  "groupStack": [],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:27)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:36.156Z] GROUP_SHOW
+Data: {
+  "groupId": "Profile",
+  "groupMessage": "Profile",
+  "flow": "phase",
+  "shouldShowGroup": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:90:33)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:27)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:36.160Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "First name"
+  },
+  "currentStep": 2,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:7:29
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:36.160Z] PROMPT_ASK
+Data: {
+  "id": "text|group:Profile|step:2|msg:tcdct7",
+  "stepIndex": 2,
+  "message": "First name"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:7:29
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:36.952Z] PROMPT_ANSWER
+Data: {
+  "id": "text|group:Profile|step:2|msg:tcdct7",
+  "stepIndex": 2,
+  "result": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:127:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:7:23
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:36.952Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Middle name"
+  },
+  "currentStep": 3,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:8:30
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:36.953Z] PROMPT_ASK
+Data: {
+  "id": "text|group:Profile|step:3|msg:xl280m",
+  "stepIndex": 3,
+  "message": "Middle name"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:8:30
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:37.618Z] PROMPT_ANSWER
+Data: {
+  "id": "text|group:Profile|step:3|msg:xl280m",
+  "stepIndex": 3,
+  "result": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:127:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:8:24
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:37.619Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Last name"
+  },
+  "currentStep": 4,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:9:28
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:37.620Z] PROMPT_ASK
+Data: {
+  "id": "text|group:Profile|step:4|msg:5k2wqz",
+  "stepIndex": 4,
+  "message": "Last name"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:9:28
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:38.693Z] PROMPT_ANSWER
+Data: {
+  "id": "text|group:Profile|step:4|msg:5k2wqz",
+  "stepIndex": 4,
+  "result": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:127:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:9:22
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:38.700Z] ENGINE_STEP
+Data: {
+  "kind": "group",
+  "opts": {
+    "message": "Registration",
+    "flow": "all"
+  },
+  "currentStep": 5,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:38.700Z] GROUP_SHOW
+Data: {
+  "groupId": "Registration",
+  "groupMessage": "Registration",
+  "flow": "all",
+  "shouldShowGroup": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:90:33)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:38.709Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Username"
+  },
+  "currentStep": 5,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:32
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:38.710Z] PROMPT_ASK
+Data: {
+  "id": "text|group:Registration|step:5|msg:3bpm2y",
+  "stepIndex": 5,
+  "message": "Username"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:32
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:41.038Z] PROMPT_ANSWER
+Data: {
+  "id": "text|group:Registration|step:5|msg:3bpm2y",
+  "stepIndex": 5,
+  "result": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:127:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:26
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:41.039Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Email address"
+  },
+  "currentStep": 6,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:14:29
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:41.039Z] PROMPT_ASK
+Data: {
+  "id": "text|group:Registration|step:6|msg:vg4swg",
+  "stepIndex": 6,
+  "message": "Email address"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:14:29
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:42.353Z] PROMPT_ANSWER
+Data: {
+  "id": "text|group:Registration|step:6|msg:vg4swg",
+  "stepIndex": 6,
+  "result": "zz"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:127:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:14:23
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:42.354Z] ENGINE_STEP
+Data: {
+  "kind": "confirm",
+  "opts": {
+    "message": "Accept terms and conditions?"
+  },
+  "currentStep": 7,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at confirm (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:208:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:15:35
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:42.354Z] PROMPT_ASK
+Data: {
+  "id": "confirm|group:Registration|step:7|msg:d0ndwt",
+  "stepIndex": 7,
+  "message": "Accept terms and conditions?"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at confirm (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:208:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:15:35
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:45.399Z] PROMPT_ANSWER
+Data: {
+  "id": "confirm|group:Registration|step:7|msg:d0ndwt",
+  "stepIndex": 7,
+  "result": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:127:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:15:29
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:45.401Z] ENGINE_STEP
+Data: {
+  "kind": "confirm",
+  "opts": {
+    "message": "Subscribe to newsletter?"
+  },
+  "currentStep": 8,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at confirm (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:208:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:16:34
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:45.401Z] PROMPT_ASK
+Data: {
+  "id": "confirm|group:Registration|step:8|msg:ogqrlj",
+  "stepIndex": 8,
+  "message": "Subscribe to newsletter?"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at confirm (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:208:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:16:34
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.921Z] PROMPT_BACK
+Data: {
+  "id": "confirm|group:Registration|step:8|msg:ogqrlj",
+  "stepIndex": 8
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:124:33)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:16:28
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.922Z] NAVIGATION_BACK
+Data: {
+  "currentStep": 8,
+  "totalSteps": 9
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:267:33)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.922Z] GROUP_UNPROCESSED
+Data: {
+  "groupName": "Registration",
+  "reason": "navigation_back",
+  "currentStep": 7
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:283:41)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.923Z] FLOW_START
+Data: {
+  "isReplaying": true,
+  "currentStep": 7
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:252:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.923Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Test"
+  },
+  "currentStep": 7,
+  "groupStack": [],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:4:22)
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:38)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.923Z] PROMPT_REPLAY
+Data: {
+  "id": "text|step:0|msg:1jsmq",
+  "stepIndex": 0,
+  "currentStep": 7,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:4:22)
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:38)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.924Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Test2"
+  },
+  "currentStep": 7,
+  "groupStack": [],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:5:23)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.924Z] PROMPT_REPLAY
+Data: {
+  "id": "text|step:1|msg:1c1nls",
+  "stepIndex": 1,
+  "currentStep": 7,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:5:23)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.924Z] ENGINE_STEP
+Data: {
+  "kind": "group",
+  "opts": {
+    "message": "Profile",
+    "flow": "phase"
+  },
+  "currentStep": 7,
+  "groupStack": [],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:27)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.925Z] GROUP_SKIP
+Data: {
+  "groupId": "Profile",
+  "groupMessage": "Profile",
+  "shouldShowGroup": false,
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:97:33)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:27)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.925Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "First name"
+  },
+  "currentStep": 7,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:7:29
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.925Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:2|msg:tcdct7",
+  "stepIndex": 2,
+  "currentStep": 7,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:7:29
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.925Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Middle name"
+  },
+  "currentStep": 7,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:8:30
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.926Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:3|msg:xl280m",
+  "stepIndex": 3,
+  "currentStep": 7,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:8:30
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.926Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Last name"
+  },
+  "currentStep": 7,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:9:28
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.926Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:4|msg:5k2wqz",
+  "stepIndex": 4,
+  "currentStep": 7,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:9:28
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.932Z] ENGINE_STEP
+Data: {
+  "kind": "group",
+  "opts": {
+    "message": "Registration",
+    "flow": "all"
+  },
+  "currentStep": 7,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.934Z] GROUP_SKIP
+Data: {
+  "groupId": "Registration",
+  "groupMessage": "Registration",
+  "shouldShowGroup": false,
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:97:33)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.935Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Username"
+  },
+  "currentStep": 7,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:32
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.935Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Registration|step:5|msg:3bpm2y",
+  "stepIndex": 5,
+  "currentStep": 7,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:32
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.935Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Email address"
+  },
+  "currentStep": 7,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:14:29
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.935Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Registration|step:6|msg:vg4swg",
+  "stepIndex": 6,
+  "currentStep": 7,
+  "answer": "zz"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:14:29
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.936Z] ENGINE_STEP
+Data: {
+  "kind": "confirm",
+  "opts": {
+    "message": "Accept terms and conditions?"
+  },
+  "currentStep": 7,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at confirm (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:208:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:15:35
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:50.936Z] PROMPT_ASK
+Data: {
+  "id": "confirm|group:Registration|step:7|msg:d0ndwt",
+  "stepIndex": 7,
+  "message": "Accept terms and conditions?"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at confirm (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:208:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:15:35
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.470Z] PROMPT_BACK
+Data: {
+  "id": "confirm|group:Registration|step:7|msg:d0ndwt",
+  "stepIndex": 7
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:124:33)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:15:29
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.471Z] NAVIGATION_BACK
+Data: {
+  "currentStep": 7,
+  "totalSteps": 8
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:267:33)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.471Z] GROUP_UNPROCESSED
+Data: {
+  "groupName": "Registration",
+  "reason": "navigation_back",
+  "currentStep": 6
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:283:41)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.472Z] GROUP_UNPROCESSED
+Data: {
+  "groupName": "Profile",
+  "reason": "navigation_back",
+  "currentStep": 6
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:283:41)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.472Z] FLOW_START
+Data: {
+  "isReplaying": true,
+  "currentStep": 6
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:252:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.472Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Test"
+  },
+  "currentStep": 6,
+  "groupStack": [],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:4:22)
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:38)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.473Z] PROMPT_REPLAY
+Data: {
+  "id": "text|step:0|msg:1jsmq",
+  "stepIndex": 0,
+  "currentStep": 6,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:4:22)
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:38)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.473Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Test2"
+  },
+  "currentStep": 6,
+  "groupStack": [],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:5:23)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.473Z] PROMPT_REPLAY
+Data: {
+  "id": "text|step:1|msg:1c1nls",
+  "stepIndex": 1,
+  "currentStep": 6,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:5:23)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.473Z] ENGINE_STEP
+Data: {
+  "kind": "group",
+  "opts": {
+    "message": "Profile",
+    "flow": "phase"
+  },
+  "currentStep": 6,
+  "groupStack": [],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:27)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.474Z] GROUP_SKIP
+Data: {
+  "groupId": "Profile",
+  "groupMessage": "Profile",
+  "shouldShowGroup": false,
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:97:33)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:27)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.474Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "First name"
+  },
+  "currentStep": 6,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:7:29
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.474Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:2|msg:tcdct7",
+  "stepIndex": 2,
+  "currentStep": 6,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:7:29
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.474Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Middle name"
+  },
+  "currentStep": 6,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:8:30
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.475Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:3|msg:xl280m",
+  "stepIndex": 3,
+  "currentStep": 6,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:8:30
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.475Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Last name"
+  },
+  "currentStep": 6,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:9:28
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.475Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:4|msg:5k2wqz",
+  "stepIndex": 4,
+  "currentStep": 6,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:9:28
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.482Z] ENGINE_STEP
+Data: {
+  "kind": "group",
+  "opts": {
+    "message": "Registration",
+    "flow": "all"
+  },
+  "currentStep": 6,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.482Z] GROUP_SKIP
+Data: {
+  "groupId": "Registration",
+  "groupMessage": "Registration",
+  "shouldShowGroup": false,
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:97:33)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.483Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Username"
+  },
+  "currentStep": 6,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:32
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.483Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Registration|step:5|msg:3bpm2y",
+  "stepIndex": 5,
+  "currentStep": 6,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:32
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.483Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Email address"
+  },
+  "currentStep": 6,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:14:29
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:51.483Z] PROMPT_ASK
+Data: {
+  "id": "text|group:Registration|step:6|msg:vg4swg",
+  "stepIndex": 6,
+  "message": "Email address"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:14:29
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.007Z] PROMPT_BACK
+Data: {
+  "id": "text|group:Registration|step:6|msg:vg4swg",
+  "stepIndex": 6
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:124:33)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:14:23
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.008Z] NAVIGATION_BACK
+Data: {
+  "currentStep": 6,
+  "totalSteps": 7
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:267:33)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.009Z] GROUP_UNPROCESSED
+Data: {
+  "groupName": "Registration",
+  "reason": "navigation_back",
+  "currentStep": 5
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:283:41)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.009Z] GROUP_UNPROCESSED
+Data: {
+  "groupName": "Profile",
+  "reason": "navigation_back",
+  "currentStep": 5
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:283:41)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.009Z] FLOW_START
+Data: {
+  "isReplaying": true,
+  "currentStep": 5
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:252:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.009Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Test"
+  },
+  "currentStep": 5,
+  "groupStack": [],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:4:22)
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:38)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.010Z] PROMPT_REPLAY
+Data: {
+  "id": "text|step:0|msg:1jsmq",
+  "stepIndex": 0,
+  "currentStep": 5,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:4:22)
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:38)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.010Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Test2"
+  },
+  "currentStep": 5,
+  "groupStack": [],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:5:23)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.010Z] PROMPT_REPLAY
+Data: {
+  "id": "text|step:1|msg:1c1nls",
+  "stepIndex": 1,
+  "currentStep": 5,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:5:23)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.010Z] ENGINE_STEP
+Data: {
+  "kind": "group",
+  "opts": {
+    "message": "Profile",
+    "flow": "phase"
+  },
+  "currentStep": 5,
+  "groupStack": [],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:27)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.011Z] GROUP_SKIP
+Data: {
+  "groupId": "Profile",
+  "groupMessage": "Profile",
+  "shouldShowGroup": false,
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:97:33)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:27)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.011Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "First name"
+  },
+  "currentStep": 5,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:7:29
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.011Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:2|msg:tcdct7",
+  "stepIndex": 2,
+  "currentStep": 5,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:7:29
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.011Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Middle name"
+  },
+  "currentStep": 5,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:8:30
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.011Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:3|msg:xl280m",
+  "stepIndex": 3,
+  "currentStep": 5,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:8:30
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.012Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Last name"
+  },
+  "currentStep": 5,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:9:28
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.012Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:4|msg:5k2wqz",
+  "stepIndex": 4,
+  "currentStep": 5,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:9:28
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.016Z] ENGINE_STEP
+Data: {
+  "kind": "group",
+  "opts": {
+    "message": "Registration",
+    "flow": "all"
+  },
+  "currentStep": 5,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.017Z] GROUP_SKIP
+Data: {
+  "groupId": "Registration",
+  "groupMessage": "Registration",
+  "shouldShowGroup": false,
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:97:33)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.017Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Username"
+  },
+  "currentStep": 5,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:32
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.017Z] PROMPT_ASK
+Data: {
+  "id": "text|group:Registration|step:5|msg:3bpm2y",
+  "stepIndex": 5,
+  "message": "Username"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:32
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.458Z] PROMPT_BACK
+Data: {
+  "id": "text|group:Registration|step:5|msg:3bpm2y",
+  "stepIndex": 5
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:124:33)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:26
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.459Z] NAVIGATION_BACK
+Data: {
+  "currentStep": 5,
+  "totalSteps": 6
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:267:33)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.460Z] GROUP_UNPROCESSED
+Data: {
+  "groupName": "Profile",
+  "reason": "navigation_back",
+  "currentStep": 4
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:283:41)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.460Z] GROUP_UNPROCESSED
+Data: {
+  "groupName": "Registration",
+  "reason": "navigation_back",
+  "currentStep": 4
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:283:41)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.460Z] FLOW_START
+Data: {
+  "isReplaying": "smart",
+  "targetGroup": "Profile",
+  "currentStep": 4
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:252:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.461Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Test"
+  },
+  "currentStep": 4,
+  "groupStack": [],
+  "isReplaying": "smart"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:4:22)
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:38)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.461Z] PROMPT_REPLAY
+Data: {
+  "id": "text|step:0|msg:1jsmq",
+  "stepIndex": 0,
+  "currentStep": 4,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:4:22)
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:38)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.461Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Test2"
+  },
+  "currentStep": 4,
+  "groupStack": [],
+  "isReplaying": "smart"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:5:23)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.461Z] PROMPT_REPLAY
+Data: {
+  "id": "text|step:1|msg:1c1nls",
+  "stepIndex": 1,
+  "currentStep": 4,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:5:23)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.461Z] ENGINE_STEP
+Data: {
+  "kind": "group",
+  "opts": {
+    "message": "Profile",
+    "flow": "phase"
+  },
+  "currentStep": 4,
+  "groupStack": [],
+  "isReplaying": "smart"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:27)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.462Z] GROUP_SHOW
+Data: {
+  "groupId": "Profile",
+  "groupMessage": "Profile",
+  "flow": "phase",
+  "shouldShowGroup": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:90:33)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:27)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.464Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "First name"
+  },
+  "currentStep": 4,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": "smart"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:7:29
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.464Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:2|msg:tcdct7",
+  "stepIndex": 2,
+  "currentStep": 4,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:7:29
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.464Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Middle name"
+  },
+  "currentStep": 4,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": "smart"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:8:30
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.465Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:3|msg:xl280m",
+  "stepIndex": 3,
+  "currentStep": 4,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:8:30
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.465Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Last name"
+  },
+  "currentStep": 4,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": "smart"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:9:28
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:52.465Z] PROMPT_ASK
+Data: {
+  "id": "text|group:Profile|step:4|msg:5k2wqz",
+  "stepIndex": 4,
+  "message": "Last name"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:9:28
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:54.080Z] PROMPT_ANSWER
+Data: {
+  "id": "text|group:Profile|step:4|msg:5k2wqz",
+  "stepIndex": 4,
+  "result": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:127:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:9:22
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:54.082Z] ENGINE_STEP
+Data: {
+  "kind": "group",
+  "opts": {
+    "message": "Registration",
+    "flow": "all"
+  },
+  "currentStep": 5,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": "smart"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:54.083Z] GROUP_SHOW
+Data: {
+  "groupId": "Registration",
+  "groupMessage": "Registration",
+  "flow": "all",
+  "shouldShowGroup": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:90:33)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:54.085Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Username"
+  },
+  "currentStep": 5,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": "smart"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:32
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:54.086Z] PROMPT_ASK
+Data: {
+  "id": "text|group:Registration|step:5|msg:3bpm2y",
+  "stepIndex": 5,
+  "message": "Username"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:32
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:55.785Z] PROMPT_ANSWER
+Data: {
+  "id": "text|group:Registration|step:5|msg:3bpm2y",
+  "stepIndex": 5,
+  "result": "s"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:127:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:26
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:55.786Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Email address"
+  },
+  "currentStep": 6,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": "smart"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:14:29
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:55.787Z] PROMPT_ASK
+Data: {
+  "id": "text|group:Registration|step:6|msg:vg4swg",
+  "stepIndex": 6,
+  "message": "Email address"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:14:29
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:57.937Z] PROMPT_ANSWER
+Data: {
+  "id": "text|group:Registration|step:6|msg:vg4swg",
+  "stepIndex": 6,
+  "result": "ss"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:127:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:14:23
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:57.938Z] ENGINE_STEP
+Data: {
+  "kind": "confirm",
+  "opts": {
+    "message": "Accept terms and conditions?"
+  },
+  "currentStep": 7,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": "smart"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at confirm (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:208:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:15:35
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:20:57.939Z] PROMPT_ASK
+Data: {
+  "id": "confirm|group:Registration|step:7|msg:d0ndwt",
+  "stepIndex": 7,
+  "message": "Accept terms and conditions?"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at confirm (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:208:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:15:35
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:01.450Z] PROMPT_ANSWER
+Data: {
+  "id": "confirm|group:Registration|step:7|msg:d0ndwt",
+  "stepIndex": 7,
+  "result": "sy"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:127:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:15:29
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:01.451Z] ENGINE_STEP
+Data: {
+  "kind": "confirm",
+  "opts": {
+    "message": "Subscribe to newsletter?"
+  },
+  "currentStep": 8,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": "smart"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at confirm (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:208:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:16:34
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:01.453Z] PROMPT_ASK
+Data: {
+  "id": "confirm|group:Registration|step:8|msg:ogqrlj",
+  "stepIndex": 8,
+  "message": "Subscribe to newsletter?"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at confirm (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:208:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:16:34
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:04.449Z] PROMPT_ANSWER
+Data: {
+  "id": "confirm|group:Registration|step:8|msg:ogqrlj",
+  "stepIndex": 8,
+  "result": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:127:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:16:28
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:04.450Z] ENGINE_STEP
+Data: {
+  "kind": "group",
+  "opts": {
+    "flow": "phase"
+  },
+  "currentStep": 9,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": "smart"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:21:31)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:04.451Z] GROUP_SHOW
+Data: {
+  "groupId": "group_2_3_phase",
+  "flow": "phase",
+  "shouldShowGroup": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:90:33)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:21:31)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:04.456Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Step 1"
+  },
+  "currentStep": 9,
+  "groupStack": [
+    "Profile",
+    "Registration",
+    "group_2_3_phase"
+  ],
+  "isReplaying": "smart"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:22:29
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:21:25)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:04.456Z] PROMPT_ASK
+Data: {
+  "id": "text|group:group_2_3_phase|step:9|msg:twqgw3",
+  "stepIndex": 9,
+  "message": "Step 1"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:22:29
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:21:25)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.120Z] PROMPT_BACK
+Data: {
+  "id": "text|group:group_2_3_phase|step:9|msg:twqgw3",
+  "stepIndex": 9
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:124:33)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:22:23
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:21:25)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.121Z] NAVIGATION_BACK
+Data: {
+  "currentStep": 9,
+  "totalSteps": 10
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:267:33)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.122Z] GROUP_UNPROCESSED
+Data: {
+  "groupName": "Registration",
+  "reason": "navigation_back",
+  "currentStep": 8
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:283:41)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.122Z] GROUP_UNPROCESSED
+Data: {
+  "groupName": "Profile",
+  "reason": "navigation_back",
+  "currentStep": 8
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:283:41)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.123Z] GROUP_UNPROCESSED
+Data: {
+  "groupName": "group_2_3_phase",
+  "reason": "navigation_back",
+  "currentStep": 8
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:283:41)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.123Z] FLOW_START
+Data: {
+  "isReplaying": false,
+  "targetGroup": "Profile",
+  "currentStep": 8
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:252:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.123Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Test"
+  },
+  "currentStep": 8,
+  "groupStack": [],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:4:22)
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:38)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.124Z] PROMPT_REPLAY
+Data: {
+  "id": "text|step:0|msg:1jsmq",
+  "stepIndex": 0,
+  "currentStep": 8,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:4:22)
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:38)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.125Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Test2"
+  },
+  "currentStep": 8,
+  "groupStack": [],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:5:23)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.125Z] PROMPT_REPLAY
+Data: {
+  "id": "text|step:1|msg:1c1nls",
+  "stepIndex": 1,
+  "currentStep": 8,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:5:23)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.125Z] ENGINE_STEP
+Data: {
+  "kind": "group",
+  "opts": {
+    "message": "Profile",
+    "flow": "phase"
+  },
+  "currentStep": 8,
+  "groupStack": [],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:27)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.125Z] GROUP_SHOW
+Data: {
+  "groupId": "Profile",
+  "groupMessage": "Profile",
+  "flow": "phase",
+  "shouldShowGroup": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:90:33)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:27)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.128Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "First name"
+  },
+  "currentStep": 8,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:7:29
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.128Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:2|msg:tcdct7",
+  "stepIndex": 2,
+  "currentStep": 8,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:7:29
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.128Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Middle name"
+  },
+  "currentStep": 8,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:8:30
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.128Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:3|msg:xl280m",
+  "stepIndex": 3,
+  "currentStep": 8,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:8:30
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.129Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Last name"
+  },
+  "currentStep": 8,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:9:28
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.129Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:4|msg:5k2wqz",
+  "stepIndex": 4,
+  "currentStep": 8,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:9:28
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.130Z] ENGINE_STEP
+Data: {
+  "kind": "group",
+  "opts": {
+    "message": "Registration",
+    "flow": "all"
+  },
+  "currentStep": 8,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.130Z] GROUP_SHOW
+Data: {
+  "groupId": "Registration",
+  "groupMessage": "Registration",
+  "flow": "all",
+  "shouldShowGroup": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:90:33)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.133Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Username"
+  },
+  "currentStep": 8,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:32
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.133Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Registration|step:5|msg:3bpm2y",
+  "stepIndex": 5,
+  "currentStep": 8,
+  "answer": "s"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:32
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.134Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Email address"
+  },
+  "currentStep": 8,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:14:29
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.134Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Registration|step:6|msg:vg4swg",
+  "stepIndex": 6,
+  "currentStep": 8,
+  "answer": "ss"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:14:29
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.134Z] ENGINE_STEP
+Data: {
+  "kind": "confirm",
+  "opts": {
+    "message": "Accept terms and conditions?"
+  },
+  "currentStep": 8,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at confirm (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:208:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:15:35
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.134Z] PROMPT_REPLAY
+Data: {
+  "id": "confirm|group:Registration|step:7|msg:d0ndwt",
+  "stepIndex": 7,
+  "currentStep": 8,
+  "answer": "sy"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at confirm (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:208:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:15:35
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.134Z] ENGINE_STEP
+Data: {
+  "kind": "confirm",
+  "opts": {
+    "message": "Subscribe to newsletter?"
+  },
+  "currentStep": 8,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": false
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at confirm (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:208:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:16:34
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.135Z] PROMPT_ASK
+Data: {
+  "id": "confirm|group:Registration|step:8|msg:ogqrlj",
+  "stepIndex": 8,
+  "message": "Subscribe to newsletter?"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at confirm (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:208:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:16:34
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.797Z] PROMPT_BACK
+Data: {
+  "id": "confirm|group:Registration|step:8|msg:ogqrlj",
+  "stepIndex": 8
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:124:33)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:16:28
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.798Z] NAVIGATION_BACK
+Data: {
+  "currentStep": 8,
+  "totalSteps": 9
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:267:33)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.798Z] GROUP_UNPROCESSED
+Data: {
+  "groupName": "Registration",
+  "reason": "navigation_back",
+  "currentStep": 7
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:283:41)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.799Z] FLOW_START
+Data: {
+  "isReplaying": true,
+  "targetGroup": "Profile",
+  "currentStep": 7
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:252:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.799Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Test"
+  },
+  "currentStep": 7,
+  "groupStack": [],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:4:22)
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:38)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.799Z] PROMPT_REPLAY
+Data: {
+  "id": "text|step:0|msg:1jsmq",
+  "stepIndex": 0,
+  "currentStep": 7,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:4:22)
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:38)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.799Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Test2"
+  },
+  "currentStep": 7,
+  "groupStack": [],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:5:23)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.800Z] PROMPT_REPLAY
+Data: {
+  "id": "text|step:1|msg:1c1nls",
+  "stepIndex": 1,
+  "currentStep": 7,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:5:23)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.800Z] ENGINE_STEP
+Data: {
+  "kind": "group",
+  "opts": {
+    "message": "Profile",
+    "flow": "phase"
+  },
+  "currentStep": 7,
+  "groupStack": [],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:27)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.800Z] GROUP_SKIP
+Data: {
+  "groupId": "Profile",
+  "groupMessage": "Profile",
+  "shouldShowGroup": false,
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:97:33)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:27)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.800Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "First name"
+  },
+  "currentStep": 7,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:7:29
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.801Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:2|msg:tcdct7",
+  "stepIndex": 2,
+  "currentStep": 7,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:7:29
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.801Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Middle name"
+  },
+  "currentStep": 7,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:8:30
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.801Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:3|msg:xl280m",
+  "stepIndex": 3,
+  "currentStep": 7,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:8:30
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.801Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Last name"
+  },
+  "currentStep": 7,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:9:28
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.802Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:4|msg:5k2wqz",
+  "stepIndex": 4,
+  "currentStep": 7,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:9:28
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.807Z] ENGINE_STEP
+Data: {
+  "kind": "group",
+  "opts": {
+    "message": "Registration",
+    "flow": "all"
+  },
+  "currentStep": 7,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.807Z] GROUP_SKIP
+Data: {
+  "groupId": "Registration",
+  "groupMessage": "Registration",
+  "shouldShowGroup": false,
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:97:33)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.807Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Username"
+  },
+  "currentStep": 7,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:32
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.808Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Registration|step:5|msg:3bpm2y",
+  "stepIndex": 5,
+  "currentStep": 7,
+  "answer": "s"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:32
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.808Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Email address"
+  },
+  "currentStep": 7,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:14:29
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.808Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Registration|step:6|msg:vg4swg",
+  "stepIndex": 6,
+  "currentStep": 7,
+  "answer": "ss"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:14:29
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.808Z] ENGINE_STEP
+Data: {
+  "kind": "confirm",
+  "opts": {
+    "message": "Accept terms and conditions?"
+  },
+  "currentStep": 7,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at confirm (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:208:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:15:35
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:06.809Z] PROMPT_ASK
+Data: {
+  "id": "confirm|group:Registration|step:7|msg:d0ndwt",
+  "stepIndex": 7,
+  "message": "Accept terms and conditions?"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at confirm (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:208:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:15:35
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.437Z] PROMPT_BACK
+Data: {
+  "id": "confirm|group:Registration|step:7|msg:d0ndwt",
+  "stepIndex": 7
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:124:33)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:15:29
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.438Z] NAVIGATION_BACK
+Data: {
+  "currentStep": 7,
+  "totalSteps": 8
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:267:33)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.438Z] GROUP_UNPROCESSED
+Data: {
+  "groupName": "Registration",
+  "reason": "navigation_back",
+  "currentStep": 6
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:283:41)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.439Z] GROUP_UNPROCESSED
+Data: {
+  "groupName": "Profile",
+  "reason": "navigation_back",
+  "currentStep": 6
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:283:41)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.439Z] FLOW_START
+Data: {
+  "isReplaying": true,
+  "targetGroup": "Profile",
+  "currentStep": 6
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:252:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.439Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Test"
+  },
+  "currentStep": 6,
+  "groupStack": [],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:4:22)
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:38)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.440Z] PROMPT_REPLAY
+Data: {
+  "id": "text|step:0|msg:1jsmq",
+  "stepIndex": 0,
+  "currentStep": 6,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:4:22)
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:38)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.440Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Test2"
+  },
+  "currentStep": 6,
+  "groupStack": [],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:5:23)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.440Z] PROMPT_REPLAY
+Data: {
+  "id": "text|step:1|msg:1c1nls",
+  "stepIndex": 1,
+  "currentStep": 6,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:5:23)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.440Z] ENGINE_STEP
+Data: {
+  "kind": "group",
+  "opts": {
+    "message": "Profile",
+    "flow": "phase"
+  },
+  "currentStep": 6,
+  "groupStack": [],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:27)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.440Z] GROUP_SKIP
+Data: {
+  "groupId": "Profile",
+  "groupMessage": "Profile",
+  "shouldShowGroup": false,
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:97:33)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:27)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.441Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "First name"
+  },
+  "currentStep": 6,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:7:29
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.441Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:2|msg:tcdct7",
+  "stepIndex": 2,
+  "currentStep": 6,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:7:29
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.441Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Middle name"
+  },
+  "currentStep": 6,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:8:30
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.441Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:3|msg:xl280m",
+  "stepIndex": 3,
+  "currentStep": 6,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:8:30
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.442Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Last name"
+  },
+  "currentStep": 6,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:9:28
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.442Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:4|msg:5k2wqz",
+  "stepIndex": 4,
+  "currentStep": 6,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:9:28
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.446Z] ENGINE_STEP
+Data: {
+  "kind": "group",
+  "opts": {
+    "message": "Registration",
+    "flow": "all"
+  },
+  "currentStep": 6,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.447Z] GROUP_SKIP
+Data: {
+  "groupId": "Registration",
+  "groupMessage": "Registration",
+  "shouldShowGroup": false,
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:97:33)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.447Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Username"
+  },
+  "currentStep": 6,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:32
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.448Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Registration|step:5|msg:3bpm2y",
+  "stepIndex": 5,
+  "currentStep": 6,
+  "answer": "s"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:32
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.448Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Email address"
+  },
+  "currentStep": 6,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:14:29
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:07.448Z] PROMPT_ASK
+Data: {
+  "id": "text|group:Registration|step:6|msg:vg4swg",
+  "stepIndex": 6,
+  "message": "Email address"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:14:29
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.202Z] PROMPT_BACK
+Data: {
+  "id": "text|group:Registration|step:6|msg:vg4swg",
+  "stepIndex": 6
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:124:33)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:14:23
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.203Z] NAVIGATION_BACK
+Data: {
+  "currentStep": 6,
+  "totalSteps": 7
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:267:33)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.204Z] GROUP_UNPROCESSED
+Data: {
+  "groupName": "Registration",
+  "reason": "navigation_back",
+  "currentStep": 5
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:283:41)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.204Z] GROUP_UNPROCESSED
+Data: {
+  "groupName": "Profile",
+  "reason": "navigation_back",
+  "currentStep": 5
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:283:41)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.205Z] FLOW_START
+Data: {
+  "isReplaying": true,
+  "targetGroup": "Profile",
+  "currentStep": 5
+}
+Stack Trace:
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:252:29)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.205Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Test"
+  },
+  "currentStep": 5,
+  "groupStack": [],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:4:22)
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:38)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.205Z] PROMPT_REPLAY
+Data: {
+  "id": "text|step:0|msg:1jsmq",
+  "stepIndex": 0,
+  "currentStep": 5,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:4:22)
+at ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:38)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.205Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Test2"
+  },
+  "currentStep": 5,
+  "groupStack": [],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:5:23)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.206Z] PROMPT_REPLAY
+Data: {
+  "id": "text|step:1|msg:1c1nls",
+  "stepIndex": 1,
+  "currentStep": 5,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:5:23)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.206Z] ENGINE_STEP
+Data: {
+  "kind": "group",
+  "opts": {
+    "message": "Profile",
+    "flow": "phase"
+  },
+  "currentStep": 5,
+  "groupStack": [],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:27)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.206Z] GROUP_SKIP
+Data: {
+  "groupId": "Profile",
+  "groupMessage": "Profile",
+  "shouldShowGroup": false,
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:97:33)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:27)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.206Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "First name"
+  },
+  "currentStep": 5,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:7:29
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.206Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:2|msg:tcdct7",
+  "stepIndex": 2,
+  "currentStep": 5,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:7:29
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.207Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Middle name"
+  },
+  "currentStep": 5,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:8:30
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.207Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:3|msg:xl280m",
+  "stepIndex": 3,
+  "currentStep": 5,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:8:30
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.207Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Last name"
+  },
+  "currentStep": 5,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:9:28
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.207Z] PROMPT_REPLAY
+Data: {
+  "id": "text|group:Profile|step:4|msg:5k2wqz",
+  "stepIndex": 4,
+  "currentStep": 5,
+  "answer": "z"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:116:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:9:28
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:20)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:6:21)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.212Z] ENGINE_STEP
+Data: {
+  "kind": "group",
+  "opts": {
+    "message": "Registration",
+    "flow": "all"
+  },
+  "currentStep": 5,
+  "groupStack": [
+    "Profile"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.213Z] GROUP_SKIP
+Data: {
+  "groupId": "Registration",
+  "groupMessage": "Registration",
+  "shouldShowGroup": false,
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:97:33)
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:171:22)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.213Z] ENGINE_STEP
+Data: {
+  "kind": "text",
+  "opts": {
+    "message": "Username"
+  },
+  "currentStep": 5,
+  "groupStack": [
+    "Profile",
+    "Registration"
+  ],
+  "isReplaying": true
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:63:25)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:32
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
+[2025-09-22T22:21:08.213Z] PROMPT_ASK
+Data: {
+  "id": "text|group:Registration|step:5|msg:3bpm2y",
+  "stepIndex": 5,
+  "message": "Username"
+}
+Stack Trace:
+at Object.step (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:121:29)
+at text (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:192:23)
+at file:///Users/gavinmcfarland/Developer/claude/dist/example.js:13:32
+at group (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:174:26)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async flow (file:///Users/gavinmcfarland/Developer/claude/dist/example.js:12:26)
+at async ask (file:///Users/gavinmcfarland/Developer/claude/dist/core.js:253:32)
+at async file:///Users/gavinmcfarland/Developer/claude/dist/example.js:51:24
+----------------------------------------
+
