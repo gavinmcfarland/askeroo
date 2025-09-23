@@ -299,6 +299,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				return next;
 			});
 
+			// Clear the field value to reset it to initial state
+			setFieldValues((prev) => {
+				if (!(toMaybeDelete in prev)) return prev;
+				const next = { ...prev };
+				delete next[toMaybeDelete];
+				return next;
+			});
+
 			// When navigating back, unmark any groups that should no longer be considered completed
 			const currentPromptGroup =
 				currentPrompt.type === "group"
