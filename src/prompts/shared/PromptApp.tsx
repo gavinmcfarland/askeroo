@@ -572,7 +572,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						: false;
 
 					if (field.type === "text") {
-						const initialValue = isActive && visitedPrompts.has(field.id)
+						const initialValue = visitedPrompts.has(field.id)
 							? fieldValues[field.id] ?? ""
 							: "";
 
@@ -581,7 +581,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								key={`static-${field.id}`}
 								message={field.message}
 								initial={initialValue}
-								completed={isCompleted}
+								completed={isCompleted && !isActive}
 								completedValue={isCompleted ? fieldValue : undefined}
 								disabled={!isActive}
 								onSubmit={isActive ? handleSubmit : () => {}}
@@ -590,7 +590,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							/>
 						);
 					} else {
-						const initialValue = isActive && visitedPrompts.has(field.id)
+						const initialValue = visitedPrompts.has(field.id)
 							? fieldValues[field.id] ?? false
 							: false;
 
@@ -599,7 +599,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								key={`static-${field.id}`}
 								message={field.message}
 								initial={initialValue}
-								completed={isCompleted}
+								completed={isCompleted && !isActive}
 								completedValue={isCompleted ? fieldValue : undefined}
 								disabled={!isActive}
 								onSubmit={isActive ? handleSubmit : () => {}}

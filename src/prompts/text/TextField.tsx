@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Text, Box, useInput } from "ink";
 
 type BackToken = { __back: true };
@@ -26,6 +26,13 @@ export function TextField({
 }: TextFieldProps) {
 	const [value, setValue] = useState(initial);
 	const [submitted, setSubmitted] = useState(false);
+
+	// Reset submitted state when field becomes active again (not disabled)
+	useEffect(() => {
+		if (!disabled && submitted) {
+			setSubmitted(false);
+		}
+	}, [disabled, submitted]);
 
 	useInput((input, key) => {
 		if (submitted || completed || disabled) return;
