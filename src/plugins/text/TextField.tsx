@@ -12,6 +12,7 @@ interface TextFieldProps {
 	completed?: boolean;
 	completedValue?: string;
 	disabled?: boolean;
+	flow?: "phase" | "static";
 }
 
 export function TextField({
@@ -23,6 +24,7 @@ export function TextField({
 	completed = false,
 	completedValue,
 	disabled = false,
+	flow,
 }: TextFieldProps) {
 	const [value, setValue] = useState(initial);
 	const [submitted, setSubmitted] = useState(false);
@@ -91,11 +93,15 @@ export function TextField({
 				{"> "}
 				<Text color="cyan">{value}</Text>
 			</Text>
-			<Text> </Text>
-			<Text dimColor>
-				<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
-				<Text color="yellow">&lt;escape&gt;</Text> go back
-			</Text>
+			{flow !== "static" && (
+				<>
+					<Text> </Text>
+					<Text dimColor>
+						<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
+						<Text color="yellow">&lt;escape&gt;</Text> go back
+					</Text>
+				</>
+			)}
 		</Box>
 	);
 }

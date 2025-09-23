@@ -586,6 +586,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						onSubmit: isActive ? handleSubmit : () => {},
 						onBack: isActive ? handleBack : undefined,
 						allowBack: isActive,
+						flow: "static",
 						...typeSpecificProps
 					});
 				});
@@ -606,6 +607,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						completedValue: fieldValue,
 						onSubmit: () => {},
 						allowBack: false,
+						flow: phaseGroups.has(currentGroup!) ? "phase" : undefined,
 						// Allow plugins to handle their own defaults
 					});
 				});
@@ -638,6 +640,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						completedValue: fieldValue,
 						onSubmit: () => {},
 						allowBack: false,
+						flow: undefined, // Root fields have no flow type
 						// Allow plugins to handle their own defaults
 					});
 				} else if (entry.type === "group" && completedGroups.has(entry.id) && entry.id !== currentGroup) {
@@ -780,6 +783,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				return "";
 			};
 
+			// Determine flow type based on current group
+			const flowType = currentGroup && phaseGroups.has(currentGroup) ? "phase" :
+							currentGroup && staticGroups.has(currentGroup) ? "static" :
+							undefined;
+
 			field = (
 				<PluginComponent
 					key={effectivePrompt.id}
@@ -788,6 +796,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					allowBack={allowBack}
 					onSubmit={handleSubmit}
 					onBack={handleBack}
+					flow={flowType}
 				/>
 			);
 		} else {
