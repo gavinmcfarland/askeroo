@@ -1,50 +1,19 @@
 import React, { useState, useEffect, useRef } from "react";
-import { TextField } from "../text/TextField.js";
-import { ConfirmField } from "../confirm/ConfirmField.js";
 import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { CompletedGroup } from "../group/CompletedGroup.js";
 import { globalRegistry } from "../../registry.js";
 
-type PromptRequest =
-	| {
-			type: "text";
-			id: string;
-			message: string;
-			initial?: string;
-			groupName?: string;
-	  }
-	| {
-			type: "confirm";
-			id: string;
-			message: string;
-			initial?: boolean;
-			groupName?: string;
-	  }
-	| {
-			type: "customText";
-			id: string;
-			message: string;
-			placeholder?: string;
-			prefix?: string;
-			groupName?: string;
-	  }
-	| {
-			type: "validatedText";
-			id: string;
-			message: string;
-			validate?: (value: string) => string | true;
-			transform?: (value: string) => string;
-			groupName?: string;
-	  }
-	| {
-			type: "multi";
-			id: string;
-			message: string;
-			options?: string[];
-			groupName?: string;
-	  }
-	| { type: "group"; id: string; message?: string; flow?: "phase" | "static"; discoveredFields?: Array<{id: string, message: string, type: string}> };
+// Generic prompt request that works for all plugins
+type PromptRequest = {
+	type: string;
+	id: string;
+	message?: string; // Optional for group prompts
+	groupName?: string; // Only present for field prompts
+	flow?: "phase" | "static"; // Only present for group prompts
+	discoveredFields?: Array<{id: string, message: string, type: string}>; // Only present for group prompts
+	[key: string]: any; // Allow any additional properties for plugin-specific options
+};
 
 interface PromptAppProps {
 	onReady: (promptFn: (request: PromptRequest) => Promise<any>) => void;
@@ -93,6 +62,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		return groupIdToMessage.get(groupId) || null;
 	};
 
+
 	// Helper function to render field components dynamically
 	const renderFieldComponent = (fieldInfo: { id: string; message: string; type: string }, props: any) => {
 		// Extract key from props to avoid React warning about spreading key
@@ -111,33 +81,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			);
 		}
 
-		// Fallback to built-in components
-		if (fieldInfo.type === "text") {
-			return (
-				<TextField
-					key={key}
-					message={fieldInfo.message}
-					{...restProps}
-				/>
-			);
-		} else {
-			return (
-				<ConfirmField
-					key={key}
-					message={fieldInfo.message}
-					{...restProps}
-				/>
-			);
-		}
+		// Fallback - return null if no plugin component found
+		return null;
 	};
 
 	useEffect(() => {
 		const promptFn = (request: PromptRequest): Promise<any> => {
 			return new Promise((resolve) => {
-				if (
-					request.type !== "group" &&
-					firstFieldIdRef.current === null
-				) {
+				if (request.type !== "group" && firstFieldIdRef.current === null) {
 					firstFieldIdRef.current = request.id;
 				}
 				setCurrentPrompt(request);
@@ -165,12 +116,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							const groupFields = newMap.get(request.groupName!) || [];
 							const fieldInfo = {
 								id: request.id,
-								message: request.message,
+								message: request.message || `${request.type} field`,
 								type: request.type,
 							};
 
 							// Only add if not already present (check by message and type to avoid duplicates from discovery vs execution)
-							if (!groupFields.some((f) => f.message === request.message && f.type === request.type)) {
+							if (!groupFields.some((f) => f.message === fieldInfo.message && f.type === fieldInfo.type)) {
 								newMap.set(request.groupName!, [...groupFields, fieldInfo]);
 							}
 							return newMap;
@@ -273,7 +224,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							const groupFields = newMap.get(currentPrompt.groupName!) || [];
 							const fieldInfo = {
 								id: currentPrompt.id,
-								message: currentPrompt.message,
+								message: currentPrompt.message || `${currentPrompt.type} field`,
 								type: currentPrompt.type,
 							};
 
@@ -298,7 +249,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								newMap.get(currentPrompt.groupName!) || [];
 							const fieldInfo = {
 								id: currentPrompt.id,
-								message: currentPrompt.message,
+								message: currentPrompt.message || `${currentPrompt.type} field`,
 								type: currentPrompt.type,
 							};
 
@@ -340,7 +291,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					setRootFieldHistory((prev) => {
 						const fieldInfo = {
 							id: currentPrompt.id,
-							message: currentPrompt.message,
+							message: currentPrompt.message || `${currentPrompt.type} field`,
 							type: currentPrompt.type,
 						};
 
@@ -782,111 +733,44 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	let field: React.ReactNode = null;
 
 	if (!isCurrentGroupStatic) {
-		switch (effectivePrompt.type) {
-			case "text": {
-				// In all groups (sequential by default), allow going back even on the first field if there are completed fields
-				const isSequentialGroup = !!(
-					effectivePrompt.groupName &&
-					!phaseGroups.has(effectivePrompt.groupName)
-				);
-				const hasCompletedFields =
-					isSequentialGroup && completedFields.size > 0;
-				const allowBack =
-					effectivePrompt.id !== firstFieldIdRef.current ||
-					hasCompletedFields;
+		// Check if this is a plugin-provided prompt type
+		const PluginComponent = globalRegistry.getComponent(effectivePrompt.type);
 
-				const initialValue = visitedPrompts.has(effectivePrompt.id)
-					? fieldValues[effectivePrompt.id] ?? effectivePrompt.initial
-					: effectivePrompt.initial;
+		if (PluginComponent) {
+			const isSequentialGroup = !!(
+				effectivePrompt.groupName &&
+				!phaseGroups.has(effectivePrompt.groupName)
+			);
+			const hasCompletedFields =
+				isSequentialGroup && completedFields.size > 0;
+			const allowBack =
+				effectivePrompt.id !== firstFieldIdRef.current ||
+				hasCompletedFields;
 
-				field = (
-					<TextField
-						key={effectivePrompt.id}
-						message={effectivePrompt.message}
-						initial={initialValue}
-						allowBack={allowBack}
-						onSubmit={handleSubmit}
-						onBack={handleBack}
-					/>
-				);
-				break;
-			}
-
-			case "confirm": {
-				// In all groups (sequential by default), allow going back even on the first field if there are completed fields
-				const isSequentialGroup = !!(
-					effectivePrompt.groupName &&
-					!phaseGroups.has(effectivePrompt.groupName)
-				);
-				const hasCompletedFields =
-					isSequentialGroup && completedFields.size > 0;
-				const allowBack =
-					effectivePrompt.id !== firstFieldIdRef.current ||
-					hasCompletedFields;
-
-				field = (
-					<ConfirmField
-						key={effectivePrompt.id}
-						message={effectivePrompt.message}
-						initial={
-							visitedPrompts.has(effectivePrompt.id)
-								? fieldValues[effectivePrompt.id] ??
-								  effectivePrompt.initial
-								: effectivePrompt.initial
-						}
-						allowBack={allowBack}
-						onSubmit={handleSubmit}
-						onBack={handleBack}
-					/>
-				);
-				break;
-			}
-
-
-			default: {
-				// Check if this is a plugin-provided prompt type
-				const PluginComponent = globalRegistry.getComponent(effectivePrompt.type);
-
-				if (PluginComponent) {
-					const isSequentialGroup = !!(
-						effectivePrompt.groupName &&
-						!phaseGroups.has(effectivePrompt.groupName)
-					);
-					const hasCompletedFields =
-						isSequentialGroup && completedFields.size > 0;
-					const allowBack =
-						effectivePrompt.id !== firstFieldIdRef.current ||
-						hasCompletedFields;
-
-					// Get initial value based on prompt type
-					const getInitialValue = () => {
-						if (!visitedPrompts.has(effectivePrompt.id)) {
-							// For custom prompt types, check if it's multi-select
-							return effectivePrompt.type === 'multi' ? [] : "";
-						}
-						const storedValue = fieldValues[effectivePrompt.id];
-						// Return stored value or appropriate default
-						return storedValue ?? (effectivePrompt.type === 'multi' ? [] : "");
-					};
-
-					field = (
-						<PluginComponent
-							key={effectivePrompt.id}
-							{...effectivePrompt} // Spread all prompt properties
-							initial={getInitialValue()}
-							allowBack={allowBack}
-							onSubmit={handleSubmit}
-							onBack={handleBack}
-						/>
-					);
-					break;
+			// Get initial value based on prompt type
+			const getInitialValue = () => {
+				if (!visitedPrompts.has(effectivePrompt.id)) {
+					// For custom prompt types, check if it's multi-select
+					return effectivePrompt.type === 'multi' ? [] : "";
 				}
+				const storedValue = fieldValues[effectivePrompt.id];
+				// Return stored value or appropriate default
+				return storedValue ?? (effectivePrompt.type === 'multi' ? [] : "");
+			};
 
-				// Fallback for unknown prompt types
-				return (
-					<GroupContainer groupName={getGroupDisplayName(currentGroup)}>{null}</GroupContainer>
-				);
-			}
+			field = (
+				<PluginComponent
+					key={effectivePrompt.id}
+					{...effectivePrompt} // Spread all prompt properties
+					initial={getInitialValue()}
+					allowBack={allowBack}
+					onSubmit={handleSubmit}
+					onBack={handleBack}
+				/>
+			);
+		} else {
+			// Fallback for unknown prompt types
+			field = null;
 		}
 	}
 
