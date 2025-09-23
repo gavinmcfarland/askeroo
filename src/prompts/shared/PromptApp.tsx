@@ -682,11 +682,20 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						);
 					} else if (field.type === "customText") {
 						const initialValue = fieldValue ?? "";
+						// Get custom properties from effectivePrompt when this field is active
+						const placeholder = (isActive && effectivePrompt?.type === "customText")
+							? effectivePrompt.placeholder
+							: undefined;
+						const prefix = (isActive && effectivePrompt?.type === "customText")
+							? effectivePrompt.prefix
+							: undefined;
 
 						return (
 							<CustomTextField
 								key={`static-${field.message}-${field.type}`}
 								message={field.message}
+								placeholder={placeholder}
+								prefix={prefix}
 								initial={initialValue}
 								completed={isCompleted && !isActive}
 								completedValue={isCompleted ? fieldValue : undefined}
@@ -698,11 +707,20 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						);
 					} else if (field.type === "validatedText") {
 						const initialValue = fieldValue ?? "";
+						// Get validation properties from effectivePrompt when this field is active
+						const validate = (isActive && effectivePrompt?.type === "validatedText")
+							? effectivePrompt.validate
+							: undefined;
+						const transform = (isActive && effectivePrompt?.type === "validatedText")
+							? effectivePrompt.transform
+							: undefined;
 
 						return (
 							<ValidatedTextField
 								key={`static-${field.message}-${field.type}`}
 								message={field.message}
+								validate={validate}
+								transform={transform}
 								initial={initialValue}
 								completed={isCompleted && !isActive}
 								completedValue={isCompleted ? fieldValue : undefined}
@@ -713,11 +731,16 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							/>
 						);
 					} else if (field.type === "multi") {
+						// Get options from effectivePrompt when this field is active
+						const options = (isActive && effectivePrompt?.type === "multi")
+							? effectivePrompt.options || []
+							: [];
+
 						return (
 							<MultiField
 								key={`static-${field.message}-${field.type}`}
 								message={field.message}
-								options={[]}
+								options={options}
 								completed={isCompleted && !isActive}
 								completedValue={isCompleted ? fieldValue : undefined}
 								disabled={!isActive && !isCompleted}
