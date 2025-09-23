@@ -5,7 +5,7 @@ export type Answers = Record<string, unknown>;
 
 type PromptKind = "text" | "confirm" | "group" | string;
 type PromptOpts = { message: string; id?: string };
-type GroupOpts = { message?: string; id?: string; flow?: "phase" | "static" };
+type GroupOpts = { message?: string; flow?: "phase" | "static" };
 
 type UI = {
 	text(
@@ -76,12 +76,6 @@ function getGroupIdentifier(
 	groupStack: string[],
 	executionContext: { groupCount: number }
 ): string {
-	// Use explicit id if provided
-	if (opts.id) return opts.id;
-
-	// Use message if provided
-	if (opts.message) return opts.message;
-
 	// Generate stable ID based on execution context
 	const depth = groupStack.length;
 	const groupIndex = executionContext.groupCount;
@@ -227,7 +221,7 @@ export function createRuntime(ui: UI) {
 
 			// Generate stable, deterministic ID
 			const id =
-				opts.id ??
+				('id' in opts ? opts.id : undefined) ??
 				generateStableId(
 					kind,
 					opts.message || `${kind}-${stepIndex}`,

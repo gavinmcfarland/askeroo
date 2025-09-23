@@ -12,7 +12,8 @@
       "Bash(gtimeout:*)",
       "Bash(npm run:*)",
       "Bash(xargs cat:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []
