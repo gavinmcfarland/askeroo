@@ -1,14 +1,14 @@
 import { createPlugin } from './registry.js';
 import { CustomTextField } from './plugins/custom-text/CustomTextField.js';
 
-interface CustomTextOptions {
-  message: string;
+export interface CustomTextOptions {
+  message?: string;
   placeholder?: string;
   prefix?: string;
 }
 
 // Example custom text input plugin with different styling
-export const customText = createPlugin({
+export const customText = createPlugin<CustomTextOptions, string>({
   type: 'customText',
   component: CustomTextField, // Plugin provides its own component
 

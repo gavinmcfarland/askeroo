@@ -64,12 +64,12 @@ export function setCurrentRuntime(runtime: any): void {
 }
 
 // Plugin creation function that auto-registers
-export function createPlugin(config: {
+export function createPlugin<T = any, R = any>(config: {
   type: string;
   component: React.ComponentType<any>;
-  prompt: (opts: any, engine: any, id: string) => Promise<any>;
+  prompt: (opts: T, engine: any, id: string) => Promise<R>;
   uiHandler?: Record<string, (...args: any[]) => Promise<any>>;
-}): (...args: any[]) => Promise<any> {
+}): (opts: T) => Promise<R> {
   const plugin: PromptPlugin = {
     type: config.type,
     component: config.component,
@@ -81,7 +81,7 @@ export function createPlugin(config: {
   globalRegistry.register(plugin);
 
   // Return the prompt function that users will call
-  return async function(opts: any): Promise<any> {
+  return async function(opts: T): Promise<R> {
     if (!currentRuntime) {
       throw new Error(`Plugin "${config.type}" must be used with a runtime. Make sure you're importing from a file that has called createRuntime().`);
     }

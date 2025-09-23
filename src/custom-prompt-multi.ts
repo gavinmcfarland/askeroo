@@ -1,13 +1,13 @@
 import { createPlugin } from './registry.js';
 import { MultiField } from './plugins/multi/MultiField.js';
 
-interface MultiOptions {
+export interface MultiOptions {
   message: string;
   options?: string[];
 }
 
 // Example multi-select prompt plugin
-export const multi = createPlugin({
+export const multi = createPlugin<MultiOptions, string[]>({
   type: 'multi',
   component: MultiField, // Plugin provides its own component
 

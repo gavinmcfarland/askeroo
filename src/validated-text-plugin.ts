@@ -1,14 +1,14 @@
 import { createPlugin } from './registry.js';
 import { ValidatedTextField } from './plugins/validated-text/ValidatedTextField.js';
 
-interface ValidatedTextOptions {
+export interface ValidatedTextOptions {
   message: string;
   validate?: (value: string) => string | true; // Return error message or true if valid
   transform?: (value: string) => string; // Transform the input
 }
 
 // Example validated text input plugin
-export const validatedText = createPlugin({
+export const validatedText = createPlugin<ValidatedTextOptions, string>({
   type: 'validatedText',
   component: ValidatedTextField, // Plugin provides its own component
 

@@ -13,25 +13,21 @@ const flow = async () => {
 
 	// Example of custom text input plugin with different styling
 	const customName = await customText({
-		message: "Enter your custom name",
 		placeholder: "e.g. John Doe",
 		prefix: "✨",
 	});
 
-	const prefs2 = await group(
-		{ message: "Preferences 2", flow: "static" },
-		async () => {
-			const role = await text({ message: "Role (user/admin)" });
-			const name = await text({ message: "Name" });
-			if (role === "admin") {
-				const code = await text({ message: "Access code" });
-				const email = await text({ message: "Email" });
-				return { role, code, email };
-			}
-			const news = await confirm({ message: "Subscribe to newsletter?" });
-			return { name, role, news };
+	const prefs2 = await group({ flow: "static" }, async () => {
+		const role = await text({ message: "Role (user/admin)" });
+		const name = await text({ message: "Name" });
+		if (role === "admin") {
+			const code = await text({ message: "Access code" });
+			const email = await text({ message: "Email" });
+			return { role, code, email };
 		}
-	);
+		const news = await confirm({ message: "Subscribe to newsletter?" });
+		return { name, role, news };
+	});
 
 	// Example of validated text input plugin
 	// const email = await validatedText({
