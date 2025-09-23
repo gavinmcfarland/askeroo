@@ -1,15 +1,51 @@
 #!/usr/bin/env node
 
 import { ask, group, text, confirm } from "./index.js";
+import { multi } from "./custom-prompt-multi.js";
+import { customText } from "./custom-text-plugin.js";
+import { validatedText } from "./validated-text-plugin.js";
 
 const flow = async () => {
 	const name = await text({ message: "Single" });
+
+	// Example of custom text input plugin with different styling
+	const customName = await customText({
+		message: "Enter your custom name",
+		placeholder: "e.g. John Doe",
+		prefix: "✨",
+	});
+
+	// Example of validated text input plugin
+	// const email = await validatedText({
+	// 	message: "Enter your email address",
+	// 	validate: (value: string) => {
+	// 		if (!value.includes("@")) return "Email must contain @";
+	// 		if (!value.includes(".")) return "Email must contain a domain";
+	// 		return true;
+	// 	},
+	// 	transform: (value: string) => value.toLowerCase().trim(),
+	// });
+
+	// // Example of custom multi-select prompt plugin
+	// const colors = await multi({
+	// 	message: "Select your favorite colors",
+	// 	options: ["red", "green", "blue", "yellow", "purple"],
+	// });
 
 	// Another group without message but with phase flow
 	// No ID needed - automatically generates stable: group_0_3_phase
 	const phasedForm = await group(
 		{ message: "Phased", flow: "phase" },
 		async () => {
+			const customName = await customText({
+				message: "Enter your custom name",
+				placeholder: "e.g. John Doe",
+				prefix: "✨",
+			});
+			const colors = await multi({
+				message: "Select your favorite colors",
+				options: ["red", "green", "blue", "yellow", "purple"],
+			});
 			const name = await text({ message: "Name" });
 			const email = await text({ message: "Email" });
 			const phone = await text({ message: "Phone" });
@@ -19,6 +55,15 @@ const flow = async () => {
 	);
 
 	const stackedForm = await group({ message: "Stacked" }, async () => {
+		const customName = await customText({
+			message: "Enter your custom name",
+			placeholder: "e.g. John Doe",
+			prefix: "✨",
+		});
+		const colors = await multi({
+			message: "Select your favorite colors",
+			options: ["red", "green", "blue", "yellow", "purple"],
+		});
 		const name = await text({ message: "Name" });
 		const email = await text({ message: "Email" });
 		const phone = await text({ message: "Phone" });
@@ -30,6 +75,15 @@ const flow = async () => {
 	const staticForm = await group(
 		{ message: "Static", flow: "static" },
 		async () => {
+			const customName = await customText({
+				message: "Enter your custom name",
+				placeholder: "e.g. John Doe",
+				prefix: "✨",
+			});
+			const colors = await multi({
+				message: "Select your favorite colors",
+				options: ["red", "green", "blue", "yellow", "purple"],
+			});
 			const name = await text({ message: "Name" });
 			const email = await text({ message: "Email" });
 			const phone = await text({ message: "Phone" });
@@ -63,6 +117,9 @@ const flow = async () => {
 
 	return {
 		name,
+		customName,
+		// email,
+		// colors,
 		stackedForm,
 		phasedForm,
 		staticForm,

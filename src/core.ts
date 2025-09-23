@@ -1,8 +1,9 @@
 import { debugLogger } from './debug.js';
+import { globalRegistry, setCurrentRuntime } from './registry.js';
 
 export type Answers = Record<string, unknown>;
 
-type PromptKind = "text" | "confirm" | "group";
+type PromptKind = "text" | "confirm" | "group" | string;
 type PromptOpts = { message: string; id?: string };
 type GroupOpts = { message?: string; id?: string; flow?: 'phase' | 'static' };
 
@@ -12,6 +13,8 @@ type UI = {
   showGroup(label: string | undefined, flow?: 'phase' | 'static', id?: string, discoveredFields?: Array<{id: string, message: string, type: string}>): Promise<void> | void;
   clearGroup?(): void;
   cleanup?(): void;
+  // Dynamic UI handlers from plugins
+  [key: string]: any;
 };
 
 type BackToken = { __back: true };
@@ -72,6 +75,10 @@ function simpleHash(str: string): string {
 
 export function createRuntime(ui: UI) {
   debugLogger.log('RUNTIME_CREATE', { ui: typeof ui });
+
+  // Extend UI with plugin handlers
+  const pluginHandlers = globalRegistry.getUIHandlers();
+  const extendedUI = { ...ui, ...pluginHandlers };
 
   const answers: Answers = {};
   let interactivePrompts: string[] = [];
@@ -135,7 +142,7 @@ export function createRuntime(ui: UI) {
         if (shouldShowGroup) {
           debugLogger.log('GROUP_SHOW', { groupId, groupMessage: groupOpts.message, flow: groupOpts.flow, shouldShowGroup });
           const fields = groupOpts.flow === 'static' ? discoveredFields.get(groupId) : undefined;
-          await ui.showGroup?.(groupOpts.message, groupOpts.flow, groupId, fields);
+          await extendedUI.showGroup?.(groupOpts.message, groupOpts.flow, groupId, fields);
           lastProcessedGroups.add(groupId);
           // Call askFn to create the interactive prompt
           await askFn(generateStableId("group", groupId, groupStack, 0));
@@ -262,7 +269,7 @@ export function createRuntime(ui: UI) {
     try {
       return await body();
     } finally {
-      ui.clearGroup?.();
+      extendedUI.clearGroup?.();
     }
   }
 
@@ -270,7 +277,7 @@ export function createRuntime(ui: UI) {
     if (!asking) throw new Error("text() must be called inside ask()");
     return engine.step("text", opts, (id) => {
       const currentGroup = groupStack[groupStack.length - 1];
-      return ui.text(opts.message, undefined, currentGroup, id);
+      return extendedUI.text(opts.message, undefined, currentGroup, id);
     });
   }
 
@@ -278,7 +285,7 @@ export function createRuntime(ui: UI) {
     if (!asking) throw new Error("confirm() must be called inside ask()");
     return engine.step("confirm", opts, (id) => {
       const currentGroup = groupStack[groupStack.length - 1];
-      return ui.confirm(opts.message, undefined, currentGroup, id);
+      return extendedUI.confirm(opts.message, undefined, currentGroup, id);
     });
   }
 
@@ -336,7 +343,7 @@ export function createRuntime(ui: UI) {
         // If we've asked all interactive prompts in this path, we're done
         if (currentStep >= interactivePrompts.length) {
           debugLogger.log('FLOW_COMPLETE', { result, totalSteps: interactivePrompts.length });
-          ui.cleanup?.();
+          extendedUI.cleanup?.();
           return result;
         }
       } catch (e) {
@@ -394,7 +401,24 @@ export function createRuntime(ui: UI) {
     }
   }
 
-  return { ask, group, text, confirm, BACK };
+  // Create dynamic prompt functions for plugins
+  const pluginPrompts: Record<string, any> = {};
+  for (const plugin of globalRegistry.getAll()) {
+    pluginPrompts[plugin.type] = async function(opts: any): Promise<any> {
+      if (!asking) throw new Error(`${plugin.type}() must be called inside ask()`);
+      return engine.step(plugin.type, opts, async (id) => {
+        const currentGroup = groupStack[groupStack.length - 1];
+        return plugin.prompt(opts, { extendedUI, currentGroup }, id);
+      });
+    };
+  }
+
+  const runtime = { ask, group, text, confirm, BACK, ...pluginPrompts };
+
+  // Set the runtime context for plugins
+  setCurrentRuntime(runtime);
+
+  return runtime;
 }
 
 export { createRuntime as default };

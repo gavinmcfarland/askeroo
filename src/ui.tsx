@@ -8,6 +8,9 @@ type BackToken = { __back: true };
 type PromptRequest =
   | { type: 'text'; id: string; message: string; initial?: string; groupName?: string }
   | { type: 'confirm'; id: string; message: string; initial?: boolean; groupName?: string }
+  | { type: 'customText'; id: string; message: string; placeholder?: string; prefix?: string; groupName?: string }
+  | { type: 'validatedText'; id: string; message: string; validate?: (value: string) => string | true; transform?: (value: string) => string; groupName?: string }
+  | { type: 'multi'; id: string; message: string; options?: string[]; groupName?: string }
   | { type: 'group'; id: string; message?: string; flow?: 'phase' | 'static'; discoveredFields?: Array<{id: string, message: string, type: string}> };
 
 // Generate stable IDs for prompts based on content and context
@@ -57,6 +60,30 @@ export const ui = {
     }
     const promptFn = await ensureApp();
     return promptFn({ type: 'confirm', id: id || generatePromptId('confirm', msg), message: msg, initial, groupName: appInstance.currentGroup });
+  },
+
+  async customText(msg: string, placeholder?: string, prefix?: string, groupContext?: string, id?: string): Promise<string | BackToken> {
+    if (groupContext) {
+      appInstance.currentGroup = groupContext;
+    }
+    const promptFn = await ensureApp();
+    return promptFn({ type: 'customText', id: id || generatePromptId('customText', msg), message: msg, placeholder, prefix, groupName: appInstance.currentGroup });
+  },
+
+  async validatedText(msg: string, validate?: (value: string) => string | true, transform?: (value: string) => string, groupContext?: string, id?: string): Promise<string | BackToken> {
+    if (groupContext) {
+      appInstance.currentGroup = groupContext;
+    }
+    const promptFn = await ensureApp();
+    return promptFn({ type: 'validatedText', id: id || generatePromptId('validatedText', msg), message: msg, validate, transform, groupName: appInstance.currentGroup });
+  },
+
+  async multi(msg: string, options?: string[], groupContext?: string, id?: string): Promise<string[] | BackToken> {
+    if (groupContext) {
+      appInstance.currentGroup = groupContext;
+    }
+    const promptFn = await ensureApp();
+    return promptFn({ type: 'multi', id: id || generatePromptId('multi', msg), message: msg, options, groupName: appInstance.currentGroup });
   },
 
   async showGroup(label: string | undefined, flow?: 'phase' | 'static', id?: string, discoveredFields?: Array<{id: string, message: string, type: string}>): Promise<void> {

@@ -14,6 +14,10 @@
             "types": "./dist/core.d.ts",
             "import": "./dist/core.js"
         },
+        "./plugin": {
+            "types": "./dist/plugin.d.ts",
+            "import": "./dist/plugin.js"
+        },
         "./fields": {
             "types": "./dist/fields/index.d.ts",
             "import": "./dist/fields/index.js"
