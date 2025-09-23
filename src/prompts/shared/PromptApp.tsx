@@ -596,9 +596,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						: false;
 
 					if (field.type === "text") {
-						// For static groups, always use stored field value if it exists
-						const initialValue = fieldValues[field.id] ?? "";
-
+						// Use the fieldValue we already found (with fallback matching)
+						const initialValue = fieldValue ?? "";
 
 						return (
 							<TextField
@@ -614,8 +613,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							/>
 						);
 					} else {
-						// For static groups, always use stored field value if it exists
-						const initialValue = fieldValues[field.id] ?? false;
+						// Use the fieldValue we already found (with fallback matching)
+						const initialValue = fieldValue ?? false;
 
 						return (
 							<ConfirmField
