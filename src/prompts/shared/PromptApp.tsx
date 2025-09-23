@@ -513,6 +513,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							key={`completed-root-${entry.id}`}
 							message={fieldInfo.message}
 							options={[]}
+							initial={[]}
 							completed={true}
 							completedValue={fieldValue}
 							onSubmit={() => {}}
@@ -736,11 +737,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							? effectivePrompt.options || []
 							: [];
 
+						const initialValue = isCompleted ? fieldValue || [] : [];
+
 						return (
 							<MultiField
 								key={`static-${field.message}-${field.type}`}
 								message={field.message}
 								options={options}
+								initial={initialValue}
 								completed={isCompleted && !isActive}
 								completedValue={isCompleted ? fieldValue : undefined}
 								disabled={!isActive && !isCompleted}
@@ -818,6 +822,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								key={`completed-${field.id}`}
 								message={field.message}
 								options={[]}
+								initial={[]}
 								completed={true}
 								completedValue={fieldValue}
 								onSubmit={() => {}}
@@ -989,11 +994,16 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					effectivePrompt.id !== firstFieldIdRef.current ||
 					hasCompletedFields;
 
+				const initialValue = visitedPrompts.has(effectivePrompt.id)
+					? fieldValues[effectivePrompt.id] ?? []
+					: [];
+
 				field = (
 					<MultiField
 						key={effectivePrompt.id}
 						message={effectivePrompt.message}
 						options={effectivePrompt.options || []}
+						initial={initialValue}
 						allowBack={allowBack}
 						onSubmit={handleSubmit}
 						onBack={handleBack}

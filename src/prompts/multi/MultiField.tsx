@@ -6,6 +6,7 @@ type BackToken = { __back: true };
 interface MultiFieldProps {
 	message: string;
 	options: string[];
+	initial?: string[];
 	onSubmit: (values: string[]) => void;
 	onBack?: () => void;
 	allowBack?: boolean;
@@ -17,6 +18,7 @@ interface MultiFieldProps {
 export function MultiField({
 	message,
 	options,
+	initial = [],
 	onSubmit,
 	onBack,
 	allowBack = true,
@@ -24,7 +26,19 @@ export function MultiField({
 	completedValue,
 	disabled = false,
 }: MultiFieldProps) {
-	const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
+	// Initialize selectedIndices based on initial values
+	const getInitialIndices = () => {
+		const indices = new Set<number>();
+		initial.forEach(value => {
+			const index = options.indexOf(value);
+			if (index !== -1) {
+				indices.add(index);
+			}
+		});
+		return indices;
+	};
+
+	const [selectedIndices, setSelectedIndices] = useState<Set<number>>(getInitialIndices());
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const [submitted, setSubmitted] = useState(false);
 
@@ -34,6 +48,20 @@ export function MultiField({
 			setSubmitted(false);
 		}
 	}, [disabled, submitted]);
+
+	// Update selected indices when initial values change
+	useEffect(() => {
+		if (!submitted && !disabled) {
+			const indices = new Set<number>();
+			initial.forEach(value => {
+				const index = options.indexOf(value);
+				if (index !== -1) {
+					indices.add(index);
+				}
+			});
+			setSelectedIndices(indices);
+		}
+	}, [initial, options, submitted, disabled]);
 
 	useInput((input, key) => {
 		if (submitted || completed || disabled) return;
