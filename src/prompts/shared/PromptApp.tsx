@@ -284,13 +284,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							return newMap;
 						});
 
-						// Force re-render when key fields change to reveal conditional fields
-						const isKeyField = currentPrompt.message.toLowerCase().includes('role');
-						if (isKeyField) {
-							// Force a re-render to trigger conditional field visibility checks
-							// This will cause shouldDisplayField to re-evaluate with the new field value
-							setStaticGroupFields((prev) => new Map(prev));
-						}
+						// Force re-render when any field changes to reveal conditional fields
+						// This allows any field to potentially trigger conditional field visibility
+						// Force a re-render to trigger conditional field visibility checks
+						// This will cause shouldDisplayField to re-evaluate with the new field value
+						setStaticGroupFields((prev) => new Map(prev));
 					}
 
 					if (!isPhaseGroup) {
@@ -520,48 +518,16 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			return true;
 		}
 
-		// For non-executed fields, check if they should be visible based on conditions
-		const message = field.message.toLowerCase();
-
-		// Always show unconditional fields (fields that don't depend on other field values)
-		// For this example, "Role" field is always shown as it's the primary condition field
-		if (message.includes('role') && (message.includes('admin') || message.includes('user'))) {
-			return true;
-		}
-
-		// Check if conditional fields should be revealed
-		// Look for the role field value to determine if admin fields should be shown
-		const roleFieldValue = getRoleFieldValue(executedFields);
-
-		if (roleFieldValue === 'admin') {
-			// Show admin-specific fields when role is admin
-			if (message.includes('access code') || message.includes('code') || message.includes('email')) {
-				return true;
-			}
-		} else if (roleFieldValue && roleFieldValue !== 'admin') {
-			// Show non-admin fields when role is set but not admin
-			if (message.includes('newsletter') || message.includes('subscribe')) {
-				return true;
-			}
-		}
-
-		// Hide fields that haven't been executed and don't meet visibility conditions
-		return false;
+		// For non-executed fields, show them all initially
+		// The runtime will handle the discovery and conditional logic internally
+		// This makes the static flow generic and not dependent on specific field names
+		return true;
 	};
 
-	// Helper function to get the current role field value
-	const getRoleFieldValue = (executedFields: Array<{ id: string; message: string; type: string }>) => {
-		// Find the role field in executed fields
-		const roleField = executedFields.find(f => {
-			const message = f.message.toLowerCase();
-			return message.includes('role') && (message.includes('admin') || message.includes('user'));
-		});
-
-		if (roleField) {
-			// Get the actual submitted value for this field
-			return fieldValues[roleField.id];
-		}
-		return null;
+	// Helper function to get field values by field information
+	const getFieldValue = (fieldInfo: { id: string; message: string; type: string }) => {
+		// Get the actual submitted value for this field
+		return fieldValues[fieldInfo.id];
 	};
 
 	// Render completed fields for all groups (sequential by default)
@@ -594,7 +560,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			});
 
 			return Array.from(allFields.values())
-				.filter((field) => shouldDisplayField(field, executedFields)) // Only show fields that should be visible
 				.map((field) => {
 					// For static groups, find the stored value by matching message and type
 					// since field IDs might differ between discovery and execution

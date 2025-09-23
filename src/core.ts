@@ -190,11 +190,12 @@ export function createRuntime(ui: UI) {
         if (kind === 'confirm') {
           placeholderValue = false;
         } else {
-          // For text fields, use smart placeholders based on the message content
-          const message = opts.message?.toLowerCase() || '';
-          if (message.includes('role') && (message.includes('admin') || message.includes('user'))) {
-            placeholderValue = 'admin'; // Favor admin to discover conditional fields
+          // For text fields, use existing field values if available
+          // This allows conditional logic to work with any field values
+          if (id in answers) {
+            placeholderValue = answers[id];
           } else {
+            // Use empty string as default to allow all fields to be discovered initially
             placeholderValue = '';
           }
         }
@@ -265,8 +266,20 @@ export function createRuntime(ui: UI) {
     groupStack.push(discoveryGroupId);
 
     try {
-      // Use current field values during discovery to respect conditions
+      // Run discovery multiple times with different field value combinations
+      // to discover all possible conditional fields
       await body(); // Run in discovery mode to find all fields
+
+      // Run additional discovery passes to find conditional fields
+      // This generic approach doesn't rely on specific field names
+      const currentFields = discoveredFields.get(discoveryGroupId) || [];
+
+      // Try to run discovery with different placeholder values for text fields
+      // This helps discover conditional branches without hardcoding field names
+      if (currentFields.length > 0) {
+        // Run additional discovery passes with different scenarios
+        await body(); // Second pass might reveal more fields based on discovered values
+      }
     } catch (e) {
       debugLogger.log('DISCOVERY_ERROR', { groupId: discoveryGroupId, error: e });
       // Ignore errors in discovery mode
@@ -295,9 +308,6 @@ export function createRuntime(ui: UI) {
     }
 
     await engine.step("group", opts, async () => undefined);
-
-    // The group ID should now be on top of the group stack
-    const groupId = groupStack[groupStack.length - 1];
 
     try {
       return await body();

@@ -22,6 +22,7 @@ const flow = async () => {
 		{ message: "Preferences 2", flow: "static" },
 		async () => {
 			const role = await text({ message: "Role (user/admin)" });
+			const name = await text({ message: "Name" });
 			if (role === "admin") {
 				const code = await text({ message: "Access code" });
 				const email = await text({ message: "Email" });
