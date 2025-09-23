@@ -45,6 +45,9 @@ function ensureApp(): Promise<(request: PromptRequest) => Promise<any>> {
   });
 }
 
+// Store reference to the runtime for re-discovery
+let currentRuntime: any = null;
+
 export const ui = {
   async text(msg: string, initial?: string, groupContext?: string, id?: string): Promise<string | BackToken> {
     if (groupContext) {
@@ -106,5 +109,18 @@ export const ui = {
       // Show debug file location when UI cleanup happens (user exiting)
       debugLogger.cleanup();
     }
+  },
+
+  // Set the runtime reference for re-discovery
+  setRuntime(runtime: any): void {
+    currentRuntime = runtime;
+  },
+
+  // Trigger re-discovery for a static group
+  async rediscoverStaticGroup(groupId: string) {
+    if (currentRuntime?.rediscoverStaticGroupFields) {
+      return await currentRuntime.rediscoverStaticGroupFields(groupId);
+    }
+    return null;
   }
 };

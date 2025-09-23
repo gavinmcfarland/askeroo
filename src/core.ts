@@ -102,6 +102,7 @@ export function createRuntime(ui: UI) {
   let groupCount = 0; // Track total number of groups encountered for stable ID generation
   let isDiscoveryMode = false; // Track if we're in discovery mode for static groups
   let discoveredFields: Map<string, Array<{id: string, message: string, type: string}>> = new Map(); // Track discovered fields for static groups
+  let staticGroupBodies: Map<string, () => Promise<any>> = new Map(); // Store group body functions for re-discovery
 
 
   const engine: Engine = {
@@ -184,7 +185,7 @@ export function createRuntime(ui: UI) {
           return currentValue as T;
         }
 
-        // For discovery, provide smarter placeholders to explore conditional paths
+        // Use smart placeholders to discover conditional fields
         let placeholderValue: any;
         if (kind === 'confirm') {
           placeholderValue = false;
@@ -192,7 +193,7 @@ export function createRuntime(ui: UI) {
           // For text fields, use smart placeholders based on the message content
           const message = opts.message?.toLowerCase() || '';
           if (message.includes('role') && (message.includes('admin') || message.includes('user'))) {
-            placeholderValue = 'admin'; // Favor admin to discover more fields
+            placeholderValue = 'admin'; // Favor admin to discover conditional fields
           } else {
             placeholderValue = '';
           }
@@ -284,6 +285,12 @@ export function createRuntime(ui: UI) {
 
     // For static groups, we need to run discovery to find fields
     if (opts.flow === 'static') {
+      const nextGroupCount = groupCount + 1;
+      const groupId = getGroupIdentifier(opts, groupStack, { groupCount: nextGroupCount });
+
+      // Store the body function for re-discovery
+      staticGroupBodies.set(groupId, body);
+
       await runStaticGroupDiscovery(opts, body);
     }
 
@@ -442,10 +449,42 @@ export function createRuntime(ui: UI) {
   }
 
 
-  const runtime = { ask, group, text, confirm, BACK, ...pluginPrompts };
+  // Re-discovery function for static groups
+  async function rediscoverStaticGroupFields(groupId: string) {
+    if (!isDiscoveryMode && staticGroupBodies.has(groupId)) {
+      debugLogger.log('REDISCOVERY_START', { groupId });
+
+      const body = staticGroupBodies.get(groupId)!;
+
+      // Clear existing discovered fields for this group
+      discoveredFields.delete(groupId);
+
+      isDiscoveryMode = true;
+      groupStack.push(groupId);
+
+      try {
+        await body();
+      } catch (e) {
+        debugLogger.log('REDISCOVERY_ERROR', { groupId, error: e });
+      } finally {
+        groupStack.pop();
+        isDiscoveryMode = false;
+      }
+
+      const rediscoveredFields = discoveredFields.get(groupId);
+      debugLogger.log('REDISCOVERY_END', { groupId, fields: rediscoveredFields });
+      return rediscoveredFields;
+    }
+    return discoveredFields.get(groupId);
+  }
+
+  const runtime = { ask, group, text, confirm, BACK, rediscoverStaticGroupFields, ...pluginPrompts };
 
   // Set the runtime context for plugins
   setCurrentRuntime(runtime);
+
+  // Set the runtime reference in UI for re-discovery
+  extendedUI.setRuntime?.(runtime);
 
   return runtime;
 }
