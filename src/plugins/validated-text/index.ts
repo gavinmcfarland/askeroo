@@ -1,5 +1,5 @@
-import { createPlugin } from './registry.js';
-import { ValidatedTextField } from './plugins/validated-text/ValidatedTextField.js';
+import { createPlugin } from '../../registry.js';
+import { ValidatedTextField } from './ValidatedTextField.js';
 
 export interface ValidatedTextOptions {
   message: string;

@@ -4,9 +4,9 @@
 import { ask, group, text, confirm } from "./index.js";
 
 // Then import plugins after runtime is established
-import { multi } from "./custom-prompt-multi.js";
-import { customText } from "./custom-text-plugin.js";
-import { validatedText } from "./validated-text-plugin.js";
+import { multi } from "./plugins/multi/index.js";
+import { customText } from "./plugins/custom-text/index.js";
+import { validatedText } from "./plugins/validated-text/index.js";
 
 const flow = async () => {
 	const name = await text({ message: "Single" });

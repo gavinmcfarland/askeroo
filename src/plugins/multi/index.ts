@@ -1,5 +1,5 @@
-import { createPlugin } from './registry.js';
-import { MultiField } from './plugins/multi/MultiField.js';
+import { createPlugin } from '../../registry.js';
+import { MultiField } from './MultiField.js';
 
 export interface MultiOptions {
   message: string;

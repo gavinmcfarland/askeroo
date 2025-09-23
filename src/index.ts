@@ -1,13 +1,12 @@
-import { createRuntime } from './core.js';
-import { ui } from './ui.js';
+import { createRuntime } from "./core.js";
+import { ui } from "./ui.js";
 
 // Type definitions for better IDE support
-export type PromptOpts = { message: string; id?: string };
 export type GroupOpts = { message?: string; flow?: "phase" | "static" };
 export type FlowFunction<T> = (api: {
 	group: (opts: GroupOpts, body: () => Promise<any>) => Promise<any>;
-	text: (opts: PromptOpts) => Promise<string>;
-	confirm: (opts: PromptOpts) => Promise<boolean>;
+	text: any;
+	confirm: any;
 	BACK: { __back: true };
 }) => Promise<T>;
 
@@ -15,25 +14,35 @@ export type FlowFunction<T> = (api: {
 let runtime: any = null;
 
 function ensureRuntime() {
-  if (!runtime) {
-    runtime = createRuntime(ui);
-  }
-  return runtime;
+	if (!runtime) {
+		runtime = createRuntime(ui);
+	}
+	return runtime;
 }
 
 // Export lazy runtime functions with proper types
-export const ask = <T>(flow: FlowFunction<T>): Promise<T> => ensureRuntime().ask(flow);
-export const group = (opts: GroupOpts, body: () => Promise<any>): Promise<any> => ensureRuntime().group(opts, body);
-export const text = (opts: PromptOpts): Promise<string> => ensureRuntime().text(opts);
-export const confirm = (opts: PromptOpts): Promise<boolean> => ensureRuntime().confirm(opts);
+export const ask = <T>(flow: FlowFunction<T>): Promise<T> =>
+	ensureRuntime().ask(flow);
+export const group = (
+	opts: GroupOpts,
+	body: () => Promise<any>
+): Promise<any> => ensureRuntime().group(opts, body);
 // BACK is just a simple token, doesn't need lazy loading
 export const BACK = { __back: true };
 
 // Export runtime factory and UI
-export { createRuntime } from './core.js';
+export { createRuntime } from "./core.js";
 export { ui };
 
 // Export plugins and their types
-export { customText, type CustomTextOptions } from './custom-text-plugin.js';
-export { multi, type MultiOptions } from './custom-prompt-multi.js';
-export { validatedText, type ValidatedTextOptions } from './validated-text-plugin.js';
+export { text, type TextOptions } from "./plugins/text/index.js";
+export { confirm, type ConfirmOptions } from "./plugins/confirm/index.js";
+export {
+	customText,
+	type CustomTextOptions,
+} from "./plugins/custom-text/index.js";
+export { multi, type MultiOptions } from "./plugins/multi/index.js";
+export {
+	validatedText,
+	type ValidatedTextOptions,
+} from "./plugins/validated-text/index.js";

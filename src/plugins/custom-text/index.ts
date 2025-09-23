@@ -1,5 +1,5 @@
-import { createPlugin } from './registry.js';
-import { CustomTextField } from './plugins/custom-text/CustomTextField.js';
+import { createPlugin } from '../../registry.js';
+import { CustomTextField } from './CustomTextField.js';
 
 export interface CustomTextOptions {
   message?: string;

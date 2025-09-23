@@ -1,6 +1,10 @@
 import { debugLogger } from "./debug.js";
 import { globalRegistry, setCurrentRuntime } from "./registry.js";
 
+// Import core plugins to ensure they're registered
+import "./plugins/text/index.js";
+import "./plugins/confirm/index.js";
+
 export type Answers = Record<string, unknown>;
 
 type PromptKind = "text" | "confirm" | "group" | string;
@@ -427,32 +431,12 @@ export function createRuntime(ui: UI) {
 		}
 	}
 
-	async function text(opts: PromptOpts): Promise<string> {
-		if (!asking) throw new Error("text() must be called inside ask()");
-		return engine.step("text", opts, (id) => {
-			const currentGroup = groupStack[groupStack.length - 1];
-			return extendedUI.text(opts.message, undefined, currentGroup, id);
-		});
-	}
-
-	async function confirm(opts: PromptOpts): Promise<boolean> {
-		if (!asking) throw new Error("confirm() must be called inside ask()");
-		return engine.step("confirm", opts, (id) => {
-			const currentGroup = groupStack[groupStack.length - 1];
-			return extendedUI.confirm(
-				opts.message,
-				undefined,
-				currentGroup,
-				id
-			);
-		});
-	}
 
 	async function ask<T>(
 		flow: (api: {
 			group: typeof group;
-			text: typeof text;
-			confirm: typeof confirm;
+			text: any;
+			confirm: any;
 			BACK: BackToken;
 		}) => Promise<T>
 	): Promise<T> {
@@ -510,7 +494,7 @@ export function createRuntime(ui: UI) {
 					targetGroup,
 					currentStep,
 				});
-				const result = await flow({ group, text, confirm, BACK });
+				const result = await flow({ group, text: pluginPrompts.text, confirm: pluginPrompts.confirm, BACK });
 				asking = false;
 				isReplaying = false; // Always clear replay mode after flow completes
 				targetGroup = undefined; // Clear target group
@@ -638,8 +622,6 @@ export function createRuntime(ui: UI) {
 	const runtime = {
 		ask,
 		group,
-		text,
-		confirm,
 		BACK,
 		rediscoverStaticGroupFields,
 		...pluginPrompts,
