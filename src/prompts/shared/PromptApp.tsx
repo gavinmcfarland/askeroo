@@ -497,8 +497,25 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			: groupFieldHistory.get(currentGroup) || [];
 
 		if (isStaticGroup) {
-			// For static groups, render all fields (completed and future) at once
-			return groupFields
+			// For static groups, render all fields from both discovery and execution
+			// Combine discovered fields with fields that have been executed
+			const executedFields = groupFieldHistory.get(currentGroup) || [];
+			const discoveredFields = groupFields;
+
+			// Create a unified list of fields, preferring executed fields over discovered ones
+			const allFields = new Map();
+
+			// Add discovered fields first
+			discoveredFields.forEach(field => {
+				allFields.set(field.message + '|' + field.type, field);
+			});
+
+			// Add executed fields (they take precedence)
+			executedFields.forEach(field => {
+				allFields.set(field.message + '|' + field.type, field);
+			});
+
+			return Array.from(allFields.values())
 				.map((field) => {
 					// For static groups, find the stored value by matching message and type
 					// since field IDs might differ between discovery and execution

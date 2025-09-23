@@ -160,7 +160,7 @@ export function createRuntime(ui: UI) {
       // Generate stable, deterministic ID
       const id = opts.id ?? generateStableId(kind, opts.message || `${kind}-${stepIndex}`, groupStack, stepIndex);
 
-      // In discovery mode, just track the field and return a placeholder
+      // In discovery mode, just track the field and return current value or placeholder
       if (isDiscoveryMode) {
         const currentGroupId = groupStack[groupStack.length - 1];
         debugLogger.log('DISCOVERY_FIELD', { currentGroupId, id, message: opts.message, kind });
@@ -176,8 +176,18 @@ export function createRuntime(ui: UI) {
             debugLogger.log('DISCOVERY_FIELD_ADDED', { currentGroupId, fieldCount: fields.length });
           }
         }
+
+        // Use current field value if available, otherwise use placeholder
+        if (id in answers) {
+          const currentValue = answers[id];
+          debugLogger.log('DISCOVERY_CURRENT_VALUE', { id, currentValue });
+          return currentValue as T;
+        }
+
         // Return a placeholder value based on type
-        return (kind === 'confirm' ? false : '') as T;
+        const placeholderValue = (kind === 'confirm' ? false : '');
+        debugLogger.log('DISCOVERY_PLACEHOLDER', { kind, placeholderValue });
+        return placeholderValue as T;
       }
 
       interactivePrompts.push(id);
@@ -230,35 +240,39 @@ export function createRuntime(ui: UI) {
     return typeof x === "object" && x !== null && (x as any).__back === true;
   }
 
+  async function runStaticGroupDiscovery(opts: GroupOpts, body: () => Promise<any>) {
+    // Pre-generate the group ID that engine.step will use
+    const nextGroupCount = groupCount + 1;
+    const discoveryGroupId = getGroupIdentifier(opts, groupStack, { groupCount: nextGroupCount });
+
+    isDiscoveryMode = true;
+    debugLogger.log('DISCOVERY_START', { groupId: discoveryGroupId, groupStack: [...groupStack] });
+
+    // Push group to stack temporarily for discovery
+    groupStack.push(discoveryGroupId);
+
+    try {
+      // Use current field values during discovery to respect conditions
+      await body(); // Run in discovery mode to find all fields
+    } catch (e) {
+      debugLogger.log('DISCOVERY_ERROR', { groupId: discoveryGroupId, error: e });
+      // Ignore errors in discovery mode
+    } finally {
+      // Remove from stack after discovery
+      groupStack.pop();
+    }
+
+    isDiscoveryMode = false;
+    const discoveredFieldsForGroup = discoveredFields.get(discoveryGroupId);
+    debugLogger.log('DISCOVERY_END', { groupId: discoveryGroupId, fields: discoveredFieldsForGroup });
+  }
+
   async function group(opts: GroupOpts, body: () => Promise<any>) {
     if (!asking) throw new Error("group() must be called inside ask()");
 
-    // For static groups, we need to run discovery first to find all fields
-    // before calling engine.step() which creates the UI
+    // For static groups, we need to run discovery to find fields
     if (opts.flow === 'static') {
-      // Pre-generate the group ID that engine.step will use
-      // We need to simulate what engine.step will do
-      const nextGroupCount = groupCount + 1;
-      const discoveryGroupId = getGroupIdentifier(opts, groupStack, { groupCount: nextGroupCount });
-
-      isDiscoveryMode = true;
-      debugLogger.log('DISCOVERY_START', { groupId: discoveryGroupId, groupStack: [...groupStack] });
-
-      // Push group to stack temporarily for discovery
-      groupStack.push(discoveryGroupId);
-      try {
-        await body(); // Run in discovery mode to find all fields
-      } catch (e) {
-        debugLogger.log('DISCOVERY_ERROR', { groupId: discoveryGroupId, error: e });
-        // Ignore errors in discovery mode
-      } finally {
-        // Remove from stack after discovery
-        groupStack.pop();
-      }
-
-      isDiscoveryMode = false;
-      const discoveredFieldsForGroup = discoveredFields.get(discoveryGroupId);
-      debugLogger.log('DISCOVERY_END', { groupId: discoveryGroupId, fields: discoveredFieldsForGroup });
+      await runStaticGroupDiscovery(opts, body);
     }
 
     await engine.step("group", opts, async () => undefined);
@@ -414,6 +428,7 @@ export function createRuntime(ui: UI) {
       });
     };
   }
+
 
   const runtime = { ask, group, text, confirm, BACK, ...pluginPrompts };
 
