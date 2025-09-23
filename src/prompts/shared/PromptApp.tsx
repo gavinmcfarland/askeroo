@@ -97,9 +97,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					});
 
 					// For fields in static groups, track them immediately in the static fields store
-					console.log("Field request - groupName:", request.groupName, "staticGroupsRef:", Array.from(staticGroupsRef.current));
 					if (request.groupName && staticGroupsRef.current.has(request.groupName)) {
-						console.log("Adding field to static group:", request.groupName, request.message);
 						setStaticGroupFields((prev) => {
 							const newMap = new Map(prev);
 							const groupFields = newMap.get(request.groupName!) || [];
@@ -162,7 +160,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					// Track static groups (non-default behavior)
 					if (request.flow === "static") {
-						console.log("Marking group as static:", request.id, "discoveredFields:", request.discoveredFields);
 						staticGroupsRef.current.add(request.id);
 						setStaticGroups((prev) =>
 							new Set(prev).add(request.id)
@@ -558,12 +555,39 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			: groupFieldHistory.get(currentGroup) || [];
 
 		if (isStaticGroup) {
-			console.log("Rendering static group fields:", currentGroup, groupFields);
 			// For static groups, render all fields (completed and future) at once
 			return groupFields
 				.map((field) => {
-					const fieldValue = fieldValues[field.id];
-					const isCompleted = completedFields.has(field.id);
+					// For static groups, find the stored value by matching message and type
+					// since field IDs might differ between discovery and execution
+					let fieldValue = fieldValues[field.id];
+					let isCompleted = fieldValue !== undefined;
+
+					// If not found by direct ID match, search by message and type
+					if (!isCompleted) {
+						for (const [storedId, storedValue] of Object.entries(fieldValues)) {
+							// Check if this stored value belongs to a field with matching message and type in our group
+							const matchingEntry = rootPromptOrder.find(entry =>
+								entry.id === storedId &&
+								entry.groupName === currentGroup
+							);
+							if (matchingEntry) {
+								// Find the field info in group history to check message/type
+								const allGroupFields = groupFieldHistory.get(currentGroup) || [];
+								const matchingField = allGroupFields.find(f =>
+									f.id === storedId &&
+									f.message === field.message &&
+									f.type === field.type
+								);
+								if (matchingField) {
+									fieldValue = storedValue;
+									isCompleted = true;
+									break;
+								}
+							}
+						}
+					}
+
 
 					// For static groups, match fields based on message and type since IDs might differ between discovery and execution
 					const isActive = effectivePrompt ?
@@ -572,36 +596,35 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						: false;
 
 					if (field.type === "text") {
-						const initialValue = visitedPrompts.has(field.id)
-							? fieldValues[field.id] ?? ""
-							: "";
+						// For static groups, always use stored field value if it exists
+						const initialValue = fieldValues[field.id] ?? "";
+
 
 						return (
 							<TextField
-								key={`static-${field.id}`}
+								key={`static-${field.message}-${field.type}`}
 								message={field.message}
 								initial={initialValue}
 								completed={isCompleted && !isActive}
 								completedValue={isCompleted ? fieldValue : undefined}
-								disabled={!isActive}
+								disabled={!isActive && !isCompleted}
 								onSubmit={isActive ? handleSubmit : () => {}}
 								onBack={isActive ? handleBack : undefined}
 								allowBack={isActive}
 							/>
 						);
 					} else {
-						const initialValue = visitedPrompts.has(field.id)
-							? fieldValues[field.id] ?? false
-							: false;
+						// For static groups, always use stored field value if it exists
+						const initialValue = fieldValues[field.id] ?? false;
 
 						return (
 							<ConfirmField
-								key={`static-${field.id}`}
+								key={`static-${field.message}-${field.type}`}
 								message={field.message}
 								initial={initialValue}
 								completed={isCompleted && !isActive}
 								completedValue={isCompleted ? fieldValue : undefined}
-								disabled={!isActive}
+								disabled={!isActive && !isCompleted}
 								onSubmit={isActive ? handleSubmit : () => {}}
 								onBack={isActive ? handleBack : undefined}
 								allowBack={isActive}

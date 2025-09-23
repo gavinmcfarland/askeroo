@@ -27,12 +27,20 @@ export function TextField({
 	const [value, setValue] = useState(initial);
 	const [submitted, setSubmitted] = useState(false);
 
+
 	// Reset submitted state when field becomes active again (not disabled)
 	useEffect(() => {
 		if (!disabled && submitted) {
 			setSubmitted(false);
 		}
 	}, [disabled, submitted]);
+
+	// Separately handle value restoration when initial changes
+	useEffect(() => {
+		if (!submitted && !disabled) {
+			setValue(initial);
+		}
+	}, [initial, submitted, disabled]);
 
 	useInput((input, key) => {
 		if (submitted || completed || disabled) return;

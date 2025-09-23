@@ -34,6 +34,13 @@ export function ConfirmField({
 		}
 	}, [disabled, submitted]);
 
+	// Separately handle value restoration when initial changes
+	useEffect(() => {
+		if (!submitted && !disabled) {
+			setValue(initial);
+		}
+	}, [initial, submitted, disabled]);
+
 	useInput((input, key) => {
 		if (submitted || completed || disabled) return;
 
