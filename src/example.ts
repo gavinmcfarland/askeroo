@@ -3,26 +3,10 @@
 import { ask, group, text, confirm } from "./index.js";
 
 const flow = async () => {
-	let test = await text({ message: "Normal" });
-
-	let test2 = await text({ message: "Normal 2" });
+	const name = await text({ message: "Single" });
 
 	// Another group without message but with phase flow
 	// No ID needed - automatically generates stable: group_0_3_phase
-	const hiddenPhase = await group({ flow: "phase" }, async () => {
-		const step1 = await text({ message: "Step 1" });
-		const step2 = await text({ message: "Step 2" });
-		return { step1, step2 };
-	});
-
-	const stackedForm = await group({ message: "Stacked" }, async () => {
-		const name = await text({ message: "Name" });
-		const email = await text({ message: "Email" });
-		const phone = await text({ message: "Phone" });
-		const address = await text({ message: "Address" });
-		return { name, email };
-	});
-
 	const phasedForm = await group(
 		{ message: "Phased", flow: "phase" },
 		async () => {
@@ -30,9 +14,17 @@ const flow = async () => {
 			const email = await text({ message: "Email" });
 			const phone = await text({ message: "Phone" });
 			const address = await text({ message: "Address" });
-			return { name, email };
+			return { name, email, phone, address };
 		}
 	);
+
+	const stackedForm = await group({ message: "Stacked" }, async () => {
+		const name = await text({ message: "Name" });
+		const email = await text({ message: "Email" });
+		const phone = await text({ message: "Phone" });
+		const address = await text({ message: "Address" });
+		return { name, email, phone, address };
+	});
 
 	// Static group - shows all prompts at once, only one active
 	const staticForm = await group(
@@ -70,12 +62,10 @@ const flow = async () => {
 	});
 
 	return {
-		test,
-		test2,
+		name,
 		stackedForm,
 		phasedForm,
 		staticForm,
-		hiddenPhase,
 		hiddenGroup,
 		prefs,
 	};
