@@ -551,29 +551,30 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					// Get initial value based on field type
 					const getInitialValue = () => {
-						if (field.type === 'multi') {
-							return isCompleted ? fieldValue || [] : [];
+						// Return the stored value if completed, otherwise use appropriate default
+						if (isCompleted) {
+							return fieldValue;
 						}
-						return fieldValue ?? (field.type === 'confirm' ? false : "");
+						// Use sensible defaults for common types, but allow plugins to override
+						if (fieldValue !== undefined) {
+							return fieldValue;
+						}
+						// Type-specific defaults
+						if (field.type === 'multi') {
+							return [];
+						}
+						if (field.type === 'confirm') {
+							return false;
+						}
+						return "";
 					};
 
-					// Get type-specific properties from effectivePrompt when this field is active
+					// Get all properties from effectivePrompt when this field is active
 					const typeSpecificProps: any = {};
-					if (isActive && effectivePrompt) {
-						if (field.type === "customText" && effectivePrompt.type === "customText") {
-							typeSpecificProps.placeholder = effectivePrompt.placeholder;
-							typeSpecificProps.prefix = effectivePrompt.prefix;
-						} else if (field.type === "validatedText" && effectivePrompt.type === "validatedText") {
-							typeSpecificProps.validate = effectivePrompt.validate;
-							typeSpecificProps.transform = effectivePrompt.transform;
-						} else if (field.type === "multi" && effectivePrompt.type === "multi") {
-							typeSpecificProps.options = effectivePrompt.options || [];
-						}
-					}
-
-					// For multi fields, always provide options (even when not active) to prevent errors
-					if (field.type === "multi" && !typeSpecificProps.options) {
-						typeSpecificProps.options = [];
+					if (isActive && effectivePrompt && field.type === effectivePrompt.type) {
+						// Pass all properties from the effective prompt except the base ones
+						const { type, id, message, groupName, ...additionalProps } = effectivePrompt;
+						Object.assign(typeSpecificProps, additionalProps);
 					}
 
 					return renderFieldComponent(field, {
@@ -605,8 +606,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						completedValue: fieldValue,
 						onSubmit: () => {},
 						allowBack: false,
-						// For multi type, provide empty arrays
-						...(field.type === 'multi' ? { options: [], initial: [] } : {})
+						// Allow plugins to handle their own defaults
 					});
 				});
 		}
@@ -638,8 +638,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						completedValue: fieldValue,
 						onSubmit: () => {},
 						allowBack: false,
-						// For multi type, provide empty arrays
-						...(fieldInfo.type === 'multi' ? { options: [], initial: [] } : {})
+						// Allow plugins to handle their own defaults
 					});
 				} else if (entry.type === "group" && completedGroups.has(entry.id) && entry.id !== currentGroup) {
 					// Render completed group (but not if it's the current group being edited)
@@ -750,12 +749,35 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			// Get initial value based on prompt type
 			const getInitialValue = () => {
 				if (!visitedPrompts.has(effectivePrompt.id)) {
-					// For custom prompt types, check if it's multi-select
-					return effectivePrompt.type === 'multi' ? [] : "";
+					// Use initial value from prompt or sensible default based on type
+					if (effectivePrompt.initial !== undefined) {
+						return effectivePrompt.initial;
+					}
+					// Return appropriate default based on field type
+					if (effectivePrompt.type === 'multi') {
+						return [];
+					}
+					if (effectivePrompt.type === 'confirm') {
+						return false;
+					}
+					return "";
 				}
 				const storedValue = fieldValues[effectivePrompt.id];
-				// Return stored value or appropriate default
-				return storedValue ?? (effectivePrompt.type === 'multi' ? [] : "");
+				// Return stored value or prompt's initial value with type-specific fallback
+				if (storedValue !== undefined) {
+					return storedValue;
+				}
+				if (effectivePrompt.initial !== undefined) {
+					return effectivePrompt.initial;
+				}
+				// Type-specific defaults
+				if (effectivePrompt.type === 'multi') {
+					return [];
+				}
+				if (effectivePrompt.type === 'confirm') {
+					return false;
+				}
+				return "";
 			};
 
 			field = (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Text, Box, useInput } from "ink";
 
 type BackToken = { __back: true };
@@ -49,19 +49,34 @@ export function MultiField({
 		}
 	}, [disabled, submitted]);
 
-	// Update selected indices when initial values change
+	// Memoize the initial values to prevent unnecessary re-renders
+	const stableInitial = useMemo(() => {
+		return [...initial];
+	}, [initial.join(',')]);
+
+	// Track previous initial values to detect actual changes
+	const prevInitialRef = useRef<string[]>([]);
+
+	// Update selected indices when initial values actually change
 	useEffect(() => {
 		if (!submitted && !disabled) {
-			const indices = new Set<number>();
-			initial.forEach(value => {
-				const index = options.indexOf(value);
-				if (index !== -1) {
-					indices.add(index);
-				}
-			});
-			setSelectedIndices(indices);
+			// Check if initial values actually changed
+			const initialChanged = stableInitial.length !== prevInitialRef.current.length ||
+				stableInitial.some((val, idx) => val !== prevInitialRef.current[idx]);
+
+			if (initialChanged) {
+				const indices = new Set<number>();
+				stableInitial.forEach(value => {
+					const index = options.indexOf(value);
+					if (index !== -1) {
+						indices.add(index);
+					}
+				});
+				setSelectedIndices(indices);
+				prevInitialRef.current = [...stableInitial];
+			}
 		}
-	}, [initial, options, submitted, disabled]);
+	}, [stableInitial, options, submitted, disabled]);
 
 	useInput((input, key) => {
 		if (submitted || completed || disabled) return;

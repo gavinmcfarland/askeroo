@@ -15,7 +15,7 @@ export const customText = createPlugin<CustomTextOptions, string>({
   // The prompt logic - called by the engine
   async prompt(opts: CustomTextOptions, { extendedUI, currentGroup }, id: string) {
     return extendedUI.customText(
-      opts.message,
+      opts.message || '',
       opts.placeholder || '',
       opts.prefix || '→',
       currentGroup,
@@ -23,6 +23,6 @@ export const customText = createPlugin<CustomTextOptions, string>({
     );
   },
 
-  // No uiHandler needed - the UI will be handled by PromptApp components
+  // No uiHandler needed - handled dynamically
   uiHandler: {}
 });

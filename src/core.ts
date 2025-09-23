@@ -1,13 +1,16 @@
 import { debugLogger } from "./debug.js";
 import { globalRegistry, setCurrentRuntime } from "./registry.js";
 
-// Import core plugins to ensure they're registered
+// Import all plugins to ensure they're registered
 import "./plugins/text/index.js";
 import "./plugins/confirm/index.js";
+import "./plugins/custom-text/index.js";
+import "./plugins/multi/index.js";
+import "./plugins/validated-text/index.js";
 
 export type Answers = Record<string, unknown>;
 
-type PromptKind = "text" | "confirm" | "group" | string;
+type PromptKind = string; // Generic type that works with any plugin
 type PromptOpts = { message: string; id?: string };
 type GroupOpts = { message?: string; flow?: "phase" | "static" };
 
