@@ -12,7 +12,8 @@
       "Bash(gtimeout:*)",
       "Bash(npm run:*)",
       "Bash(xargs cat:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": [],
     "ask": []

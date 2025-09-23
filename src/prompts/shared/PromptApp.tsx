@@ -284,10 +284,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							return newMap;
 						});
 
-						// Force re-render when any field changes to reveal conditional fields
-						// This allows any field to potentially trigger conditional field visibility
-						// Force a re-render to trigger conditional field visibility checks
-						// This will cause shouldDisplayField to re-evaluate with the new field value
+						// Trigger re-render when field values change in static groups
+						// With the enhanced discovery, all conditional fields are already discovered
+						// so this just updates the UI state
 						setStaticGroupFields((prev) => new Map(prev));
 					}
 

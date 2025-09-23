@@ -99,6 +99,29 @@ export const ui = {
     appInstance.currentGroup = undefined;
   },
 
+  // Reactive discovery methods
+  async onFieldChange(fieldId: string, value: unknown, groupId: string): Promise<void> {
+    debugLogger.log('UI_FIELD_CHANGE', { fieldId, value, groupId });
+    // Trigger re-discovery in the reactive runtime if available
+    if (currentRuntime && typeof currentRuntime.handleFieldValueChange === 'function') {
+      await currentRuntime.handleFieldValueChange(fieldId, value, groupId);
+    }
+  },
+
+  async updateStaticGroupFields(groupId: string, fields: Array<{id: string, message: string, type: string}>): Promise<void> {
+    debugLogger.log('UI_UPDATE_STATIC_GROUP_FIELDS', { groupId, fieldCount: fields.length });
+    // Update the UI to show the new fields
+    const promptFn = await ensureApp();
+    // Re-render the group with updated fields
+    await promptFn({
+      type: 'group',
+      id: groupId,
+      message: groupId,
+      flow: 'static',
+      discoveredFields: fields
+    });
+  },
+
   cleanup(): void {
     if (appInstance.unmount) {
       debugLogger.log('UI_CLEANUP', 'UI cleanup triggered');
@@ -124,3 +147,6 @@ export const ui = {
     return null;
   }
 };
+
+// TODO: Make UI globally available for PromptApp to access re-discovery
+// For now, focusing on core discovery logic

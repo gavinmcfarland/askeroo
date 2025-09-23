@@ -5,7 +5,16 @@ export type Answers = Record<string, unknown>;
 
 type PromptKind = "text" | "confirm" | "group" | string;
 type PromptOpts = { message: string; id?: string };
-type GroupOpts = { message?: string; id?: string; flow?: 'phase' | 'static' };
+type GroupOpts = {
+  message?: string;
+  id?: string;
+  flow?: 'phase' | 'static';
+  discovery?: {
+    mode?: 'upfront' | 'reactive' | 'hybrid';
+    triggers?: string[];
+    debounceMs?: number;
+  };
+};
 
 type UI = {
   text(msg: string, initial?: string, groupContext?: string, id?: string): Promise<string | BackToken>;
@@ -25,7 +34,7 @@ type Engine = {
   BACK: BackToken;
 };
 
-// Generate stable, deterministic ID based on execution context
+// Generate stable, deterministic ID based on content, not execution order
 function generateStableId(kind: PromptKind, message: string, groupStack: string[], stepIndex: number): string {
   const parts: string[] = [kind];
 
@@ -35,13 +44,20 @@ function generateStableId(kind: PromptKind, message: string, groupStack: string[
     parts.push(`group:${currentGroup}`);
   }
 
-  // Add step index to ensure uniqueness within the same group
-  parts.push(`step:${stepIndex}`);
-
-  // Optionally add a hash of the message for additional uniqueness
-  // This helps when fields have similar positions but different messages
+  // Use message hash as primary identifier instead of step index
+  // This ensures the same field gets the same ID regardless of discovery vs execution order
   const messageHash = simpleHash(message);
   parts.push(`msg:${messageHash}`);
+
+  // Add step index only as a fallback for fields with identical messages
+  // This maintains uniqueness while prioritizing content-based stability
+  if (message) {
+    // For fields with messages, the message hash should be sufficient
+    // Don't include step index to avoid discovery/execution order dependencies
+  } else {
+    // Only for fields without messages, fall back to step index
+    parts.push(`step:${stepIndex}`);
+  }
 
   return parts.join('|');
 }
@@ -159,7 +175,9 @@ export function createRuntime(ui: UI) {
       const stepIndex = interactivePrompts.length;
 
       // Generate stable, deterministic ID
-      const id = opts.id ?? generateStableId(kind, opts.message || `${kind}-${stepIndex}`, groupStack, stepIndex);
+      // In discovery mode, use a placeholder step index to ensure consistent IDs
+      const effectiveStepIndex = isDiscoveryMode ? 0 : stepIndex;
+      const id = opts.id ?? generateStableId(kind, opts.message || `${kind}-${effectiveStepIndex}`, groupStack, effectiveStepIndex);
 
       // In discovery mode, just track the field and return current value or placeholder
       if (isDiscoveryMode) {
@@ -175,6 +193,8 @@ export function createRuntime(ui: UI) {
             });
             discoveredFields.set(currentGroupId, fields);
             debugLogger.log('DISCOVERY_FIELD_ADDED', { currentGroupId, fieldCount: fields.length });
+          } else {
+            debugLogger.log('DISCOVERY_FIELD_SKIP', { message: opts.message });
           }
         }
 
@@ -185,17 +205,20 @@ export function createRuntime(ui: UI) {
           return currentValue as T;
         }
 
-        // Use smart placeholders to discover conditional fields
+        // Use current field values during discovery to enable staged discovery
+        // This allows conditional fields to be revealed as conditions are met
         let placeholderValue: any;
         if (kind === 'confirm') {
-          placeholderValue = false;
+          // Use existing boolean value if available, otherwise default to false
+          placeholderValue = (id in answers) ? answers[id] : false;
         } else {
           // For text fields, use existing field values if available
-          // This allows conditional logic to work with any field values
+          // This is key for staged discovery - when a field value changes,
+          // re-running discovery with that value will reveal conditional fields
           if (id in answers) {
             placeholderValue = answers[id];
           } else {
-            // Use empty string as default to allow all fields to be discovered initially
+            // Use empty string as default for initial discovery
             placeholderValue = '';
           }
         }
@@ -259,6 +282,8 @@ export function createRuntime(ui: UI) {
     const nextGroupCount = groupCount + 1;
     const discoveryGroupId = getGroupIdentifier(opts, groupStack, { groupCount: nextGroupCount });
 
+    debugLogger.log('DISCOVERY_START', { groupId: discoveryGroupId, answersCount: Object.keys(answers).length });
+
     isDiscoveryMode = true;
     debugLogger.log('DISCOVERY_START', { groupId: discoveryGroupId, groupStack: [...groupStack] });
 
@@ -266,19 +291,50 @@ export function createRuntime(ui: UI) {
     groupStack.push(discoveryGroupId);
 
     try {
-      // Run discovery multiple times with different field value combinations
-      // to discover all possible conditional fields
-      await body(); // Run in discovery mode to find all fields
+      // Run initial discovery with default values
+      debugLogger.log('DISCOVERY_PASS', { pass: 1, type: 'default' });
+      await body();
 
-      // Run additional discovery passes to find conditional fields
-      // This generic approach doesn't rely on specific field names
+      // Run additional discovery passes with different placeholder values
+      // to explore conditional branches
       const currentFields = discoveredFields.get(discoveryGroupId) || [];
+      debugLogger.log('DISCOVERY_PASS_COMPLETE', { pass: 1, fieldsFound: currentFields.length });
 
-      // Try to run discovery with different placeholder values for text fields
-      // This helps discover conditional branches without hardcoding field names
-      if (currentFields.length > 0) {
-        // Run additional discovery passes with different scenarios
-        await body(); // Second pass might reveal more fields based on discovered values
+      // Find text fields that might be condition fields (for exploring branches)
+      const textFields = currentFields.filter(f => f.type === 'text');
+
+      for (const textField of textFields) {
+        debugLogger.log('DISCOVERY_CONDITIONAL_PASS', { field: textField.message });
+
+        // Try common conditional values to explore different branches
+        const testValues = ['admin', 'user', 'premium', 'basic', 'yes', 'no', 'true', 'false'];
+
+        for (const testValue of testValues) {
+          const fieldsBefore = discoveredFields.get(discoveryGroupId)?.length || 0;
+
+          // Set a test value for this field to explore conditional branches
+          answers[textField.id] = testValue;
+          debugLogger.log('DISCOVERY_TEST_VALUE', { field: textField.message, value: testValue });
+
+          try {
+            await body(); // Run discovery with this test value
+          } catch (e) {
+            // Ignore errors during exploration
+            debugLogger.log('DISCOVERY_TEST_ERROR', { field: textField.message, value: testValue, error: e });
+          }
+
+          const fieldsAfter = discoveredFields.get(discoveryGroupId)?.length || 0;
+          if (fieldsAfter > fieldsBefore) {
+            debugLogger.log('DISCOVERY_NEW_FIELDS', {
+              field: textField.message,
+              value: testValue,
+              newFields: fieldsAfter - fieldsBefore
+            });
+          }
+
+          // Clean up the test value
+          delete answers[textField.id];
+        }
       }
     } catch (e) {
       debugLogger.log('DISCOVERY_ERROR', { groupId: discoveryGroupId, error: e });
@@ -290,7 +346,7 @@ export function createRuntime(ui: UI) {
 
     isDiscoveryMode = false;
     const discoveredFieldsForGroup = discoveredFields.get(discoveryGroupId);
-    debugLogger.log('DISCOVERY_END', { groupId: discoveryGroupId, fields: discoveredFieldsForGroup });
+    debugLogger.log('DISCOVERY_END', { groupId: discoveryGroupId, fieldCount: discoveredFieldsForGroup?.length || 0, fields: discoveredFieldsForGroup });
   }
 
   async function group(opts: GroupOpts, body: () => Promise<any>) {
@@ -482,9 +538,10 @@ export function createRuntime(ui: UI) {
       }
 
       const rediscoveredFields = discoveredFields.get(groupId);
-      debugLogger.log('REDISCOVERY_END', { groupId, fields: rediscoveredFields });
+      debugLogger.log('REDISCOVERY_END', { groupId, fieldCount: rediscoveredFields?.length || 0, fields: rediscoveredFields });
       return rediscoveredFields;
     }
+    debugLogger.log('REDISCOVERY_SKIP', { groupId, reason: 'not_in_correct_state' });
     return discoveredFields.get(groupId);
   }
 

@@ -19,6 +19,7 @@ export const confirm = (...args: any[]) => ensureRuntime().confirm(...args);
 // BACK is just a simple token, doesn't need lazy loading
 export const BACK = { __back: true };
 
-// Export runtime factory and UI
+// Export runtime factories and UI
 export { createRuntime } from './core.js';
+export { createReactiveRuntime } from './reactive-core.js';
 export { ui };
