@@ -588,7 +588,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 		return groupOrder
 			.slice(0, currentGroupIndex >= 0 ? currentGroupIndex : 0)
-			.filter((groupId) => completedGroups.has(groupId))
+			.filter((groupId) => completedGroups.has(groupId) && groupId !== currentGroup)
 			.map((groupId) => {
 				const groupDisplayName = getGroupDisplayName(groupId);
 				if (phaseGroups.has(groupId) || flowGroups.has(groupId)) {
@@ -702,24 +702,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	if (!effectivePrompt) {
 		// Keep a stable shell so layout doesn't jump, but show completed groups and fields
-		// Check if we're in a flow group and should render it
+		// For flow groups, don't render here - let the active prompt path handle it
+		// This prevents double-rendering of flow groups
 		if (currentGroup && flowGroups.has(currentGroup)) {
-			const groupFields = flowGroupFields.get(currentGroup) || [];
-			const activeIndex = activeFlowFieldIndex.get(currentGroup) || 0;
-
+			// Don't render flow groups in the no-prompt state
+			// They will be rendered by the active prompt path
 			return (
 				<RootContainer>
 					{renderCompletedRootFields()}
-					{renderCompletedGroups()}
-					<FlowGroupContainer
-						groupName={getGroupDisplayName(currentGroup)}
-						fields={groupFields}
-						currentActiveIndex={activeIndex}
-						onFieldSubmit={handleSubmit}
-						onNavigateField={handleBack}
-						onBack={handleBack}
-						allowBack={true}
-					/>
 				</RootContainer>
 			);
 		}
@@ -745,7 +735,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		return (
 			<RootContainer>
 				{renderCompletedRootFields()}
-				{renderCompletedGroups()}
 				<FlowGroupContainer
 					groupName={getGroupDisplayName(effectivePrompt.groupName)}
 					fields={groupFields}
@@ -757,6 +746,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				/>
 			</RootContainer>
 		);
+	}
+
+	// If we got here and it's a flow group field, something went wrong - prevent individual field rendering
+	if (effectivePrompt.groupName && flowGroups.has(effectivePrompt.groupName)) {
+		console.warn('Flow group field reached individual field rendering - this should not happen');
+		return null;
 	}
 
 	let field: React.ReactNode;
