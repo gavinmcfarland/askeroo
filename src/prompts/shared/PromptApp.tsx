@@ -484,120 +484,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const effectivePrompt =
 		currentPrompt?.type === "group" ? null : currentPrompt;
 
-	// Render completed root-level fields
-	const renderCompletedRootFields = () => {
-		// Only show root fields that come before the current prompt in the root order
-		const currentPromptIndex = rootPromptOrder.findIndex(
-			(p) => p.id === effectivePrompt?.id
-		);
-		const fieldsToShow =
-			currentPromptIndex >= 0
-				? rootPromptOrder.slice(0, currentPromptIndex)
-				: rootPromptOrder;
-
-		return fieldsToShow
-			.filter(
-				(entry) =>
-					entry.type === "field" &&
-					!entry.groupName &&
-					completedFields.has(entry.id)
-			)
-			.map((entry) => {
-				const fieldInfo = rootFieldHistory.find(
-					(f) => f.id === entry.id
-				);
-				if (!fieldInfo) return null;
-
-				const fieldValue = fieldValues[entry.id];
-
-				return renderFieldComponent(fieldInfo, {
-					key: `completed-root-${entry.id}`,
-					completed: true,
-					completedValue: fieldValue,
-					onSubmit: () => {},
-					allowBack: false,
-					// For multi type, provide empty arrays
-					...(fieldInfo.type === 'multi' ? { options: [], initial: [] } : {})
-				});
-			})
-			.filter(Boolean);
-	};
-
-	// Render completed groups at root level
-	const renderCompletedGroups = () => {
-		const currentGroupIndex = groupOrder.indexOf(currentGroup || "");
-
-		return groupOrder
-			.slice(0, currentGroupIndex >= 0 ? currentGroupIndex : 0)
-			.filter((groupId) => completedGroups.has(groupId))
-			.map((groupId) => {
-				const groupDisplayName = getGroupDisplayName(groupId);
-				if (phaseGroups.has(groupId)) {
-					// For phase groups, show a simple completion indicator
-					// Only show if group has a message, otherwise show fields without group header
-					if (groupDisplayName) {
-						return (
-							<CompletedGroup
-								key={`completed-group-${groupId}`}
-								groupName={groupDisplayName}
-								completedFields={[
-									{
-										id: "phase-completed",
-										message: "Completed",
-										value: "✓",
-										type: "completed",
-									},
-								]}
-							/>
-						);
-					} else {
-						// Phase group without message - just show completion indicator without group header
-						return (
-							<CompletedGroup
-								key={`completed-group-${groupId}`}
-								groupName={null}
-								completedFields={[
-									{
-										id: "phase-completed",
-										message: "Completed",
-										value: "✓",
-										type: "completed",
-									},
-								]}
-							/>
-						);
-					}
-				} else {
-					// For sequential groups, show detailed field completion
-					const groupFields = groupFieldHistory.get(groupId) || [];
-					const completedGroupFields = groupFields
-						.filter((field) => {
-							// Only include fields that are actually completed AND belong to this group
-							// Additional safety check to prevent root-level fields from appearing in groups
-							const belongsToGroup =
-								rootPromptOrder.find((p) => p.id === field.id)
-									?.groupName === groupId;
-							return (
-								completedFields.has(field.id) && belongsToGroup
-							);
-						})
-						.map((field) => ({
-							id: field.id,
-							message: field.message,
-							value: fieldValues[field.id],
-							type: field.type,
-						}));
-
-					return (
-						<CompletedGroup
-							key={`completed-group-${groupId}`}
-							groupName={groupDisplayName} // Only show if there's actually a message
-							completedFields={completedGroupFields}
-						/>
-					);
-				}
-			});
-	};
 
 	// Render completed fields for all groups (sequential by default)
 	const renderCompletedFields = () => {
@@ -714,12 +600,115 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		}
 	};
 
+	// Render completed items in execution order
+	const renderCompletedItemsInOrder = () => {
+		// Only show items that come before the current prompt in the root order
+		const currentPromptIndex = rootPromptOrder.findIndex(
+			(p) => p.id === effectivePrompt?.id
+		);
+		const itemsToShow =
+			currentPromptIndex >= 0
+				? rootPromptOrder.slice(0, currentPromptIndex)
+				: rootPromptOrder;
+
+		return itemsToShow
+			.map((entry) => {
+				if (entry.type === "field" && !entry.groupName && completedFields.has(entry.id)) {
+					// Render completed root-level field
+					const fieldInfo = rootFieldHistory.find((f) => f.id === entry.id);
+					if (!fieldInfo) return null;
+
+					const fieldValue = fieldValues[entry.id];
+
+					return renderFieldComponent(fieldInfo, {
+						key: `completed-root-${entry.id}`,
+						completed: true,
+						completedValue: fieldValue,
+						onSubmit: () => {},
+						allowBack: false,
+						// For multi type, provide empty arrays
+						...(fieldInfo.type === 'multi' ? { options: [], initial: [] } : {})
+					});
+				} else if (entry.type === "group" && completedGroups.has(entry.id)) {
+					// Render completed group
+					const groupId = entry.id;
+					const groupDisplayName = getGroupDisplayName(groupId);
+
+					if (phaseGroups.has(groupId)) {
+						// For phase groups, show a simple completion indicator
+						// Only show if group has a message, otherwise show fields without group header
+						if (groupDisplayName) {
+							return (
+								<CompletedGroup
+									key={`completed-group-${groupId}`}
+									groupName={groupDisplayName}
+									completedFields={[
+										{
+											id: "phase-completed",
+											message: "Completed",
+											value: "✓",
+											type: "completed",
+										},
+									]}
+								/>
+							);
+						} else {
+							// Phase group without message - just show completion indicator without group header
+							return (
+								<CompletedGroup
+									key={`completed-group-${groupId}`}
+									groupName={null}
+									completedFields={[
+										{
+											id: "phase-completed",
+											message: "Completed",
+											value: "✓",
+											type: "completed",
+										},
+									]}
+								/>
+							);
+						}
+					} else {
+						// For sequential groups, show detailed field completion
+						const groupFields = groupFieldHistory.get(groupId) || [];
+						const completedGroupFields = groupFields
+							.filter((field) => {
+								// Only include fields that are actually completed AND belong to this group
+								// Additional safety check to prevent root-level fields from appearing in groups
+								const belongsToGroup =
+									rootPromptOrder.find((p) => p.id === field.id)
+										?.groupName === groupId;
+								return (
+									completedFields.has(field.id) && belongsToGroup
+								);
+							})
+							.map((field) => ({
+								id: field.id,
+								message: field.message,
+								value: fieldValues[field.id],
+								type: field.type,
+							}));
+
+						return (
+							<CompletedGroup
+								key={`completed-group-${groupId}`}
+								groupName={groupDisplayName} // Only show if there's actually a message
+								completedFields={completedGroupFields}
+							/>
+						);
+					}
+				}
+				return null;
+			})
+			.filter(Boolean);
+	};
+
 	if (!effectivePrompt) {
 		// Keep a stable shell so layout doesn't jump, but show completed groups and fields
 		return (
 			<RootContainer>
-				{renderCompletedRootFields()}
-				{renderCompletedGroups()}
+				{renderCompletedItemsInOrder()}
 				<GroupContainer groupName={getGroupDisplayName(currentGroup)}>
 					{renderCompletedFields()}
 				</GroupContainer>
@@ -842,8 +831,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	return (
 		<RootContainer>
-			{renderCompletedRootFields()}
-			{renderCompletedGroups()}
+			{renderCompletedItemsInOrder()}
 			<GroupContainer key="group-container" groupName={getGroupDisplayName(currentGroup)}>
 				{renderCompletedFields()}
 				{field}

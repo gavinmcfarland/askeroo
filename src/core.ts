@@ -269,6 +269,8 @@ export function createRuntime(ui: UI) {
     try {
       return await body();
     } finally {
+      // Pop the group from the stack when the group body completes
+      groupStack.pop();
       extendedUI.clearGroup?.();
     }
   }
