@@ -54,7 +54,16 @@ const flow = async () => {
 		return { role, news };
 	});
 
-	return { profile, hiddenGroup, prefs, hiddenPhase };
+	// Static group example - shows all fields at once
+	const staticForm = await group({ message: "User Information", flow: "static" }, async () => {
+		const name = await text({ message: "Name" });
+		const email = await text({ message: "Email" });
+		const phone = await text({ message: "Phone" });
+		const address = await text({ message: "Address" });
+		return { name, email, phone, address };
+	});
+
+	return { profile, hiddenGroup, prefs, hiddenPhase, staticForm };
 };
 
 (async () => {

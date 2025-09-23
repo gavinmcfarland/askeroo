@@ -4,12 +4,12 @@ export type Answers = Record<string, unknown>;
 
 type PromptKind = "text" | "confirm" | "group";
 type PromptOpts = { message: string; id?: string };
-type GroupOpts = { message?: string; id?: string; flow?: 'phase' };
+type GroupOpts = { message?: string; id?: string; flow?: 'phase' | 'static' };
 
 type UI = {
   text(msg: string, initial?: string, groupContext?: string, id?: string): Promise<string | BackToken>;
   confirm(msg: string, initial?: boolean, groupContext?: string, id?: string): Promise<boolean | BackToken>;
-  showGroup(label: string | undefined, flow?: 'phase', id?: string): Promise<void> | void;
+  showGroup(label: string | undefined, flow?: 'phase' | 'static', id?: string, staticFields?: Array<{ id: string; message: string; kind: PromptKind; opts: PromptOpts }>): Promise<void> | void;
   clearGroup?(): void;
   cleanup?(): void;
 };
@@ -91,6 +91,8 @@ export function createRuntime(ui: UI) {
   let groupStack: string[] = []; // Track current group nesting
   let lastProcessedGroups: Set<string> = new Set(); // Track which groups were already processed
   let phaseGroups: Map<string, 'phase'> = new Map(); // Track groups with phase flow
+  let staticGroups: Map<string, 'static'> = new Map(); // Track groups with static flow
+  let staticGroupFields: Map<string, Array<{ id: string; message: string; kind: PromptKind; opts: PromptOpts }>> = new Map(); // Track discovered fields for static groups
   let groupCount = 0; // Track total number of groups encountered for stable ID generation
 
 
@@ -113,6 +115,11 @@ export function createRuntime(ui: UI) {
           phaseGroups.set(groupId, 'phase');
         }
 
+        // Track static groups (pre-discover fields)
+        if (groupOpts.flow === 'static') {
+          staticGroups.set(groupId, 'static');
+        }
+
         if (isReplaying === "smart") {
           // Smart replay: show the target group and any groups that come after it
           const isTargetOrAfter = groupId === targetGroup ||
@@ -126,7 +133,8 @@ export function createRuntime(ui: UI) {
         // Only call askFn (which creates UI prompts) if we should show the group
         if (shouldShowGroup) {
           debugLogger.log('GROUP_SHOW', { groupId, groupMessage: groupOpts.message, flow: groupOpts.flow, shouldShowGroup });
-          await ui.showGroup?.(groupOpts.message, groupOpts.flow, groupId);
+          const staticFields = groupOpts.flow === 'static' ? staticGroupFields.get(groupId) : undefined;
+          await ui.showGroup?.(groupOpts.message, groupOpts.flow, groupId, staticFields);
           lastProcessedGroups.add(groupId);
           // Call askFn to create the interactive prompt
           await askFn(generateStableId("group", groupId, groupStack, 0));
@@ -195,8 +203,99 @@ export function createRuntime(ui: UI) {
     return typeof x === "object" && x !== null && (x as any).__back === true;
   }
 
+  // Field discovery for static groups
+  async function discoverStaticGroupFields(groupId: string, body: () => Promise<any>) {
+    const discoveredFields: Array<{ id: string; message: string; kind: PromptKind; opts: PromptOpts }> = [];
+    const fieldMessageIds = new Set<string>(); // Track unique field messages to avoid duplicates
+
+    // Save current state
+    const originalAsking = asking;
+    const originalGroupStack = [...groupStack];
+
+    // Set up discovery mode
+    asking = true;
+    groupStack = [...groupStack, groupId];
+
+    // Override engine.step to capture field definitions during discovery
+    const originalStep = engine.step;
+
+    // Create discovery function that tracks all possible paths
+    const runDiscovery = async (mockValues: Record<string, any> = {}) => {
+      let fieldIndex = 0; // Reset field index for each discovery run
+
+      engine.step = async function<T>(kind: PromptKind, opts: PromptOpts | GroupOpts, askFn: (id: string) => Promise<T | BackToken>): Promise<T> {
+        if (kind !== "group") {
+          const promptOpts = opts as PromptOpts;
+
+          // Create a stable key based on message and kind to identify unique fields
+          const fieldKey = `${kind}:${promptOpts.message}`;
+
+          // Only add truly unique fields (by message + kind)
+          if (!fieldMessageIds.has(fieldKey)) {
+            const id = opts.id ?? generateStableId(kind, promptOpts.message, groupStack, fieldIndex);
+            discoveredFields.push({ id, message: promptOpts.message, kind, opts: promptOpts });
+            fieldMessageIds.add(fieldKey);
+            fieldIndex++;
+          }
+
+          // Return mock values or predefined values for this discovery path
+          if (promptOpts.message in mockValues) {
+            return mockValues[promptOpts.message] as T;
+          }
+
+          // Try to return relevant mock values based on field message
+          if (kind === "text") {
+            const message = promptOpts.message.toLowerCase();
+            if (message.includes("role")) {
+              return (mockValues["__role"] || "") as T;
+            }
+            return "" as T;
+          }
+          if (kind === "confirm") {
+            return (mockValues["__confirm"] || false) as T;
+          }
+        }
+        return undefined as T;
+      };
+
+      try {
+        await body();
+      } catch (error) {
+        // Handle conditional logic gracefully - some paths may throw
+        debugLogger.log('STATIC_GROUP_DISCOVERY_PATH_ERROR', { groupId, mockValues, error: error instanceof Error ? error.message : String(error) });
+      }
+    };
+
+    try {
+      // Run discovery with different mock values to explore conditional paths
+      await runDiscovery({}); // Default path
+      await runDiscovery({ "__role": "admin" }); // Admin path
+      await runDiscovery({ "__role": "user" }); // User path
+      await runDiscovery({ "__confirm": true }); // Try with true for confirm fields
+      await runDiscovery({ "__role": "admin", "__confirm": true }); // Combined paths
+    } finally {
+      // Restore original state
+      engine.step = originalStep;
+      asking = originalAsking;
+      groupStack = originalGroupStack;
+    }
+
+    // Store discovered fields
+    staticGroupFields.set(groupId, discoveredFields);
+    debugLogger.log('STATIC_GROUP_DISCOVERY', { groupId, fieldsCount: discoveredFields.length, fields: discoveredFields.map(f => f.message) });
+  }
+
   async function group(opts: GroupOpts, body: () => Promise<any>) {
     if (!asking) throw new Error("group() must be called inside ask()");
+
+    const groupId = getGroupIdentifier(opts, groupStack, { groupCount: groupCount + 1 });
+
+    // For static groups, pre-discover all fields only if not already discovered
+    if (opts.flow === 'static' && !staticGroupFields.has(groupId)) {
+      debugLogger.log('STATIC_GROUP_PREDISCOVERY', { groupId });
+      await discoverStaticGroupFields(groupId, body);
+    }
+
     await engine.step("group", opts, async () => undefined);
     try {
       return await body();

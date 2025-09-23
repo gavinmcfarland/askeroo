@@ -4,6 +4,7 @@ import { ConfirmField } from "../confirm/ConfirmField.js";
 import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { CompletedGroup } from "../group/CompletedGroup.js";
+import { StaticGroupContainer } from "../group/StaticGroupContainer.js";
 
 type PromptRequest =
 	| {
@@ -20,7 +21,7 @@ type PromptRequest =
 			initial?: boolean;
 			groupName?: string;
 	  }
-	| { type: "group"; id: string; message?: string; flow?: "phase" };
+	| { type: "group"; id: string; message?: string; flow?: "phase" | "static"; staticFields?: Array<{ id: string; message: string; kind: string; opts: any }> };
 
 interface PromptAppProps {
 	onReady: (promptFn: (request: PromptRequest) => Promise<any>) => void;
@@ -42,6 +43,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		new Set()
 	);
 	const [phaseGroups, setPhaseGroups] = useState<Set<string>>(new Set());
+	const [staticGroups, setStaticGroups] = useState<Set<string>>(new Set());
+	const [staticGroupFields, setStaticGroupFields] = useState<Map<string, Array<{ id: string; message: string; kind: string; opts: any }>>>(new Map());
 	const [groupFieldHistory, setGroupFieldHistory] = useState<
 		Map<string, Array<{ id: string; message: string; type: string }>>
 	>(new Map());
@@ -133,6 +136,22 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							new Set(prev).add(request.id)
 						);
 					}
+
+					// Track static groups
+					if (request.flow === "static") {
+						setStaticGroups((prev) =>
+							new Set(prev).add(request.id)
+						);
+
+						// Store static group fields
+						if (request.staticFields) {
+							setStaticGroupFields((prev) => {
+								const newMap = new Map(prev);
+								newMap.set(request.id, request.staticFields!);
+								return newMap;
+							});
+						}
+					}
 				}
 			});
 		};
@@ -157,9 +176,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				);
 
 				if (currentPrompt.groupName) {
-					// For grouped fields, track in group history (unless it's a phase group)
+					// For grouped fields, track in group history (unless it's a phase group or static group)
 					// Double-check that this field actually belongs to a group
-					if (!phaseGroups.has(currentPrompt.groupName)) {
+					if (!phaseGroups.has(currentPrompt.groupName) && !staticGroups.has(currentPrompt.groupName)) {
 						setGroupFieldHistory((prev) => {
 							const newMap = new Map(prev);
 							const groupFields =
@@ -501,7 +520,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	// Render completed fields for all groups (sequential by default)
 	const renderCompletedFields = () => {
-		if (!currentGroup || phaseGroups.has(currentGroup)) {
+		if (!currentGroup || phaseGroups.has(currentGroup) || staticGroups.has(currentGroup)) {
 			return null;
 		}
 
@@ -541,12 +560,89 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			});
 	};
 
+	// Render static group fields
+	const renderStaticGroupFields = () => {
+		if (!currentGroup || !staticGroups.has(currentGroup)) {
+			return null;
+		}
+
+		const groupFields = staticGroupFields.get(currentGroup) || [];
+
+		// For conditional field visibility, we need to determine which fields should be visible
+		// based on the current field values and completed fields
+		const getVisibleFields = () => {
+			// Get current field values including the active prompt
+			const currentValues = { ...fieldValues };
+			if (effectivePrompt?.id && currentValues[effectivePrompt.id] === undefined) {
+				// Include the current field in visibility calculation if it has a value
+				const currentField = groupFields.find(f => f.id === effectivePrompt.id);
+				if (currentField && visitedPrompts.has(effectivePrompt.id)) {
+					currentValues[effectivePrompt.id] = fieldValues[effectivePrompt.id];
+				}
+			}
+
+			// For now, show all discovered fields - in a more sophisticated implementation,
+			// we would re-run the group body with current values to determine visibility
+			// But this provides the basic static group functionality
+			return groupFields;
+		};
+
+		const visibleFields = getVisibleFields();
+
+		// Find the index of the current active field
+		const activeFieldIndex = effectivePrompt?.id
+			? visibleFields.findIndex(field => field.id === effectivePrompt.id)
+			: -1;
+
+		// Show all discovered fields with appropriate states
+		const staticFieldInfos = visibleFields.map((field, index) => {
+			// For static groups, match fields by message + type since IDs might differ between discovery and execution
+			const matchingCompletedField = Array.from(completedFields).find(completedId => {
+				// Try exact ID match first
+				if (completedId === field.id) return true;
+
+				// Fallback: find a completed field with same message in this group
+				const completedFieldData = rootPromptOrder.find(p => p.id === completedId);
+				return completedFieldData?.groupName === currentGroup &&
+				       rootFieldHistory.some(h => h.id === completedId && h.message === field.message);
+			});
+
+			const matchingActiveField = effectivePrompt?.message === field.message &&
+			                           effectivePrompt?.groupName === currentGroup;
+
+			const isCompleted = !!matchingCompletedField;
+			const isActive = matchingActiveField;
+			const isDisabled = !isCompleted && !isActive;
+
+			// Get the actual field value using the matching completed field ID or effective prompt ID
+			const valueFieldId = matchingCompletedField || (isActive ? effectivePrompt?.id : field.id);
+			const fieldValue = valueFieldId ? fieldValues[valueFieldId] : undefined;
+
+			return {
+				id: field.id,
+				message: field.message,
+				type: field.kind,
+				state: isCompleted ? "completed" as const : isActive ? "active" as const : "disabled" as const,
+				value: fieldValue
+			};
+		});
+
+		return (
+			<StaticGroupContainer
+				groupName={getGroupDisplayName(currentGroup)}
+				fields={staticFieldInfos}
+				currentFieldId={effectivePrompt?.id}
+			/>
+		);
+	};
+
 	if (!effectivePrompt) {
 		// Keep a stable shell so layout doesn't jump, but show completed groups and fields
 		return (
 			<RootContainer>
 				{renderCompletedRootFields()}
 				{renderCompletedGroups()}
+				{renderStaticGroupFields()}
 				<GroupContainer groupName={getGroupDisplayName(currentGroup)}>
 					{renderCompletedFields()}
 				</GroupContainer>
@@ -558,13 +654,18 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	switch (effectivePrompt.type) {
 		case "text": {
-			// In all groups (sequential by default), allow going back even on the first field if there are completed fields
+			// In all groups (sequential and static), allow going back even on the first field if there are completed fields
 			const isSequentialGroup = !!(
 				effectivePrompt.groupName &&
-				!phaseGroups.has(effectivePrompt.groupName)
+				!phaseGroups.has(effectivePrompt.groupName) &&
+				!staticGroups.has(effectivePrompt.groupName)
+			);
+			const isStaticGroup = !!(
+				effectivePrompt.groupName &&
+				staticGroups.has(effectivePrompt.groupName)
 			);
 			const hasCompletedFields =
-				isSequentialGroup && completedFields.size > 0;
+				(isSequentialGroup || isStaticGroup) && completedFields.size > 0;
 			const allowBack =
 				effectivePrompt.id !== firstFieldIdRef.current ||
 				hasCompletedFields;
@@ -587,13 +688,18 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		}
 
 		case "confirm": {
-			// In all groups (sequential by default), allow going back even on the first field if there are completed fields
+			// In all groups (sequential and static), allow going back even on the first field if there are completed fields
 			const isSequentialGroup = !!(
 				effectivePrompt.groupName &&
-				!phaseGroups.has(effectivePrompt.groupName)
+				!phaseGroups.has(effectivePrompt.groupName) &&
+				!staticGroups.has(effectivePrompt.groupName)
+			);
+			const isStaticGroup = !!(
+				effectivePrompt.groupName &&
+				staticGroups.has(effectivePrompt.groupName)
 			);
 			const hasCompletedFields =
-				isSequentialGroup && completedFields.size > 0;
+				(isSequentialGroup || isStaticGroup) && completedFields.size > 0;
 			const allowBack =
 				effectivePrompt.id !== firstFieldIdRef.current ||
 				hasCompletedFields;
@@ -620,6 +726,22 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			return (
 				<GroupContainer groupName={getGroupDisplayName(currentGroup)}>{null}</GroupContainer>
 			);
+	}
+
+	// Check if we're in a static group
+	const isStaticGroup = currentGroup && staticGroups.has(currentGroup);
+
+	if (isStaticGroup) {
+		// For static groups, render the static container (which includes the active field display)
+		// and the interactive field below it
+		return (
+			<RootContainer>
+				{renderCompletedRootFields()}
+				{renderCompletedGroups()}
+				{renderStaticGroupFields()}
+				{field}
+			</RootContainer>
+		);
 	}
 
 	return (

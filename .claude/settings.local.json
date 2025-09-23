@@ -10,7 +10,8 @@
       "Bash(find:*)",
       "Bash(timeout:*)",
       "Bash(gtimeout:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(npm start)"
     ],
     "deny": [],
     "ask": []
