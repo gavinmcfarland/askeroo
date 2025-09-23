@@ -29,7 +29,7 @@ const flow = async () => {
 				return { role, code, email };
 			}
 			const news = await confirm({ message: "Subscribe to newsletter?" });
-			return { role, news };
+			return { name, role, news };
 		}
 	);
 
