@@ -30,10 +30,10 @@ const flow = async () => {
 	// });
 
 	// // Example of custom multi-select prompt plugin
-	// const colors = await multi({
-	// 	message: "Select your favorite colors",
-	// 	options: ["red", "green", "blue", "yellow", "purple"],
-	// });
+	const colors = await multi({
+		message: "Select your favorite colors",
+		options: ["red", "green", "blue", "yellow", "purple"],
+	});
 
 	// Another group without message but with phase flow
 	// No ID needed - automatically generates stable: group_0_3_phase

@@ -510,32 +510,15 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 				const fieldValue = fieldValues[entry.id];
 
-				// Only render built-in components for now
-				if (fieldInfo.type === "text") {
-					return (
-						<TextField
-							key={`completed-root-${entry.id}`}
-							message={fieldInfo.message}
-							completed={true}
-							completedValue={fieldValue}
-							onSubmit={() => {}}
-							allowBack={false}
-						/>
-					);
-				} else if (fieldInfo.type === "confirm") {
-					return (
-						<ConfirmField
-							key={`completed-root-${entry.id}`}
-							message={fieldInfo.message}
-							completed={true}
-							completedValue={fieldValue}
-							onSubmit={() => {}}
-							allowBack={false}
-						/>
-					);
-				}
-				// Skip custom prompts for now
-				return null;
+				return renderFieldComponent(fieldInfo, {
+					key: `completed-root-${entry.id}`,
+					completed: true,
+					completedValue: fieldValue,
+					onSubmit: () => {},
+					allowBack: false,
+					// For multi type, provide empty arrays
+					...(fieldInfo.type === 'multi' ? { options: [], initial: [] } : {})
+				});
 			})
 			.filter(Boolean);
 	};
