@@ -12,7 +12,7 @@ interface TextFieldProps {
 	completed?: boolean;
 	completedValue?: string;
 	disabled?: boolean;
-	flow?: "phase" | "static";
+	flow?: "phased" | "static";
 }
 
 export function TextField({

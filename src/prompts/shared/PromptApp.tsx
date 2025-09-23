@@ -10,7 +10,7 @@ type PromptRequest = {
 	id: string;
 	message?: string; // Optional for group prompts
 	groupName?: string; // Only present for field prompts
-	flow?: "phase" | "static"; // Only present for group prompts
+	flow?: "phased" | "static"; // Only present for group prompts
 	discoveredFields?: Array<{id: string, message: string, type: string}>; // Only present for group prompts
 	[key: string]: any; // Allow any additional properties for plugin-specific options
 };
@@ -164,8 +164,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					// Group prompts update the group (needed for initial display and cross-group nav)
 					setCurrentGroup(request.id); // Use ID as the stable identifier
 
-					// Track phase groups (non-default behavior)
-					if (request.flow === "phase") {
+					// Track phased groups (non-default behavior)
+					if (request.flow === "phased") {
 						setPhaseGroups((prev) =>
 							new Set(prev).add(request.id)
 						);
@@ -607,7 +607,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						completedValue: fieldValue,
 						onSubmit: () => {},
 						allowBack: false,
-						flow: phaseGroups.has(currentGroup!) ? "phase" : undefined,
+						flow: phaseGroups.has(currentGroup!) ? "phased" : undefined,
 						// Allow plugins to handle their own defaults
 					});
 				});
@@ -784,7 +784,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			};
 
 			// Determine flow type based on current group
-			const flowType = currentGroup && phaseGroups.has(currentGroup) ? "phase" :
+			const flowType = currentGroup && phaseGroups.has(currentGroup) ? "phased" :
 							currentGroup && staticGroups.has(currentGroup) ? "static" :
 							undefined;
 

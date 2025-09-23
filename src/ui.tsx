@@ -12,7 +12,7 @@ type PromptRequest = {
 	id: string;
 	message?: string;
 	groupName?: string;
-	flow?: "phase" | "static";
+	flow?: "phased" | "static";
 	discoveredFields?: Array<{ id: string; message: string; type: string }>;
 	[key: string]: any; // Allow any plugin-specific properties
 };
@@ -61,7 +61,7 @@ function createUI() {
 	const baseUI = {
 		async showGroup(
 			label: string | undefined,
-			flow?: "phase" | "static",
+			flow?: "phased" | "static",
 			id?: string,
 			discoveredFields?: Array<{
 				id: string;

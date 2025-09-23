@@ -2,7 +2,7 @@ import { createRuntime } from "./core.js";
 import { ui } from "./ui.js";
 
 // Type definitions for better IDE support
-export type GroupOpts = { message?: string; flow?: "phase" | "static" };
+export type GroupOpts = { message?: string; flow?: "phased" | "static" };
 export type FlowFunction<T> = (api: {
 	group: (opts: GroupOpts, body: () => Promise<any>) => Promise<any>;
 	BACK: { __back: true };

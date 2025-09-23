@@ -42,10 +42,10 @@ const flow = async () => {
 		options: ["red", "green", "blue", "yellow", "purple"],
 	});
 
-	// Another group without message but with phase flow
-	// No ID needed - automatically generates stable: group_0_3_phase
+	// Another group without message but with phased flow
+	// No ID needed - automatically generates stable: group_0_3_phased
 	const phasedForm = await group(
-		{ message: "Phased", flow: "phase" },
+		{ message: "Phased", flow: "phased" },
 		async () => {
 			const colors = await multi({
 				message: "Select your favorite colors",

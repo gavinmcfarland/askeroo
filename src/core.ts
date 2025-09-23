@@ -12,12 +12,12 @@ export type Answers = Record<string, unknown>;
 
 type PromptKind = string; // Generic type that works with any plugin
 type PromptOpts = { message: string; id?: string };
-type GroupOpts = { message?: string; flow?: "phase" | "static" };
+type GroupOpts = { message?: string; flow?: "phased" | "static" };
 
 type UI = {
 	showGroup(
 		label: string | undefined,
-		flow?: "phase" | "static",
+		flow?: "phased" | "static",
 		id?: string,
 		discoveredFields?: Array<{ id: string; message: string; type: string }>
 	): Promise<void> | void;
@@ -114,7 +114,7 @@ export function createRuntime(ui: UI) {
 
 	let groupStack: string[] = []; // Track current group nesting
 	let lastProcessedGroups: Set<string> = new Set(); // Track which groups were already processed
-	let phaseGroups: Map<string, "phase"> = new Map(); // Track groups with phase flow
+	let phaseGroups: Map<string, "phased"> = new Map(); // Track groups with phased flow
 	let staticGroups: Map<string, "static"> = new Map(); // Track groups with static flow
 	let groupCount = 0; // Track total number of groups encountered for stable ID generation
 	let isDiscoveryMode = false; // Track if we're in discovery mode for static groups
@@ -150,9 +150,9 @@ export function createRuntime(ui: UI) {
 				});
 				let shouldShowGroup: boolean;
 
-				// Track phase groups (non-default behavior)
-				if (groupOpts.flow === "phase") {
-					phaseGroups.set(groupId, "phase");
+				// Track phased groups (non-default behavior)
+				if (groupOpts.flow === "phased") {
+					phaseGroups.set(groupId, "phased");
 				}
 
 				// Track static groups (non-default behavior)
