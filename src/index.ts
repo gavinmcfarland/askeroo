@@ -5,10 +5,8 @@ import { ui } from "./ui.js";
 export type GroupOpts = { message?: string; flow?: "phase" | "static" };
 export type FlowFunction<T> = (api: {
 	group: (opts: GroupOpts, body: () => Promise<any>) => Promise<any>;
-	text: any;
-	confirm: any;
 	BACK: { __back: true };
-}) => Promise<T>;
+} & Record<string, any>) => Promise<T>;
 
 // Create runtime lazily to ensure all plugins are loaded first
 let runtime: any = null;

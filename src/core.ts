@@ -12,18 +12,6 @@ type PromptOpts = { message: string; id?: string };
 type GroupOpts = { message?: string; flow?: "phase" | "static" };
 
 type UI = {
-	text(
-		msg: string,
-		initial?: string,
-		groupContext?: string,
-		id?: string
-	): Promise<string | BackToken>;
-	confirm(
-		msg: string,
-		initial?: boolean,
-		groupContext?: string,
-		id?: string
-	): Promise<boolean | BackToken>;
 	showGroup(
 		label: string | undefined,
 		flow?: "phase" | "static",
@@ -225,7 +213,7 @@ export function createRuntime(ui: UI) {
 
 			// Generate stable, deterministic ID
 			const id =
-				('id' in opts ? opts.id : undefined) ??
+				("id" in opts ? opts.id : undefined) ??
 				generateStableId(
 					kind,
 					opts.message || `${kind}-${stepIndex}`,
@@ -431,14 +419,11 @@ export function createRuntime(ui: UI) {
 		}
 	}
 
-
 	async function ask<T>(
 		flow: (api: {
 			group: typeof group;
-			text: any;
-			confirm: any;
 			BACK: BackToken;
-		}) => Promise<T>
+		} & Record<string, any>) => Promise<T>
 	): Promise<T> {
 		debugLogger.log("ASK_START", {
 			currentStep,
@@ -494,7 +479,11 @@ export function createRuntime(ui: UI) {
 					targetGroup,
 					currentStep,
 				});
-				const result = await flow({ group, text: pluginPrompts.text, confirm: pluginPrompts.confirm, BACK });
+				const result = await flow({
+					group,
+					BACK,
+					...pluginPrompts,
+				});
 				asking = false;
 				isReplaying = false; // Always clear replay mode after flow completes
 				targetGroup = undefined; // Clear target group
