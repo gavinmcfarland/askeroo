@@ -265,6 +265,25 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					const isPhaseGroup = phaseGroups.has(currentPrompt.groupName);
 					const isStaticGroup = staticGroups.has(currentPrompt.groupName);
 
+					// For static groups, also add to staticGroupFields if not already present
+					if (isStaticGroup) {
+						setStaticGroupFields((prev) => {
+							const newMap = new Map(prev);
+							const groupFields = newMap.get(currentPrompt.groupName!) || [];
+							const fieldInfo = {
+								id: currentPrompt.id,
+								message: currentPrompt.message,
+								type: currentPrompt.type,
+							};
+
+							// Only add if not already present (check by message and type)
+							if (!groupFields.some((f) => f.message === fieldInfo.message && f.type === fieldInfo.type)) {
+								newMap.set(currentPrompt.groupName!, [...groupFields, fieldInfo]);
+							}
+							return newMap;
+						});
+					}
+
 					if (!isPhaseGroup) {
 						setGroupFieldHistory((prev) => {
 							const newMap = new Map(prev);
@@ -372,7 +391,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			// When navigating back, unmark any groups that should no longer be considered completed
 			const currentPromptGroup =
 				currentPrompt.type === "group"
-					? currentPrompt.message
+					? currentPrompt.id  // Use the stable group ID, not the message
 					: currentPrompt.groupName;
 
 			// Consolidate group completion cleanup in a single state update
@@ -646,8 +665,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						// For multi type, provide empty arrays
 						...(fieldInfo.type === 'multi' ? { options: [], initial: [] } : {})
 					});
-				} else if (entry.type === "group" && completedGroups.has(entry.id)) {
-					// Render completed group
+				} else if (entry.type === "group" && completedGroups.has(entry.id) && entry.id !== currentGroup) {
+					// Render completed group (but not if it's the current group being edited)
 					const groupId = entry.id;
 					const groupDisplayName = getGroupDisplayName(groupId);
 

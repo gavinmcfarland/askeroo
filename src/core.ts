@@ -177,16 +177,28 @@ export function createRuntime(ui: UI) {
           }
         }
 
-        // Use current field value if available, otherwise use placeholder
+        // Use current field value if available, otherwise use smart placeholder
         if (id in answers) {
           const currentValue = answers[id];
           debugLogger.log('DISCOVERY_CURRENT_VALUE', { id, currentValue });
           return currentValue as T;
         }
 
-        // Return a placeholder value based on type
-        const placeholderValue = (kind === 'confirm' ? false : '');
-        debugLogger.log('DISCOVERY_PLACEHOLDER', { kind, placeholderValue });
+        // For discovery, provide smarter placeholders to explore conditional paths
+        let placeholderValue: any;
+        if (kind === 'confirm') {
+          placeholderValue = false;
+        } else {
+          // For text fields, use smart placeholders based on the message content
+          const message = opts.message?.toLowerCase() || '';
+          if (message.includes('role') && (message.includes('admin') || message.includes('user'))) {
+            placeholderValue = 'admin'; // Favor admin to discover more fields
+          } else {
+            placeholderValue = '';
+          }
+        }
+
+        debugLogger.log('DISCOVERY_PLACEHOLDER', { kind, message: opts.message, placeholderValue });
         return placeholderValue as T;
       }
 
