@@ -3,31 +3,9 @@
 import { ask, group, text, confirm } from "./index.js";
 
 const flow = async () => {
-	let test = await text({ message: "Test" });
+	let test = await text({ message: "Normal" });
 
-	let test2 = await text({ message: "Test2" });
-
-	const profile = await group(
-		{ message: "Profile", flow: "phase" },
-		async () => {
-			const first = await text({ message: "First name" });
-
-			const middle = await text({ message: "Middle name" });
-
-			const last = await text({ message: "Last name" });
-
-			return { first, middle, last };
-		}
-	);
-
-	// Static group - shows all prompts at once, only one active
-	const staticForm = await group({ flow: "static" }, async () => {
-		const name = await text({ message: "Name" });
-		const email = await text({ message: "Email" });
-		const phone = await text({ message: "Phone" });
-		const address = await text({ message: "Address" });
-		return { name, email };
-	});
+	let test2 = await text({ message: "Normal 2" });
 
 	// Another group without message but with phase flow
 	// No ID needed - automatically generates stable: group_0_3_phase
@@ -36,6 +14,37 @@ const flow = async () => {
 		const step2 = await text({ message: "Step 2" });
 		return { step1, step2 };
 	});
+
+	const stackedForm = await group({ message: "Stacked" }, async () => {
+		const name = await text({ message: "Name" });
+		const email = await text({ message: "Email" });
+		const phone = await text({ message: "Phone" });
+		const address = await text({ message: "Address" });
+		return { name, email };
+	});
+
+	const phasedForm = await group(
+		{ message: "Phased", flow: "phase" },
+		async () => {
+			const name = await text({ message: "Name" });
+			const email = await text({ message: "Email" });
+			const phone = await text({ message: "Phone" });
+			const address = await text({ message: "Address" });
+			return { name, email };
+		}
+	);
+
+	// Static group - shows all prompts at once, only one active
+	const staticForm = await group(
+		{ message: "Static", flow: "static" },
+		async () => {
+			const name = await text({ message: "Name" });
+			const email = await text({ message: "Email" });
+			const phone = await text({ message: "Phone" });
+			const address = await text({ message: "Address" });
+			return { name, email };
+		}
+	);
 
 	// Group with no message - should not show group header in UI
 	// No ID needed - automatically generates stable: group_0_4_sequential
@@ -60,7 +69,16 @@ const flow = async () => {
 		return { role, news };
 	});
 
-	return { profile, staticForm, hiddenPhase, hiddenGroup, prefs };
+	return {
+		test,
+		test2,
+		stackedForm,
+		phasedForm,
+		staticForm,
+		hiddenPhase,
+		hiddenGroup,
+		prefs,
+	};
 };
 
 (async () => {
