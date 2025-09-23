@@ -27,7 +27,6 @@ export function TextField({
 	const [value, setValue] = useState(initial);
 	const [submitted, setSubmitted] = useState(false);
 
-
 	// Reset submitted state when field becomes active again (not disabled)
 	useEffect(() => {
 		if (!disabled && submitted) {
@@ -61,11 +60,13 @@ export function TextField({
 
 	if (completed) {
 		return (
-			<Box flexDirection="column">
-				<Text>{message}</Text>
+			<Box>
+				<Box width={12}>
+					<Text>{message}</Text>
+				</Box>
+
 				<Text>
-					<Text color="green">✓ </Text>
-					<Text color="gray">{completedValue || value}</Text>
+					<Text color="cyan">{completedValue || value}</Text>
 				</Text>
 			</Box>
 		);
@@ -73,7 +74,7 @@ export function TextField({
 
 	if (disabled) {
 		return (
-			<Box flexDirection="column">
+			<Box>
 				<Text dimColor>{message}</Text>
 				<Text dimColor>
 					{"> "}

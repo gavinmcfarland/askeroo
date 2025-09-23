@@ -16,7 +16,9 @@ export function GroupContainer({ groupName, children }: GroupContainerProps) {
 					</Text>
 				</Box>
 			)}
-			<Box gap={2}>{children}</Box>
+			<Box flexDirection="column" gap={1}>
+				{children}
+			</Box>
 		</Box>
 	);
 }

@@ -5,29 +5,25 @@ import { ask, group, text, confirm } from "./index.js";
 
 // Then import plugins after runtime is established
 import { multi } from "./plugins/multi/index.js";
-import { customText } from "./plugins/custom-text/index.js";
-import { validatedText } from "./plugins/validated-text/index.js";
 
 const flow = async () => {
-	const name = await text({ message: "Single" });
+	const name = await text({ message: "First" });
+	const name2 = await text({ message: "Second" });
 
-	// Example of custom text input plugin with different styling
-	const customName = await customText({
-		placeholder: "e.g. John Doe",
-		prefix: "✨",
-	});
-
-	const prefs2 = await group({ flow: "static" }, async () => {
-		const role = await text({ message: "Role (user/admin)" });
-		const name = await text({ message: "Name" });
-		if (role === "admin") {
-			const code = await text({ message: "Access code" });
-			const email = await text({ message: "Email" });
-			return { role, code, email };
+	const prefs2 = await group(
+		{ message: "Static", flow: "static" },
+		async () => {
+			const role = await text({ message: "Role (user/admin)" });
+			const name = await text({ message: "Name" });
+			if (role === "admin") {
+				const code = await text({ message: "Access code" });
+				const email = await text({ message: "Email" });
+				return { role, code, email };
+			}
+			const news = await confirm({ message: "Subscribe to newsletter?" });
+			return { name, role, news };
 		}
-		const news = await confirm({ message: "Subscribe to newsletter?" });
-		return { name, role, news };
-	});
+	);
 
 	// Example of validated text input plugin
 	// const email = await validatedText({
@@ -51,11 +47,6 @@ const flow = async () => {
 	const phasedForm = await group(
 		{ message: "Phased", flow: "phase" },
 		async () => {
-			const customName = await customText({
-				message: "Enter your custom name",
-				placeholder: "e.g. John Doe",
-				prefix: "✨",
-			});
 			const colors = await multi({
 				message: "Select your favorite colors",
 				options: ["red", "green", "blue", "yellow", "purple"],
@@ -69,11 +60,6 @@ const flow = async () => {
 	);
 
 	const stackedForm = await group({ message: "Stacked" }, async () => {
-		const customName = await customText({
-			message: "Enter your custom name",
-			placeholder: "e.g. John Doe",
-			prefix: "✨",
-		});
 		const colors = await multi({
 			message: "Select your favorite colors",
 			options: ["red", "green", "blue", "yellow", "purple"],
@@ -89,11 +75,6 @@ const flow = async () => {
 	const staticForm = await group(
 		{ message: "Static", flow: "static" },
 		async () => {
-			const customName = await customText({
-				message: "Enter your custom name",
-				placeholder: "e.g. John Doe",
-				prefix: "✨",
-			});
 			const colors = await multi({
 				message: "Select your favorite colors",
 				options: ["red", "green", "blue", "yellow", "purple"],
@@ -131,7 +112,6 @@ const flow = async () => {
 
 	return {
 		name,
-		customName,
 		// email,
 		// colors,
 		stackedForm,
