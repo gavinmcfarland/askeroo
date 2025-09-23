@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 
+// Import runtime first to set up the global context
 import { ask, group, text, confirm } from "./index.js";
+
+// Then import plugins after runtime is established
 import { multi } from "./custom-prompt-multi.js";
 import { customText } from "./custom-text-plugin.js";
 import { validatedText } from "./validated-text-plugin.js";

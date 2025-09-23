@@ -1,4 +1,5 @@
 import { createPlugin } from './registry.js';
+import { MultiField } from './plugins/multi/MultiField.js';
 
 interface MultiOptions {
   message: string;
@@ -8,6 +9,7 @@ interface MultiOptions {
 // Example multi-select prompt plugin
 export const multi = createPlugin({
   type: 'multi',
+  component: MultiField, // Plugin provides its own component
 
   // The prompt logic - called by the engine
   async prompt(opts: MultiOptions, { extendedUI, currentGroup }, id: string) {

@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { TextField } from "../text/TextField.js";
 import { ConfirmField } from "../confirm/ConfirmField.js";
-import { CustomTextField } from "../custom-text/CustomTextField.js";
-import { ValidatedTextField } from "../validated-text/ValidatedTextField.js";
-import { MultiField } from "../multi/MultiField.js";
 import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { CompletedGroup } from "../group/CompletedGroup.js";
+import { globalRegistry } from "../../registry.js";
 
 type PromptRequest =
 	| {
@@ -93,6 +91,44 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const getGroupDisplayName = (groupId: string | null): string | null => {
 		if (!groupId) return null;
 		return groupIdToMessage.get(groupId) || null;
+	};
+
+	// Helper function to render field components dynamically
+	const renderFieldComponent = (fieldInfo: { id: string; message: string; type: string }, props: any) => {
+		// Extract key from props to avoid React warning about spreading key
+		const { key: propsKey, ...restProps } = props;
+		const key = propsKey || `field-${fieldInfo.id}`;
+
+		// Check for plugin components first
+		const PluginComponent = globalRegistry.getComponent(fieldInfo.type);
+		if (PluginComponent) {
+			return (
+				<PluginComponent
+					key={key}
+					message={fieldInfo.message}
+					{...restProps}
+				/>
+			);
+		}
+
+		// Fallback to built-in components
+		if (fieldInfo.type === "text") {
+			return (
+				<TextField
+					key={key}
+					message={fieldInfo.message}
+					{...restProps}
+				/>
+			);
+		} else {
+			return (
+				<ConfirmField
+					key={key}
+					message={fieldInfo.message}
+					{...restProps}
+				/>
+			);
+		}
 	};
 
 	useEffect(() => {
@@ -474,6 +510,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 				const fieldValue = fieldValues[entry.id];
 
+				// Only render built-in components for now
 				if (fieldInfo.type === "text") {
 					return (
 						<TextField
@@ -485,42 +522,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							allowBack={false}
 						/>
 					);
-				} else if (fieldInfo.type === "customText") {
-					return (
-						<CustomTextField
-							key={`completed-root-${entry.id}`}
-							message={fieldInfo.message}
-							completed={true}
-							completedValue={fieldValue}
-							onSubmit={() => {}}
-							allowBack={false}
-						/>
-					);
-				} else if (fieldInfo.type === "validatedText") {
-					return (
-						<ValidatedTextField
-							key={`completed-root-${entry.id}`}
-							message={fieldInfo.message}
-							completed={true}
-							completedValue={fieldValue}
-							onSubmit={() => {}}
-							allowBack={false}
-						/>
-					);
-				} else if (fieldInfo.type === "multi") {
-					return (
-						<MultiField
-							key={`completed-root-${entry.id}`}
-							message={fieldInfo.message}
-							options={[]}
-							initial={[]}
-							completed={true}
-							completedValue={fieldValue}
-							onSubmit={() => {}}
-							allowBack={false}
-						/>
-					);
-				} else {
+				} else if (fieldInfo.type === "confirm") {
 					return (
 						<ConfirmField
 							key={`completed-root-${entry.id}`}
@@ -532,6 +534,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						/>
 					);
 				}
+				// Skip custom prompts for now
+				return null;
 			})
 			.filter(Boolean);
 	};
@@ -664,113 +668,44 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						 (field.message === effectivePrompt.message && field.type === effectivePrompt.type))
 						: false;
 
-					if (field.type === "text") {
-						// Use the fieldValue we already found (with fallback matching)
-						const initialValue = fieldValue ?? "";
+					// Get initial value based on field type
+					const getInitialValue = () => {
+						if (field.type === 'multi') {
+							return isCompleted ? fieldValue || [] : [];
+						}
+						return fieldValue ?? (field.type === 'confirm' ? false : "");
+					};
 
-						return (
-							<TextField
-								key={`static-${field.message}-${field.type}`}
-								message={field.message}
-								initial={initialValue}
-								completed={isCompleted && !isActive}
-								completedValue={isCompleted ? fieldValue : undefined}
-								disabled={!isActive && !isCompleted}
-								onSubmit={isActive ? handleSubmit : () => {}}
-								onBack={isActive ? handleBack : undefined}
-								allowBack={isActive}
-							/>
-						);
-					} else if (field.type === "customText") {
-						const initialValue = fieldValue ?? "";
-						// Get custom properties from effectivePrompt when this field is active
-						const placeholder = (isActive && effectivePrompt?.type === "customText")
-							? effectivePrompt.placeholder
-							: undefined;
-						const prefix = (isActive && effectivePrompt?.type === "customText")
-							? effectivePrompt.prefix
-							: undefined;
-
-						return (
-							<CustomTextField
-								key={`static-${field.message}-${field.type}`}
-								message={field.message}
-								placeholder={placeholder}
-								prefix={prefix}
-								initial={initialValue}
-								completed={isCompleted && !isActive}
-								completedValue={isCompleted ? fieldValue : undefined}
-								disabled={!isActive && !isCompleted}
-								onSubmit={isActive ? handleSubmit : () => {}}
-								onBack={isActive ? handleBack : undefined}
-								allowBack={isActive}
-							/>
-						);
-					} else if (field.type === "validatedText") {
-						const initialValue = fieldValue ?? "";
-						// Get validation properties from effectivePrompt when this field is active
-						const validate = (isActive && effectivePrompt?.type === "validatedText")
-							? effectivePrompt.validate
-							: undefined;
-						const transform = (isActive && effectivePrompt?.type === "validatedText")
-							? effectivePrompt.transform
-							: undefined;
-
-						return (
-							<ValidatedTextField
-								key={`static-${field.message}-${field.type}`}
-								message={field.message}
-								validate={validate}
-								transform={transform}
-								initial={initialValue}
-								completed={isCompleted && !isActive}
-								completedValue={isCompleted ? fieldValue : undefined}
-								disabled={!isActive && !isCompleted}
-								onSubmit={isActive ? handleSubmit : () => {}}
-								onBack={isActive ? handleBack : undefined}
-								allowBack={isActive}
-							/>
-						);
-					} else if (field.type === "multi") {
-						// Get options from effectivePrompt when this field is active
-						const options = (isActive && effectivePrompt?.type === "multi")
-							? effectivePrompt.options || []
-							: [];
-
-						const initialValue = isCompleted ? fieldValue || [] : [];
-
-						return (
-							<MultiField
-								key={`static-${field.message}-${field.type}`}
-								message={field.message}
-								options={options}
-								initial={initialValue}
-								completed={isCompleted && !isActive}
-								completedValue={isCompleted ? fieldValue : undefined}
-								disabled={!isActive && !isCompleted}
-								onSubmit={isActive ? handleSubmit : () => {}}
-								onBack={isActive ? handleBack : undefined}
-								allowBack={isActive}
-							/>
-						);
-					} else {
-						// Use the fieldValue we already found (with fallback matching)
-						const initialValue = fieldValue ?? false;
-
-						return (
-							<ConfirmField
-								key={`static-${field.message}-${field.type}`}
-								message={field.message}
-								initial={initialValue}
-								completed={isCompleted && !isActive}
-								completedValue={isCompleted ? fieldValue : undefined}
-								disabled={!isActive && !isCompleted}
-								onSubmit={isActive ? handleSubmit : () => {}}
-								onBack={isActive ? handleBack : undefined}
-								allowBack={isActive}
-							/>
-						);
+					// Get type-specific properties from effectivePrompt when this field is active
+					const typeSpecificProps: any = {};
+					if (isActive && effectivePrompt) {
+						if (field.type === "customText" && effectivePrompt.type === "customText") {
+							typeSpecificProps.placeholder = effectivePrompt.placeholder;
+							typeSpecificProps.prefix = effectivePrompt.prefix;
+						} else if (field.type === "validatedText" && effectivePrompt.type === "validatedText") {
+							typeSpecificProps.validate = effectivePrompt.validate;
+							typeSpecificProps.transform = effectivePrompt.transform;
+						} else if (field.type === "multi" && effectivePrompt.type === "multi") {
+							typeSpecificProps.options = effectivePrompt.options || [];
+						}
 					}
+
+					// For multi fields, always provide options (even when not active) to prevent errors
+					if (field.type === "multi" && !typeSpecificProps.options) {
+						typeSpecificProps.options = [];
+					}
+
+					return renderFieldComponent(field, {
+						key: `static-${field.message}-${field.type}`,
+						initial: getInitialValue(),
+						completed: isCompleted && !isActive,
+						completedValue: isCompleted ? fieldValue : undefined,
+						disabled: !isActive && !isCompleted,
+						onSubmit: isActive ? handleSubmit : () => {},
+						onBack: isActive ? handleBack : undefined,
+						allowBack: isActive,
+						...typeSpecificProps
+					});
 				});
 		} else {
 			// For sequential groups, only show completed fields
@@ -783,64 +718,15 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				.map((field) => {
 					const fieldValue = fieldValues[field.id];
 
-					if (field.type === "text") {
-						return (
-							<TextField
-								key={`completed-${field.id}`}
-								message={field.message}
-								completed={true}
-								completedValue={fieldValue}
-								onSubmit={() => {}}
-								allowBack={false}
-							/>
-						);
-					} else if (field.type === "customText") {
-						return (
-							<CustomTextField
-								key={`completed-${field.id}`}
-								message={field.message}
-								completed={true}
-								completedValue={fieldValue}
-								onSubmit={() => {}}
-								allowBack={false}
-							/>
-						);
-					} else if (field.type === "validatedText") {
-						return (
-							<ValidatedTextField
-								key={`completed-${field.id}`}
-								message={field.message}
-								completed={true}
-								completedValue={fieldValue}
-								onSubmit={() => {}}
-								allowBack={false}
-							/>
-						);
-					} else if (field.type === "multi") {
-						return (
-							<MultiField
-								key={`completed-${field.id}`}
-								message={field.message}
-								options={[]}
-								initial={[]}
-								completed={true}
-								completedValue={fieldValue}
-								onSubmit={() => {}}
-								allowBack={false}
-							/>
-						);
-					} else {
-						return (
-							<ConfirmField
-								key={`completed-${field.id}`}
-								message={field.message}
-								completed={true}
-								completedValue={fieldValue}
-								onSubmit={() => {}}
-								allowBack={false}
-							/>
-						);
-					}
+					return renderFieldComponent(field, {
+						key: `completed-${field.id}`,
+						completed: true,
+						completedValue: fieldValue,
+						onSubmit: () => {},
+						allowBack: false,
+						// For multi type, provide empty arrays
+						...(field.type === 'multi' ? { options: [], initial: [] } : {})
+					});
 				});
 		}
 	};
@@ -923,99 +809,51 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				break;
 			}
 
-			case "customText": {
-				const isSequentialGroup = !!(
-					effectivePrompt.groupName &&
-					!phaseGroups.has(effectivePrompt.groupName)
-				);
-				const hasCompletedFields =
-					isSequentialGroup && completedFields.size > 0;
-				const allowBack =
-					effectivePrompt.id !== firstFieldIdRef.current ||
-					hasCompletedFields;
 
-				const initialValue = visitedPrompts.has(effectivePrompt.id)
-					? fieldValues[effectivePrompt.id] ?? ""
-					: "";
+			default: {
+				// Check if this is a plugin-provided prompt type
+				const PluginComponent = globalRegistry.getComponent(effectivePrompt.type);
 
-				field = (
-					<CustomTextField
-						key={effectivePrompt.id}
-						message={effectivePrompt.message}
-						placeholder={effectivePrompt.placeholder}
-						prefix={effectivePrompt.prefix}
-						initial={initialValue}
-						allowBack={allowBack}
-						onSubmit={handleSubmit}
-						onBack={handleBack}
-					/>
-				);
-				break;
-			}
+				if (PluginComponent) {
+					const isSequentialGroup = !!(
+						effectivePrompt.groupName &&
+						!phaseGroups.has(effectivePrompt.groupName)
+					);
+					const hasCompletedFields =
+						isSequentialGroup && completedFields.size > 0;
+					const allowBack =
+						effectivePrompt.id !== firstFieldIdRef.current ||
+						hasCompletedFields;
 
-			case "validatedText": {
-				const isSequentialGroup = !!(
-					effectivePrompt.groupName &&
-					!phaseGroups.has(effectivePrompt.groupName)
-				);
-				const hasCompletedFields =
-					isSequentialGroup && completedFields.size > 0;
-				const allowBack =
-					effectivePrompt.id !== firstFieldIdRef.current ||
-					hasCompletedFields;
+					// Get initial value based on prompt type
+					const getInitialValue = () => {
+						if (!visitedPrompts.has(effectivePrompt.id)) {
+							// For custom prompt types, check if it's multi-select
+							return effectivePrompt.type === 'multi' ? [] : "";
+						}
+						const storedValue = fieldValues[effectivePrompt.id];
+						// Return stored value or appropriate default
+						return storedValue ?? (effectivePrompt.type === 'multi' ? [] : "");
+					};
 
-				const initialValue = visitedPrompts.has(effectivePrompt.id)
-					? fieldValues[effectivePrompt.id] ?? ""
-					: "";
+					field = (
+						<PluginComponent
+							key={effectivePrompt.id}
+							{...effectivePrompt} // Spread all prompt properties
+							initial={getInitialValue()}
+							allowBack={allowBack}
+							onSubmit={handleSubmit}
+							onBack={handleBack}
+						/>
+					);
+					break;
+				}
 
-				field = (
-					<ValidatedTextField
-						key={effectivePrompt.id}
-						message={effectivePrompt.message}
-						validate={effectivePrompt.validate}
-						transform={effectivePrompt.transform}
-						initial={initialValue}
-						allowBack={allowBack}
-						onSubmit={handleSubmit}
-						onBack={handleBack}
-					/>
-				);
-				break;
-			}
-
-			case "multi": {
-				const isSequentialGroup = !!(
-					effectivePrompt.groupName &&
-					!phaseGroups.has(effectivePrompt.groupName)
-				);
-				const hasCompletedFields =
-					isSequentialGroup && completedFields.size > 0;
-				const allowBack =
-					effectivePrompt.id !== firstFieldIdRef.current ||
-					hasCompletedFields;
-
-				const initialValue = visitedPrompts.has(effectivePrompt.id)
-					? fieldValues[effectivePrompt.id] ?? []
-					: [];
-
-				field = (
-					<MultiField
-						key={effectivePrompt.id}
-						message={effectivePrompt.message}
-						options={effectivePrompt.options || []}
-						initial={initialValue}
-						allowBack={allowBack}
-						onSubmit={handleSubmit}
-						onBack={handleBack}
-					/>
-				);
-				break;
-			}
-
-			default:
+				// Fallback for unknown prompt types
 				return (
 					<GroupContainer groupName={getGroupDisplayName(currentGroup)}>{null}</GroupContainer>
 				);
+			}
 		}
 	}
 

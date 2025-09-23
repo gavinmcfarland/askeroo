@@ -1,6 +1,9 @@
+import React from 'react';
+
 // Global registry for prompt plugins
 export type PromptPlugin = {
   type: string;
+  component: React.ComponentType<any>; // Plugin provides its own React component
   prompt: (opts: any, engine: any, id: string) => Promise<any>;
   uiHandler?: Record<string, (...args: any[]) => Promise<any>>;
 };
@@ -31,6 +34,23 @@ class PromptRegistry {
 
     return handlers;
   }
+
+  getComponent(type: string): React.ComponentType<any> | undefined {
+    const plugin = this.plugins.get(type);
+    return plugin?.component;
+  }
+
+  getComponents(): Record<string, React.ComponentType<any>> {
+    const components: Record<string, React.ComponentType<any>> = {};
+
+    for (const [type, plugin] of this.plugins.entries()) {
+      if (plugin.component) {
+        components[type] = plugin.component;
+      }
+    }
+
+    return components;
+  }
 }
 
 // Global singleton registry
@@ -44,9 +64,15 @@ export function setCurrentRuntime(runtime: any): void {
 }
 
 // Plugin creation function that auto-registers
-export function createPlugin(config: Omit<PromptPlugin, 'type'> & { type: string }): (...args: any[]) => Promise<any> {
+export function createPlugin(config: {
+  type: string;
+  component: React.ComponentType<any>;
+  prompt: (opts: any, engine: any, id: string) => Promise<any>;
+  uiHandler?: Record<string, (...args: any[]) => Promise<any>>;
+}): (...args: any[]) => Promise<any> {
   const plugin: PromptPlugin = {
     type: config.type,
+    component: config.component,
     prompt: config.prompt,
     uiHandler: config.uiHandler
   };
@@ -59,6 +85,7 @@ export function createPlugin(config: Omit<PromptPlugin, 'type'> & { type: string
     if (!currentRuntime) {
       throw new Error(`Plugin "${config.type}" must be used with a runtime. Make sure you're importing from a file that has called createRuntime().`);
     }
+
 
     // Call the dynamically created prompt function from the runtime
     const dynamicPrompt = currentRuntime[config.type];

@@ -1,4 +1,5 @@
 import { createPlugin } from './registry.js';
+import { CustomTextField } from './plugins/custom-text/CustomTextField.js';
 
 interface CustomTextOptions {
   message: string;
@@ -9,6 +10,7 @@ interface CustomTextOptions {
 // Example custom text input plugin with different styling
 export const customText = createPlugin({
   type: 'customText',
+  component: CustomTextField, // Plugin provides its own component
 
   // The prompt logic - called by the engine
   async prompt(opts: CustomTextOptions, { extendedUI, currentGroup }, id: string) {

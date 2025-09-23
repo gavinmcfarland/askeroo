@@ -1,4 +1,5 @@
 import { createPlugin } from './registry.js';
+import { ValidatedTextField } from './plugins/validated-text/ValidatedTextField.js';
 
 interface ValidatedTextOptions {
   message: string;
@@ -9,6 +10,7 @@ interface ValidatedTextOptions {
 // Example validated text input plugin
 export const validatedText = createPlugin({
   type: 'validatedText',
+  component: ValidatedTextField, // Plugin provides its own component
 
   // The prompt logic - called by the engine
   async prompt(opts: ValidatedTextOptions, { extendedUI, currentGroup }, id: string) {
