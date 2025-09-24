@@ -20,7 +20,6 @@ const flow = async () => {
 		{
 			message: "Project Configuration",
 			flow: "static",
-			enableArrowNavigation: true,
 		}
 	);
 
