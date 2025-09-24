@@ -15,10 +15,13 @@ const flow = async () => {
 				addons: await text({ message: "Add-ons" }),
 			};
 		},
-		{ message: "Static", flow: "static", enableArrowNavigation: true }
+		{ message: "Static", flow: "static" }
 	);
 
-	return { answers };
+	const first2 = await text({ message: "First" });
+	const last2 = await text({ message: "Last" });
+
+	return { answers, first2, last2 };
 };
 
 (async () => {
