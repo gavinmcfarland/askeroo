@@ -9,14 +9,16 @@ import { multi } from "./plugins/multi/index.js";
 const flow = async () => {
 	const name = await text({
 		message: "First",
-		shortMessage: "Fi",
 	});
 	const name2 = await text({ message: "Second" });
 
 	const prefs2 = await group(
 		{ message: "Static", flow: "static" },
 		async () => {
-			const role = await text({ message: "Role (user/admin)" });
+			const role = await text({
+				message: "Role (user/admin)",
+				shortMessage: "Role",
+			});
 			const name = await text({ message: "Name" });
 			if (role === "admin") {
 				const code = await text({ message: "Access code" });
