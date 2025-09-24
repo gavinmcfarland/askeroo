@@ -9,8 +9,9 @@ import { multi } from "./plugins/multi/index.js";
 const flow = async () => {
 	const name = await text({
 		message: "First",
+		initialValue: "Hello",
 	});
-	const name2 = await text({ message: "Second" });
+	const name2 = await text({ message: "Second", initialValue: "World" });
 
 	const prefs2 = await group(
 		{ message: "Static", flow: "static" },

@@ -4,6 +4,7 @@ import { TextField } from "./TextField.js";
 export interface TextOptions {
 	message: string;
 	shortMessage?: string;
+	initialValue?: string;
 	id?: string;
 }
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Text, Box, useInput } from "ink";
 
-interface TextFieldProps {
+interface Props {
 	message: string;
 	shortMessage?: string;
 	onSubmit: (value: string) => void;
@@ -12,7 +12,6 @@ interface TextFieldProps {
 	completedValue?: string;
 	disabled?: boolean;
 	flow?: "phased" | "static";
-	[key: string]: any; // Allow any additional options
 }
 
 export function TextField({
@@ -26,7 +25,7 @@ export function TextField({
 	completedValue,
 	disabled = false,
 	flow,
-}: TextFieldProps) {
+}: Props) {
 	const [value, setValue] = useState(initialValue);
 	const [submitted, setSubmitted] = useState(false);
 
