@@ -12,8 +12,8 @@ export const text = createPlugin<TextOptions, string>({
 	type: "text",
 	component: TextField,
 
-	// The prompt logic - called by the engine
-	async prompt(opts: TextOptions, { extendedUI, currentGroup }, id: string) {
-		return extendedUI.text(opts, currentGroup, id);
+	// The prompt logic - just return the options, runtime handles UI
+	prompt(opts: TextOptions, { currentGroup }, id: string) {
+		return opts;
 	},
 });

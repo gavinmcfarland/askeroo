@@ -573,7 +573,10 @@ export function createRuntime(ui: UI) {
 				throw new Error(`${plugin.type}() must be called inside ask()`);
 			return engine.step(plugin.type, opts, async (id) => {
 				const currentGroup = groupStack[groupStack.length - 1];
-				return plugin.prompt(opts, { extendedUI, currentGroup }, id);
+				// Get the processed options from the plugin
+				const processedOpts = plugin.prompt(opts, { currentGroup }, id);
+				// Call the appropriate UI method based on plugin type
+				return extendedUI[plugin.type](processedOpts, currentGroup, id);
 			});
 		};
 	}

@@ -4,7 +4,7 @@ import React from 'react';
 export type PromptPlugin = {
   type: string;
   component: React.ComponentType<any>; // Plugin provides its own React component
-  prompt: (opts: any, engine: any, id: string) => Promise<any>;
+  prompt: (opts: any, context: { currentGroup?: string }, id: string) => any;
 };
 
 class PromptRegistry {
@@ -55,7 +55,7 @@ export function setCurrentRuntime(runtime: any): void {
 export function createPlugin<T = any, R = any>(config: {
   type: string;
   component: React.ComponentType<any>;
-  prompt: (opts: T, engine: any, id: string) => Promise<R>;
+  prompt: (opts: T, context: { currentGroup?: string }, id: string) => T;
 }): (opts: T) => Promise<R> {
   const plugin: PromptPlugin = {
     type: config.type,

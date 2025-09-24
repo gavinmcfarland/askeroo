@@ -11,9 +11,8 @@ export const multi = createPlugin<MultiOptions, string[]>({
   type: 'multi',
   component: MultiField, // Plugin provides its own component
 
-  // The prompt logic - called by the engine
-  async prompt(opts: MultiOptions, { extendedUI, currentGroup }, id: string) {
-    // Call the UI handler with the provided options
-    return extendedUI.multi(opts, currentGroup, id);
+  // The prompt logic - just return the options, runtime handles UI
+  prompt(opts: MultiOptions, { currentGroup }, id: string) {
+    return opts;
   },
 });

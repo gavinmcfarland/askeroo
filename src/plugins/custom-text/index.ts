@@ -12,12 +12,8 @@ export const customText = createPlugin<CustomTextOptions, string>({
   type: 'customText',
   component: CustomTextField, // Plugin provides its own component
 
-  // The prompt logic - called by the engine
-  async prompt(opts: CustomTextOptions, { extendedUI, currentGroup }, id: string) {
-    return extendedUI.customText(
-      opts,
-      currentGroup,
-      id
-    );
+  // The prompt logic - just return the options, runtime handles UI
+  prompt(opts: CustomTextOptions, { currentGroup }, id: string) {
+    return opts;
   },
 });
