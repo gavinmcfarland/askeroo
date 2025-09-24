@@ -20,7 +20,4 @@ export const validatedText = createPlugin<ValidatedTextOptions, string>({
       id
     );
   },
-
-  // No uiHandler needed - the UI will be handled by PromptApp components
-  uiHandler: {}
 });

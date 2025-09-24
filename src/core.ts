@@ -93,9 +93,8 @@ function simpleHash(str: string): string {
 export function createRuntime(ui: UI) {
 	debugLogger.log("RUNTIME_CREATE", { ui: typeof ui });
 
-	// Extend UI with plugin handlers
-	const pluginHandlers = globalRegistry.getUIHandlers();
-	const extendedUI = { ...ui, ...pluginHandlers };
+	// Use the UI directly - dynamic handlers are created in ui.tsx
+	const extendedUI = ui;
 
 	const answers: Answers = {};
 	let interactivePrompts: string[] = [];

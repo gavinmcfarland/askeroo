@@ -109,8 +109,7 @@ function createUI() {
 		},
 	};
 
-	// Dynamically add plugin UI handlers
-	const pluginHandlers = globalRegistry.getUIHandlers();
+	// Create dynamic UI handlers for all registered plugins
 
 	// Create generic UI handlers for all registered plugins
 	//   console.log('Registered plugins:', globalRegistry.getAll().map(p => p.type));
@@ -139,7 +138,7 @@ function createUI() {
 		};
 	}
 
-	return { ...baseUI, ...pluginHandlers };
+	return baseUI;
 }
 
 export const ui = createUI();

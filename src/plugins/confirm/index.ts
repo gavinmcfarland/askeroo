@@ -19,7 +19,4 @@ export const confirm = createPlugin<ConfirmOptions, boolean>({
       id
     );
   },
-
-  // No uiHandler needed - the UI will be handled by PromptApp components
-  uiHandler: {}
 });

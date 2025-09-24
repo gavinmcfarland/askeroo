@@ -16,7 +16,4 @@ export const text = createPlugin<TextOptions, string>({
 	async prompt(opts: TextOptions, { extendedUI, currentGroup }, id: string) {
 		return extendedUI.text(opts, currentGroup, id);
 	},
-
-	// No uiHandler needed - the UI will be handled by PromptApp components
-	uiHandler: {},
 });

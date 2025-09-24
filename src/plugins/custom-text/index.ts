@@ -20,7 +20,4 @@ export const customText = createPlugin<CustomTextOptions, string>({
       id
     );
   },
-
-  // No uiHandler needed - handled dynamically
-  uiHandler: {}
 });

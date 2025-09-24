@@ -16,7 +16,4 @@ export const multi = createPlugin<MultiOptions, string[]>({
     // Call the UI handler with the provided options
     return extendedUI.multi(opts, currentGroup, id);
   },
-
-  // No uiHandler needed - the UI will be handled by PromptApp components
-  uiHandler: {}
 });

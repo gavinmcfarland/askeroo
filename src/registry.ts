@@ -5,7 +5,6 @@ export type PromptPlugin = {
   type: string;
   component: React.ComponentType<any>; // Plugin provides its own React component
   prompt: (opts: any, engine: any, id: string) => Promise<any>;
-  uiHandler?: Record<string, (...args: any[]) => Promise<any>>;
 };
 
 class PromptRegistry {
@@ -23,17 +22,6 @@ class PromptRegistry {
     return Array.from(this.plugins.values());
   }
 
-  getUIHandlers(): Record<string, (...args: any[]) => Promise<any>> {
-    const handlers: Record<string, (...args: any[]) => Promise<any>> = {};
-
-    for (const plugin of this.plugins.values()) {
-      if (plugin.uiHandler) {
-        Object.assign(handlers, plugin.uiHandler);
-      }
-    }
-
-    return handlers;
-  }
 
   getComponent(type: string): React.ComponentType<any> | undefined {
     const plugin = this.plugins.get(type);
@@ -68,13 +56,11 @@ export function createPlugin<T = any, R = any>(config: {
   type: string;
   component: React.ComponentType<any>;
   prompt: (opts: T, engine: any, id: string) => Promise<R>;
-  uiHandler?: Record<string, (...args: any[]) => Promise<any>>;
 }): (opts: T) => Promise<R> {
   const plugin: PromptPlugin = {
     type: config.type,
     component: config.component,
-    prompt: config.prompt,
-    uiHandler: config.uiHandler
+    prompt: config.prompt
   };
 
   // Auto-register the plugin
