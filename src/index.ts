@@ -2,7 +2,10 @@ import { createRuntime } from "./core.js";
 import { ui } from "./ui.js";
 
 // Type definitions for better IDE support
-export type GroupOpts = { message?: string; flow?: "phased" | "static"; enableArrowNavigation?: boolean };
+export type GroupOpts =
+	| { message?: string; flow?: "phased"; enableArrowNavigation?: never }
+	| { message?: string; flow: "static"; enableArrowNavigation?: boolean }
+	| { message?: string; flow?: undefined; enableArrowNavigation?: never };
 export type FlowFunction<T> = (api: {
 	group: (body: () => Promise<any>, opts?: GroupOpts) => Promise<any>;
 	BACK: { __back: true };

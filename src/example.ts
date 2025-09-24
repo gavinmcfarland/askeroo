@@ -15,7 +15,7 @@ const flow = async () => {
 				addons: await text({ message: "Add-ons" }),
 			};
 		},
-		{ message: "Static", enableArrowNavigation: true }
+		{ message: "Static", flow: "static", enableArrowNavigation: true }
 	);
 
 	const first2 = await text({ message: "First" });

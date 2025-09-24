@@ -12,7 +12,10 @@ export type Answers = Record<string, unknown>;
 
 type PromptKind = string; // Generic type that works with any plugin
 type PromptOpts = { message: string; id?: string };
-type GroupOpts = { message?: string; flow?: "phased" | "static"; enableArrowNavigation?: boolean };
+type GroupOpts =
+	| { message?: string; flow?: "phased"; enableArrowNavigation?: never }
+	| { message?: string; flow: "static"; enableArrowNavigation?: boolean }
+	| { message?: string; flow?: undefined; enableArrowNavigation?: never };
 
 type UI = {
 	showGroup(
