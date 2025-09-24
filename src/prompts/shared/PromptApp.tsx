@@ -596,7 +596,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					return renderFieldComponent(field, {
 						key: `static-${field.message}-${field.type}`,
-						initial: getInitialValue(),
+						initialValue: getInitialValue(),
 						completed: isCompleted && !isActive,
 						completedValue: isCompleted ? fieldValue : undefined,
 						disabled: !isActive && !isCompleted,
@@ -769,9 +769,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			// Get initial value based on prompt type
 			const getInitialValue = () => {
 				if (!visitedPrompts.has(effectivePrompt.id)) {
-					// Use initial value from prompt or sensible default based on type
-					if (effectivePrompt.initial !== undefined) {
-						return effectivePrompt.initial;
+					// Use initialValue from prompt or sensible default based on type
+					if (effectivePrompt.initialValue !== undefined) {
+						return effectivePrompt.initialValue;
 					}
 					// Return appropriate default based on field type
 					if (effectivePrompt.type === 'multi') {
@@ -783,12 +783,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					return "";
 				}
 				const storedValue = fieldValues[effectivePrompt.id];
-				// Return stored value or prompt's initial value with type-specific fallback
+				// Return stored value or prompt's initialValue with type-specific fallback
 				if (storedValue !== undefined) {
 					return storedValue;
 				}
-				if (effectivePrompt.initial !== undefined) {
-					return effectivePrompt.initial;
+				if (effectivePrompt.initialValue !== undefined) {
+					return effectivePrompt.initialValue;
 				}
 				// Type-specific defaults
 				if (effectivePrompt.type === 'multi') {
@@ -809,7 +809,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				<PluginComponent
 					key={effectivePrompt.id}
 					{...effectivePrompt} // Spread all prompt properties
-					initial={getInitialValue()}
+					initialValue={getInitialValue()}
 					allowBack={allowBack}
 					onSubmit={handleSubmit}
 					onBack={handleBack}

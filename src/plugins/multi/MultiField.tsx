@@ -5,7 +5,7 @@ import { Text, Box, useInput } from "ink";
 interface MultiFieldProps {
 	message: string;
 	options?: string[];
-	initial?: string[];
+	initialValue?: string[];
 	onSubmit: (values: string[]) => void;
 	onBack?: () => void;
 	allowBack?: boolean;
@@ -18,7 +18,7 @@ interface MultiFieldProps {
 export function MultiField({
 	message,
 	options = [],
-	initial = [],
+	initialValue = [],
 	onSubmit,
 	onBack,
 	allowBack = true,
@@ -27,10 +27,10 @@ export function MultiField({
 	disabled = false,
 	...rest
 }: MultiFieldProps) {
-	// Initialize selectedIndices based on initial values
+	// Initialize selectedIndices based on initialValue
 	const getInitialIndices = () => {
 		const indices = new Set<number>();
-		initial.forEach(value => {
+		initialValue.forEach(value => {
 			const index = options.indexOf(value);
 			if (index !== -1) {
 				indices.add(index);
@@ -50,18 +50,18 @@ export function MultiField({
 		}
 	}, [disabled, submitted]);
 
-	// Memoize the initial values to prevent unnecessary re-renders
+	// Memoize the initialValue to prevent unnecessary re-renders
 	const stableInitial = useMemo(() => {
-		return [...initial];
-	}, [initial.join(',')]);
+		return [...initialValue];
+	}, [initialValue.join(',')]);
 
-	// Track previous initial values to detect actual changes
+	// Track previous initialValue to detect actual changes
 	const prevInitialRef = useRef<string[]>([]);
 
-	// Update selected indices when initial values actually change
+	// Update selected indices when initialValue actually changes
 	useEffect(() => {
 		if (!submitted && !disabled) {
-			// Check if initial values actually changed
+			// Check if initialValue actually changed
 			const initialChanged = stableInitial.length !== prevInitialRef.current.length ||
 				stableInitial.some((val, idx) => val !== prevInitialRef.current[idx]);
 

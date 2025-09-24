@@ -8,7 +8,7 @@ interface ValidatedTextFieldProps {
 	transform?: (value: string) => string;
 	onSubmit: (value: string) => void;
 	onBack?: () => void;
-	initial?: string;
+	initialValue?: string;
 	allowBack?: boolean;
 	completed?: boolean;
 	completedValue?: string;
@@ -22,14 +22,14 @@ export function ValidatedTextField({
 	transform,
 	onSubmit,
 	onBack,
-	initial = "",
+	initialValue = "",
 	allowBack = true,
 	completed = false,
 	completedValue,
 	disabled = false,
 	...rest
 }: ValidatedTextFieldProps) {
-	const [value, setValue] = useState(initial);
+	const [value, setValue] = useState(initialValue);
 	const [submitted, setSubmitted] = useState(false);
 	const [error, setError] = useState<string>("");
 
@@ -41,13 +41,13 @@ export function ValidatedTextField({
 		}
 	}, [disabled, submitted]);
 
-	// Separately handle value restoration when initial changes
+	// Separately handle value restoration when initialValue changes
 	useEffect(() => {
 		if (!submitted && !disabled) {
-			setValue(initial);
+			setValue(initialValue);
 			setError("");
 		}
-	}, [initial, submitted, disabled]);
+	}, [initialValue, submitted, disabled]);
 
 	useInput((input, key) => {
 		if (submitted || completed || disabled) return;

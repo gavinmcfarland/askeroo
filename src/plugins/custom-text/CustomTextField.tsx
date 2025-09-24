@@ -8,7 +8,7 @@ interface CustomTextFieldProps {
 	prefix?: string;
 	onSubmit: (value: string) => void;
 	onBack?: () => void;
-	initial?: string;
+	initialValue?: string;
 	allowBack?: boolean;
 	completed?: boolean;
 	completedValue?: string;
@@ -22,14 +22,14 @@ export function CustomTextField({
 	prefix = "→",
 	onSubmit,
 	onBack,
-	initial = "",
+	initialValue = "",
 	allowBack = true,
 	completed = false,
 	completedValue,
 	disabled = false,
 	...rest
 }: CustomTextFieldProps) {
-	const [value, setValue] = useState(initial);
+	const [value, setValue] = useState(initialValue);
 	const [submitted, setSubmitted] = useState(false);
 
 	// Reset submitted state when field becomes active again (not disabled)
@@ -39,12 +39,12 @@ export function CustomTextField({
 		}
 	}, [disabled, submitted]);
 
-	// Separately handle value restoration when initial changes
+	// Separately handle value restoration when initialValue changes
 	useEffect(() => {
 		if (!submitted && !disabled) {
-			setValue(initial);
+			setValue(initialValue);
 		}
-	}, [initial, submitted, disabled]);
+	}, [initialValue, submitted, disabled]);
 
 	useInput((input, key) => {
 		if (submitted || completed || disabled) return;

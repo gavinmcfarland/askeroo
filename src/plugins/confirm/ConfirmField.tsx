@@ -6,7 +6,7 @@ interface ConfirmFieldProps {
 	message: string;
 	onSubmit: (value: boolean) => void;
 	onBack?: () => void;
-	initial?: boolean;
+	initialValue?: boolean;
 	allowBack?: boolean;
 	completed?: boolean;
 	completedValue?: boolean;
@@ -18,14 +18,14 @@ export function ConfirmField({
 	message,
 	onSubmit,
 	onBack,
-	initial = false,
+	initialValue = false,
 	allowBack = true,
 	completed = false,
 	completedValue,
 	disabled = false,
 	...rest
 }: ConfirmFieldProps) {
-	const [value, setValue] = useState<boolean | null>(initial);
+	const [value, setValue] = useState<boolean | null>(initialValue);
 	const [submitted, setSubmitted] = useState(false);
 
 	// Reset submitted state when field becomes active again (not disabled)
@@ -35,12 +35,12 @@ export function ConfirmField({
 		}
 	}, [disabled, submitted]);
 
-	// Separately handle value restoration when initial changes
+	// Separately handle value restoration when initialValue changes
 	useEffect(() => {
 		if (!submitted && !disabled) {
-			setValue(initial);
+			setValue(initialValue);
 		}
-	}, [initial, submitted, disabled]);
+	}, [initialValue, submitted, disabled]);
 
 	useInput((input, key) => {
 		if (submitted || completed || disabled) return;
