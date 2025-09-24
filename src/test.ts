@@ -93,6 +93,29 @@ const flow = async () => {
 		{ message: "Static", flow: "static" }
 	);
 
+	// Static group with arrow navigation enabled - use arrow keys to navigate between fields
+	const staticWithNavigation = await group(
+		async () => {
+			const firstName = await text({ message: "First name" });
+			const lastName = await text({ message: "Last name" });
+			const newsletter = await confirm({ message: "Subscribe to newsletter?" });
+			const phone = await text({ message: "Phone number" });
+			return { firstName, lastName, newsletter, phone };
+		},
+		{ message: "Static with Arrow Navigation", flow: "static", enableArrowNavigation: true }
+	);
+
+	// Static group without arrow navigation (default behavior)
+	const staticWithoutNavigation = await group(
+		async () => {
+			const username = await text({ message: "Username" });
+			const password = await text({ message: "Password" });
+			const confirmPassword = await text({ message: "Confirm password" });
+			return { username, password, confirmPassword };
+		},
+		{ message: "Static without Arrow Navigation", flow: "static" }
+	);
+
 	// Group with no message - should not show group header in UI
 	// No ID needed - automatically generates stable: group_0_4_sequential
 	const hiddenGroup = await group(async () => {
@@ -123,6 +146,8 @@ const flow = async () => {
 		stackedForm,
 		phasedForm,
 		staticForm,
+		staticWithNavigation,
+		staticWithoutNavigation,
 		hiddenGroup,
 		prefs,
 	};

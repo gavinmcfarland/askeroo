@@ -3,6 +3,8 @@ import { ask, group, text, confirm } from "./index.js";
 import { multi } from "./plugins/multi/index.js";
 
 const flow = async () => {
+	const first = await text({ message: "First" });
+	const last = await text({ message: "Last" });
 	const answers = await group(
 		async () => {
 			return {
@@ -13,7 +15,7 @@ const flow = async () => {
 				addons: await text({ message: "Add-ons" }),
 			};
 		},
-		{ message: "Static", flow: "static" }
+		{ message: "Static", flow: "static", enableArrowNavigation: true }
 	);
 
 	return { answers };

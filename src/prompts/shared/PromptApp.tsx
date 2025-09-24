@@ -13,6 +13,7 @@ type PromptRequest = {
 	groupName?: string; // Only present for field prompts
 	flow?: "phased" | "static"; // Only present for group prompts
 	discoveredFields?: Array<{id: string, message: string, type: string}>; // Only present for group prompts
+	enableArrowNavigation?: boolean; // Only present for group prompts
 	[key: string]: any; // Allow any additional properties for plugin-specific options
 };
 
@@ -62,6 +63,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const staticGroupsRef = useRef<Set<string>>(new Set());
 	// Static group navigation state
 	const [staticGroupFocusIndex, setStaticGroupFocusIndex] = useState<Map<string, number>>(new Map());
+	// Track groups with arrow navigation enabled
+	const [arrowNavigationGroups, setArrowNavigationGroups] = useState<Set<string>>(new Set());
 
 	// Helper function to get display name for a group
 	const getGroupDisplayName = (groupId: string | null): string | null => {
@@ -197,6 +200,13 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						setStaticGroups((prev) =>
 							new Set(prev).add(request.id)
 						);
+
+						// Track arrow navigation for this group
+						if (request.enableArrowNavigation) {
+							setArrowNavigationGroups((prev) =>
+								new Set(prev).add(request.id)
+							);
+						}
 
 						// Pre-populate static group fields from discovery
 						if (request.discoveredFields && request.discoveredFields.length > 0) {
@@ -704,6 +714,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					// Determine position in group for navigation
 					const isFirstInGroup = index === 0;
 					const isLastInGroup = index === allFieldsArray.length - 1;
+					const hasArrowNavigation = arrowNavigationGroups.has(currentGroup);
 
 					return renderFieldComponent(field, {
 						key: `static-${field.message}-${field.type}`,
@@ -717,6 +728,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						flow: "static",
 						isFirstInGroup,
 						isLastInGroup,
+						enableArrowNavigation: hasArrowNavigation,
 						...typeSpecificProps
 					});
 				});

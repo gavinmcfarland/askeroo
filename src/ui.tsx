@@ -67,7 +67,8 @@ function createUI() {
 				id: string;
 				message: string;
 				type: string;
-			}>
+			}>,
+			enableArrowNavigation?: boolean
 		): Promise<void> {
 			appInstance.currentGroup = label;
 			const promptFn = await ensureApp();
@@ -77,6 +78,7 @@ function createUI() {
 				message: label,
 				flow,
 				discoveredFields,
+				enableArrowNavigation,
 			});
 		},
 

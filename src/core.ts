@@ -12,14 +12,15 @@ export type Answers = Record<string, unknown>;
 
 type PromptKind = string; // Generic type that works with any plugin
 type PromptOpts = { message: string; id?: string };
-type GroupOpts = { message?: string; flow?: "phased" | "static" };
+type GroupOpts = { message?: string; flow?: "phased" | "static"; enableArrowNavigation?: boolean };
 
 type UI = {
 	showGroup(
 		label: string | undefined,
 		flow?: "phased" | "static",
 		id?: string,
-		discoveredFields?: Array<{ id: string; message: string; type: string }>
+		discoveredFields?: Array<{ id: string; message: string; type: string }>,
+		enableArrowNavigation?: boolean
 	): Promise<void> | void;
 	clearGroup?(): void;
 	cleanup?(): void;
@@ -190,7 +191,8 @@ export function createRuntime(ui: UI) {
 						groupOpts.message,
 						groupOpts.flow,
 						groupId,
-						fields
+						fields,
+						groupOpts.enableArrowNavigation
 					);
 					lastProcessedGroups.add(groupId);
 					// Call askFn to create the interactive prompt
