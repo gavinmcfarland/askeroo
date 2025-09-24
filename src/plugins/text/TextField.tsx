@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Text, Box, useInput } from "ink";
-
-type BackToken = { __back: true };
 
 interface TextFieldProps {
 	message: string;
+	shortMessage?: string;
 	onSubmit: (value: string) => void;
 	onBack?: () => void;
 	initial?: string;
@@ -13,10 +12,12 @@ interface TextFieldProps {
 	completedValue?: string;
 	disabled?: boolean;
 	flow?: "phased" | "static";
+	[key: string]: any; // Allow any additional options
 }
 
 export function TextField({
 	message,
+	shortMessage,
 	onSubmit,
 	onBack,
 	initial = "",
@@ -64,7 +65,7 @@ export function TextField({
 		return (
 			<Box>
 				<Box width={12}>
-					<Text>{message}</Text>
+					<Text>{shortMessage || message}</Text>
 				</Box>
 
 				<Text>
@@ -77,7 +78,7 @@ export function TextField({
 	if (disabled) {
 		return (
 			<Box>
-				<Text dimColor>{message}</Text>
+				<Text dimColor>{shortMessage || message}</Text>
 				<Text dimColor>
 					{"> "}
 					<Text color="gray">...</Text>

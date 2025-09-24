@@ -53,6 +53,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const [rootFieldHistory, setRootFieldHistory] = useState<
 		Array<{ id: string; message: string; type: string }>
 	>([]);
+	// Store complete field properties for proper rendering
+	const [fieldProperties, setFieldProperties] = useState<
+		Map<string, any>
+	>(new Map());
 	const firstFieldIdRef = useRef<string | null>(null);
 	const staticGroupsRef = useRef<Set<string>>(new Set());
 
@@ -69,6 +73,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		const { key: propsKey, ...restProps } = props;
 		const key = propsKey || `field-${fieldInfo.id}`;
 
+		// Get the original field properties if available
+		const originalProperties = fieldProperties.get(fieldInfo.id) || {};
+
 		// Check for plugin components first
 		const PluginComponent = globalRegistry.getComponent(fieldInfo.type);
 		if (PluginComponent) {
@@ -76,7 +83,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				<PluginComponent
 					key={key}
 					message={fieldInfo.message}
-					{...restProps}
+					{...originalProperties} // Spread original properties like shortMessage
+					{...restProps} // Spread rendering props (these take precedence)
 				/>
 			);
 		}
@@ -95,7 +103,16 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				// ⬇️ assign without rendering
 				resolverRef.current = resolve;
 
-				// Track root-level prompt order
+				// Store complete field properties for later rendering
+			if (request.type !== "group") {
+				setFieldProperties((prev) => {
+					const newMap = new Map(prev);
+					newMap.set(request.id, request);
+					return newMap;
+				});
+			}
+
+			// Track root-level prompt order
 				if (request.type !== "group") {
 					setRootPromptOrder((prev) => {
 						const entry = {

@@ -14,6 +14,7 @@ interface ValidatedTextFieldProps {
 	completed?: boolean;
 	completedValue?: string;
 	disabled?: boolean;
+	[key: string]: any; // Allow any additional options
 }
 
 export function ValidatedTextField({
@@ -27,6 +28,7 @@ export function ValidatedTextField({
 	completed = false,
 	completedValue,
 	disabled = false,
+	...rest
 }: ValidatedTextFieldProps) {
 	const [value, setValue] = useState(initial);
 	const [submitted, setSubmitted] = useState(false);

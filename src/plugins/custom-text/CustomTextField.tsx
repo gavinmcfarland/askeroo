@@ -14,6 +14,7 @@ interface CustomTextFieldProps {
 	completed?: boolean;
 	completedValue?: string;
 	disabled?: boolean;
+	[key: string]: any; // Allow any additional options
 }
 
 export function CustomTextField({
@@ -27,6 +28,7 @@ export function CustomTextField({
 	completed = false,
 	completedValue,
 	disabled = false,
+	...rest
 }: CustomTextFieldProps) {
 	const [value, setValue] = useState(initial);
 	const [submitted, setSubmitted] = useState(false);

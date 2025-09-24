@@ -12,6 +12,7 @@ interface ConfirmFieldProps {
 	completed?: boolean;
 	completedValue?: boolean;
 	disabled?: boolean;
+	[key: string]: any; // Allow any additional options
 }
 
 export function ConfirmField({
@@ -23,6 +24,7 @@ export function ConfirmField({
 	completed = false,
 	completedValue,
 	disabled = false,
+	...rest
 }: ConfirmFieldProps) {
 	const [value, setValue] = useState<boolean | null>(initial);
 	const [submitted, setSubmitted] = useState(false);

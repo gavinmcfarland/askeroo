@@ -117,47 +117,23 @@ function createUI() {
 	for (const plugin of globalRegistry.getAll()) {
 		// console.log("Creating UI handler for:", plugin.type);
 		(baseUI as any)[plugin.type] = async function (
-			msg: string,
-			...args: any[]
+			opts: any,
+			currentGroup: string,
+			id: string
 		): Promise<any> {
-			const groupContext = args[args.length - 2]; // Second to last arg is usually groupContext
-			const id = args[args.length - 1]; // Last arg is usually id
-
-			if (typeof groupContext === "string") {
-				appInstance.currentGroup = groupContext;
+			if (typeof currentGroup === "string") {
+				appInstance.currentGroup = currentGroup;
 			}
 
 			const promptFn = await ensureApp();
 
-			// Create the request object with the message and any additional args
+			// Create the request object with all options spread in
 			const request: PromptRequest = {
 				type: plugin.type,
-				id:
-					(typeof id === "string" ? id : undefined) ||
-					generatePromptId(plugin.type, msg),
-				message: msg,
+				id: id || generatePromptId(plugin.type, opts.message || `${plugin.type} field`),
 				groupName: appInstance.currentGroup,
+				...opts // Spread all options from the plugin
 			};
-
-			// Add any additional properties from args (excluding groupContext and id)
-			const additionalArgs = args.slice(0, -2);
-			additionalArgs.forEach((arg, index) => {
-				if (arg !== undefined) {
-					// Map common argument positions to known properties
-					if (plugin.type === "customText") {
-						if (index === 0) request.placeholder = arg;
-						if (index === 1) request.prefix = arg;
-					} else if (plugin.type === "validatedText") {
-						if (index === 0) request.validate = arg;
-						if (index === 1) request.transform = arg;
-					} else if (plugin.type === "multi") {
-						if (index === 0) request.options = arg;
-					} else {
-						// For other plugins, use generic property names
-						(request as any)[`arg${index}`] = arg;
-					}
-				}
-			});
 
 			return promptFn(request);
 		};

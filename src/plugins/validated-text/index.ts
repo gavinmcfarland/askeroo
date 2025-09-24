@@ -15,9 +15,7 @@ export const validatedText = createPlugin<ValidatedTextOptions, string>({
   // The prompt logic - called by the engine
   async prompt(opts: ValidatedTextOptions, { extendedUI, currentGroup }, id: string) {
     return extendedUI.validatedText(
-      opts.message,
-      opts.validate,
-      opts.transform,
+      opts,
       currentGroup,
       id
     );

@@ -15,9 +15,7 @@ export const customText = createPlugin<CustomTextOptions, string>({
   // The prompt logic - called by the engine
   async prompt(opts: CustomTextOptions, { extendedUI, currentGroup }, id: string) {
     return extendedUI.customText(
-      opts.message || '',
-      opts.placeholder || '',
-      opts.prefix || '→',
+      opts,
       currentGroup,
       id
     );

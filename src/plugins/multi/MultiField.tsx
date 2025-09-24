@@ -5,7 +5,7 @@ type BackToken = { __back: true };
 
 interface MultiFieldProps {
 	message: string;
-	options: string[];
+	options?: string[];
 	initial?: string[];
 	onSubmit: (values: string[]) => void;
 	onBack?: () => void;
@@ -13,11 +13,12 @@ interface MultiFieldProps {
 	completed?: boolean;
 	completedValue?: string[];
 	disabled?: boolean;
+	[key: string]: any; // Allow any additional options
 }
 
 export function MultiField({
 	message,
-	options,
+	options = [],
 	initial = [],
 	onSubmit,
 	onBack,
@@ -25,6 +26,7 @@ export function MultiField({
 	completed = false,
 	completedValue,
 	disabled = false,
+	...rest
 }: MultiFieldProps) {
 	// Initialize selectedIndices based on initial values
 	const getInitialIndices = () => {

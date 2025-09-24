@@ -14,8 +14,7 @@ export const confirm = createPlugin<ConfirmOptions, boolean>({
   // The prompt logic - called by the engine
   async prompt(opts: ConfirmOptions, { extendedUI, currentGroup }, id: string) {
     return extendedUI.confirm(
-      opts.message,
-      undefined,
+      opts,
       currentGroup,
       id
     );

@@ -7,7 +7,10 @@ import { ask, group, text, confirm } from "./index.js";
 import { multi } from "./plugins/multi/index.js";
 
 const flow = async () => {
-	const name = await text({ message: "First" });
+	const name = await text({
+		message: "First",
+		shortMessage: "Fi",
+	});
 	const name2 = await text({ message: "Second" });
 
 	const prefs2 = await group(
