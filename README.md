@@ -24,14 +24,14 @@ import { ask, group, text, confirm } from "askeroo/core";
 
 const flow = async () => {
   // Group 1: Profile
-  const profile = await group({ message: "Profile" }, async () => {
+  const profile = await group(async () => {
     const first = await text({ message: "First name" });
     const last  = await text({ message: "Last name" });
     return { first, last };
-  });
+  }, { message: "Profile" });
 
   // Group 2: Preferences (with conditional)
-  const prefs = await group({ message: "Preferences" }, async () => {
+  const prefs = await group(async () => {
     const role = await text({ message: "Role (user/admin)" });
     if (role === "admin") {
       const code = await text({ message: "Access code" });
@@ -39,7 +39,7 @@ const flow = async () => {
     }
     const news = await confirm({ message: "Subscribe to newsletter?" });
     return { role, news };
-  });
+  }, { message: "Preferences" });
 
   return { profile, prefs };
 };
@@ -71,15 +71,15 @@ const result = await ask(async () => {
 });
 ```
 
-#### `group(options: PromptOpts, body: () => Promise<T>): Promise<T>`
+#### `group(body: () => Promise<T>, options?: PromptOpts): Promise<T>`
 Creates a visual group of related prompts.
 
 ```typescript
-const profile = await group({ message: "Profile" }, async () => {
+const profile = await group(async () => {
   const first = await text({ message: "First name" });
   const last = await text({ message: "Last name" });
   return { first, last };
-});
+}, { message: "Profile" });
 ```
 
 #### `text(options: PromptOpts): Promise<string>`

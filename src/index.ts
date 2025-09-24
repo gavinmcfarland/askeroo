@@ -4,7 +4,7 @@ import { ui } from "./ui.js";
 // Type definitions for better IDE support
 export type GroupOpts = { message?: string; flow?: "phased" | "static" };
 export type FlowFunction<T> = (api: {
-	group: (opts: GroupOpts, body: () => Promise<any>) => Promise<any>;
+	group: (body: () => Promise<any>, opts?: GroupOpts) => Promise<any>;
 	BACK: { __back: true };
 } & Record<string, any>) => Promise<T>;
 
@@ -22,9 +22,9 @@ function ensureRuntime() {
 export const ask = <T>(flow: FlowFunction<T>): Promise<T> =>
 	ensureRuntime().ask(flow);
 export const group = (
-	opts: GroupOpts,
-	body: () => Promise<any>
-): Promise<any> => ensureRuntime().group(opts, body);
+	body: () => Promise<any>,
+	opts?: GroupOpts
+): Promise<any> => ensureRuntime().group(body, opts);
 // BACK is just a simple token, doesn't need lazy loading
 export const BACK = { __back: true };
 

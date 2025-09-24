@@ -394,23 +394,23 @@ export function createRuntime(ui: UI) {
 		});
 	}
 
-	async function group(opts: GroupOpts, body: () => Promise<any>) {
+	async function group(body: () => Promise<any>, opts?: GroupOpts) {
 		if (!asking) throw new Error("group() must be called inside ask()");
 
 		// For static groups, we need to run discovery to find fields
-		if (opts.flow === "static") {
+		if (opts?.flow === "static") {
 			const nextGroupCount = groupCount + 1;
-			const groupId = getGroupIdentifier(opts, groupStack, {
+			const groupId = getGroupIdentifier(opts || {}, groupStack, {
 				groupCount: nextGroupCount,
 			});
 
 			// Store the body function for re-discovery
 			staticGroupBodies.set(groupId, body);
 
-			await runStaticGroupDiscovery(opts, body);
+			await runStaticGroupDiscovery(opts || {}, body);
 		}
 
-		await engine.step("group", opts, async () => undefined);
+		await engine.step("group", opts || {}, async () => undefined);
 
 		try {
 			return await body();

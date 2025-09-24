@@ -7,7 +7,6 @@ const testGenericStatic = async () => {
 	const result = await ask(async ({ group, text, confirm }) => {
 		// Test with completely different field names than the hardcoded ones
 		const userPrefs = await group(
-			{ message: "User Preferences", flow: "static" },
 			async () => {
 				const subscription = await text({ message: "Subscription type (basic/premium)" });
 				const username = await text({ message: "Username" });
@@ -21,7 +20,8 @@ const testGenericStatic = async () => {
 
 				const newsletter = await confirm({ message: "Subscribe to newsletter?" });
 				return { subscription, username, newsletter };
-			}
+			},
+			{ message: "User Preferences", flow: "static" }
 		);
 
 		return { userPrefs };

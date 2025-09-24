@@ -62,13 +62,13 @@ export function TextField({
 
 	if (completed) {
 		return (
-			<Box>
-				<Box width={12}>
+			<Box gap={1}>
+				<Box width={14}>
 					<Text>{shortMessage || message}</Text>
 				</Box>
 
 				<Text>
-					<Text color="cyan">{completedValue || value}</Text>
+					<Text color="blue">{completedValue || value}</Text>
 				</Text>
 			</Box>
 		);
@@ -76,10 +76,9 @@ export function TextField({
 
 	if (disabled) {
 		return (
-			<Box>
+			<Box gap={1}>
 				<Text dimColor>{shortMessage || message}</Text>
 				<Text dimColor>
-					{"> "}
 					<Text color="gray">...</Text>
 				</Text>
 			</Box>
@@ -87,10 +86,9 @@ export function TextField({
 	}
 
 	return (
-		<Box flexDirection="column">
+		<Box flexDirection={flow === "static" ? "row" : "column"} gap={1}>
 			<Text>{message}</Text>
 			<Text>
-				{"> "}
 				<Text color="cyan">{value}</Text>
 			</Text>
 			{flow !== "static" && (

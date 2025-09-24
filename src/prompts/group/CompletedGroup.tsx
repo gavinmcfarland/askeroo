@@ -10,7 +10,10 @@ interface CompletedGroupProps {
 	}>;
 }
 
-export function CompletedGroup({ groupName, completedFields }: CompletedGroupProps) {
+export function CompletedGroup({
+	groupName,
+	completedFields,
+}: CompletedGroupProps) {
 	return (
 		<Box flexDirection="column">
 			{groupName && (
