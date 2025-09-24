@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Text, Box, useInput } from "ink";
 
-type BackToken = { __back: true };
 
 interface ValidatedTextFieldProps {
 	message: string;

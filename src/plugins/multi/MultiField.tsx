@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Text, Box, useInput } from "ink";
 
-type BackToken = { __back: true };
 
 interface MultiFieldProps {
 	message: string;
