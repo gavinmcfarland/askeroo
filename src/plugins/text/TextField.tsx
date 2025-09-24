@@ -4,7 +4,9 @@ import { Text, Box, useInput } from "ink";
 interface Props {
 	message: string;
 	shortMessage?: string;
-	onSubmit: (value: string | { __preserveAndBack: boolean; value: string }) => void;
+	onSubmit: (
+		value: string | { __preserveAndBack: boolean; value: string }
+	) => void;
 	onBack?: () => void;
 	initialValue?: string;
 	allowBack?: boolean;
@@ -12,7 +14,7 @@ interface Props {
 	completedValue?: string;
 	disabled?: boolean;
 	flow?: "phased" | "static";
-	onNavigate?: (direction: 'up' | 'down') => void;
+	onNavigate?: (direction: "up" | "down") => void;
 	isFirstInGroup?: boolean;
 	isLastInGroup?: boolean;
 	enableArrowNavigation?: boolean;
@@ -134,7 +136,7 @@ export function TextField({
 	}
 
 	return (
-		<Box flexDirection={flow === "static" ? "row" : "column"} gap={1}>
+		<Box flexDirection="row" gap={1}>
 			<Text>{message}</Text>
 			<Text>
 				<Text color="cyan">{value}</Text>
