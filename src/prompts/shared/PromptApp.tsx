@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useInput } from "ink";
 import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { CompletedGroup } from "../group/CompletedGroup.js";
@@ -59,6 +60,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	>(new Map());
 	const firstFieldIdRef = useRef<string | null>(null);
 	const staticGroupsRef = useRef<Set<string>>(new Set());
+	// Static group navigation state
+	const [staticGroupFocusIndex, setStaticGroupFocusIndex] = useState<Map<string, number>>(new Map());
 
 	// Helper function to get display name for a group
 	const getGroupDisplayName = (groupId: string | null): string | null => {
@@ -214,6 +217,101 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const handleSubmit = (value: any) => {
 		if (resolverRef.current && currentPrompt) {
 			if (currentPrompt.type !== "group") {
+				// Handle special navigation value that preserves field content but goes back
+				if (typeof value === 'object' && value?.__preserveAndBack) {
+					// Store the actual value, not the navigation object
+					const actualValue = value.value;
+					setFieldValues((prev) => ({
+						...prev,
+						[currentPrompt.id]: actualValue,
+					}));
+
+					// Mark as visited
+					setVisitedPrompts((prev) =>
+						new Set(prev).add(currentPrompt.id)
+					);
+
+					// Mark field as completed (if it meets completion criteria)
+					const shouldMarkCompleted = currentPrompt.type !== 'text' &&
+						currentPrompt.type !== 'custom-text' &&
+						currentPrompt.type !== 'validated-text'
+						? actualValue !== undefined
+						: (typeof actualValue === 'string' ? actualValue.trim() !== '' : actualValue !== undefined);
+
+					if (shouldMarkCompleted) {
+						setCompletedFields((prev) =>
+							new Set(prev).add(currentPrompt.id)
+						);
+					}
+
+					// Handle group tracking for static groups
+					if (currentPrompt.groupName) {
+						const isStaticGroup = staticGroups.has(currentPrompt.groupName);
+
+						if (isStaticGroup) {
+							// Add current field to static group fields
+							setStaticGroupFields((prev) => {
+								const newMap = new Map(prev);
+								const groupFields = newMap.get(currentPrompt.groupName!) || [];
+								const fieldInfo = {
+									id: currentPrompt.id,
+									message: currentPrompt.message || `${currentPrompt.type} field`,
+									type: currentPrompt.type,
+								};
+
+								// Only add if not already present
+								if (!groupFields.some((f) => f.message === fieldInfo.message && f.type === fieldInfo.type)) {
+									newMap.set(currentPrompt.groupName!, [...groupFields, fieldInfo]);
+								}
+								return newMap;
+							});
+
+							// Force re-render for conditional fields
+							setStaticGroupFields((prev) => new Map(prev));
+						}
+
+						// Track in group history for non-phase groups
+						const isPhaseGroup = phaseGroups.has(currentPrompt.groupName);
+						if (!isPhaseGroup) {
+							setGroupFieldHistory((prev) => {
+								const newMap = new Map(prev);
+								const groupFields = newMap.get(currentPrompt.groupName!) || [];
+								const fieldInfo = {
+									id: currentPrompt.id,
+									message: currentPrompt.message || `${currentPrompt.type} field`,
+									type: currentPrompt.type,
+								};
+
+								if (!groupFields.some((f) => f.id === currentPrompt.id)) {
+									newMap.set(currentPrompt.groupName!, [...groupFields, fieldInfo]);
+								}
+								return newMap;
+							});
+						}
+					} else {
+						// For root-level fields, track in root history
+						setRootFieldHistory((prev) => {
+							const fieldInfo = {
+								id: currentPrompt.id,
+								message: currentPrompt.message || `${currentPrompt.type} field`,
+								type: currentPrompt.type,
+							};
+
+							if (!prev.some((f) => f.id === currentPrompt.id)) {
+								return [...prev, fieldInfo];
+							}
+							return prev;
+						});
+					}
+
+					// Trigger back navigation
+					const r = resolverRef.current;
+					resolverRef.current = null;
+					r({ __back: true });
+					return;
+				}
+
+				// Regular submit - store the value
 				setFieldValues((prev) => ({
 					...prev,
 					[currentPrompt.id]: value,
@@ -464,6 +562,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		previousGroupRef.current = currentGroup;
 	}, [currentGroup, phaseGroups, groupOrder]);
 
+
 	// ⬇️ Auto-resolve group prompts without touching resolver state
 	useEffect(() => {
 		if (currentPrompt?.type === "group" && resolverRef.current) {
@@ -498,6 +597,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		return fieldValues[fieldInfo.id];
 	};
 
+
 	// Render completed fields for all groups (sequential by default)
 	const renderCompletedFields = () => {
 		if (!currentGroup || phaseGroups.has(currentGroup)) {
@@ -527,15 +627,21 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				allFields.set(field.message + '|' + field.type, field);
 			});
 
-			return Array.from(allFields.values())
-				.map((field) => {
+			const allFieldsArray = Array.from(allFields.values());
+
+			return allFieldsArray
+				.map((field, index) => {
 					// For static groups, find the stored value by matching message and type
 					// since field IDs might differ between discovery and execution
 					let fieldValue = fieldValues[field.id];
-					let isCompleted = fieldValue !== undefined;
+					let isCompleted = fieldValue !== undefined && (
+						field.type !== 'text' && field.type !== 'custom-text' && field.type !== 'validated-text'
+						? true
+						: (typeof fieldValue === 'string' ? fieldValue.trim() !== '' : fieldValue)
+					);
 
 					// If not found by direct ID match, search by message and type
-					if (!isCompleted) {
+					if (fieldValue === undefined) {
 						for (const [storedId, storedValue] of Object.entries(fieldValues)) {
 							// Check if this stored value belongs to a field with matching message and type in our group
 							const matchingEntry = rootPromptOrder.find(entry =>
@@ -552,13 +658,17 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								);
 								if (matchingField) {
 									fieldValue = storedValue;
-									isCompleted = true;
+									// Apply same completion logic for consistency
+									isCompleted = storedValue !== undefined && (
+										field.type !== 'text' && field.type !== 'custom-text' && field.type !== 'validated-text'
+										? true
+										: (typeof storedValue === 'string' ? storedValue.trim() !== '' : storedValue)
+									);
 									break;
 								}
 							}
 						}
 					}
-
 
 					// For static groups, match fields based on message and type since IDs might differ between discovery and execution
 					const isActive = effectivePrompt ?
@@ -568,15 +678,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					// Get initial value based on field type
 					const getInitialValue = () => {
-						// Return the stored value if completed, otherwise use appropriate default
-						if (isCompleted) {
-							return fieldValue;
-						}
-						// Use sensible defaults for common types, but allow plugins to override
+						// Always return the stored value if it exists, regardless of completion status
+						// This ensures that partially entered values are preserved during navigation
 						if (fieldValue !== undefined) {
 							return fieldValue;
 						}
-						// Type-specific defaults
+						// Type-specific defaults for truly new fields
 						if (field.type === 'multi') {
 							return [];
 						}
@@ -594,6 +701,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						Object.assign(typeSpecificProps, additionalProps);
 					}
 
+					// Determine position in group for navigation
+					const isFirstInGroup = index === 0;
+					const isLastInGroup = index === allFieldsArray.length - 1;
+
 					return renderFieldComponent(field, {
 						key: `static-${field.message}-${field.type}`,
 						initialValue: getInitialValue(),
@@ -604,6 +715,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						onBack: isActive ? handleBack : undefined,
 						allowBack: isActive,
 						flow: "static",
+						isFirstInGroup,
+						isLastInGroup,
 						...typeSpecificProps
 					});
 				});

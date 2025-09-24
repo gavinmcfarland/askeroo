@@ -4,7 +4,7 @@ import { Text, Box, useInput } from "ink";
 interface Props {
 	message: string;
 	shortMessage?: string;
-	onSubmit: (value: string) => void;
+	onSubmit: (value: string | { __preserveAndBack: boolean; value: string }) => void;
 	onBack?: () => void;
 	initialValue?: string;
 	allowBack?: boolean;
@@ -12,6 +12,9 @@ interface Props {
 	completedValue?: string;
 	disabled?: boolean;
 	flow?: "phased" | "static";
+	onNavigate?: (direction: 'up' | 'down') => void;
+	isFirstInGroup?: boolean;
+	isLastInGroup?: boolean;
 }
 
 export function TextField({
@@ -25,6 +28,9 @@ export function TextField({
 	completedValue,
 	disabled = false,
 	flow,
+	onNavigate,
+	isFirstInGroup = false,
+	isLastInGroup = false,
 }: Props) {
 	const [value, setValue] = useState(initialValue);
 	const [submitted, setSubmitted] = useState(false);
@@ -38,20 +44,56 @@ export function TextField({
 
 	// Separately handle value restoration when initialValue changes
 	useEffect(() => {
-		if (!submitted && !disabled) {
+		// Always restore the initialValue when the field becomes active (not disabled)
+		// This ensures preserved values are restored when navigating back to fields
+		if (!disabled) {
 			setValue(initialValue);
 		}
-	}, [initialValue, submitted, disabled]);
+	}, [initialValue, disabled]);
 
 	useInput((input, key) => {
 		if (submitted || completed || disabled) return;
 
+		// Handle static group navigation with arrow keys
+		if (flow === "static") {
+			if (key.downArrow) {
+				if (!isLastInGroup) {
+					// Always submit current value (even if empty) and move to next field
+					// The completion logic will determine if empty fields are considered "completed"
+					setSubmitted(true);
+					onSubmit(value);
+					return;
+				}
+				// On last field, down arrow does nothing (doesn't submit)
+				return;
+			} else if (key.upArrow) {
+				// For up navigation in static groups, we need to preserve the value but go back
+				// We'll submit a special navigation value that includes the current field value
+				setSubmitted(true);
+				onSubmit({ __preserveAndBack: true, value: value });
+				return;
+			} else if (key.escape) {
+				if (isFirstInGroup) {
+					// On first field, escape exits the group (preserve value first)
+					setSubmitted(true);
+					onSubmit({ __preserveAndBack: true, value: value });
+				} else {
+					// On other fields, escape moves up (same as up arrow)
+					setSubmitted(true);
+					onSubmit({ __preserveAndBack: true, value: value });
+				}
+				return;
+			}
+		}
+
 		if (key.return) {
+			// Enter always submits the current value
 			setSubmitted(true);
 			onSubmit(value);
 		} else if (key.backspace || key.delete) {
 			setValue((prev) => prev.slice(0, -1));
-		} else if (key.escape) {
+		} else if (key.escape && flow !== "static") {
+			// Regular escape behavior for non-static groups
 			if (allowBack && onBack) {
 				onBack();
 			}

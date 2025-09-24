@@ -4,13 +4,17 @@ import { Text, Box, useInput } from "ink";
 
 interface ConfirmFieldProps {
 	message: string;
-	onSubmit: (value: boolean) => void;
+	onSubmit: (value: boolean | { __preserveAndBack: boolean; value: boolean }) => void;
 	onBack?: () => void;
 	initialValue?: boolean;
 	allowBack?: boolean;
 	completed?: boolean;
 	completedValue?: boolean;
 	disabled?: boolean;
+	flow?: "phased" | "static";
+	onNavigate?: (direction: 'up' | 'down') => void;
+	isFirstInGroup?: boolean;
+	isLastInGroup?: boolean;
 	[key: string]: any; // Allow any additional options
 }
 
@@ -23,6 +27,10 @@ export function ConfirmField({
 	completed = false,
 	completedValue,
 	disabled = false,
+	flow,
+	onNavigate,
+	isFirstInGroup = false,
+	isLastInGroup = false,
 	...rest
 }: ConfirmFieldProps) {
 	const [value, setValue] = useState<boolean | null>(initialValue);
@@ -37,18 +45,61 @@ export function ConfirmField({
 
 	// Separately handle value restoration when initialValue changes
 	useEffect(() => {
-		if (!submitted && !disabled) {
+		// Always restore the initialValue when the field becomes active (not disabled)
+		// This ensures preserved values are restored when navigating back to fields
+		if (!disabled) {
 			setValue(initialValue);
 		}
-	}, [initialValue, submitted, disabled]);
+	}, [initialValue, disabled]);
 
 	useInput((input, key) => {
 		if (submitted || completed || disabled) return;
 
-		if (key.return && value !== null) {
-			setSubmitted(true);
-			onSubmit(value);
-		} else if (key.escape) {
+		// Handle static group navigation with arrow keys
+		if (flow === "static") {
+			if (key.downArrow) {
+				if (!isLastInGroup) {
+					if (value !== null) {
+						// Submit current value and move to next field
+						setSubmitted(true);
+						onSubmit(value);
+					} else {
+						// No value selected, just navigate back (field remains incomplete/disabled)
+						if (onBack) {
+							onBack();
+						}
+					}
+					return;
+				}
+				// On last field, down arrow does nothing
+				return;
+			} else if (key.upArrow) {
+				// For up navigation, preserve current selection and go back
+				setSubmitted(true);
+				onSubmit({ __preserveAndBack: true, value: value || false });
+				return;
+			} else if (key.escape) {
+				if (isFirstInGroup) {
+					// On first field, escape exits the group (preserve value first)
+					setSubmitted(true);
+					onSubmit({ __preserveAndBack: true, value: value || false });
+				} else {
+					// On other fields, escape moves up (same as up arrow)
+					setSubmitted(true);
+					onSubmit({ __preserveAndBack: true, value: value || false });
+				}
+				return;
+			}
+		}
+
+		if (key.return) {
+			if (value !== null) {
+				// Always submit the value, navigation will happen naturally
+				setSubmitted(true);
+				onSubmit(value);
+			}
+		} else if (key.escape && flow !== "static") {
+			// Regular escape behavior for non-static groups
 			if (allowBack && onBack) {
 				onBack();
 			}
