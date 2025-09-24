@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Text, Box, useInput } from "ink";
 
-
 interface MultiFieldProps {
 	message: string;
 	options?: string[];
@@ -12,6 +11,7 @@ interface MultiFieldProps {
 	completed?: boolean;
 	completedValue?: string[];
 	disabled?: boolean;
+	onHintChange?: (hint: React.ReactNode) => void;
 	[key: string]: any; // Allow any additional options
 }
 
@@ -25,12 +25,13 @@ export function MultiField({
 	completed = false,
 	completedValue,
 	disabled = false,
+	onHintChange,
 	...rest
 }: MultiFieldProps) {
 	// Initialize selectedIndices based on initialValue
 	const getInitialIndices = () => {
 		const indices = new Set<number>();
-		initialValue.forEach(value => {
+		initialValue.forEach((value) => {
 			const index = options.indexOf(value);
 			if (index !== -1) {
 				indices.add(index);
@@ -39,7 +40,9 @@ export function MultiField({
 		return indices;
 	};
 
-	const [selectedIndices, setSelectedIndices] = useState<Set<number>>(getInitialIndices());
+	const [selectedIndices, setSelectedIndices] = useState<Set<number>>(
+		getInitialIndices()
+	);
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const [submitted, setSubmitted] = useState(false);
 
@@ -50,10 +53,30 @@ export function MultiField({
 		}
 	}, [disabled, submitted]);
 
+	// Provide hint text to parent component
+	useEffect(() => {
+		if (!onHintChange) return;
+
+		if (!disabled && !completed) {
+			const hintText = (
+				<>
+					<Text color="yellow">&lt;↑↓&gt;</Text> navigate,{" "}
+					<Text color="yellow">&lt;space&gt;</Text> select,{" "}
+					<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
+					<Text color="yellow">&lt;escape&gt;</Text> go back
+				</>
+			);
+			onHintChange(hintText);
+		} else {
+			// Clear hint when field is disabled/completed
+			onHintChange(null);
+		}
+	}, [disabled, completed]); // Removed onHintChange from dependencies
+
 	// Memoize the initialValue to prevent unnecessary re-renders
 	const stableInitial = useMemo(() => {
 		return [...initialValue];
-	}, [initialValue.join(',')]);
+	}, [initialValue.join(",")]);
 
 	// Track previous initialValue to detect actual changes
 	const prevInitialRef = useRef<string[]>([]);
@@ -62,12 +85,15 @@ export function MultiField({
 	useEffect(() => {
 		if (!submitted && !disabled) {
 			// Check if initialValue actually changed
-			const initialChanged = stableInitial.length !== prevInitialRef.current.length ||
-				stableInitial.some((val, idx) => val !== prevInitialRef.current[idx]);
+			const initialChanged =
+				stableInitial.length !== prevInitialRef.current.length ||
+				stableInitial.some(
+					(val, idx) => val !== prevInitialRef.current[idx]
+				);
 
 			if (initialChanged) {
 				const indices = new Set<number>();
-				stableInitial.forEach(value => {
+				stableInitial.forEach((value) => {
 					const index = options.indexOf(value);
 					if (index !== -1) {
 						indices.add(index);
@@ -83,14 +109,20 @@ export function MultiField({
 		if (submitted || completed || disabled) return;
 
 		if (key.return) {
-			const selectedValues = Array.from(selectedIndices).map(i => options[i]);
+			const selectedValues = Array.from(selectedIndices).map(
+				(i) => options[i]
+			);
 			setSubmitted(true);
 			onSubmit(selectedValues);
 		} else if (key.upArrow) {
-			setCurrentIndex((prev) => (prev > 0 ? prev - 1 : options.length - 1));
+			setCurrentIndex((prev) =>
+				prev > 0 ? prev - 1 : options.length - 1
+			);
 		} else if (key.downArrow) {
-			setCurrentIndex((prev) => (prev < options.length - 1 ? prev + 1 : 0));
-		} else if (input === ' ') {
+			setCurrentIndex((prev) =>
+				prev < options.length - 1 ? prev + 1 : 0
+			);
+		} else if (input === " ") {
 			setSelectedIndices((prev) => {
 				const newSet = new Set(prev);
 				if (newSet.has(currentIndex)) {
@@ -113,7 +145,9 @@ export function MultiField({
 				<Text>🎨 {message}</Text>
 				<Text>
 					<Text color="green">✓ </Text>
-					<Text color="gray">{(completedValue || []).join(", ")}</Text>
+					<Text color="gray">
+						{(completedValue || []).join(", ")}
+					</Text>
 				</Text>
 			</Box>
 		);
@@ -123,7 +157,9 @@ export function MultiField({
 		return (
 			<Box flexDirection="column">
 				<Text dimColor>🎨 {message}</Text>
-				<Text dimColor>→ <Text color="gray">...</Text></Text>
+				<Text dimColor>
+					→ <Text color="gray">...</Text>
+				</Text>
 			</Box>
 		);
 	}
@@ -131,7 +167,7 @@ export function MultiField({
 	return (
 		<Box flexDirection="column">
 			<Text>🎨 {message}</Text>
-			<Text dimColor>   Selected: {selectedIndices.size} item(s)</Text>
+			<Text dimColor> Selected: {selectedIndices.size} item(s)</Text>
 			<Text> </Text>
 			{options.map((option, index) => {
 				const isSelected = selectedIndices.has(index);
@@ -145,13 +181,13 @@ export function MultiField({
 					</Text>
 				);
 			})}
-			<Text> </Text>
+			{/* <Text> </Text>
 			<Text dimColor>
 				<Text color="yellow">&lt;↑↓&gt;</Text> navigate,{" "}
 				<Text color="yellow">&lt;space&gt;</Text> select,{" "}
 				<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
 				<Text color="yellow">&lt;escape&gt;</Text> go back
-			</Text>
+			</Text> */}
 		</Box>
 	);
 }

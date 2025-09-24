@@ -4,9 +4,14 @@ import { Text, Box } from "ink";
 interface GroupContainerProps {
 	groupName?: string | null;
 	children: React.ReactNode;
+	hintText?: React.ReactNode;
 }
 
-export function GroupContainer({ groupName, children }: GroupContainerProps) {
+export function GroupContainer({
+	groupName,
+	children,
+	hintText,
+}: GroupContainerProps) {
 	return (
 		<Box flexDirection="column">
 			{groupName && (
@@ -17,6 +22,11 @@ export function GroupContainer({ groupName, children }: GroupContainerProps) {
 				</Box>
 			)}
 			<Box flexDirection="column">{children}</Box>
+			{hintText && (
+				<Box marginTop={1}>
+					<Text dimColor>sss{hintText}</Text>
+				</Box>
+			)}
 		</Box>
 	);
 }

@@ -5,7 +5,10 @@ interface Props {
 	message: string;
 	shortMessage?: string;
 	onSubmit: (
-		value: string | { __preserveAndBack: boolean; value: string } | { __clearGroupAndBack: boolean }
+		value:
+			| string
+			| { __preserveAndBack: boolean; value: string }
+			| { __clearGroupAndBack: boolean }
 	) => void;
 	onBack?: () => void;
 	initialValue?: string;
@@ -18,6 +21,7 @@ interface Props {
 	isFirstInGroup?: boolean;
 	isLastInGroup?: boolean;
 	enableArrowNavigation?: boolean;
+	onHintChange?: (hint: React.ReactNode) => void;
 }
 
 export function TextField({
@@ -35,6 +39,7 @@ export function TextField({
 	isFirstInGroup = false,
 	isLastInGroup = false,
 	enableArrowNavigation = false,
+	onHintChange,
 }: Props) {
 	const [value, setValue] = useState(initialValue);
 	const [submitted, setSubmitted] = useState(false);
@@ -54,6 +59,25 @@ export function TextField({
 			setValue(initialValue);
 		}
 	}, [initialValue, disabled]);
+
+	// Provide hint text to parent component
+	useEffect(() => {
+		if (!onHintChange) return;
+
+		if (!disabled && !completed) {
+			const hintText =
+				flow !== "static" ? (
+					<>
+						<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
+						<Text color="yellow">&lt;escape&gt;</Text> go back
+					</>
+				) : null;
+			onHintChange(hintText);
+		} else {
+			// Clear hint when field is disabled/completed
+			onHintChange(null);
+		}
+	}, [disabled, completed, flow]); // Removed onHintChange from dependencies
 
 	useInput((input, key) => {
 		if (submitted || completed || disabled) return;
@@ -148,7 +172,7 @@ export function TextField({
 			<Text>
 				<Text color="cyan">{value}</Text>
 			</Text>
-			{flow !== "static" && (
+			{/* {flow !== "static" && (
 				<>
 					<Text> </Text>
 					<Text dimColor>
@@ -156,7 +180,7 @@ export function TextField({
 						<Text color="yellow">&lt;escape&gt;</Text> go back
 					</Text>
 				</>
-			)}
+			)} */}
 		</Box>
 	);
 }

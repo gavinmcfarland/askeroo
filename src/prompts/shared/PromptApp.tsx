@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useInput } from "ink";
 import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
@@ -65,6 +65,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const [staticGroupFocusIndex, setStaticGroupFocusIndex] = useState<Map<string, number>>(new Map());
 	// Track groups with arrow navigation enabled
 	const [arrowNavigationGroups, setArrowNavigationGroups] = useState<Set<string>>(new Set());
+	// Track current field hint text
+	const [currentHintText, setCurrentHintText] = useState<React.ReactNode>(null);
 
 	// Helper function to get display name for a group
 	const getGroupDisplayName = (groupId: string | null): string | null => {
@@ -72,9 +74,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		return groupIdToMessage.get(groupId) || null;
 	};
 
+	// Handler for when fields provide hint text
+	const handleHintChange = useCallback((hint: React.ReactNode) => {
+		setCurrentHintText(hint);
+	}, []);
+
 
 	// Helper function to render field components dynamically
-	const renderFieldComponent = (fieldInfo: { id: string; message: string; type: string }, props: any) => {
+	const renderFieldComponent = (fieldInfo: { id: string; message: string; type: string }, props: any, includeHintHandler = false) => {
 		// Extract key from props to avoid React warning about spreading key
 		const { key: propsKey, ...restProps } = props;
 		const key = propsKey || `field-${fieldInfo.id}`;
@@ -91,6 +98,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					message={fieldInfo.message}
 					{...originalProperties} // Spread original properties like shortMessage
 					{...restProps} // Spread rendering props (these take precedence)
+					{...(includeHintHandler && { onHintChange: handleHintChange })} // Only add hint handler for active fields
 				/>
 			);
 		}
@@ -790,7 +798,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						isLastInGroup,
 						enableArrowNavigation: hasArrowNavigation,
 						...typeSpecificProps
-					});
+					}, isActive); // Pass hint handler only for active fields
 				});
 		} else {
 			// For sequential groups, only show completed fields
@@ -998,6 +1006,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					allowBack={allowBack}
 					onSubmit={handleSubmit}
 					onBack={handleBack}
+					onHintChange={handleHintChange}
 					flow={flowType}
 				/>
 			);
@@ -1010,7 +1019,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	return (
 		<RootContainer>
 			{renderCompletedItemsInOrder()}
-			<GroupContainer key="group-container" groupName={getGroupDisplayName(currentGroup)}>
+			<GroupContainer key="group-container" groupName={getGroupDisplayName(currentGroup)} hintText={currentHintText}>
 				{renderCompletedFields()}
 				{field}
 			</GroupContainer>

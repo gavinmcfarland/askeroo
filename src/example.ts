@@ -3,25 +3,30 @@ import { ask, group, text, confirm } from "./index.js";
 import { multi } from "./plugins/multi/index.js";
 
 const flow = async () => {
-	const first = await text({ message: "First" });
-	const last = await text({ message: "Last" });
-	const answers = await group(
+	const first = await text({ message: "What's your name?" });
+
+	const projectInfo = await group(
 		async () => {
 			return {
-				type: await text({ message: "Type" }),
+				type: await text({ message: "Project type" }),
+				useTypeScript: await confirm({ message: "Use TypeScript?" }),
+				features: await multi({
+					message: "Select features",
+					options: ["Auth", "Database", "Testing", "API"],
+				}),
 				framework: await text({ message: "Framework" }),
-				typescript: await text({ message: "TypeScript" }),
-				template: await text({ message: "Template" }),
-				addons: await text({ message: "Add-ons" }),
 			};
 		},
-		{ message: "Static", flow: "static", enableArrowNavigation: true }
+		{
+			message: "Project Configuration",
+			flow: "static",
+			enableArrowNavigation: true,
+		}
 	);
 
-	const first2 = await text({ message: "First" });
-	const last2 = await text({ message: "Last" });
+	const email = await text({ message: "Your email?" });
 
-	return { answers, first2, last2 };
+	return { first, projectInfo, email };
 };
 
 (async () => {

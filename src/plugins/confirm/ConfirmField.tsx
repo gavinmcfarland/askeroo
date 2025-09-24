@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Text, Box, useInput } from "ink";
 
-
 interface ConfirmFieldProps {
 	message: string;
-	onSubmit: (value: boolean | { __preserveAndBack: boolean; value: boolean } | { __clearGroupAndBack: boolean }) => void;
+	onSubmit: (
+		value:
+			| boolean
+			| { __preserveAndBack: boolean; value: boolean }
+			| { __clearGroupAndBack: boolean }
+	) => void;
 	onBack?: () => void;
 	initialValue?: boolean;
 	allowBack?: boolean;
@@ -12,10 +16,11 @@ interface ConfirmFieldProps {
 	completedValue?: boolean;
 	disabled?: boolean;
 	flow?: "phased" | "static";
-	onNavigate?: (direction: 'up' | 'down') => void;
+	onNavigate?: (direction: "up" | "down") => void;
 	isFirstInGroup?: boolean;
 	isLastInGroup?: boolean;
 	enableArrowNavigation?: boolean;
+	onHintChange?: (hint: React.ReactNode) => void;
 	[key: string]: any; // Allow any additional options
 }
 
@@ -33,6 +38,7 @@ export function ConfirmField({
 	isFirstInGroup = false,
 	isLastInGroup = false,
 	enableArrowNavigation = false,
+	onHintChange,
 	...rest
 }: ConfirmFieldProps) {
 	const [value, setValue] = useState<boolean | null>(initialValue);
@@ -53,6 +59,24 @@ export function ConfirmField({
 			setValue(initialValue);
 		}
 	}, [initialValue, disabled]);
+
+	// Provide hint text to parent component
+	useEffect(() => {
+		if (!onHintChange) return;
+
+		if (!disabled && !completed) {
+			const hintText = (
+				<>
+					<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
+					<Text color="yellow">&lt;escape&gt;</Text> go back
+				</>
+			);
+			onHintChange(hintText);
+		} else {
+			// Clear hint when field is disabled/completed
+			onHintChange(null);
+		}
+	}, [disabled, completed]); // Removed onHintChange from dependencies
 
 	useInput((input, key) => {
 		if (submitted || completed || disabled) return;
@@ -80,7 +104,10 @@ export function ConfirmField({
 				if (!isFirstInGroup) {
 					// Only navigate up if not on the first field (stay within group bounds)
 					setSubmitted(true);
-					onSubmit({ __preserveAndBack: true, value: value || false });
+					onSubmit({
+						__preserveAndBack: true,
+						value: value || false,
+					});
 				}
 				// If on first field, do nothing (don't exit the group)
 				return;
@@ -125,7 +152,8 @@ export function ConfirmField({
 	});
 
 	if (completed) {
-		const displayValue = completedValue !== undefined ? completedValue : value;
+		const displayValue =
+			completedValue !== undefined ? completedValue : value;
 		return (
 			<Box flexDirection="column">
 				<Text>{message}</Text>
@@ -160,11 +188,11 @@ export function ConfirmField({
 				</Text>
 				<Text dimColor> [y/n]</Text>
 			</Text>
-			<Text> </Text>
+			{/* <Text> </Text>
 			<Text dimColor>
 				<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
 				<Text color="yellow">&lt;escape&gt;</Text> go back
-			</Text>
+			</Text> */}
 		</Box>
 	);
 }

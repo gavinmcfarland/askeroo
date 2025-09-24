@@ -13,6 +13,7 @@ interface CustomTextFieldProps {
 	completed?: boolean;
 	completedValue?: string;
 	disabled?: boolean;
+	onHintChange?: (hint: React.ReactNode) => void;
 	[key: string]: any; // Allow any additional options
 }
 
@@ -27,6 +28,7 @@ export function CustomTextField({
 	completed = false,
 	completedValue,
 	disabled = false,
+	onHintChange,
 	...rest
 }: CustomTextFieldProps) {
 	const [value, setValue] = useState(initialValue);
@@ -45,6 +47,24 @@ export function CustomTextField({
 			setValue(initialValue);
 		}
 	}, [initialValue, submitted, disabled]);
+
+	// Provide hint text to parent component
+	useEffect(() => {
+		if (!onHintChange) return;
+
+		if (!disabled && !completed) {
+			const hintText = (
+				<>
+					<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
+					<Text color="yellow">&lt;escape&gt;</Text> go back
+				</>
+			);
+			onHintChange(hintText);
+		} else {
+			// Clear hint when field is disabled/completed
+			onHintChange(null);
+		}
+	}, [disabled, completed]); // Removed onHintChange from dependencies
 
 	useInput((input, key) => {
 		if (submitted || completed || disabled) return;
