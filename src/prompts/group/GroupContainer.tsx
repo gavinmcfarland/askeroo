@@ -24,7 +24,7 @@ export function GroupContainer({
 			<Box flexDirection="column">{children}</Box>
 			{hintText && (
 				<Box marginTop={1}>
-					<Text dimColor>sss{hintText}</Text>
+					<Text dimColor>{hintText}</Text>
 				</Box>
 			)}
 		</Box>

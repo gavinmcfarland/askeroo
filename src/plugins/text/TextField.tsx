@@ -65,13 +65,12 @@ export function TextField({
 		if (!onHintChange) return;
 
 		if (!disabled && !completed) {
-			const hintText =
-				flow !== "static" ? (
-					<>
-						<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
-						<Text color="yellow">&lt;escape&gt;</Text> go back
-					</>
-				) : null;
+			const hintText = (
+				<>
+					<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
+					<Text color="yellow">&lt;escape&gt;</Text> go back
+				</>
+			);
 			onHintChange(hintText);
 		} else {
 			// Clear hint when field is disabled/completed
