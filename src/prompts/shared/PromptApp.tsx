@@ -227,6 +227,66 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const handleSubmit = (value: any) => {
 		if (resolverRef.current && currentPrompt) {
 			if (currentPrompt.type !== "group") {
+				// Handle special navigation value that clears entire group and goes back
+				if (typeof value === 'object' && value?.__clearGroupAndBack) {
+					// Clear all fields in the current group
+					if (currentPrompt.groupName) {
+						// Find all fields that belong to this group and clear them
+						setFieldValues((prev) => {
+							const newFieldValues = { ...prev };
+
+							// Remove all field values for fields in this group
+							const groupName = currentPrompt.groupName;
+							for (const [fieldId, _] of Object.entries(newFieldValues)) {
+								// Check if this field belongs to the current group
+								const fieldEntry = rootPromptOrder.find(entry => entry.id === fieldId && entry.groupName === groupName);
+								if (fieldEntry) {
+									delete newFieldValues[fieldId];
+								}
+							}
+
+							return newFieldValues;
+						});
+
+						// Also clear completion tracking for group fields
+						setCompletedFields((prev) => {
+							const newCompleted = new Set(prev);
+							const groupName = currentPrompt.groupName;
+
+							// Remove completion status for all fields in this group
+							for (const fieldId of newCompleted) {
+								const fieldEntry = rootPromptOrder.find(entry => entry.id === fieldId && entry.groupName === groupName);
+								if (fieldEntry) {
+									newCompleted.delete(fieldId);
+								}
+							}
+
+							return newCompleted;
+						});
+
+						// Clear visited prompts for group fields
+						setVisitedPrompts((prev) => {
+							const newVisited = new Set(prev);
+							const groupName = currentPrompt.groupName;
+
+							for (const fieldId of newVisited) {
+								const fieldEntry = rootPromptOrder.find(entry => entry.id === fieldId && entry.groupName === groupName);
+								if (fieldEntry) {
+									newVisited.delete(fieldId);
+								}
+							}
+
+							return newVisited;
+						});
+					}
+
+					// Trigger back navigation
+					const r = resolverRef.current;
+					resolverRef.current = null;
+					r({ __back: true });
+					return;
+				}
+
 				// Handle special navigation value that preserves field content but goes back
 				if (typeof value === 'object' && value?.__preserveAndBack) {
 					// Store the actual value, not the navigation object

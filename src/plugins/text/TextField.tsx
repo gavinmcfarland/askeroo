@@ -5,7 +5,7 @@ interface Props {
 	message: string;
 	shortMessage?: string;
 	onSubmit: (
-		value: string | { __preserveAndBack: boolean; value: string }
+		value: string | { __preserveAndBack: boolean; value: string } | { __clearGroupAndBack: boolean }
 	) => void;
 	onBack?: () => void;
 	initialValue?: string;
@@ -71,10 +71,13 @@ export function TextField({
 				// On last field, down arrow does nothing (doesn't submit)
 				return;
 			} else if (key.upArrow) {
-				// For up navigation in static groups, we need to preserve the value but go back
-				// We'll submit a special navigation value that includes the current field value
-				setSubmitted(true);
-				onSubmit({ __preserveAndBack: true, value: value });
+				// For up navigation in static groups with arrow navigation enabled
+				if (!isFirstInGroup) {
+					// Only navigate up if not on the first field (stay within group bounds)
+					setSubmitted(true);
+					onSubmit({ __preserveAndBack: true, value: value });
+				}
+				// If on first field, do nothing (don't exit the group)
 				return;
 			}
 		}
@@ -82,11 +85,15 @@ export function TextField({
 		// Handle escape key for static groups (always enabled regardless of arrow navigation)
 		if (flow === "static" && key.escape) {
 			if (enableArrowNavigation && !isFirstInGroup) {
-				// If arrow navigation is enabled and not on first field, escape moves up within group
+				// If arrow navigation is enabled and not on first field, escape moves up within group (preserve value)
 				setSubmitted(true);
 				onSubmit({ __preserveAndBack: true, value: value });
+			} else if (enableArrowNavigation && isFirstInGroup) {
+				// Escape on first field with arrow navigation: clear entire group and exit
+				setSubmitted(true);
+				onSubmit({ __clearGroupAndBack: true });
 			} else {
-				// Default escape behavior - same as non-static groups
+				// Escape when arrow navigation is disabled: regular back behavior
 				if (allowBack && onBack) {
 					onBack();
 				}

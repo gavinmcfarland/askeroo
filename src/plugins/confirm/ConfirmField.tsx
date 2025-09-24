@@ -4,7 +4,7 @@ import { Text, Box, useInput } from "ink";
 
 interface ConfirmFieldProps {
 	message: string;
-	onSubmit: (value: boolean | { __preserveAndBack: boolean; value: boolean }) => void;
+	onSubmit: (value: boolean | { __preserveAndBack: boolean; value: boolean } | { __clearGroupAndBack: boolean }) => void;
 	onBack?: () => void;
 	initialValue?: boolean;
 	allowBack?: boolean;
@@ -76,9 +76,13 @@ export function ConfirmField({
 				// On last field, down arrow does nothing
 				return;
 			} else if (key.upArrow) {
-				// For up navigation, preserve current selection and go back
-				setSubmitted(true);
-				onSubmit({ __preserveAndBack: true, value: value || false });
+				// For up navigation in static groups with arrow navigation enabled
+				if (!isFirstInGroup) {
+					// Only navigate up if not on the first field (stay within group bounds)
+					setSubmitted(true);
+					onSubmit({ __preserveAndBack: true, value: value || false });
+				}
+				// If on first field, do nothing (don't exit the group)
 				return;
 			}
 		}
@@ -86,11 +90,15 @@ export function ConfirmField({
 		// Handle escape key for static groups (always enabled regardless of arrow navigation)
 		if (flow === "static" && key.escape) {
 			if (enableArrowNavigation && !isFirstInGroup) {
-				// If arrow navigation is enabled and not on first field, escape moves up within group
+				// If arrow navigation is enabled and not on first field, escape moves up within group (preserve value)
 				setSubmitted(true);
 				onSubmit({ __preserveAndBack: true, value: value || false });
+			} else if (enableArrowNavigation && isFirstInGroup) {
+				// Escape on first field with arrow navigation: clear entire group and exit
+				setSubmitted(true);
+				onSubmit({ __clearGroupAndBack: true });
 			} else {
-				// Default escape behavior - same as non-static groups
+				// Escape when arrow navigation is disabled: regular back behavior
 				if (allowBack && onBack) {
 					onBack();
 				}
