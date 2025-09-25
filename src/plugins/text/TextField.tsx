@@ -22,6 +22,7 @@ interface Props {
 	isLastInGroup?: boolean;
 	enableArrowNavigation?: boolean;
 	onHintChange?: (hint: React.ReactNode) => void;
+	isFirstRootPrompt?: boolean;
 }
 
 export function TextField({
@@ -40,6 +41,7 @@ export function TextField({
 	isLastInGroup = false,
 	enableArrowNavigation = false,
 	onHintChange,
+	isFirstRootPrompt = false,
 }: Props) {
 	const [value, setValue] = useState(initialValue);
 	const [submitted, setSubmitted] = useState(false);
@@ -67,8 +69,12 @@ export function TextField({
 		if (!disabled && !completed) {
 			const hintText = (
 				<>
-					<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
-					<Text color="yellow">&lt;escape&gt;</Text> go back
+					<Text color="yellow">&lt;enter&gt;</Text> proceed
+					{!isFirstRootPrompt && (
+						<>
+							, <Text color="yellow">&lt;escape&gt;</Text> go back
+						</>
+					)}
 				</>
 			);
 			onHintChange(hintText);
@@ -76,7 +82,7 @@ export function TextField({
 			// Clear hint when field is disabled/completed
 			onHintChange(null);
 		}
-	}, [disabled, completed, flow]); // Removed onHintChange from dependencies
+	}, [disabled, completed, flow, isFirstRootPrompt]); // Removed onHintChange from dependencies
 
 	useInput((input, key) => {
 		if (submitted || completed || disabled) return;

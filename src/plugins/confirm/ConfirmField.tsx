@@ -21,6 +21,7 @@ interface ConfirmFieldProps {
 	isLastInGroup?: boolean;
 	enableArrowNavigation?: boolean;
 	onHintChange?: (hint: React.ReactNode) => void;
+	isFirstRootPrompt?: boolean;
 	[key: string]: any; // Allow any additional options
 }
 
@@ -39,6 +40,7 @@ export function ConfirmField({
 	isLastInGroup = false,
 	enableArrowNavigation = false,
 	onHintChange,
+	isFirstRootPrompt = false,
 	...rest
 }: ConfirmFieldProps) {
 	const [value, setValue] = useState<boolean | null>(initialValue);
@@ -67,8 +69,13 @@ export function ConfirmField({
 		if (!disabled && !completed) {
 			const hintText = (
 				<>
-					<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
-					<Text color="yellow">&lt;escape&gt;</Text> go back
+					<Text color="yellow">&lt;enter&gt;</Text> proceed
+					{!isFirstRootPrompt && (
+						<>
+							,{" "}
+							<Text color="yellow">&lt;escape&gt;</Text> go back
+						</>
+					)}
 				</>
 			);
 			onHintChange(hintText);
@@ -76,7 +83,7 @@ export function ConfirmField({
 			// Clear hint when field is disabled/completed
 			onHintChange(null);
 		}
-	}, [disabled, completed]); // Removed onHintChange from dependencies
+	}, [disabled, completed, isFirstRootPrompt]); // Removed onHintChange from dependencies
 
 	useInput((input, key) => {
 		if (submitted || completed || disabled) return;

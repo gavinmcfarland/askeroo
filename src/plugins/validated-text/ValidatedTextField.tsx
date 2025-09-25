@@ -14,6 +14,7 @@ interface ValidatedTextFieldProps {
 	completedValue?: string;
 	disabled?: boolean;
 	onHintChange?: (hint: React.ReactNode) => void;
+	isFirstRootPrompt?: boolean;
 	[key: string]: any; // Allow any additional options
 }
 
@@ -29,6 +30,7 @@ export function ValidatedTextField({
 	completedValue,
 	disabled = false,
 	onHintChange,
+	isFirstRootPrompt = false,
 	...rest
 }: ValidatedTextFieldProps) {
 	const [value, setValue] = useState(initialValue);
@@ -58,8 +60,13 @@ export function ValidatedTextField({
 		if (!disabled && !completed) {
 			const hintText = (
 				<>
-					<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
-					<Text color="yellow">&lt;escape&gt;</Text> go back
+					<Text color="yellow">&lt;enter&gt;</Text> proceed
+					{!isFirstRootPrompt && (
+						<>
+							,{" "}
+							<Text color="yellow">&lt;escape&gt;</Text> go back
+						</>
+					)}
 				</>
 			);
 			onHintChange(hintText);
@@ -67,7 +74,7 @@ export function ValidatedTextField({
 			// Clear hint when field is disabled/completed
 			onHintChange(null);
 		}
-	}, [disabled, completed]); // Removed onHintChange from dependencies
+	}, [disabled, completed, isFirstRootPrompt]); // Removed onHintChange from dependencies
 
 	useInput((input, key) => {
 		if (submitted || completed || disabled) return;
@@ -138,10 +145,12 @@ export function ValidatedTextField({
 				</Text>
 			)}
 			<Text> </Text>
-			<Text dimColor>
-				<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
-				<Text color="yellow">&lt;escape&gt;</Text> go back
+			{!isFirstRootPrompt && (
+				<Text dimColor>
+					<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
+					<Text color="yellow">&lt;escape&gt;</Text> go back
 			</Text>
+			)}
 		</Box>
 	);
 }

@@ -14,6 +14,7 @@ interface CustomTextFieldProps {
 	completedValue?: string;
 	disabled?: boolean;
 	onHintChange?: (hint: React.ReactNode) => void;
+	isFirstRootPrompt?: boolean;
 	[key: string]: any; // Allow any additional options
 }
 
@@ -29,6 +30,7 @@ export function CustomTextField({
 	completedValue,
 	disabled = false,
 	onHintChange,
+	isFirstRootPrompt = false,
 	...rest
 }: CustomTextFieldProps) {
 	const [value, setValue] = useState(initialValue);
@@ -55,8 +57,13 @@ export function CustomTextField({
 		if (!disabled && !completed) {
 			const hintText = (
 				<>
-					<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
-					<Text color="yellow">&lt;escape&gt;</Text> go back
+					<Text color="yellow">&lt;enter&gt;</Text> proceed
+					{!isFirstRootPrompt && (
+						<>
+							,{" "}
+							<Text color="yellow">&lt;escape&gt;</Text> go back
+						</>
+					)}
 				</>
 			);
 			onHintChange(hintText);
@@ -64,7 +71,7 @@ export function CustomTextField({
 			// Clear hint when field is disabled/completed
 			onHintChange(null);
 		}
-	}, [disabled, completed]); // Removed onHintChange from dependencies
+	}, [disabled, completed, isFirstRootPrompt]); // Removed onHintChange from dependencies
 
 	useInput((input, key) => {
 		if (submitted || completed || disabled) return;
@@ -114,10 +121,12 @@ export function CustomTextField({
 				{prefix} <Text color="magenta">{value}</Text>
 			</Text>
 			<Text> </Text>
-			<Text dimColor>
-				<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
-				<Text color="yellow">&lt;escape&gt;</Text> go back
+			{!isFirstRootPrompt && (
+				<Text dimColor>
+					<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
+					<Text color="yellow">&lt;escape&gt;</Text> go back
 			</Text>
+			)}
 		</Box>
 	);
 }

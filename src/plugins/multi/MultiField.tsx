@@ -12,6 +12,7 @@ interface MultiFieldProps {
 	completedValue?: string[];
 	disabled?: boolean;
 	onHintChange?: (hint: React.ReactNode) => void;
+	isFirstRootPrompt?: boolean;
 	[key: string]: any; // Allow any additional options
 }
 
@@ -26,6 +27,7 @@ export function MultiField({
 	completedValue,
 	disabled = false,
 	onHintChange,
+	isFirstRootPrompt = false,
 	...rest
 }: MultiFieldProps) {
 	// Initialize selectedIndices based on initialValue
@@ -62,8 +64,13 @@ export function MultiField({
 				<>
 					<Text color="yellow">&lt;↑↓&gt;</Text> navigate,{" "}
 					<Text color="yellow">&lt;space&gt;</Text> select,{" "}
-					<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
-					<Text color="yellow">&lt;escape&gt;</Text> go back
+					<Text color="yellow">&lt;enter&gt;</Text> proceed
+					{!isFirstRootPrompt && (
+						<>
+							,{" "}
+							<Text color="yellow">&lt;escape&gt;</Text> go back
+						</>
+					)}
 				</>
 			);
 			onHintChange(hintText);
@@ -71,7 +78,7 @@ export function MultiField({
 			// Clear hint when field is disabled/completed
 			onHintChange(null);
 		}
-	}, [disabled, completed]); // Removed onHintChange from dependencies
+	}, [disabled, completed, isFirstRootPrompt]); // Removed onHintChange from dependencies
 
 	// Memoize the initialValue to prevent unnecessary re-renders
 	const stableInitial = useMemo(() => {
@@ -141,24 +148,19 @@ export function MultiField({
 
 	if (completed) {
 		return (
-			<Box flexDirection="column">
-				<Text>🎨 {message}</Text>
-				<Text>
-					<Text color="green">✓ </Text>
-					<Text color="gray">
-						{(completedValue || []).join(", ")}
-					</Text>
-				</Text>
+			<Box flexDirection="row" gap={1}>
+				<Text>{message}</Text>
+				<Text color="blue">{(completedValue || []).join(", ")}</Text>
 			</Box>
 		);
 	}
 
 	if (disabled) {
 		return (
-			<Box flexDirection="column">
-				<Text dimColor>🎨 {message}</Text>
+			<Box flexDirection="row" gap={1}>
+				<Text dimColor>{message}</Text>
 				<Text dimColor>
-					→ <Text color="gray">...</Text>
+					<Text color="gray">...</Text>
 				</Text>
 			</Box>
 		);
@@ -166,14 +168,14 @@ export function MultiField({
 
 	return (
 		<Box flexDirection="column">
-			<Text>🎨 {message}</Text>
-			<Text dimColor> Selected: {selectedIndices.size} item(s)</Text>
+			<Text>{message}</Text>
+			<Text dimColor>Selected: {selectedIndices.size} item(s)</Text>
 			<Text> </Text>
 			{options.map((option, index) => {
 				const isSelected = selectedIndices.has(index);
 				const isCurrent = index === currentIndex;
-				const prefix = isCurrent ? "→" : " ";
-				const checkbox = isSelected ? "☑" : "☐";
+				const prefix = isCurrent ? ">" : " ";
+				const checkbox = isSelected ? "■" : "☐";
 
 				return (
 					<Text key={index} color={isCurrent ? "cyan" : undefined}>
@@ -181,13 +183,6 @@ export function MultiField({
 					</Text>
 				);
 			})}
-			{/* <Text> </Text>
-			<Text dimColor>
-				<Text color="yellow">&lt;↑↓&gt;</Text> navigate,{" "}
-				<Text color="yellow">&lt;space&gt;</Text> select,{" "}
-				<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
-				<Text color="yellow">&lt;escape&gt;</Text> go back
-			</Text> */}
 		</Box>
 	);
 }

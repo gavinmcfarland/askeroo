@@ -791,6 +791,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					const isLastInGroup = index === allFieldsArray.length - 1;
 					const hasArrowNavigation = arrowNavigationGroups.has(currentGroup);
 
+					// Check if this is the first prompt in the root flow (for static group fields)
+					// This is true if this field is the very first field the user sees, regardless of grouping
+					const isFirstRootPromptInStaticGroup = field.id === firstFieldIdRef.current;
+
 					return renderFieldComponent(field, {
 						key: `static-${field.message}-${field.type}`,
 						initialValue: getInitialValue(),
@@ -804,6 +808,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						isFirstInGroup,
 						isLastInGroup,
 						enableArrowNavigation: hasArrowNavigation,
+						isFirstRootPrompt: isFirstRootPromptInStaticGroup,
 						...typeSpecificProps
 					}, isActive); // Pass hint handler only for active fields
 				});
@@ -1010,6 +1015,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				return "";
 			};
 
+			// Check if this is the first prompt in the root flow
+			// This is true if this field is the very first field the user sees, regardless of grouping
+			const isFirstRootPrompt = effectivePrompt.id === firstFieldIdRef.current;
+
 			// Determine flow type based on current group
 			const flowType = currentGroup && progressiveGroups.has(currentGroup) ? "progressive" :
 							currentGroup && phaseGroups.has(currentGroup) ? "phased" :
@@ -1026,6 +1035,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					onBack={handleBack}
 					onHintChange={handleHintChange}
 					flow={flowType}
+					isFirstRootPrompt={isFirstRootPrompt}
 				/>
 			);
 		} else {
