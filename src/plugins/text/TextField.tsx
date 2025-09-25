@@ -222,7 +222,6 @@ export function TextField({
 		<Box
 			flexDirection={flow === "static" ? "row" : "column"}
 			gap={flow === "static" ? 1 : 0}
-			marginTop={flow === "progressive" && !isFirstInGroup ? 1 : 0}
 			marginBottom={flow === "static" && !isLastInGroup ? 1 : 0}
 		>
 			<Box width={flow === "static" ? 14 : undefined}>

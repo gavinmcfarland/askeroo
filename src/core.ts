@@ -7,6 +7,7 @@ import "./plugins/confirm/index.js";
 import "./plugins/custom-text/index.js";
 import "./plugins/multi/index.js";
 import "./plugins/validated-text/index.js";
+import "./plugins/completed-fields/index.js";
 
 export type Answers = Record<string, unknown>;
 

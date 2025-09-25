@@ -3,6 +3,7 @@ import { useInput, Box, Text } from "ink";
 import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../../registry.js";
+import { updateAppState } from "../../plugins/completed-fields/CompletedFields.js";
 
 // Generic prompt request that works for all plugins
 type PromptRequest = {
@@ -49,6 +50,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const [completedGroups, setCompletedGroups] = useState<Set<string>>(
 		new Set()
 	);
+
+	// Track field metadata for the completed fields plugin
+	const [fieldMessages, setFieldMessages] = useState<Record<string, string>>({});
+	const [fieldGroupNames, setFieldGroupNames] = useState<Record<string, string>>({});
 	const [groupOrder, setGroupOrder] = useState<string[]>([]);
 	const [groupIdToMessage, setGroupIdToMessage] = useState<
 		Map<string, string | undefined>
@@ -63,6 +68,17 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const [fieldProperties, setFieldProperties] = useState<Map<string, any>>(
 		new Map()
 	);
+
+	// Update completed fields plugin state whenever relevant data changes
+	useEffect(() => {
+		updateAppState({
+			completedFields,
+			fieldValues,
+			groupNames: fieldGroupNames,
+			fieldMessages
+		});
+	}, [completedFields, fieldValues, fieldGroupNames, fieldMessages]);
+
 	const firstFieldIdRef = useRef<string | null>(null);
 	const staticGroupsRef = useRef<Set<string>>(new Set());
 	// Static group navigation state
@@ -141,6 +157,20 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						newMap.set(request.id, request);
 						return newMap;
 					});
+
+					// Track field metadata for completed fields plugin
+					// Try to get the field label from various possible properties
+					const fieldLabel = request.message || request.label || `${request.type} field`;
+					setFieldMessages(prev => ({
+						...prev,
+						[request.id]: fieldLabel
+					}));
+					if (request.groupName) {
+						setFieldGroupNames(prev => ({
+							...prev,
+							[request.id]: request.groupName!
+						}));
+					}
 				}
 
 				// Track root-level prompt order
