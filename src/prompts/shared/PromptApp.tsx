@@ -77,9 +77,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			fieldValues,
 			groupNames: fieldGroupNames,
 			groupIds: fieldGroupIds,
-			fieldMessages
+			fieldMessages,
+			fieldProperties
 		});
-	}, [completedFields, fieldValues, fieldGroupNames, fieldGroupIds, fieldMessages]);
+	}, [completedFields, fieldValues, fieldGroupNames, fieldGroupIds, fieldMessages, fieldProperties]);
 
 	const firstFieldIdRef = useRef<string | null>(null);
 	const staticGroupsRef = useRef<Set<string>>(new Set());

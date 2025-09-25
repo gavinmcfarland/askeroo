@@ -30,12 +30,14 @@ let globalAppState: {
 	groupNames: Record<string, string>;
 	groupIds: Record<string, string>;
 	fieldMessages: Record<string, string>;
+	fieldProperties: Map<string, any>;
 } = {
 	completedFields: new Set(),
 	fieldValues: {},
 	groupNames: {},
 	groupIds: {},
 	fieldMessages: {},
+	fieldProperties: new Map(),
 };
 
 let globalUpdateListeners: Set<() => void> = new Set();
@@ -81,19 +83,22 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 		for (const fieldId of appState.completedFields) {
 			if (appState.fieldValues[fieldId] !== undefined) {
 				const value = appState.fieldValues[fieldId];
-				const message = appState.fieldMessages[fieldId] || fieldId;
 				const groupName = appState.groupNames[fieldId];
 				const groupId = appState.groupIds[fieldId];
+
+				// Get the original field properties
+				const originalProperties = appState.fieldProperties.get(fieldId) || {};
+
+				// Use the original field's label and shortLabel properties
+				const label = originalProperties.label || originalProperties.message || appState.fieldMessages[fieldId] || fieldId;
+				const shortLabel = originalProperties.shortLabel;
 
 				fields.push({
 					id: fieldId,
 					groupName,
-					groupId, // Add groupId to the field for filtering
-					label: message,
-					shortLabel:
-						message.length > 15
-							? message.substring(0, 12) + "..."
-							: message,
+					groupId,
+					label,
+					shortLabel,
 					value: String(value),
 					timestamp: Date.now(), // We don't have timestamps from the app state
 				});
@@ -231,20 +236,22 @@ export const completedFieldsUtils = {
 		for (const fieldId of globalAppState.completedFields) {
 			if (globalAppState.fieldValues[fieldId] !== undefined) {
 				const value = globalAppState.fieldValues[fieldId];
-				const message =
-					globalAppState.fieldMessages[fieldId] || fieldId;
 				const groupName = globalAppState.groupNames[fieldId];
 				const groupId = globalAppState.groupIds[fieldId];
+
+				// Get the original field properties
+				const originalProperties = globalAppState.fieldProperties.get(fieldId) || {};
+
+				// Use the original field's label and shortLabel properties
+				const label = originalProperties.label || originalProperties.message || globalAppState.fieldMessages[fieldId] || fieldId;
+				const shortLabel = originalProperties.shortLabel;
 
 				fields.push({
 					id: fieldId,
 					groupName,
 					groupId,
-					label: message,
-					shortLabel:
-						message.length > 15
-							? message.substring(0, 12) + "..."
-							: message,
+					label,
+					shortLabel,
 					value: String(value),
 					timestamp: Date.now(),
 				});

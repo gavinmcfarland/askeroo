@@ -3,24 +3,32 @@ import { ask, group, text, confirm } from "../src/index.js";
 import { completedFields } from "../src/plugins/completed-fields/index.js";
 
 const flow = async () => {
-	const answers = await group(async () => {
-		return {
-			type: await text({ shortLabel: "Type", label: "Choose a type:" }),
-			framework: await text({
-				shortLabel: "Framework",
-				label: "Choose a framework:",
-			}),
-			template: await text({
-				shortLabel: "Template",
-				label: "Pick a template to start from:",
-			}),
-			typescript: await text({
-				shortLabel: "TypeScript",
-				label: "Use TypeScript?",
-			}),
-			setup: await text({ shortLabel: "Setup", label: "Setup" }),
-		};
-	});
+	// await completedFields();
+
+	const answers = await group(
+		async () => {
+			return {
+				type: await text({
+					shortLabel: "Type",
+					label: "Choose a type:",
+				}),
+				framework: await text({
+					shortLabel: "Framework",
+					label: "Choose a framework:",
+				}),
+				template: await text({
+					shortLabel: "Template",
+					label: "Pick a template to start from:",
+				}),
+				typescript: await text({
+					shortLabel: "TypeScript",
+					label: "Use TypeScript?",
+				}),
+				setup: await text({ shortLabel: "Setup", label: "Setup" }),
+			};
+		},
+		{ flow: "phased" }
+	);
 
 	// Show all completed fields after the group
 	await completedFields({});
