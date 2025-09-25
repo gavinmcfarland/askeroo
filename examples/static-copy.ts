@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { ask, group, text, confirm } from "./index.js";
-import { multi } from "./plugins/multi/index.js";
+import { ask, group, text, confirm } from "../src/index.js";
+import { multi } from "../src/plugins/multi/index.js";
 
 const flow = async () => {
 	const first = await text({ message: "What's your name?" });

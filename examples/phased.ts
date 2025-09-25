@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { ask, group, text, confirm } from "./index.js";
-import { multi } from "./plugins/multi/index.js";
+import { ask, group, text, confirm } from "../src/index.js";
+import { multi } from "../src/plugins/multi/index.js";
 
 const flow = async () => {
 	const answers = await group(
@@ -10,16 +10,12 @@ const flow = async () => {
 				framework: await text({ message: "Framework" }),
 				typescript: await text({ message: "TypeScript" }),
 				template: await text({ message: "Template" }),
-				addons: await text({ message: "Add-ons" }),
-				git: await text({ message: "Git" }),
 			};
 		},
 		{
 			flow: "phased",
 		}
 	);
-
-	const name = await text({ message: "Name" });
 
 	return { answers };
 };

@@ -32,7 +32,7 @@
         "build": "npm run clean && tsc",
         "clean": "rm -rf ./dist/*",
         "dev": "tsc --watch",
-        "example": "npm run build && node dist/example.js --",
+        "example": "npm run build && node scripts/run-example.js",
         "plugma": "npm run build && node dist/plugma.js --",
         "test": "npm run build && node dist/test.js --",
         "prepublishOnly": "npm run build"

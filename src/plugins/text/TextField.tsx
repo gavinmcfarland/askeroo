@@ -179,17 +179,9 @@ export function TextField({
 				<Text>{message}</Text>
 			</Box>
 			<Text>
+				{"> "}
 				<Text color="cyan">{value}</Text>
 			</Text>
-			{/* {flow !== "static" && (
-				<>
-					<Text> </Text>
-					<Text dimColor>
-						<Text color="yellow">&lt;enter&gt;</Text> proceed,{" "}
-						<Text color="yellow">&lt;escape&gt;</Text> go back
-					</Text>
-				</>
-			)} */}
 		</Box>
 	);
 }
