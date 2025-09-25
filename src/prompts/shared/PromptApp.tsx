@@ -140,6 +140,26 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	useEffect(() => {
 		const promptFn = (request: PromptRequest): Promise<any> => {
 			return new Promise((resolve) => {
+				// Handle flow completion first
+				if (request.type === "completeFlow") {
+					// Handle flow completion - mark all fields as completed
+					setCompletedFields((prev) => {
+						const newCompleted = new Set(prev);
+						// Add all field values as completed
+						Object.keys(fieldValues).forEach(fieldId => {
+							newCompleted.add(fieldId);
+						});
+						return newCompleted;
+					});
+
+					// Clear the current prompt so the active field transitions to completed state
+					setCurrentPrompt(null);
+
+					// Resolve immediately
+					resolve(undefined);
+					return;
+				}
+
 				if (
 					request.type !== "group" &&
 					firstFieldIdRef.current === null
@@ -636,8 +656,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			}
 			const r = resolverRef.current;
 			resolverRef.current = null;
-			// resolve immediately; let the controller switch the prompt
-			r(value);
+
+			// Add a small delay to allow completion state to update and re-render
+			setTimeout(() => {
+				r(value);
+			}, 50);
 		}
 	};
 

@@ -109,6 +109,14 @@ function createUI() {
 			}
 			return null;
 		},
+
+		async completeFlow(): Promise<void> {
+			const promptFn = await ensureApp();
+			await promptFn({
+				type: "completeFlow",
+				id: "flow-completion",
+			});
+		},
 	};
 
 	// Create dynamic UI handlers for all registered plugins

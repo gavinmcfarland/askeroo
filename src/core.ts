@@ -509,6 +509,13 @@ export function createRuntime(ui: UI) {
 						result,
 						totalSteps: interactivePrompts.length,
 					});
+
+					// Notify UI that the flow is complete so all fields can be marked as completed
+					extendedUI.completeFlow?.();
+
+					// Add a small delay to allow the completion state to update
+					await new Promise(resolve => setTimeout(resolve, 100));
+
 					extendedUI.cleanup?.();
 					return result;
 				}
