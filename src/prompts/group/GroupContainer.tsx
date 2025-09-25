@@ -6,7 +6,7 @@ interface GroupContainerProps {
 	children?: React.ReactNode;
 	hintText?: React.ReactNode;
 	completed?: boolean;
-	completedFields?: React.ReactNode[];
+	completedFields?: React.ReactNode[] | null;
 }
 
 export function GroupContainer({
@@ -18,6 +18,11 @@ export function GroupContainer({
 }: GroupContainerProps) {
 	// If group is completed, render the completed field components
 	if (completed) {
+		// Don't render anything if no completed fields are provided
+		if (!completedFields || completedFields.length === 0) {
+			return null;
+		}
+
 		return (
 			<Box flexDirection="column">
 				{groupName && (
@@ -27,9 +32,7 @@ export function GroupContainer({
 						</Text>
 					</Box>
 				)}
-				<Box flexDirection="column">
-					{completedFields}
-				</Box>
+				<Box flexDirection="column">{completedFields}</Box>
 			</Box>
 		);
 	}

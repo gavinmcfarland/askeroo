@@ -163,7 +163,9 @@ export function TextField({
 	if (disabled) {
 		return (
 			<Box gap={1}>
-				<Text dimColor>{shortMessage || message}</Text>
+				<Box width={14}>
+					<Text dimColor>{shortMessage || message}</Text>
+				</Box>
 				<Text dimColor>
 					<Text color="gray">...</Text>
 				</Text>
@@ -173,7 +175,9 @@ export function TextField({
 
 	return (
 		<Box flexDirection="row" gap={1}>
-			<Text>{message}</Text>
+			<Box width={14}>
+				<Text>{message}</Text>
+			</Box>
 			<Text>
 				<Text color="cyan">{value}</Text>
 			</Text>

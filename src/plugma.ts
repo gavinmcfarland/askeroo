@@ -8,10 +8,6 @@ const flow = async () => {
 			return {
 				type: await text({ message: "Type" }),
 				framework: await text({ message: "Framework" }),
-				features: await multi({
-					message: "Features",
-					options: ["Auth", "Database", "Testing", "API"],
-				}),
 				typescript: await text({ message: "TypeScript" }),
 				template: await text({ message: "Template" }),
 				addons: await text({ message: "Add-ons" }),

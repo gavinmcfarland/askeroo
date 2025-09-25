@@ -11,7 +11,7 @@ type PromptRequest = {
 	message?: string; // Optional for group prompts
 	groupName?: string; // Only present for field prompts
 	flow?: "progressive" | "phased" | "static"; // Only present for group prompts
-	discoveredFields?: Array<{id: string, message: string, type: string}>; // Only present for group prompts
+	discoveredFields?: Array<{ id: string; message: string; type: string }>; // Only present for group prompts
 	enableArrowNavigation?: boolean; // Only present for group prompts
 	[key: string]: any; // Allow any additional properties for plugin-specific options
 };
@@ -35,7 +35,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const [completedFields, setCompletedFields] = useState<Set<string>>(
 		new Set()
 	);
-	const [progressiveGroups, setProgressiveGroups] = useState<Set<string>>(new Set());
+	const [progressiveGroups, setProgressiveGroups] = useState<Set<string>>(
+		new Set()
+	);
 	const [phaseGroups, setPhaseGroups] = useState<Set<string>>(new Set());
 	const [staticGroups, setStaticGroups] = useState<Set<string>>(new Set());
 	const [staticGroupFields, setStaticGroupFields] = useState<
@@ -48,7 +50,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		new Set()
 	);
 	const [groupOrder, setGroupOrder] = useState<string[]>([]);
-	const [groupIdToMessage, setGroupIdToMessage] = useState<Map<string, string | undefined>>(new Map());
+	const [groupIdToMessage, setGroupIdToMessage] = useState<
+		Map<string, string | undefined>
+	>(new Map());
 	const [rootPromptOrder, setRootPromptOrder] = useState<
 		Array<{ id: string; type: "field" | "group"; groupName?: string }>
 	>([]);
@@ -56,17 +60,22 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		Array<{ id: string; message: string; type: string }>
 	>([]);
 	// Store complete field properties for proper rendering
-	const [fieldProperties, setFieldProperties] = useState<
-		Map<string, any>
-	>(new Map());
+	const [fieldProperties, setFieldProperties] = useState<Map<string, any>>(
+		new Map()
+	);
 	const firstFieldIdRef = useRef<string | null>(null);
 	const staticGroupsRef = useRef<Set<string>>(new Set());
 	// Static group navigation state
-	const [staticGroupFocusIndex, setStaticGroupFocusIndex] = useState<Map<string, number>>(new Map());
+	const [staticGroupFocusIndex, setStaticGroupFocusIndex] = useState<
+		Map<string, number>
+	>(new Map());
 	// Track groups with arrow navigation enabled
-	const [arrowNavigationGroups, setArrowNavigationGroups] = useState<Set<string>>(new Set());
+	const [arrowNavigationGroups, setArrowNavigationGroups] = useState<
+		Set<string>
+	>(new Set());
 	// Track current field hint text
-	const [currentHintText, setCurrentHintText] = useState<React.ReactNode>(null);
+	const [currentHintText, setCurrentHintText] =
+		useState<React.ReactNode>(null);
 
 	// Helper function to get display name for a group
 	const getGroupDisplayName = (groupId: string | null): string | null => {
@@ -79,9 +88,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		setCurrentHintText(hint);
 	}, []);
 
-
 	// Helper function to render field components dynamically
-	const renderFieldComponent = (fieldInfo: { id: string; message: string; type: string }, props: any, includeHintHandler = false) => {
+	const renderFieldComponent = (
+		fieldInfo: { id: string; message: string; type: string },
+		props: any,
+		includeHintHandler = false
+	) => {
 		// Extract key from props to avoid React warning about spreading key
 		const { key: propsKey, ...restProps } = props;
 		const key = propsKey || `field-${fieldInfo.id}`;
@@ -98,7 +110,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					message={fieldInfo.message}
 					{...originalProperties} // Spread original properties like shortMessage
 					{...restProps} // Spread rendering props (these take precedence)
-					{...(includeHintHandler && { onHintChange: handleHintChange })} // Only add hint handler for active fields
+					{...(includeHintHandler && {
+						onHintChange: handleHintChange,
+					})} // Only add hint handler for active fields
 				/>
 			);
 		}
@@ -110,7 +124,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	useEffect(() => {
 		const promptFn = (request: PromptRequest): Promise<any> => {
 			return new Promise((resolve) => {
-				if (request.type !== "group" && firstFieldIdRef.current === null) {
+				if (
+					request.type !== "group" &&
+					firstFieldIdRef.current === null
+				) {
 					firstFieldIdRef.current = request.id;
 				}
 				setCurrentPrompt(request);
@@ -118,15 +135,15 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				resolverRef.current = resolve;
 
 				// Store complete field properties for later rendering
-			if (request.type !== "group") {
-				setFieldProperties((prev) => {
-					const newMap = new Map(prev);
-					newMap.set(request.id, request);
-					return newMap;
-				});
-			}
+				if (request.type !== "group") {
+					setFieldProperties((prev) => {
+						const newMap = new Map(prev);
+						newMap.set(request.id, request);
+						return newMap;
+					});
+				}
 
-			// Track root-level prompt order
+				// Track root-level prompt order
 				if (request.type !== "group") {
 					setRootPromptOrder((prev) => {
 						const entry = {
@@ -141,19 +158,33 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					});
 
 					// For fields in static groups, track them immediately in the static fields store
-					if (request.groupName && staticGroupsRef.current.has(request.groupName)) {
+					if (
+						request.groupName &&
+						staticGroupsRef.current.has(request.groupName)
+					) {
 						setStaticGroupFields((prev) => {
 							const newMap = new Map(prev);
-							const groupFields = newMap.get(request.groupName!) || [];
+							const groupFields =
+								newMap.get(request.groupName!) || [];
 							const fieldInfo = {
 								id: request.id,
-								message: request.message || `${request.type} field`,
+								message:
+									request.message || `${request.type} field`,
 								type: request.type,
 							};
 
 							// Only add if not already present (check by message and type to avoid duplicates from discovery vs execution)
-							if (!groupFields.some((f) => f.message === fieldInfo.message && f.type === fieldInfo.type)) {
-								newMap.set(request.groupName!, [...groupFields, fieldInfo]);
+							if (
+								!groupFields.some(
+									(f) =>
+										f.message === fieldInfo.message &&
+										f.type === fieldInfo.type
+								)
+							) {
+								newMap.set(request.groupName!, [
+									...groupFields,
+									fieldInfo,
+								]);
 							}
 							return newMap;
 						});
@@ -204,9 +235,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					// Track phased groups
 					if (request.flow === "phased") {
-						setPhaseGroups((prev) =>
-							new Set(prev).add(request.id)
-						);
+						setPhaseGroups((prev) => new Set(prev).add(request.id));
 					}
 
 					// Track static groups (non-default behavior)
@@ -224,10 +253,16 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						}
 
 						// Pre-populate static group fields from discovery
-						if (request.discoveredFields && request.discoveredFields.length > 0) {
+						if (
+							request.discoveredFields &&
+							request.discoveredFields.length > 0
+						) {
 							setStaticGroupFields((prev) => {
 								const newMap = new Map(prev);
-								newMap.set(request.id, request.discoveredFields!);
+								newMap.set(
+									request.id,
+									request.discoveredFields!
+								);
 								return newMap;
 							});
 						}
@@ -243,7 +278,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		if (resolverRef.current && currentPrompt) {
 			if (currentPrompt.type !== "group") {
 				// Handle special navigation value that clears entire group and goes back
-				if (typeof value === 'object' && value?.__clearGroupAndBack) {
+				if (typeof value === "object" && value?.__clearGroupAndBack) {
 					// Clear all fields in the current group
 					if (currentPrompt.groupName) {
 						// Find all fields that belong to this group and clear them
@@ -252,9 +287,15 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 							// Remove all field values for fields in this group
 							const groupName = currentPrompt.groupName;
-							for (const [fieldId, _] of Object.entries(newFieldValues)) {
+							for (const [fieldId, _] of Object.entries(
+								newFieldValues
+							)) {
 								// Check if this field belongs to the current group
-								const fieldEntry = rootPromptOrder.find(entry => entry.id === fieldId && entry.groupName === groupName);
+								const fieldEntry = rootPromptOrder.find(
+									(entry) =>
+										entry.id === fieldId &&
+										entry.groupName === groupName
+								);
 								if (fieldEntry) {
 									delete newFieldValues[fieldId];
 								}
@@ -270,7 +311,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 							// Remove completion status for all fields in this group
 							for (const fieldId of newCompleted) {
-								const fieldEntry = rootPromptOrder.find(entry => entry.id === fieldId && entry.groupName === groupName);
+								const fieldEntry = rootPromptOrder.find(
+									(entry) =>
+										entry.id === fieldId &&
+										entry.groupName === groupName
+								);
 								if (fieldEntry) {
 									newCompleted.delete(fieldId);
 								}
@@ -285,7 +330,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							const groupName = currentPrompt.groupName;
 
 							for (const fieldId of newVisited) {
-								const fieldEntry = rootPromptOrder.find(entry => entry.id === fieldId && entry.groupName === groupName);
+								const fieldEntry = rootPromptOrder.find(
+									(entry) =>
+										entry.id === fieldId &&
+										entry.groupName === groupName
+								);
 								if (fieldEntry) {
 									newVisited.delete(fieldId);
 								}
@@ -303,7 +352,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				}
 
 				// Handle special navigation value that preserves field content but goes back
-				if (typeof value === 'object' && value?.__preserveAndBack) {
+				if (typeof value === "object" && value?.__preserveAndBack) {
 					// Store the actual value, not the navigation object
 					const actualValue = value.value;
 					setFieldValues((prev) => ({
@@ -317,11 +366,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					);
 
 					// Mark field as completed (if it meets completion criteria)
-					const shouldMarkCompleted = currentPrompt.type !== 'text' &&
-						currentPrompt.type !== 'custom-text' &&
-						currentPrompt.type !== 'validated-text'
-						? actualValue !== undefined
-						: (typeof actualValue === 'string' ? actualValue.trim() !== '' : actualValue !== undefined);
+					const shouldMarkCompleted =
+						currentPrompt.type !== "text" &&
+						currentPrompt.type !== "custom-text" &&
+						currentPrompt.type !== "validated-text"
+							? actualValue !== undefined
+							: typeof actualValue === "string"
+							? actualValue.trim() !== ""
+							: actualValue !== undefined;
 
 					if (shouldMarkCompleted) {
 						setCompletedFields((prev) =>
@@ -331,22 +383,36 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					// Handle group tracking for static groups
 					if (currentPrompt.groupName) {
-						const isStaticGroup = staticGroups.has(currentPrompt.groupName);
+						const isStaticGroup = staticGroups.has(
+							currentPrompt.groupName
+						);
 
 						if (isStaticGroup) {
 							// Add current field to static group fields
 							setStaticGroupFields((prev) => {
 								const newMap = new Map(prev);
-								const groupFields = newMap.get(currentPrompt.groupName!) || [];
+								const groupFields =
+									newMap.get(currentPrompt.groupName!) || [];
 								const fieldInfo = {
 									id: currentPrompt.id,
-									message: currentPrompt.message || `${currentPrompt.type} field`,
+									message:
+										currentPrompt.message ||
+										`${currentPrompt.type} field`,
 									type: currentPrompt.type,
 								};
 
 								// Only add if not already present
-								if (!groupFields.some((f) => f.message === fieldInfo.message && f.type === fieldInfo.type)) {
-									newMap.set(currentPrompt.groupName!, [...groupFields, fieldInfo]);
+								if (
+									!groupFields.some(
+										(f) =>
+											f.message === fieldInfo.message &&
+											f.type === fieldInfo.type
+									)
+								) {
+									newMap.set(currentPrompt.groupName!, [
+										...groupFields,
+										fieldInfo,
+									]);
 								}
 								return newMap;
 							});
@@ -356,19 +422,31 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						}
 
 						// Track in group history for non-phase groups
-						const isPhaseGroup = phaseGroups.has(currentPrompt.groupName);
+						const isPhaseGroup = phaseGroups.has(
+							currentPrompt.groupName
+						);
 						if (!isPhaseGroup) {
 							setGroupFieldHistory((prev) => {
 								const newMap = new Map(prev);
-								const groupFields = newMap.get(currentPrompt.groupName!) || [];
+								const groupFields =
+									newMap.get(currentPrompt.groupName!) || [];
 								const fieldInfo = {
 									id: currentPrompt.id,
-									message: currentPrompt.message || `${currentPrompt.type} field`,
+									message:
+										currentPrompt.message ||
+										`${currentPrompt.type} field`,
 									type: currentPrompt.type,
 								};
 
-								if (!groupFields.some((f) => f.id === currentPrompt.id)) {
-									newMap.set(currentPrompt.groupName!, [...groupFields, fieldInfo]);
+								if (
+									!groupFields.some(
+										(f) => f.id === currentPrompt.id
+									)
+								) {
+									newMap.set(currentPrompt.groupName!, [
+										...groupFields,
+										fieldInfo,
+									]);
 								}
 								return newMap;
 							});
@@ -378,7 +456,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						setRootFieldHistory((prev) => {
 							const fieldInfo = {
 								id: currentPrompt.id,
-								message: currentPrompt.message || `${currentPrompt.type} field`,
+								message:
+									currentPrompt.message ||
+									`${currentPrompt.type} field`,
 								type: currentPrompt.type,
 							};
 
@@ -413,24 +493,40 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				if (currentPrompt.groupName) {
 					// For grouped fields, track in group history
 					// Phase groups don't track history, static groups track all fields
-					const isPhaseGroup = phaseGroups.has(currentPrompt.groupName);
-					const isStaticGroup = staticGroups.has(currentPrompt.groupName);
+					const isPhaseGroup = phaseGroups.has(
+						currentPrompt.groupName
+					);
+					const isStaticGroup = staticGroups.has(
+						currentPrompt.groupName
+					);
 
 					// For static groups, trigger field revelation when conditions are met
 					if (isStaticGroup) {
 						// First add the current field
 						setStaticGroupFields((prev) => {
 							const newMap = new Map(prev);
-							const groupFields = newMap.get(currentPrompt.groupName!) || [];
+							const groupFields =
+								newMap.get(currentPrompt.groupName!) || [];
 							const fieldInfo = {
 								id: currentPrompt.id,
-								message: currentPrompt.message || `${currentPrompt.type} field`,
+								message:
+									currentPrompt.message ||
+									`${currentPrompt.type} field`,
 								type: currentPrompt.type,
 							};
 
 							// Only add if not already present (check by message and type)
-							if (!groupFields.some((f) => f.message === fieldInfo.message && f.type === fieldInfo.type)) {
-								newMap.set(currentPrompt.groupName!, [...groupFields, fieldInfo]);
+							if (
+								!groupFields.some(
+									(f) =>
+										f.message === fieldInfo.message &&
+										f.type === fieldInfo.type
+								)
+							) {
+								newMap.set(currentPrompt.groupName!, [
+									...groupFields,
+									fieldInfo,
+								]);
 							}
 							return newMap;
 						});
@@ -449,7 +545,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								newMap.get(currentPrompt.groupName!) || [];
 							const fieldInfo = {
 								id: currentPrompt.id,
-								message: currentPrompt.message || `${currentPrompt.type} field`,
+								message:
+									currentPrompt.message ||
+									`${currentPrompt.type} field`,
 								type: currentPrompt.type,
 							};
 
@@ -491,7 +589,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					setRootFieldHistory((prev) => {
 						const fieldInfo = {
 							id: currentPrompt.id,
-							message: currentPrompt.message || `${currentPrompt.type} field`,
+							message:
+								currentPrompt.message ||
+								`${currentPrompt.type} field`,
 							type: currentPrompt.type,
 						};
 
@@ -549,7 +649,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			// When navigating back, unmark any groups that should no longer be considered completed
 			const currentPromptGroup =
 				currentPrompt.type === "group"
-					? currentPrompt.id  // Use the stable group ID, not the message
+					? currentPrompt.id // Use the stable group ID, not the message
 					: currentPrompt.groupName;
 
 			// Consolidate group completion cleanup in a single state update
@@ -647,7 +747,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		previousGroupRef.current = currentGroup;
 	}, [currentGroup, phaseGroups, groupOrder]);
 
-
 	// ⬇️ Auto-resolve group prompts without touching resolver state
 	useEffect(() => {
 		if (currentPrompt?.type === "group" && resolverRef.current) {
@@ -662,11 +761,17 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const effectivePrompt =
 		currentPrompt?.type === "group" ? null : currentPrompt;
 
-
 	// Helper function to determine if a field should be displayed based on conditions
-	const shouldDisplayField = (field: { id: string; message: string; type: string }, executedFields: Array<{ id: string; message: string; type: string }>) => {
+	const shouldDisplayField = (
+		field: { id: string; message: string; type: string },
+		executedFields: Array<{ id: string; message: string; type: string }>
+	) => {
 		// Always show executed fields
-		if (executedFields.some(f => f.message === field.message && f.type === field.type)) {
+		if (
+			executedFields.some(
+				(f) => f.message === field.message && f.type === field.type
+			)
+		) {
 			return true;
 		}
 
@@ -677,11 +782,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	};
 
 	// Helper function to get field values by field information
-	const getFieldValue = (fieldInfo: { id: string; message: string; type: string }) => {
+	const getFieldValue = (fieldInfo: {
+		id: string;
+		message: string;
+		type: string;
+	}) => {
 		// Get the actual submitted value for this field
 		return fieldValues[fieldInfo.id];
 	};
-
 
 	// Render completed fields for all groups (sequential by default)
 	const renderCompletedFields = () => {
@@ -703,99 +811,121 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			const allFields = new Map();
 
 			// Add discovered fields first
-			discoveredFields.forEach(field => {
-				allFields.set(field.message + '|' + field.type, field);
+			discoveredFields.forEach((field) => {
+				allFields.set(field.message + "|" + field.type, field);
 			});
 
 			// Add executed fields (they take precedence)
-			executedFields.forEach(field => {
-				allFields.set(field.message + '|' + field.type, field);
+			executedFields.forEach((field) => {
+				allFields.set(field.message + "|" + field.type, field);
 			});
 
 			const allFieldsArray = Array.from(allFields.values());
 
-			return allFieldsArray
-				.map((field, index) => {
-					// For static groups, find the stored value by matching message and type
-					// since field IDs might differ between discovery and execution
-					let fieldValue = fieldValues[field.id];
-					let isCompleted = fieldValue !== undefined && (
-						field.type !== 'text' && field.type !== 'custom-text' && field.type !== 'validated-text'
+			return allFieldsArray.map((field, index) => {
+				// For static groups, find the stored value by matching message and type
+				// since field IDs might differ between discovery and execution
+				let fieldValue = fieldValues[field.id];
+				let isCompleted =
+					fieldValue !== undefined &&
+					(field.type !== "text" &&
+					field.type !== "custom-text" &&
+					field.type !== "validated-text"
 						? true
-						: (typeof fieldValue === 'string' ? fieldValue.trim() !== '' : fieldValue)
-					);
+						: typeof fieldValue === "string"
+						? fieldValue.trim() !== ""
+						: fieldValue);
 
-					// If not found by direct ID match, search by message and type
-					if (fieldValue === undefined) {
-						for (const [storedId, storedValue] of Object.entries(fieldValues)) {
-							// Check if this stored value belongs to a field with matching message and type in our group
-							const matchingEntry = rootPromptOrder.find(entry =>
+				// If not found by direct ID match, search by message and type
+				if (fieldValue === undefined) {
+					for (const [storedId, storedValue] of Object.entries(
+						fieldValues
+					)) {
+						// Check if this stored value belongs to a field with matching message and type in our group
+						const matchingEntry = rootPromptOrder.find(
+							(entry) =>
 								entry.id === storedId &&
 								entry.groupName === currentGroup
-							);
-							if (matchingEntry) {
-								// Find the field info in group history to check message/type
-								const allGroupFields = groupFieldHistory.get(currentGroup) || [];
-								const matchingField = allGroupFields.find(f =>
+						);
+						if (matchingEntry) {
+							// Find the field info in group history to check message/type
+							const allGroupFields =
+								groupFieldHistory.get(currentGroup) || [];
+							const matchingField = allGroupFields.find(
+								(f) =>
 									f.id === storedId &&
 									f.message === field.message &&
 									f.type === field.type
-								);
-								if (matchingField) {
-									fieldValue = storedValue;
-									// Apply same completion logic for consistency
-									isCompleted = storedValue !== undefined && (
-										field.type !== 'text' && field.type !== 'custom-text' && field.type !== 'validated-text'
+							);
+							if (matchingField) {
+								fieldValue = storedValue;
+								// Apply same completion logic for consistency
+								isCompleted =
+									storedValue !== undefined &&
+									(field.type !== "text" &&
+									field.type !== "custom-text" &&
+									field.type !== "validated-text"
 										? true
-										: (typeof storedValue === 'string' ? storedValue.trim() !== '' : storedValue)
-									);
-									break;
-								}
+										: typeof storedValue === "string"
+										? storedValue.trim() !== ""
+										: storedValue);
+								break;
 							}
 						}
 					}
+				}
 
-					// For static groups, match fields based on message and type since IDs might differ between discovery and execution
-					const isActive = effectivePrompt ?
-						(field.id === effectivePrompt.id ||
-						 (field.message === effectivePrompt.message && field.type === effectivePrompt.type))
-						: false;
+				// For static groups, match fields based on message and type since IDs might differ between discovery and execution
+				const isActive = effectivePrompt
+					? field.id === effectivePrompt.id ||
+					  (field.message === effectivePrompt.message &&
+							field.type === effectivePrompt.type)
+					: false;
 
-					// Get initial value based on field type
-					const getInitialValue = () => {
-						// Always return the stored value if it exists, regardless of completion status
-						// This ensures that partially entered values are preserved during navigation
-						if (fieldValue !== undefined) {
-							return fieldValue;
-						}
-						// Type-specific defaults for truly new fields
-						if (field.type === 'multi') {
-							return [];
-						}
-						if (field.type === 'confirm') {
-							return false;
-						}
-						return "";
-					};
-
-					// Get all properties from effectivePrompt when this field is active
-					const typeSpecificProps: any = {};
-					if (isActive && effectivePrompt && field.type === effectivePrompt.type) {
-						// Pass all properties from the effective prompt except the base ones
-						const { type, id, message, groupName, ...additionalProps } = effectivePrompt;
-						Object.assign(typeSpecificProps, additionalProps);
+				// Get initial value based on field type
+				const getInitialValue = () => {
+					// Always return the stored value if it exists, regardless of completion status
+					// This ensures that partially entered values are preserved during navigation
+					if (fieldValue !== undefined) {
+						return fieldValue;
 					}
+					// Type-specific defaults for truly new fields
+					if (field.type === "multi") {
+						return [];
+					}
+					if (field.type === "confirm") {
+						return false;
+					}
+					return "";
+				};
 
-					// Determine position in group for navigation
-					const isFirstInGroup = index === 0;
-					const isLastInGroup = index === allFieldsArray.length - 1;
-					const hasArrowNavigation = arrowNavigationGroups.has(currentGroup);
+				// Get all properties from effectivePrompt when this field is active
+				const typeSpecificProps: any = {};
+				if (
+					isActive &&
+					effectivePrompt &&
+					field.type === effectivePrompt.type
+				) {
+					// Pass all properties from the effective prompt except the base ones
+					const { type, id, message, groupName, ...additionalProps } =
+						effectivePrompt;
+					Object.assign(typeSpecificProps, additionalProps);
+				}
 
-					// Check if this is the first prompt in the root flow (for static group fields)
-					// This is true if this field is the very first field the user sees, regardless of grouping
-					const isFirstRootPromptInStaticGroup = field.id === firstFieldIdRef.current;
+				// Determine position in group for navigation
+				const isFirstInGroup = index === 0;
+				const isLastInGroup = index === allFieldsArray.length - 1;
+				const hasArrowNavigation =
+					arrowNavigationGroups.has(currentGroup);
 
-					return renderFieldComponent(field, {
+				// Check if this is the first prompt in the root flow (for static group fields)
+				// This is true if this field is the very first field the user sees, regardless of grouping
+				const isFirstRootPromptInStaticGroup =
+					field.id === firstFieldIdRef.current;
+
+				return renderFieldComponent(
+					field,
+					{
 						key: `static-${field.message}-${field.type}`,
 						initialValue: getInitialValue(),
 						completed: isCompleted && !isActive,
@@ -809,9 +939,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						isLastInGroup,
 						enableArrowNavigation: hasArrowNavigation,
 						isFirstRootPrompt: isFirstRootPromptInStaticGroup,
-						...typeSpecificProps
-					}, isActive); // Pass hint handler only for active fields
-				});
+						...typeSpecificProps,
+					},
+					isActive
+				); // Pass hint handler only for active fields
+			});
 		} else {
 			// For sequential groups, only show completed fields
 			return groupFields
@@ -829,7 +961,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						completedValue: fieldValue,
 						onSubmit: () => {},
 						allowBack: false,
-						flow: phaseGroups.has(currentGroup!) ? "phased" : undefined,
+						flow: phaseGroups.has(currentGroup!)
+							? "phased"
+							: undefined,
 						// Allow plugins to handle their own defaults
 					});
 				});
@@ -849,9 +983,15 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 		return itemsToShow
 			.map((entry) => {
-				if (entry.type === "field" && !entry.groupName && completedFields.has(entry.id)) {
+				if (
+					entry.type === "field" &&
+					!entry.groupName &&
+					completedFields.has(entry.id)
+				) {
 					// Render completed root-level field
-					const fieldInfo = rootFieldHistory.find((f) => f.id === entry.id);
+					const fieldInfo = rootFieldHistory.find(
+						(f) => f.id === entry.id
+					);
 					if (!fieldInfo) return null;
 
 					const fieldValue = fieldValues[entry.id];
@@ -865,7 +1005,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						flow: undefined, // Root fields have no flow type
 						// Allow plugins to handle their own defaults
 					});
-				} else if (entry.type === "group" && completedGroups.has(entry.id) && entry.id !== currentGroup) {
+				} else if (
+					entry.type === "group" &&
+					completedGroups.has(entry.id) &&
+					entry.id !== currentGroup
+				) {
 					// Render completed group (but not if it's the current group being edited)
 					const groupId = entry.id;
 					const groupDisplayName = getGroupDisplayName(groupId);
@@ -879,15 +1023,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 									key={`completed-group-${groupId}`}
 									groupName={groupDisplayName}
 									completed={true}
-									completedFields={[
-										<Box key="phase-completed" flexDirection="column">
-											<Text>Completed</Text>
-											<Text>
-												<Text color="green">✓ </Text>
-												<Text color="gray">✓</Text>
-											</Text>
-										</Box>
-									]}
+									completedFields={null}
 								/>
 							);
 						} else {
@@ -897,30 +1033,25 @@ export function PromptApp({ onReady }: PromptAppProps) {
 									key={`completed-group-${groupId}`}
 									groupName={null}
 									completed={true}
-									completedFields={[
-										<Box key="phase-completed" flexDirection="column">
-											<Text>Completed</Text>
-											<Text>
-												<Text color="green">✓ </Text>
-												<Text color="gray">✓</Text>
-											</Text>
-										</Box>
-									]}
+									completedFields={null}
 								/>
 							);
 						}
 					} else {
 						// For sequential groups, show detailed field completion using actual field components
-						const groupFields = groupFieldHistory.get(groupId) || [];
+						const groupFields =
+							groupFieldHistory.get(groupId) || [];
 						const completedGroupFieldComponents = groupFields
 							.filter((field) => {
 								// Only include fields that are actually completed AND belong to this group
 								// Additional safety check to prevent root-level fields from appearing in groups
 								const belongsToGroup =
-									rootPromptOrder.find((p) => p.id === field.id)
-										?.groupName === groupId;
+									rootPromptOrder.find(
+										(p) => p.id === field.id
+									)?.groupName === groupId;
 								return (
-									completedFields.has(field.id) && belongsToGroup
+									completedFields.has(field.id) &&
+									belongsToGroup
 								);
 							})
 							.map((field) => {
@@ -931,7 +1062,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 									completedValue: fieldValue,
 									onSubmit: () => {},
 									allowBack: false,
-									flow: phaseGroups.has(groupId) ? "phased" : "static",
+									flow: phaseGroups.has(groupId)
+										? "phased"
+										: "static",
 								});
 							});
 
@@ -968,7 +1101,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	if (!isCurrentGroupStatic) {
 		// Check if this is a plugin-provided prompt type
-		const PluginComponent = globalRegistry.getComponent(effectivePrompt.type);
+		const PluginComponent = globalRegistry.getComponent(
+			effectivePrompt.type
+		);
 
 		if (PluginComponent) {
 			const isSequentialGroup = !!(
@@ -989,10 +1124,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						return effectivePrompt.initialValue;
 					}
 					// Return appropriate default based on field type
-					if (effectivePrompt.type === 'multi') {
+					if (effectivePrompt.type === "multi") {
 						return [];
 					}
-					if (effectivePrompt.type === 'confirm') {
+					if (effectivePrompt.type === "confirm") {
 						return false;
 					}
 					return "";
@@ -1006,10 +1141,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					return effectivePrompt.initialValue;
 				}
 				// Type-specific defaults
-				if (effectivePrompt.type === 'multi') {
+				if (effectivePrompt.type === "multi") {
 					return [];
 				}
-				if (effectivePrompt.type === 'confirm') {
+				if (effectivePrompt.type === "confirm") {
 					return false;
 				}
 				return "";
@@ -1017,13 +1152,18 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 			// Check if this is the first prompt in the root flow
 			// This is true if this field is the very first field the user sees, regardless of grouping
-			const isFirstRootPrompt = effectivePrompt.id === firstFieldIdRef.current;
+			const isFirstRootPrompt =
+				effectivePrompt.id === firstFieldIdRef.current;
 
 			// Determine flow type based on current group
-			const flowType = currentGroup && progressiveGroups.has(currentGroup) ? "progressive" :
-							currentGroup && phaseGroups.has(currentGroup) ? "phased" :
-							currentGroup && staticGroups.has(currentGroup) ? "static" :
-							"progressive"; // Default to progressive for groups with no flow specified
+			const flowType =
+				currentGroup && progressiveGroups.has(currentGroup)
+					? "progressive"
+					: currentGroup && phaseGroups.has(currentGroup)
+					? "phased"
+					: currentGroup && staticGroups.has(currentGroup)
+					? "static"
+					: "progressive"; // Default to progressive for groups with no flow specified
 
 			field = (
 				<PluginComponent
@@ -1047,7 +1187,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	return (
 		<RootContainer>
 			{renderCompletedItemsInOrder()}
-			<GroupContainer key="group-container" groupName={getGroupDisplayName(currentGroup)} hintText={currentHintText}>
+			<GroupContainer
+				key="group-container"
+				groupName={getGroupDisplayName(currentGroup)}
+				hintText={currentHintText}
+			>
 				{renderCompletedFields()}
 				{field}
 			</GroupContainer>
