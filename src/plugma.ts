@@ -16,7 +16,6 @@ const flow = async () => {
 		},
 		{
 			flow: "static",
-			enableArrowNavigation: true,
 		}
 	);
 
