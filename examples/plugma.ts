@@ -3,7 +3,7 @@ import { ask, group, text, confirm } from "../src/index.js";
 import { completedFields } from "../src/plugins/completed-fields/index.js";
 
 const flow = async () => {
-	// await completedFields();
+	await completedFields();
 
 	const answers = await group(
 		async () => {
@@ -29,9 +29,6 @@ const flow = async () => {
 		},
 		{ flow: "phased" }
 	);
-
-	// Show all completed fields after the group
-	await completedFields({});
 
 	return { answers };
 };
