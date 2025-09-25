@@ -174,14 +174,17 @@ export function TextField({
 	}
 
 	return (
-		<Box flexDirection="row" gap={1}>
-			<Box width={14}>
-				<Text>{message}</Text>
+		console.log(isFirstInGroup),
+		(
+			<Box flexDirection="row" gap={1} marginTop={isFirstInGroup ? 0 : 1}>
+				<Box width={14}>
+					<Text>{message}</Text>
+				</Box>
+				<Text>
+					{"> "}
+					<Text color="cyan">{value}</Text>
+				</Text>
 			</Box>
-			<Text>
-				{"> "}
-				<Text color="cyan">{value}</Text>
-			</Text>
-		</Box>
+		)
 	);
 }
