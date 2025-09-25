@@ -8,8 +8,8 @@ export interface CompletedFieldsOptions {
 	title?: string;
 }
 
-// CompletedFields plugin
-export const completedFields = createPlugin<CompletedFieldsOptions, void>({
+// Internal plugin implementation
+const completedFieldsInternal = createPlugin<CompletedFieldsOptions, void>({
 	type: 'completedFields',
 	component: CompletedFieldsDisplay,
 
@@ -21,3 +21,10 @@ export const completedFields = createPlugin<CompletedFieldsOptions, void>({
 		};
 	},
 });
+
+// Public API with overloads for optional parameters
+export function completedFields(): Promise<void>;
+export function completedFields(options: CompletedFieldsOptions): Promise<void>;
+export function completedFields(options: CompletedFieldsOptions = {}): Promise<void> {
+	return completedFieldsInternal(options);
+}

@@ -54,6 +54,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// Track field metadata for the completed fields plugin
 	const [fieldMessages, setFieldMessages] = useState<Record<string, string>>({});
 	const [fieldGroupNames, setFieldGroupNames] = useState<Record<string, string>>({});
+	const [fieldGroupIds, setFieldGroupIds] = useState<Record<string, string>>({});
 	const [groupOrder, setGroupOrder] = useState<string[]>([]);
 	const [groupIdToMessage, setGroupIdToMessage] = useState<
 		Map<string, string | undefined>
@@ -75,9 +76,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			completedFields,
 			fieldValues,
 			groupNames: fieldGroupNames,
+			groupIds: fieldGroupIds,
 			fieldMessages
 		});
-	}, [completedFields, fieldValues, fieldGroupNames, fieldMessages]);
+	}, [completedFields, fieldValues, fieldGroupNames, fieldGroupIds, fieldMessages]);
 
 	const firstFieldIdRef = useRef<string | null>(null);
 	const staticGroupsRef = useRef<Set<string>>(new Set());
@@ -186,10 +188,20 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						[request.id]: fieldLabel
 					}));
 					if (request.groupName) {
-						setFieldGroupNames(prev => ({
+						// Store the group ID (for filtering)
+						setFieldGroupIds(prev => ({
 							...prev,
 							[request.id]: request.groupName!
 						}));
+
+						// Store the group display name (for UI display) - only if there's actually a message
+						const groupDisplayName = groupIdToMessage.get(request.groupName);
+						if (groupDisplayName) {
+							setFieldGroupNames(prev => ({
+								...prev,
+								[request.id]: groupDisplayName
+							}));
+						}
 					}
 				}
 

@@ -13,11 +13,12 @@ export type Answers = Record<string, unknown>;
 
 type PromptKind = string; // Generic type that works with any plugin
 type PromptOpts = { message: string; id?: string };
+type GroupMeta = { message?: string; id?: string };
 type GroupOpts =
-	| { message?: string; flow?: "progressive"; enableArrowNavigation?: never }
-	| { message?: string; flow: "phased"; enableArrowNavigation?: never }
-	| { message?: string; flow: "static"; enableArrowNavigation?: boolean }
-	| { message?: string; flow?: undefined; enableArrowNavigation?: never };
+	| { flow?: "progressive"; enableArrowNavigation?: never }
+	| { flow: "phased"; enableArrowNavigation?: never }
+	| { flow: "static"; enableArrowNavigation?: boolean }
+	| { flow?: undefined; enableArrowNavigation?: never };
 
 type UI = {
 	showGroup(
@@ -39,7 +40,7 @@ const BACK: BackToken = { __back: true };
 type Engine = {
 	step<T>(
 		kind: PromptKind,
-		opts: PromptOpts | GroupOpts,
+		opts: PromptOpts | (GroupMeta & GroupOpts),
 		askFn: (id: string) => Promise<T | BackToken>
 	): Promise<T>;
 	BACK: BackToken;
@@ -73,10 +74,15 @@ function generateStableId(
 
 // Generate stable group identifier for tracking
 function getGroupIdentifier(
-	opts: GroupOpts,
+	opts: any,
 	groupStack: string[],
 	executionContext: { groupCount: number }
 ): string {
+	// Use custom ID if provided, otherwise generate stable ID based on execution context
+	if (opts.id) {
+		return opts.id;
+	}
+
 	// Generate stable ID based on execution context
 	const depth = groupStack.length;
 	const groupIndex = executionContext.groupCount;
@@ -134,7 +140,7 @@ export function createRuntime(ui: UI) {
 		BACK,
 		async step<T>(
 			kind: PromptKind,
-			opts: PromptOpts | GroupOpts,
+			opts: PromptOpts | (GroupMeta & GroupOpts),
 			askFn: (id: string) => Promise<T | BackToken>
 		) {
 			debugLogger.log("ENGINE_STEP", {
@@ -146,7 +152,7 @@ export function createRuntime(ui: UI) {
 			});
 
 			if (kind === "group") {
-				const groupOpts = opts as GroupOpts;
+				const groupOpts = opts as GroupMeta & GroupOpts;
 
 				// Increment group count for stable ID generation
 				groupCount++;
@@ -407,23 +413,26 @@ export function createRuntime(ui: UI) {
 		});
 	}
 
-	async function group(body: () => Promise<any>, opts?: GroupOpts) {
+	async function group(meta: GroupMeta, body: () => Promise<any>, opts?: GroupOpts) {
 		if (!asking) throw new Error("group() must be called inside ask()");
+
+		// Combine meta and opts for the engine step
+		const combinedOpts = { ...meta, ...(opts || {}) };
 
 		// For static groups, we need to run discovery to find fields
 		if (opts?.flow === "static") {
 			const nextGroupCount = groupCount + 1;
-			const groupId = getGroupIdentifier(opts || {}, groupStack, {
+			const groupId = getGroupIdentifier(combinedOpts, groupStack, {
 				groupCount: nextGroupCount,
 			});
 
 			// Store the body function for re-discovery
 			staticGroupBodies.set(groupId, body);
 
-			await runStaticGroupDiscovery(opts || {}, body);
+			await runStaticGroupDiscovery(combinedOpts, body);
 		}
 
-		await engine.step("group", opts || {}, async () => undefined);
+		await engine.step("group", combinedOpts, async () => undefined);
 
 		try {
 			return await body();

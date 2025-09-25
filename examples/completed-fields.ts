@@ -4,15 +4,23 @@ import { completedFields } from "../src/plugins/completed-fields/index.js";
 
 const flow = async () => {
 	// Show completed fields after first field
-	await completedFields({});
+
+	await completedFields();
+
 	// First, let's collect some data
-	const name = await text({ label: "Name" });
+	const answers = await group(
+		{ id: "answers" },
+		async () => {
+			return {
+				name: await text({ label: "Name" }),
+				email: await text({ label: "Email" }),
+				phone: await text({ label: "Phone" }),
+			};
+		},
+		{ flow: "phased" }
+	);
 
-	const email = await text({ label: "Email" });
-
-	const phone = await text({ label: "Phone" });
-
-	return { name, email, phone };
+	return { answers };
 };
 
 (async () => {

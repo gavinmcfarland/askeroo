@@ -16,6 +16,7 @@ export interface CompletedFieldsOptions {
 export interface CompletedField {
 	id: string;
 	groupName?: string;
+	groupId?: string;
 	label: string;
 	shortLabel?: string;
 	value: string;
@@ -27,11 +28,13 @@ let globalAppState: {
 	completedFields: Set<string>;
 	fieldValues: Record<string, any>;
 	groupNames: Record<string, string>;
+	groupIds: Record<string, string>;
 	fieldMessages: Record<string, string>;
 } = {
 	completedFields: new Set(),
 	fieldValues: {},
 	groupNames: {},
+	groupIds: {},
 	fieldMessages: {},
 };
 
@@ -44,7 +47,7 @@ export function updateAppState(state: typeof globalAppState) {
 }
 
 // Main component for the plugin
-export function CompletedFieldsDisplay(props: CompletedFieldsOptions) {
+export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 	const [appState, setAppState] = useState(globalAppState);
 
 	useEffect(() => {
@@ -80,11 +83,12 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions) {
 				const value = appState.fieldValues[fieldId];
 				const message = appState.fieldMessages[fieldId] || fieldId;
 				const groupName = appState.groupNames[fieldId];
-
+				const groupId = appState.groupIds[fieldId];
 
 				fields.push({
 					id: fieldId,
 					groupName,
+					groupId, // Add groupId to the field for filtering
 					label: message,
 					shortLabel:
 						message.length > 15
@@ -103,12 +107,10 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions) {
 	const filteredFields = React.useMemo(() => {
 		let fields = completedFieldsFromApp;
 
-		// Filter by groups if specified
+		// Filter by group IDs if specified
 		if (props.filter && props.filter.length > 0) {
 			fields = fields.filter((field) =>
-				field.groupName
-					? props.filter!.includes(field.groupName)
-					: false
+				field.groupId ? props.filter!.includes(field.groupId) : false
 			);
 		}
 
@@ -138,11 +140,13 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions) {
 	if (filteredFields.length === 0) {
 		return (
 			<Box flexDirection="column">
-				<Box marginBottom={1}>
-					<Text color="magenta" bold>
-						{props.title || "Completed Fields"} (0)
-					</Text>
-				</Box>
+				{props.title && (
+					<Box marginBottom={1}>
+						<Text color="magenta" bold>
+							{props.title || "Completed Fields"} (0)
+						</Text>
+					</Box>
+				)}
 				<Text dimColor>No completed fields yet.</Text>
 			</Box>
 		);
@@ -152,12 +156,13 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions) {
 	if (!props.showGroupHeaders) {
 		return (
 			<Box flexDirection="column">
-				<Box marginBottom={1}>
-					<Text color="magenta" bold>
-						{props.title || "Completed Fields"} (
-						{filteredFields.length})
-					</Text>
-				</Box>
+				{props.title && (
+					<Box marginBottom={1}>
+						<Text color="magenta" bold>
+							{props.title} ({filteredFields.length})
+						</Text>
+					</Box>
+				)}
 				{filteredFields.map((field) => (
 					<Box key={field.id} gap={1}>
 						<Box width={14}>
@@ -177,14 +182,15 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions) {
 	// Render with group headers
 	return (
 		<Box flexDirection="column">
-			<Box marginBottom={1}>
-				<Text color="magenta" bold>
-					{props.title || "Completed Fields"} ({filteredFields.length}
-					)
-				</Text>
-			</Box>
+			{props.title && (
+				<Box marginBottom={1}>
+					<Text color="magenta" bold>
+						{props.title}
+					</Text>
+				</Box>
+			)}
 			{Object.entries(groupedFields).map(([groupName, fields]) => (
-				<Box key={groupName} flexDirection="column" marginBottom={1}>
+				<Box key={groupName} flexDirection="column">
 					{groupName !== "Other" && (
 						<Box marginBottom={0.5}>
 							<Text color="green" bold>
@@ -228,10 +234,12 @@ export const completedFieldsUtils = {
 				const message =
 					globalAppState.fieldMessages[fieldId] || fieldId;
 				const groupName = globalAppState.groupNames[fieldId];
+				const groupId = globalAppState.groupIds[fieldId];
 
 				fields.push({
 					id: fieldId,
 					groupName,
+					groupId,
 					label: message,
 					shortLabel:
 						message.length > 15

@@ -2,13 +2,17 @@ import { createRuntime } from "./core.js";
 import { ui } from "./ui.js";
 
 // Type definitions for better IDE support
+export type GroupMeta = { message?: string; id?: string };
 export type GroupOpts =
-	| { message?: string; flow?: "progressive"; enableArrowNavigation?: never }
-	| { message?: string; flow: "phased"; enableArrowNavigation?: never }
-	| { message?: string; flow: "static"; enableArrowNavigation?: boolean }
-	| { message?: string; flow?: undefined; enableArrowNavigation?: never };
+	| { flow?: "progressive"; enableArrowNavigation?: never }
+	| { flow: "phased"; enableArrowNavigation?: never }
+	| { flow: "static"; enableArrowNavigation?: boolean }
+	| { flow?: undefined; enableArrowNavigation?: never };
 export type FlowFunction<T> = (api: {
-	group: (body: () => Promise<any>, opts?: GroupOpts) => Promise<any>;
+	group: {
+		(meta: GroupMeta, body: () => Promise<any>, opts?: GroupOpts): Promise<any>;
+		(body: () => Promise<any>, opts?: GroupOpts & GroupMeta): Promise<any>;
+	};
 	BACK: { __back: true };
 } & Record<string, any>) => Promise<T>;
 
@@ -25,10 +29,29 @@ function ensureRuntime() {
 // Export lazy runtime functions with proper types
 export const ask = <T>(flow: FlowFunction<T>): Promise<T> =>
 	ensureRuntime().ask(flow);
-export const group = (
+// Support both old and new signatures for backward compatibility
+export function group(
+	meta: GroupMeta,
 	body: () => Promise<any>,
 	opts?: GroupOpts
-): Promise<any> => ensureRuntime().group(body, opts);
+): Promise<any>;
+export function group(
+	body: () => Promise<any>,
+	opts?: GroupOpts & GroupMeta
+): Promise<any>;
+export function group(
+	metaOrBody: GroupMeta | (() => Promise<any>),
+	bodyOrOpts?: (() => Promise<any>) | (GroupOpts & GroupMeta),
+	opts?: GroupOpts
+): Promise<any> {
+	if (typeof metaOrBody === 'function') {
+		// Old signature: group(body, opts)
+		return ensureRuntime().group({}, metaOrBody, bodyOrOpts as GroupOpts);
+	} else {
+		// New signature: group(meta, body, opts)
+		return ensureRuntime().group(metaOrBody, bodyOrOpts as () => Promise<any>, opts);
+	}
+}
 // BACK is just a simple token, doesn't need lazy loading
 export const BACK = { __back: true };
 
