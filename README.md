@@ -4,17 +4,17 @@ A modern CLI prompt library with flow control, back navigation, and conditional 
 
 ## Features
 
-- = **Flow Control**: Advanced conditional prompts with dynamic branching
--  **Back Navigation**: Intelligent back button with replay functionality
-- <� **Beautiful UI**: Powered by Ink for rich terminal interfaces
-- =� **TypeScript**: Full type safety and IntelliSense support
-- =� **Modern ESM**: Uses ES modules for better tree-shaking
-- = **Replay Engine**: Smart prompt replay with conditional branching
+-   Works great out of the box, with key prompts, like text, radio, multi.
+-   Create your own bespoke prompts using a highly flexible framework
+-   Stateful navigation that preserves user's inputs
+-   Return structured data your way with imperative-style functions
+-   Write dynamic branching with conditionals fields
+-   Rich markdown support with md template literals for formatted labels and content
 
 ## Installation
 
 ```bash
-npm install askeroo
+npm i askeroo
 ```
 
 ## Quick Start
@@ -23,119 +23,112 @@ npm install askeroo
 import { ask, group, text, confirm } from "askeroo/core";
 
 const flow = async () => {
-  // Group 1: Profile
-  const profile = await group(async () => {
-    const first = await text({ message: "First name" });
-    const last  = await text({ message: "Last name" });
-    return { first, last };
-  }, { message: "Profile" });
+    // Group 1: Profile
+    const profile = await group(
+        async () => {
+            const first = await text({ message: "First name" });
+            const last = await text({ message: "Last name" });
+            return { first, last };
+        },
+        { message: "Profile" }
+    );
 
-  // Group 2: Preferences (with conditional)
-  const prefs = await group(async () => {
-    const role = await text({ message: "Role (user/admin)" });
-    if (role === "admin") {
-      const code = await text({ message: "Access code" });
-      return { role, code };
-    }
-    const news = await confirm({ message: "Subscribe to newsletter?" });
-    return { role, news };
-  }, { message: "Preferences" });
+    // Group 2: Preferences (with conditional)
+    const prefs = await group(
+        async () => {
+            const role = await text({ message: "Role (user/admin)" });
+            if (role === "admin") {
+                const code = await text({ message: "Access code" });
+                return { role, code };
+            }
+            const news = await confirm({ message: "Subscribe to newsletter?" });
+            return { role, news };
+        },
+        { message: "Preferences" }
+    );
 
-  return { profile, prefs };
+    return { profile, prefs };
 };
 
 const result = await ask(flow);
 console.log(result);
 ```
 
-## How It Works
-
-Askeroo uses a **replay-based engine** that re-runs your flow function each time you navigate or provide answers. This enables:
-
-- **Dynamic branching**: Conditionals like `if (role === "admin")` are re-evaluated each replay
-- **Intelligent back navigation**: Type `<` to go back one step, automatically clearing dependent answers
-- **Linear visible sequence**: Only prompts actually reached in the current path are shown
-- **Automatic pruning**: Answers from paths no longer taken are removed
-
 ## API Reference
 
-### Core Functions
+-   ### Run prompt flows
 
-#### `ask(flow: FlowFunction): Promise<T>`
-Executes a prompt flow with replay and navigation support.
+    **`ask(flow: FlowFunction, options: FlowOpts): Promise<T>`**
 
-```typescript
-const result = await ask(async () => {
-  const name = await text({ message: "Name" });
-  return { name };
-});
-```
+    Executes a prompt flow with replay and navigation support.
 
-#### `group(body: () => Promise<T>, options?: PromptOpts): Promise<T>`
-Creates a visual group of related prompts.
+    ```ts
+    const result = await ask(async () => {
+        const name = await text({
+            message: "Name",
+        });
+        return { name };
+    });
+    ```
 
-```typescript
-const profile = await group(async () => {
-  const first = await text({ message: "First name" });
-  const last = await text({ message: "Last name" });
-  return { first, last };
-}, { message: "Profile" });
-```
+    **Options**
 
-#### `text(options: PromptOpts): Promise<string>`
-Prompts for text input.
+    ```ts
+    interface FlowOpts {
+        allowBack?: boolean;
+    }
+    ```
 
-```typescript
-const name = await text({ message: "What's your name?" });
-const email = await text({ message: "Email", name: "user_email" }); // with stable ID
-```
+-   ### Group prompts
 
-#### `confirm(options: PromptOpts): Promise<boolean>`
-Prompts for yes/no confirmation.
+    **`group(flow: () => Promise<T>, options: GroupOpts): Promise<T>`**
 
-```typescript
-const subscribe = await confirm({ message: "Subscribe to newsletter?" });
-```
+    Group prompts visually and control their behaviour together.
 
-### Types
+    **Options**
 
-```typescript
-type PromptOpts = {
-  message: string;
-  name?: string;  // Optional stable ID for the prompt
-};
-```
+    ```ts
+    interface GroupOpts {
+        label?: string;
+        flow?: "progressive" | "phased" | "static";
+        allowBack?: boolean;
+        arrowNavigation?: boolean;
+    }
+    ```
 
-## Back Navigation
+    -   **allowBack:** (default true) - allow user to go back
+    -   **flow:** (default progressive) - change the behaviour of how prompts appear in a group.
+        -   **Progressive:** fields are progressively revealed as the user answers them.
+        -   **Phased:** only one is visible at a time.
+        -   **Static:** all fields are visible at the same time.
+    -   **arrowNavigation:** (default false) only applicable to static groups. If true allows users to navigate up and down.
+    -   **statePersistence:** 'remember', 'persist', 'none'
 
-- Type `<` at any prompt to go back to the previous step
-- The engine automatically:
-  - Decrements the cursor position
-  - Clears answers that are no longer reachable
-  - Replays the flow from the beginning with the new cursor position
-  - Re-evaluates all conditionals with current answers
+## Prompts
 
-## Custom UI
+### `text(config)`
 
-Create your own UI implementation:
+Show a text input.
 
-```typescript
-import { createRuntime } from "askeroo";
+### `confirm(config)`
 
-const customUI = {
-  async text(msg: string): Promise<string | { __back: true }> {
-    // Your custom text input implementation
-  },
-  async confirm(msg: string): Promise<boolean | { __back: true }> {
-    // Your custom confirm implementation
-  },
-  showGroup(label: string): void {
-    // Your custom group display
-  }
-};
+Show a confirmation with choice of yes or no.
 
-const { ask, group, text, confirm } = createRuntime(customUI);
-```
+### `radio(config)`
+
+Show a single-choice selection from multiple options.
+
+### `multi(config)`
+
+Show a multi-choice selection allowing multiple options.
+
+### `note()`
+
+Show a note using markdown.
+
+### `component()`
+
+Render a React component using Ink.
 
 ## Examples
 
