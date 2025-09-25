@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useInput } from "ink";
 import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
-import { CompletedGroup } from "../group/CompletedGroup.js";
 import { globalRegistry } from "../../registry.js";
 
 // Generic prompt request that works for all plugins
@@ -863,9 +862,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						// Only show if group has a message, otherwise show fields without group header
 						if (groupDisplayName) {
 							return (
-								<CompletedGroup
+								<GroupContainer
 									key={`completed-group-${groupId}`}
 									groupName={groupDisplayName}
+									completed={true}
 									completedFields={[
 										{
 											id: "phase-completed",
@@ -879,9 +879,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						} else {
 							// Phase group without message - just show completion indicator without group header
 							return (
-								<CompletedGroup
+								<GroupContainer
 									key={`completed-group-${groupId}`}
 									groupName={null}
+									completed={true}
 									completedFields={[
 										{
 											id: "phase-completed",
@@ -915,9 +916,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							}));
 
 						return (
-							<CompletedGroup
+							<GroupContainer
 								key={`completed-group-${groupId}`}
 								groupName={groupDisplayName} // Only show if there's actually a message
+								completed={true}
 								completedFields={completedGroupFields}
 							/>
 						);

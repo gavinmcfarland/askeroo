@@ -20,6 +20,8 @@ const flow = async () => {
 		}
 	);
 
+	const name = await text({ message: "Name" });
+
 	return { answers };
 };
 
