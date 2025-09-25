@@ -106,29 +106,84 @@ console.log(result);
 
 ## Prompts
 
-### `text(config)`
+### `text(options: TextOpts)`
 
 Show a text input.
 
-### `confirm(config)`
+**Options**
+
+```ts
+interface TextOpts {
+    label?: string;
+    initialValue?: string;
+    placeholder?: string;
+    required?: boolean;
+}
+```
+
+### `confirm(options: ConfirmOpts)`
 
 Show a confirmation with choice of yes or no.
 
-### `radio(config)`
+**Options**
+
+```ts
+interface ConfirmOpts {
+    label?: string;
+    allowLoop?: boolean;
+    options?: AtLeastTwo<{ value: any; label: string }>[];
+}
+```
+
+### `radio(options: RadioOpts)`
 
 Show a single-choice selection from multiple options.
 
-### `multi(config)`
+```ts
+interface RadioOpts {
+    label?: string;
+    allowLoop?: boolean;
+    searchable: boolean;
+    options: Array<{ value: string; label: string }>;
+    initialValue?: string;
+}
+```
+
+### `multi(options: MultiOpts)`
 
 Show a multi-choice selection allowing multiple options.
 
-### `note()`
+```ts
+interface MultiOpts {
+    label?: string;
+    allowLoop?: boolean;
+    searchable: boolean;
+    options: Array<{ value: string; label: string }>;
+    initialValue?: string[];
+    noneOption?: { label: string };
+    otherOption?: { label: string };
+}
+```
+
+### `note(options: NoteOpts)`
 
 Show a note using markdown.
 
-### `component()`
+```ts
+interface NoteOpts {
+    message: MarkdownString;
+}
+```
+
+### `component(options: ComponentOpts)`
 
 Render a React component using Ink.
+
+```ts
+interface ComponentOpts {
+    component: ReactComponent;
+}
+```
 
 ## Examples
 
