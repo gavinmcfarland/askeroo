@@ -6,12 +6,7 @@ interface GroupContainerProps {
 	children?: React.ReactNode;
 	hintText?: React.ReactNode;
 	completed?: boolean;
-	completedFields?: Array<{
-		id: string;
-		message: string;
-		value: any;
-		type: string;
-	}>;
+	completedFields?: React.ReactNode[];
 }
 
 export function GroupContainer({
@@ -21,7 +16,7 @@ export function GroupContainer({
 	completed = false,
 	completedFields = [],
 }: GroupContainerProps) {
-	// If group is completed, render in completed state
+	// If group is completed, render the completed field components
 	if (completed) {
 		return (
 			<Box flexDirection="column">
@@ -32,16 +27,8 @@ export function GroupContainer({
 						</Text>
 					</Box>
 				)}
-				<Box flexDirection="column" gap={1}>
-					{completedFields.map((field) => (
-						<Box key={field.id} flexDirection="column">
-							<Text>{field.message}</Text>
-							<Text>
-								<Text color="green">✓ </Text>
-								<Text color="gray">{field.value}</Text>
-							</Text>
-						</Box>
-					))}
+				<Box flexDirection="column">
+					{completedFields}
 				</Box>
 			</Box>
 		);

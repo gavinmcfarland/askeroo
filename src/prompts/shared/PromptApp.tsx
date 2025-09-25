@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useInput } from "ink";
+import { useInput, Box, Text } from "ink";
 import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../../registry.js";
@@ -867,12 +867,13 @@ export function PromptApp({ onReady }: PromptAppProps) {
 									groupName={groupDisplayName}
 									completed={true}
 									completedFields={[
-										{
-											id: "phase-completed",
-											message: "Completed",
-											value: "✓",
-											type: "completed",
-										},
+										<Box key="phase-completed" flexDirection="column">
+											<Text>Completed</Text>
+											<Text>
+												<Text color="green">✓ </Text>
+												<Text color="gray">✓</Text>
+											</Text>
+										</Box>
 									]}
 								/>
 							);
@@ -884,20 +885,21 @@ export function PromptApp({ onReady }: PromptAppProps) {
 									groupName={null}
 									completed={true}
 									completedFields={[
-										{
-											id: "phase-completed",
-											message: "Completed",
-											value: "✓",
-											type: "completed",
-										},
+										<Box key="phase-completed" flexDirection="column">
+											<Text>Completed</Text>
+											<Text>
+												<Text color="green">✓ </Text>
+												<Text color="gray">✓</Text>
+											</Text>
+										</Box>
 									]}
 								/>
 							);
 						}
 					} else {
-						// For sequential groups, show detailed field completion
+						// For sequential groups, show detailed field completion using actual field components
 						const groupFields = groupFieldHistory.get(groupId) || [];
-						const completedGroupFields = groupFields
+						const completedGroupFieldComponents = groupFields
 							.filter((field) => {
 								// Only include fields that are actually completed AND belong to this group
 								// Additional safety check to prevent root-level fields from appearing in groups
@@ -908,19 +910,24 @@ export function PromptApp({ onReady }: PromptAppProps) {
 									completedFields.has(field.id) && belongsToGroup
 								);
 							})
-							.map((field) => ({
-								id: field.id,
-								message: field.message,
-								value: fieldValues[field.id],
-								type: field.type,
-							}));
+							.map((field) => {
+								const fieldValue = fieldValues[field.id];
+								return renderFieldComponent(field, {
+									key: `completed-group-field-${field.id}`,
+									completed: true,
+									completedValue: fieldValue,
+									onSubmit: () => {},
+									allowBack: false,
+									flow: phaseGroups.has(groupId) ? "phased" : "static",
+								});
+							});
 
 						return (
 							<GroupContainer
 								key={`completed-group-${groupId}`}
 								groupName={groupDisplayName} // Only show if there's actually a message
 								completed={true}
-								completedFields={completedGroupFields}
+								completedFields={completedGroupFieldComponents}
 							/>
 						);
 					}
