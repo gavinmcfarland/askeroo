@@ -5,11 +5,20 @@ import { multi } from "../src/plugins/multi/index.js";
 const flow = async () => {
 	const answers = await group(async () => {
 		return {
-			type: await text({ message: "Type" }),
-			framework: await text({ message: "Framework" }),
-			template: await text({ message: "Template" }),
-			typescript: await text({ message: "TypeScript" }),
-			setup: await text({ message: "Setup" }),
+			type: await text({ shortLabel: "Type", label: "Choose a type:" }),
+			framework: await text({
+				shortLabel: "Framework",
+				label: "Choose a framework:",
+			}),
+			template: await text({
+				shortLabel: "Template",
+				label: "Pick a template to start from:",
+			}),
+			typescript: await text({
+				shortLabel: "TypeScript",
+				label: "Use TypeScript?",
+			}),
+			setup: await text({ shortLabel: "Setup", label: "Setup" }),
 		};
 	});
 

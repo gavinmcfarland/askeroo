@@ -8,21 +8,21 @@ import { multi } from "./plugins/multi/index.js";
 
 const flow = async () => {
 	const name = await text({
-		message: "First",
+		label: "First",
 		initialValue: "Hello",
 	});
-	const name2 = await text({ message: "Second", initialValue: "World" });
+	const name2 = await text({ label: "Second", initialValue: "World" });
 
 	const prefs2 = await group(
 		async () => {
 			const role = await text({
-				message: "Role (user/admin)",
-				shortMessage: "Role",
+				label: "Role (user/admin)",
+				shortLabel: "Role",
 			});
-			const name = await text({ message: "Name" });
+			const name = await text({ label: "Name" });
 			if (role === "admin") {
-				const code = await text({ message: "Access code" });
-				const email = await text({ message: "Email" });
+				const code = await text({ label: "Access code" });
+				const email = await text({ label: "Email" });
 				return { role, code, email };
 			}
 			const news = await confirm({ message: "Subscribe to newsletter?" });
@@ -56,26 +56,29 @@ const flow = async () => {
 				message: "Select your favorite colors",
 				options: ["red", "green", "blue", "yellow", "purple"],
 			});
-			const name = await text({ message: "Name" });
-			const email = await text({ message: "Email" });
-			const phone = await text({ message: "Phone" });
-			const address = await text({ message: "Address" });
+			const name = await text({ label: "Name" });
+			const email = await text({ label: "Email" });
+			const phone = await text({ label: "Phone" });
+			const address = await text({ label: "Address" });
 			return { name, email, phone, address };
 		},
 		{ message: "Phased", flow: "phased" }
 	);
 
-	const stackedForm = await group(async () => {
-		const colors = await multi({
-			message: "Select your favorite colors",
-			options: ["red", "green", "blue", "yellow", "purple"],
-		});
-		const name = await text({ message: "Name" });
-		const email = await text({ message: "Email" });
-		const phone = await text({ message: "Phone" });
-		const address = await text({ message: "Address" });
-		return { name, email, phone, address };
-	}, { message: "Stacked" });
+	const stackedForm = await group(
+		async () => {
+			const colors = await multi({
+				message: "Select your favorite colors",
+				options: ["red", "green", "blue", "yellow", "purple"],
+			});
+			const name = await text({ label: "Name" });
+			const email = await text({ label: "Email" });
+			const phone = await text({ label: "Phone" });
+			const address = await text({ label: "Address" });
+			return { name, email, phone, address };
+		},
+		{ message: "Stacked" }
+	);
 
 	// Static group - shows all prompts at once, only one active
 	const staticForm = await group(
@@ -84,10 +87,10 @@ const flow = async () => {
 				message: "Select your favorite colors",
 				options: ["red", "green", "blue", "yellow", "purple"],
 			});
-			const name = await text({ message: "Name" });
-			const email = await text({ message: "Email" });
-			const phone = await text({ message: "Phone" });
-			const address = await text({ message: "Address" });
+			const name = await text({ label: "Name" });
+			const email = await text({ label: "Email" });
+			const phone = await text({ label: "Phone" });
+			const address = await text({ label: "Address" });
 			return { name, email };
 		},
 		{ message: "Static", flow: "static" }
@@ -96,21 +99,27 @@ const flow = async () => {
 	// Static group with arrow navigation enabled - use arrow keys to navigate between fields
 	const staticWithNavigation = await group(
 		async () => {
-			const firstName = await text({ message: "First name" });
-			const lastName = await text({ message: "Last name" });
-			const newsletter = await confirm({ message: "Subscribe to newsletter?" });
-			const phone = await text({ message: "Phone number" });
+			const firstName = await text({ label: "First name" });
+			const lastName = await text({ label: "Last name" });
+			const newsletter = await confirm({
+				message: "Subscribe to newsletter?",
+			});
+			const phone = await text({ label: "Phone number" });
 			return { firstName, lastName, newsletter, phone };
 		},
-		{ message: "Static with Arrow Navigation", flow: "static", enableArrowNavigation: true }
+		{
+			message: "Static with Arrow Navigation",
+			flow: "static",
+			enableArrowNavigation: true,
+		}
 	);
 
 	// Static group without arrow navigation (default behavior)
 	const staticWithoutNavigation = await group(
 		async () => {
-			const username = await text({ message: "Username" });
-			const password = await text({ message: "Password" });
-			const confirmPassword = await text({ message: "Confirm password" });
+			const username = await text({ label: "Username" });
+			const password = await text({ label: "Password" });
+			const confirmPassword = await text({ label: "Confirm password" });
 			return { username, password, confirmPassword };
 		},
 		{ message: "Static without Arrow Navigation", flow: "static" }
@@ -119,25 +128,28 @@ const flow = async () => {
 	// Group with no message - should not show group header in UI
 	// No ID needed - automatically generates stable: group_0_4_sequential
 	const hiddenGroup = await group(async () => {
-		const role = await text({ message: "Role (user/admin)" });
+		const role = await text({ label: "Role (user/admin)" });
 		if (role === "admin") {
-			const code = await text({ message: "Access code" });
+			const code = await text({ label: "Access code" });
 			return { role, code };
 		}
 		const news = await confirm({ message: "Subscribe to newsletter?" });
 		return { role, news };
 	}, {});
 
-	const prefs = await group(async () => {
-		const role = await text({ message: "Role (user/admin)" });
-		if (role === "admin") {
-			const code = await text({ message: "Access code" });
-			const email = await text({ message: "Email" });
-			return { role, code, email };
-		}
-		const news = await confirm({ message: "Subscribe to newsletter?" });
-		return { role, news };
-	}, { message: "Preferences" });
+	const prefs = await group(
+		async () => {
+			const role = await text({ label: "Role (user/admin)" });
+			if (role === "admin") {
+				const code = await text({ label: "Access code" });
+				const email = await text({ label: "Email" });
+				return { role, code, email };
+			}
+			const news = await confirm({ message: "Subscribe to newsletter?" });
+			return { role, news };
+		},
+		{ message: "Preferences" }
+	);
 
 	return {
 		name,

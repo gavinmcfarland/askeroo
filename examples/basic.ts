@@ -4,10 +4,10 @@ import { multi } from "../src/plugins/multi/index.js";
 
 const flow = async () => {
 	return {
-		type: await text({ message: "Type" }),
-		framework: await text({ message: "Framework" }),
-		typescript: await text({ message: "TypeScript" }),
-		template: await text({ message: "Template" }),
+		type: await text({ label: "Type" }),
+		framework: await text({ label: "Framework" }),
+		typescript: await text({ label: "TypeScript" }),
+		template: await text({ label: "Template" }),
 	};
 };
 

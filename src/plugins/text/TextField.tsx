@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { Text, Box, useInput } from "ink";
 
 interface Props {
-	message: string;
-	shortMessage?: string;
+	label: string;
+	shortLabel?: string;
 	onSubmit: (
 		value:
 			| string
@@ -26,8 +26,8 @@ interface Props {
 }
 
 export function TextField({
-	message,
-	shortMessage,
+	label,
+	shortLabel,
 	onSubmit,
 	onBack,
 	initialValue = "",
@@ -44,6 +44,7 @@ export function TextField({
 	isFirstRootPrompt = false,
 }: Props) {
 	const [value, setValue] = useState(initialValue);
+	const [cursorPosition, setCursorPosition] = useState(initialValue.length);
 	const [submitted, setSubmitted] = useState(false);
 
 	// Reset submitted state when field becomes active again (not disabled)
@@ -59,6 +60,7 @@ export function TextField({
 		// This ensures preserved values are restored when navigating back to fields
 		if (!disabled) {
 			setValue(initialValue);
+			setCursorPosition(initialValue.length);
 		}
 	}, [initialValue, disabled]);
 
@@ -86,6 +88,38 @@ export function TextField({
 
 	useInput((input, key) => {
 		if (submitted || completed || disabled) return;
+
+		// Handle Ctrl+U or Cmd+K to clear entire input (common terminal shortcuts)
+		if ((key.ctrl && input === "u") || (key.meta && input === "k")) {
+			setValue("");
+			setCursorPosition(0);
+			return;
+		}
+
+		// Handle Ctrl+A to move cursor to beginning
+		if (key.ctrl && input === "a") {
+			setCursorPosition(0);
+			return;
+		}
+
+		// Handle Ctrl+E to move cursor to end
+		if (key.ctrl && input === "e") {
+			setCursorPosition(value.length);
+			return;
+		}
+
+		// Handle cursor movement with arrow keys (when not in arrow navigation mode for groups)
+		if (!(flow === "static" && enableArrowNavigation)) {
+			if (key.leftArrow) {
+				setCursorPosition(Math.max(0, cursorPosition - 1));
+				return;
+			}
+
+			if (key.rightArrow) {
+				setCursorPosition(Math.min(value.length, cursorPosition + 1));
+				return;
+			}
+		}
 
 		// Handle static group navigation with arrow keys (only if enabled)
 		if (flow === "static" && enableArrowNavigation) {
@@ -135,14 +169,25 @@ export function TextField({
 			setSubmitted(true);
 			onSubmit(value);
 		} else if (key.backspace || key.delete) {
-			setValue((prev) => prev.slice(0, -1));
+			if (cursorPosition > 0) {
+				const newValue =
+					value.slice(0, cursorPosition - 1) +
+					value.slice(cursorPosition);
+				setValue(newValue);
+				setCursorPosition(cursorPosition - 1);
+			}
 		} else if (key.escape && flow !== "static") {
 			// Regular escape behavior for non-static groups
 			if (allowBack && onBack) {
 				onBack();
 			}
 		} else if (!key.ctrl && !key.meta && input) {
-			setValue((prev) => prev + input);
+			const newValue =
+				value.slice(0, cursorPosition) +
+				input +
+				value.slice(cursorPosition);
+			setValue(newValue);
+			setCursorPosition(cursorPosition + 1);
 		}
 	});
 
@@ -150,7 +195,7 @@ export function TextField({
 		return (
 			<Box gap={1}>
 				<Box width={14}>
-					<Text>{shortMessage || message}</Text>
+					<Text>{shortLabel || label}</Text>
 				</Box>
 
 				<Text>
@@ -164,7 +209,7 @@ export function TextField({
 		return (
 			<Box gap={1}>
 				<Box width={14}>
-					<Text dimColor>{shortMessage || message}</Text>
+					<Text dimColor>{shortLabel || label}</Text>
 				</Box>
 				<Text dimColor>
 					<Text color="gray">...</Text>
@@ -174,27 +219,32 @@ export function TextField({
 	}
 
 	return (
-		console.log(flow, isLastInGroup),
-		(
-			<Box
-				flexDirection="row"
-				gap={1}
-				marginBottom={
-					flow === "static" && !isLastInGroup
-						? 1
-						: flow === "progressive" && isLastInGroup
-						? 1
-						: 0
-				}
-			>
-				<Box width={14}>
-					<Text>{message}</Text>
-				</Box>
-				<Text>
-					{"> "}
-					<Text color="cyan">{value}</Text>
-				</Text>
+		<Box
+			flexDirection={flow === "static" ? "row" : "column"}
+			gap={flow === "static" ? 1 : 0}
+			marginTop={flow === "progressive" && !isFirstInGroup ? 1 : 0}
+			marginBottom={flow === "static" && !isLastInGroup ? 1 : 0}
+		>
+			<Box width={flow === "static" ? 14 : undefined}>
+				<Text>{label}</Text>
 			</Box>
-		)
+			<Text color="cyan">
+				{value.slice(0, cursorPosition)}
+				{cursorPosition < value.length && (
+					<Text backgroundColor="grey" color="black">
+						{value[cursorPosition]}
+					</Text>
+				)}
+				{cursorPosition >= value.length && (
+					<Text backgroundColor="grey" color="black">
+						{" "}
+					</Text>
+				)}
+				{value.slice(
+					cursorPosition + (cursorPosition < value.length ? 1 : 0)
+				)}
+				{value.length === 0 && cursorPosition === 0 && "\u200B"}
+			</Text>
+		</Box>
 	);
 }

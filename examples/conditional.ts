@@ -3,14 +3,14 @@ import { ask, group, text, confirm } from "../src/index.js";
 import { multi } from "../src/plugins/multi/index.js";
 
 const flow = async () => {
-	const name = await text({ message: "Name" });
+	const name = await text({ label: "Name" });
 
 	if (name.toLowerCase() === "admin") {
 		const answers = await group(
 			async () => {
 				return {
-					email: await text({ message: "Email" }),
-					password: await text({ message: "Password" }),
+					email: await text({ label: "Email" }),
+					password: await text({ label: "Password" }),
 				};
 			},
 			{
@@ -23,7 +23,7 @@ const flow = async () => {
 		const answers = await group(
 			async () => {
 				return {
-					news: await text({ message: "Newsletter" }),
+					news: await text({ label: "Newsletter" }),
 				};
 			},
 			{

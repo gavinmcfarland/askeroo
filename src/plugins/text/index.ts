@@ -2,8 +2,8 @@ import { createPlugin } from "../../registry.js";
 import { TextField } from "./TextField.js";
 
 export interface TextOptions {
-	message: string;
-	shortMessage?: string;
+	label: string;
+	shortLabel?: string;
 	initialValue?: string;
 	id?: string;
 }
