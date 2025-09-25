@@ -16,7 +16,7 @@ interface Props {
 	completed?: boolean;
 	completedValue?: string;
 	disabled?: boolean;
-	flow?: "phased" | "static";
+	flow?: "progressive" | "phased" | "static";
 	onNavigate?: (direction: "up" | "down") => void;
 	isFirstInGroup?: boolean;
 	isLastInGroup?: boolean;

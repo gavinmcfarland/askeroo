@@ -13,14 +13,15 @@ export type Answers = Record<string, unknown>;
 type PromptKind = string; // Generic type that works with any plugin
 type PromptOpts = { message: string; id?: string };
 type GroupOpts =
-	| { message?: string; flow?: "phased"; enableArrowNavigation?: never }
+	| { message?: string; flow?: "progressive"; enableArrowNavigation?: never }
+	| { message?: string; flow: "phased"; enableArrowNavigation?: never }
 	| { message?: string; flow: "static"; enableArrowNavigation?: boolean }
 	| { message?: string; flow?: undefined; enableArrowNavigation?: never };
 
 type UI = {
 	showGroup(
 		label: string | undefined,
-		flow?: "phased" | "static",
+		flow?: "progressive" | "phased" | "static",
 		id?: string,
 		discoveredFields?: Array<{ id: string; message: string; type: string }>,
 		enableArrowNavigation?: boolean
@@ -117,6 +118,7 @@ export function createRuntime(ui: UI) {
 
 	let groupStack: string[] = []; // Track current group nesting
 	let lastProcessedGroups: Set<string> = new Set(); // Track which groups were already processed
+	let progressiveGroups: Map<string, "progressive"> = new Map(); // Track groups with progressive flow
 	let phaseGroups: Map<string, "phased"> = new Map(); // Track groups with phased flow
 	let staticGroups: Map<string, "static"> = new Map(); // Track groups with static flow
 	let groupCount = 0; // Track total number of groups encountered for stable ID generation
@@ -153,7 +155,12 @@ export function createRuntime(ui: UI) {
 				});
 				let shouldShowGroup: boolean;
 
-				// Track phased groups (non-default behavior)
+				// Track progressive groups (default behavior)
+				if (groupOpts.flow === "progressive" || !groupOpts.flow) {
+					progressiveGroups.set(groupId, "progressive");
+				}
+
+				// Track phased groups
 				if (groupOpts.flow === "phased") {
 					phaseGroups.set(groupId, "phased");
 				}
@@ -192,7 +199,7 @@ export function createRuntime(ui: UI) {
 							: undefined;
 					await extendedUI.showGroup?.(
 						groupOpts.message,
-						groupOpts.flow,
+						groupOpts.flow || "progressive",
 						groupId,
 						fields,
 						groupOpts.enableArrowNavigation

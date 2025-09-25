@@ -19,8 +19,7 @@ const flow = async () => {
 		},
 		{
 			message: "Project Configuration",
-			flow: "static",
-		}
+		} // Using default "progressive" flow
 	);
 
 	const email = await text({ message: "Your email?" });

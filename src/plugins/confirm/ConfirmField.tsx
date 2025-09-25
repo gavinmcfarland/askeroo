@@ -15,7 +15,7 @@ interface ConfirmFieldProps {
 	completed?: boolean;
 	completedValue?: boolean;
 	disabled?: boolean;
-	flow?: "phased" | "static";
+	flow?: "progressive" | "phased" | "static";
 	onNavigate?: (direction: "up" | "down") => void;
 	isFirstInGroup?: boolean;
 	isLastInGroup?: boolean;

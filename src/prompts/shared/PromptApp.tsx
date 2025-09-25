@@ -10,7 +10,7 @@ type PromptRequest = {
 	id: string;
 	message?: string; // Optional for group prompts
 	groupName?: string; // Only present for field prompts
-	flow?: "phased" | "static"; // Only present for group prompts
+	flow?: "progressive" | "phased" | "static"; // Only present for group prompts
 	discoveredFields?: Array<{id: string, message: string, type: string}>; // Only present for group prompts
 	enableArrowNavigation?: boolean; // Only present for group prompts
 	[key: string]: any; // Allow any additional properties for plugin-specific options
@@ -35,6 +35,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const [completedFields, setCompletedFields] = useState<Set<string>>(
 		new Set()
 	);
+	const [progressiveGroups, setProgressiveGroups] = useState<Set<string>>(new Set());
 	const [phaseGroups, setPhaseGroups] = useState<Set<string>>(new Set());
 	const [staticGroups, setStaticGroups] = useState<Set<string>>(new Set());
 	const [staticGroupFields, setStaticGroupFields] = useState<
@@ -194,7 +195,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					// Group prompts update the group (needed for initial display and cross-group nav)
 					setCurrentGroup(request.id); // Use ID as the stable identifier
 
-					// Track phased groups (non-default behavior)
+					// Track progressive groups (default behavior)
+					if (request.flow === "progressive" || !request.flow) {
+						setProgressiveGroups((prev) =>
+							new Set(prev).add(request.id)
+						);
+					}
+
+					// Track phased groups
 					if (request.flow === "phased") {
 						setPhaseGroups((prev) =>
 							new Set(prev).add(request.id)
@@ -1003,9 +1011,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			};
 
 			// Determine flow type based on current group
-			const flowType = currentGroup && phaseGroups.has(currentGroup) ? "phased" :
+			const flowType = currentGroup && progressiveGroups.has(currentGroup) ? "progressive" :
+							currentGroup && phaseGroups.has(currentGroup) ? "phased" :
 							currentGroup && staticGroups.has(currentGroup) ? "static" :
-							undefined;
+							"progressive"; // Default to progressive for groups with no flow specified
 
 			field = (
 				<PluginComponent
