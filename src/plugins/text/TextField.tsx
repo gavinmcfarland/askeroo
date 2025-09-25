@@ -174,9 +174,19 @@ export function TextField({
 	}
 
 	return (
-		console.log(isFirstInGroup),
+		console.log(flow, isLastInGroup),
 		(
-			<Box flexDirection="row" gap={1} marginTop={isFirstInGroup ? 0 : 1}>
+			<Box
+				flexDirection="row"
+				gap={1}
+				marginBottom={
+					flow === "static" && !isLastInGroup
+						? 1
+						: flow === "progressive" && isLastInGroup
+						? 1
+						: 0
+				}
+			>
 				<Box width={14}>
 					<Text>{message}</Text>
 				</Box>

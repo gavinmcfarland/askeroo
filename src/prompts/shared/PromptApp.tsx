@@ -913,7 +913,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				}
 
 				// Determine position in group for navigation
-				const isFirstInGroup = index === 0;
+				const isFirstInGroup = index === 0; // First field within this group
 				const isLastInGroup = index === allFieldsArray.length - 1;
 				const hasArrowNavigation =
 					arrowNavigationGroups.has(currentGroup);
@@ -1155,6 +1155,16 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			const isFirstRootPrompt =
 				effectivePrompt.id === firstFieldIdRef.current;
 
+			// Check if this is the first field in its group
+			const isFirstInGroup = effectivePrompt.groupName ?
+				// For grouped fields, check if this is the first field in the group's history
+				(() => {
+					const groupHistory = groupFieldHistory.get(effectivePrompt.groupName);
+					return !groupHistory || groupHistory.length === 0 || groupHistory[0].id === effectivePrompt.id;
+				})() :
+				// For root-level fields, they are not in a group, so always false
+				false;
+
 			// Determine flow type based on current group
 			const flowType =
 				currentGroup && progressiveGroups.has(currentGroup)
@@ -1176,6 +1186,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					onHintChange={handleHintChange}
 					flow={flowType}
 					isFirstRootPrompt={isFirstRootPrompt}
+					isFirstInGroup={isFirstInGroup}
 				/>
 			);
 		} else {
