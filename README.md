@@ -184,6 +184,15 @@ console.log(result);
         component: ReactComponent;
     }
     ```
+-   ### `completedFields(options: CompletedFieldsOpts)`
+
+    Show the status of completed fields.
+
+    ```ts
+    interfaceCompletedFieldsOpts {
+        filter: string[];
+    }
+    ```
 
 ## Create a prompt
 
