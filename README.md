@@ -106,82 +106,124 @@ console.log(result);
 
 ## Prompts
 
-### `text(options: TextOpts)`
+-   ### `text(options: TextOpts)`
 
-Show a text input.
+    Show a text input.
 
-**Options**
+    **Options**
+
+    ```ts
+    interface TextOpts {
+        label?: string;
+        initialValue?: string;
+        placeholder?: string;
+        required?: boolean;
+    }
+    ```
+
+-   ### `confirm(options: ConfirmOpts)`
+
+    Show a confirmation with choice of yes or no.
+
+    **Options**
+
+    ```ts
+    interface ConfirmOpts {
+        label?: string;
+        allowLoop?: boolean;
+        options?: AtLeastTwo<{ value: any; label: string }>[];
+    }
+    ```
+
+-   ### `radio(options: RadioOpts)`
+
+    Show a single-choice selection from multiple options.
+
+    ```ts
+    interface RadioOpts {
+        label?: string;
+        allowLoop?: boolean;
+        searchable: boolean;
+        options: Array<{ value: string; label: string }>;
+        initialValue?: string;
+    }
+    ```
+
+-   ### `multi(options: MultiOpts)`
+
+    Show a multi-choice selection allowing multiple options.
+
+    ```ts
+    interface MultiOpts {
+        label?: string;
+        allowLoop?: boolean;
+        searchable: boolean;
+        options: Array<{ value: string; label: string }>;
+        initialValue?: string[];
+        noneOption?: { label: string };
+        otherOption?: { label: string };
+    }
+    ```
+
+-   ### `note(options: NoteOpts)`
+
+    Show a note using markdown.
+
+    ```ts
+    interface NoteOpts {
+        message: MarkdownString;
+    }
+    ```
+
+-   ### `component(options: ComponentOpts)`
+
+    Render a React component using Ink.
+
+    ```ts
+    interface ComponentOpts {
+        component: ReactComponent;
+    }
+    ```
+
+## Create a prompt
 
 ```ts
-interface TextOpts {
-    label?: string;
+export interface TextOptions {
+    label: string;
     initialValue?: string;
-    placeholder?: string;
-    required?: boolean;
 }
+
+// Core text input plugin
+export const text = createPlugin<TextOptions, string>({
+    type: "text",
+    component: TextField,
+
+    // The prompt logic - just return the options, runtime handles UI
+    prompt(opts: TextOptions, { currentGroup }, id: string) {
+        return opts;
+    },
+});
 ```
 
-### `confirm(options: ConfirmOpts)`
-
-Show a confirmation with choice of yes or no.
-
-**Options**
+### Component Props
 
 ```ts
-interface ConfirmOpts {
-    label?: string;
-    allowLoop?: boolean;
-    options?: AtLeastTwo<{ value: any; label: string }>[];
-}
-```
-
-### `radio(options: RadioOpts)`
-
-Show a single-choice selection from multiple options.
-
-```ts
-interface RadioOpts {
-    label?: string;
-    allowLoop?: boolean;
-    searchable: boolean;
-    options: Array<{ value: string; label: string }>;
-    initialValue?: string;
-}
-```
-
-### `multi(options: MultiOpts)`
-
-Show a multi-choice selection allowing multiple options.
-
-```ts
-interface MultiOpts {
-    label?: string;
-    allowLoop?: boolean;
-    searchable: boolean;
-    options: Array<{ value: string; label: string }>;
-    initialValue?: string[];
-    noneOption?: { label: string };
-    otherOption?: { label: string };
-}
-```
-
-### `note(options: NoteOpts)`
-
-Show a note using markdown.
-
-```ts
-interface NoteOpts {
-    message: MarkdownString;
-}
-```
-
-### `component(options: ComponentOpts)`
-
-Render a React component using Ink.
-
-```ts
-interface ComponentOpts {
-    component: ReactComponent;
+export interface Props {
+    label: string;
+	onSubmit: ;
+	onBack: ;
+    onNavigate: ;
+    onHintChange: ;
+	initialValue: string;
+	allowBack: boolean;
+	completed: boolean;
+	completedValue: boolean;
+	disabled: boolean;
+	flow: 'progressive' | 'phased' | 'static';
+	isFirstInGroup: boolean;
+	isLastInGroup: boolean;
+	arrowNavigation: boolean;
+	isFirstRootPrompt: boolean;
 }
 ```
 
