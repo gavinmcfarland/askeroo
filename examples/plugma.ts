@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { ask, group, text, confirm, radio } from "../src/index.js";
+import { ask, group, text, confirm, radio, multi } from "../src/index.js";
 import { completedFields } from "../src/plugins/completed-fields/index.js";
 import { note } from "../src/plugins/note/index.js";
 
@@ -41,6 +41,19 @@ const flow = async () => {
 						{ value: "default", label: "Default" },
 						{ value: "minimal", label: "Rectangle creator" },
 					],
+				}),
+				addons: await multi({
+					shortLabel: "Addons",
+					label: "Choose addons:",
+					options: [
+						{ value: "tailwind", label: "Tailwind" },
+						{ value: "shadcn", label: "Shadcn" },
+						{ value: "eslint", label: "ESLint" },
+						{ value: "prettier", label: "Prettier" },
+						{ value: "vitest", label: "Vitest" },
+						{ value: "playwright", label: "Playwright" },
+					],
+					noneOption: { label: "None" },
 				}),
 				typescript: await confirm({
 					shortLabel: "TypeScript",

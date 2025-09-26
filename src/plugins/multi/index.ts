@@ -1,9 +1,22 @@
 import { createPlugin } from '../../registry.js';
 import { MultiField } from './MultiField.js';
 
+export interface MultiOption {
+  value: string;
+  label: string;
+}
+
 export interface MultiOptions {
-  message: string;
-  options?: string[];
+  message?: string;
+  label?: string;
+  shortLabel?: string;
+  options?: string[] | MultiOption[];
+  noneOption?: {
+    label: string;
+  };
+  showNumbers?: boolean;
+  allowLoop?: boolean;
+  searchable?: boolean;
 }
 
 // Example multi-select prompt plugin
