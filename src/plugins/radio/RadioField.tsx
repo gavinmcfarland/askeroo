@@ -15,7 +15,7 @@ interface Props {
 	showNumbers?: boolean; // Whether to show numbers for selection
 	allowLoop?: boolean; // Whether to allow looping when navigating with up/down arrows (default: true)
 	searchable?: boolean; // Whether to enable search functionality (default: false)
-	hintPosition?: "bottom" | "inline" | "side"; // Where to display option hints (default: "inline")
+	hintPosition?: "bottom" | "inline" | "side" | "inline-fixed"; // Where to display option hints (default: "inline")
 	onSubmit: (
 		value:
 			| string
@@ -369,6 +369,66 @@ export function RadioField({
 						})}
 					</Box>
 				</Box>
+			) : hintPosition === "inline-fixed" ? (
+				filteredOptions.map((option, index) => {
+					const isSelected = index === selectedIndex;
+					const color = isSelected ? "cyan" : option.color || "gray";
+
+					// Highlight matching text if searching
+					const renderLabel = () => {
+						if (!searchable || !currentSearchQuery.trim()) {
+							return option.label;
+						}
+
+						const query = currentSearchQuery.toLowerCase();
+						const label = option.label;
+						const lowerLabel = label.toLowerCase();
+						const matchIndex = lowerLabel.indexOf(query);
+
+						if (matchIndex === -1) {
+							return label; // No match found, return original
+						}
+
+						const beforeMatch = label.slice(0, matchIndex);
+						const match = label.slice(
+							matchIndex,
+							matchIndex + query.length
+						);
+						const afterMatch = label.slice(matchIndex + query.length);
+
+						// Use cyan for focused items, option color or white for non-focused
+						const highlightColor = isSelected
+							? "cyan"
+							: option.color || "white";
+
+						return (
+							<>
+								{beforeMatch}
+								<Text underline color={highlightColor}>
+									{match}
+								</Text>
+								{afterMatch}
+							</>
+						);
+					};
+
+					return (
+						<Box key={option.value} flexDirection="row">
+							<Box width={25}>
+								<Text color={color}>
+									{isSelected ? "●" : "○"}{" "}
+									{showNumbers === true && `${index + 1}. `}
+									{renderLabel()}
+								</Text>
+							</Box>
+							<Box flexGrow={1}>
+								<Text color="gray">
+									{isSelected && option.hint ? option.hint : ""}
+								</Text>
+							</Box>
+						</Box>
+					);
+				})
 			) : (
 				filteredOptions.map((option, index) => {
 					const isSelected = index === selectedIndex;

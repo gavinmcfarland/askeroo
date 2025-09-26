@@ -19,7 +19,7 @@ export interface MultiOptions {
   showNumbers?: boolean;
   allowLoop?: boolean;
   searchable?: boolean;
-  hintPosition?: "bottom" | "inline" | "side"; // Where to display option hints (default: "inline")
+  hintPosition?: "bottom" | "inline" | "side" | "inline-fixed"; // Where to display option hints (default: "inline")
 }
 
 // Example multi-select prompt plugin

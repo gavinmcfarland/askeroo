@@ -37,7 +37,7 @@ const flow = async () => {
 				template: await radio({
 					shortLabel: "Template",
 					label: "Choose a template:",
-					hintPosition: "side",
+					hintPosition: "inline-fixed",
 					options: [
 						{
 							value: "default",
@@ -54,7 +54,7 @@ const flow = async () => {
 				addons: await multi({
 					shortLabel: "Addons",
 					label: "Choose addons:",
-					hintPosition: "side",
+					hintPosition: "inline-fixed",
 					options: [
 						{
 							value: "tailwind",
