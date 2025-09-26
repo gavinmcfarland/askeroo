@@ -1,9 +1,6 @@
 import { debugLogger } from "./debug.js";
 import { globalRegistry, setCurrentRuntime } from "./registry.js";
 
-// Import core plugins (they self-register when imported)
-import "./plugins/core.js";
-
 export type Answers = Record<string, unknown>;
 
 type PromptKind = string; // Generic type that works with any plugin

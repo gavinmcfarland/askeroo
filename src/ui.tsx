@@ -4,9 +4,6 @@ import { PromptApp } from "./prompts/shared/PromptApp.js";
 import { debugLogger } from "./debug.js";
 import { globalRegistry } from "./registry.js";
 
-// Import core plugins (they self-register when imported)
-import "./plugins/core.js";
-
 type BackToken = { __back: true };
 
 // Generic prompt request that works with any plugin
@@ -122,41 +119,51 @@ function createUI() {
 		},
 	};
 
-	// Create dynamic UI handlers for all registered plugins
-
-	// Create generic UI handlers for all registered plugins
-	//   console.log('Registered plugins:', globalRegistry.getAll().map(p => p.type));
-	for (const plugin of globalRegistry.getAll()) {
-		// console.log("Creating UI handler for:", plugin.type);
-		(baseUI as any)[plugin.type] = async function (
-			opts: any,
-			currentGroup: string,
-			id: string
-		): Promise<any> {
-			if (typeof currentGroup === "string") {
-				appInstance.currentGroup = currentGroup;
+	// Create a Proxy to dynamically handle plugin methods
+	return new Proxy(baseUI, {
+		get(target: any, prop: string) {
+			// If the property exists on baseUI, return it
+			if (prop in target) {
+				return target[prop];
 			}
 
-			const promptFn = await ensureApp();
+			// Check if this is a registered plugin type
+			const plugin = globalRegistry.get(prop);
+			if (plugin) {
+				// Create and cache the handler
+				target[prop] = async function (
+					opts: any,
+					currentGroup: string,
+					id: string
+				): Promise<any> {
+					if (typeof currentGroup === "string") {
+						appInstance.currentGroup = currentGroup;
+					}
 
-			// Create the request object with all options spread in
-			const request: PromptRequest = {
-				type: plugin.type,
-				id:
-					id ||
-					generatePromptId(
-						plugin.type,
-						opts.message || `${plugin.type} field`
-					),
-				groupName: appInstance.currentGroup,
-				...opts, // Spread all options from the plugin
-			};
+					const promptFn = await ensureApp();
 
-			return promptFn(request);
-		};
-	}
+					// Create the request object with all options spread in
+					const request: PromptRequest = {
+						type: plugin.type,
+						id:
+							id ||
+							generatePromptId(
+								plugin.type,
+								opts.message || `${plugin.type} field`
+							),
+						groupName: appInstance.currentGroup,
+						...opts, // Spread all options from the plugin
+					};
 
-	return baseUI;
+					return promptFn(request);
+				};
+				return target[prop];
+			}
+
+			// Return undefined for unknown properties
+			return undefined;
+		},
+	});
 }
 
 export const ui = createUI();

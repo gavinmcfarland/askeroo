@@ -4,7 +4,7 @@ The plugin system allows you to create custom prompt types and register them wit
 
 ## Core Plugins
 
-Core plugins are automatically loaded when you import the runtime. They include:
+Core plugins are registered when you import them from the main package. They include:
 
 - `text` - Text input fields
 - `confirm` - Yes/no confirmation prompts
@@ -17,7 +17,7 @@ Core plugins are automatically loaded when you import the runtime. They include:
 
 ### Method 1: Using `createPlugin` (Recommended)
 
-The easiest way to create a plugin is using the `createPlugin` helper, which automatically registers your plugin:
+The easiest way to create a plugin is using the `createPlugin` helper, which automatically registers your plugin when the module is imported:
 
 ```typescript
 import React from 'react';
@@ -44,7 +44,7 @@ Then use it in your code:
 
 ```typescript
 import { ask } from '../core.js';
-import './path/to/my-custom-field.js'; // Import to register the plugin
+import { myCustomField } from './path/to/my-custom-field.js'; // Import registers the plugin automatically
 
 const result = await ask(async ({ myCustomField }) => {
   return await myCustomField({
@@ -53,6 +53,8 @@ const result = await ask(async ({ myCustomField }) => {
   });
 });
 ```
+
+**Note:** Just importing the plugin file registers it with the runtime, just like built-in plugins work when you import them from the main package.
 
 ### Method 2: Manual Registration
 

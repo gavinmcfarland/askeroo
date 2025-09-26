@@ -31,8 +31,6 @@ if (!existsSync(compiledExamplePath)) {
 	process.exit(1);
 }
 
-console.log(`Running example: ${exampleName} \n`);
-
 // Run the compiled example
 const runChild = spawn('node', [compiledExamplePath, '--', ...process.argv.slice(3)], {
 	stdio: 'inherit',
