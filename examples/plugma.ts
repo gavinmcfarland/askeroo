@@ -54,6 +54,7 @@ const flow = async () => {
 				addons: await multi({
 					shortLabel: "Addons",
 					label: "Choose addons:",
+					hintPosition: "bottom",
 					options: [
 						{
 							value: "tailwind",
@@ -68,7 +69,6 @@ const flow = async () => {
 						{
 							value: "eslint",
 							label: "ESLint",
-							hint: "A linter for JavaScript",
 						},
 						{
 							value: "prettier",

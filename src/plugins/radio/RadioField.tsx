@@ -438,15 +438,13 @@ export function RadioField({
 						No options match "{currentSearchQuery}"
 					</Text>
 				)}
-			{hintPosition === "bottom" &&
-				(() => {
-					const selectedOption = filteredOptions[selectedIndex];
-					return selectedOption?.hint ? (
-						<Box marginTop={1}>
-							<Text color="gray">{selectedOption.hint}</Text>
-						</Box>
-					) : null;
-				})()}
+			{hintPosition === "bottom" && (
+				<Box marginTop={1} key={`hint-${selectedIndex}`}>
+					<Text color="gray">
+						{filteredOptions[selectedIndex]?.hint || " "}
+					</Text>
+				</Box>
+			)}
 		</Box>
 	);
 }

@@ -182,7 +182,7 @@ export function MultiField({
 		if (selectedIndex > maxIndex) {
 			setSelectedIndex(Math.max(0, maxIndex));
 		}
-	}, [filteredOptions, noneOption, selectedIndex]);
+	}, [filteredOptions.length, noneOption]);
 
 	// Reset submitted state when field becomes active again (not disabled)
 	useEffect(() => {
@@ -408,28 +408,12 @@ export function MultiField({
 	return (
 		<Box flexDirection="column">
 			<Text>{label}</Text>
-			{noneOption &&
-				(() => {
-					const isSelected = selectedValues.includes(NONE_VALUE);
-					const isFocused = selectedIndex === 0;
-					const color = isFocused
-						? "cyan"
-						: isSelected
-						? "white"
-						: "gray";
-					return (
-						<Text color={color}>
-							{isSelected ? "■" : "□"} {showNumbers && "1. "}
-							{noneOption.label}
-						</Text>
-					);
-				})()}
 			{hintPosition === "side" ? (
 				<Box flexDirection="row">
 					<Box flexDirection="column" width={25}>
 						{noneOption && (
-							<Text color={selectedIndex === 0 ? "cyan" : "white"}>
-								{selectedValues.includes("__NONE__") ? "■" : "□"} {showNumbers && "1. "}
+							<Text color={selectedIndex === 0 ? "cyan" : selectedValues.includes(NONE_VALUE) ? "white" : "gray"}>
+								{selectedValues.includes(NONE_VALUE) ? "■" : "□"} {showNumbers && "1. "}
 								{noneOption.label}
 							</Text>
 						)}
@@ -494,7 +478,7 @@ export function MultiField({
 					<Box flexDirection="column" flexGrow={1}>
 						{noneOption && (
 							<Text color="gray">
-								{selectedIndex === 0 ? "" : ""}
+								{/* Placeholder for noneOption - no hint support */}
 							</Text>
 						)}
 						{filteredOptions.map((option, index) => {
@@ -603,20 +587,25 @@ export function MultiField({
 					</Text>
 				)}
 			{error && <Text color="red">{error}</Text>}
-			{hintPosition === "bottom" &&
-				(() => {
-					const focusedOption = filteredOptions.find(
-						(option, index) => {
-							const optionIndex = index + (noneOption ? 1 : 0);
-							return optionIndex === selectedIndex;
-						}
-					);
-					return focusedOption?.hint ? (
-						<Box marginTop={1}>
-							<Text color="gray">{focusedOption.hint}</Text>
-						</Box>
-					) : null;
-				})()}
+			{hintPosition === "bottom" && (
+				<Box marginTop={1} key={`hint-${selectedIndex}`}>
+					<Text color="gray">
+						{(() => {
+							// Check if none option is focused first
+							if (noneOption && selectedIndex === 0) {
+								// None option doesn't support hints
+								return " ";
+							}
+
+							// Find the focused option from filteredOptions
+							const focusedOptionIndex = selectedIndex - (noneOption ? 1 : 0);
+							const focusedOption = filteredOptions[focusedOptionIndex];
+
+							return focusedOption?.hint || " ";
+						})()}
+					</Text>
+				</Box>
+			)}
 		</Box>
 	);
 }
