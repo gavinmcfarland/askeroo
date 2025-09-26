@@ -108,8 +108,12 @@ export function MultiField({
 		return normalizedOptions.filter((option) => {
 			const isSelected = selectedValues.includes(option.value);
 			const matchesSearch =
-				option.label.toLowerCase().includes(currentSearchQuery.toLowerCase()) ||
-				option.value.toLowerCase().includes(currentSearchQuery.toLowerCase());
+				option.label
+					.toLowerCase()
+					.includes(currentSearchQuery.toLowerCase()) ||
+				option.value
+					.toLowerCase()
+					.includes(currentSearchQuery.toLowerCase());
 
 			// Show option if it's selected OR if it matches the search
 			return isSelected || matchesSearch;
@@ -281,6 +285,12 @@ export function MultiField({
 
 		// Handle back navigation (Escape)
 		if (key.escape) {
+			// If searching, clear the search query first
+			if (searchable && currentSearchQuery.trim()) {
+				setInternalSearchQuery("");
+				return;
+			}
+
 			// If there's a noneOption and regular options are selected, clear selections and select none first
 			if (
 				noneOption &&
@@ -434,13 +444,18 @@ export function MultiField({
 					}
 
 					const beforeMatch = label.slice(0, matchIndex);
-					const match = label.slice(matchIndex, matchIndex + query.length);
+					const match = label.slice(
+						matchIndex,
+						matchIndex + query.length
+					);
 					const afterMatch = label.slice(matchIndex + query.length);
 
 					return (
 						<>
 							{beforeMatch}
-							<Text backgroundColor="yellow" color="black">{match}</Text>
+							<Text backgroundColor="grey" color="black">
+								{match}
+							</Text>
 							{afterMatch}
 						</>
 					);
