@@ -5,12 +5,16 @@ export type Answers = Record<string, unknown>;
 
 type PromptKind = string; // Generic type that works with any plugin
 type PromptOpts = { message: string; id?: string };
-type GroupMeta = { message?: string; id?: string };
+type GroupMeta = { message?: string; id?: string; saveOnEscape?: boolean };
 type GroupOpts =
-	| { flow?: "progressive"; enableArrowNavigation?: never }
-	| { flow: "phased"; enableArrowNavigation?: never }
-	| { flow: "static"; enableArrowNavigation?: boolean }
-	| { flow?: undefined; enableArrowNavigation?: never };
+	| { flow?: "progressive"; enableArrowNavigation?: never; saveOnEscape?: boolean }
+	| { flow: "phased"; enableArrowNavigation?: never; saveOnEscape?: boolean }
+	| { flow: "static"; enableArrowNavigation?: boolean; saveOnEscape?: boolean }
+	| { flow?: undefined; enableArrowNavigation?: never; saveOnEscape?: boolean };
+
+type AskOptions = {
+	saveOnEscape?: boolean;
+};
 
 type UI = {
 	showGroup(
@@ -94,7 +98,7 @@ function simpleHash(str: string): string {
 	return Math.abs(hash).toString(36);
 }
 
-export function createRuntime(ui: UI) {
+export function createRuntime(ui: UI, globalSaveOnEscape?: boolean) {
 	debugLogger.log("RUNTIME_CREATE", { ui: typeof ui });
 
 	// Use the UI directly - dynamic handlers are created in ui.tsx
@@ -106,6 +110,7 @@ export function createRuntime(ui: UI) {
 	let asking = false;
 	let isReplaying: boolean | "smart" = false; // Track replay mode: false, true, or "smart"
 	let targetGroup: string | undefined; // For smart replay mode
+	let currentSaveOnEscape: boolean = globalSaveOnEscape || false; // Current save on escape mode
 
 	// Track execution context to avoid unnecessary replays
 	let executionPath: Array<{
@@ -415,6 +420,11 @@ export function createRuntime(ui: UI) {
 		// Combine meta and opts for the engine step
 		const combinedOpts = { ...meta, ...(opts || {}) };
 
+		// Update save on escape if specified at group level
+		if (combinedOpts.saveOnEscape !== undefined) {
+			currentSaveOnEscape = combinedOpts.saveOnEscape;
+		}
+
 		// For static groups, we need to run discovery to find fields
 		if (opts?.flow === "static") {
 			const nextGroupCount = groupCount + 1;
@@ -445,11 +455,18 @@ export function createRuntime(ui: UI) {
 				group: typeof group;
 				BACK: BackToken;
 			} & Record<string, any>
-		) => Promise<T>
+		) => Promise<T>,
+		options?: AskOptions
 	): Promise<T> {
+		// Update save on escape if specified at ask level
+		if (options?.saveOnEscape !== undefined) {
+			currentSaveOnEscape = options.saveOnEscape;
+		}
+
 		debugLogger.log("ASK_START", {
 			currentStep,
 			answersCount: Object.keys(answers).length,
+			saveOnEscape: currentSaveOnEscape,
 		});
 
 		while (true) {
@@ -624,8 +641,10 @@ export function createRuntime(ui: UI) {
 				throw new Error(`${plugin.type}() must be called inside ask()`);
 			return engine.step(plugin.type, opts, async (id) => {
 				const currentGroup = groupStack[groupStack.length - 1];
+				// Check if we have an existing answer for this field
+				const existingAnswer = answers[id];
 				// Get the processed options from the plugin
-				const processedOpts = plugin.prompt(opts, { currentGroup }, id);
+				const processedOpts = plugin.prompt(opts, { currentGroup, saveOnEscape: currentSaveOnEscape, existingAnswer }, id);
 				// Call the appropriate UI method based on plugin type
 				return extendedUI[plugin.type](processedOpts, currentGroup, id);
 			});

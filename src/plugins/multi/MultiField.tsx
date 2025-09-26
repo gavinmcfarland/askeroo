@@ -12,7 +12,12 @@ interface MultiFieldProps {
 	label: string;
 	options?: string[] | MultiFieldOption[];
 	initialValue?: string[];
-	onSubmit: (values: string[]) => void;
+	onSubmit: (
+		values:
+			| string[]
+			| { __preserveAndBack: boolean; value: string[] }
+			| { __clearGroupAndBack: boolean }
+	) => void;
 	onBack?: () => void;
 	allowBack?: boolean;
 	completed?: boolean;
@@ -29,6 +34,7 @@ interface MultiFieldProps {
 	hintPosition?: "bottom" | "inline" | "side" | "inline-fixed"; // Where to display option hints (default: "inline")
 	searchQuery?: string;
 	onSearchQueryChange?: (query: string) => void;
+	saveOnEscape?: boolean;
 	[key: string]: any; // Allow any additional options
 }
 
@@ -136,6 +142,7 @@ export function MultiField({
 				: totalOptions - 1
 			: Math.max(0, selectedIndex - 1);
 		setSelectedIndex(newIndex);
+		setUserHasModified(true);
 	};
 
 	const navigateDown = () => {
@@ -145,9 +152,11 @@ export function MultiField({
 				: 0
 			: Math.min(totalOptions - 1, selectedIndex + 1);
 		setSelectedIndex(newIndex);
+		setUserHasModified(true);
 	};
 	const [submitted, setSubmitted] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [userHasModified, setUserHasModified] = useState(false);
 
 	// Toggle selection function
 	const toggleSelection = (optionValue: string) => {
@@ -174,6 +183,7 @@ export function MultiField({
 
 		setSelectedValues(newSelectedValues);
 		setError(null);
+		setUserHasModified(true);
 	};
 
 	// Adjust focus when filtered options change to ensure it stays within bounds
@@ -229,7 +239,7 @@ export function MultiField({
 
 	// Update selected values when initialValue actually changes
 	useEffect(() => {
-		if (!submitted && !disabled) {
+		if (!submitted && !disabled && !userHasModified) {
 			// Check if initialValue actually changed
 			const initialChanged =
 				stableInitial.length !== prevInitialRef.current.length ||
@@ -260,7 +270,7 @@ export function MultiField({
 				prevInitialRef.current = [...stableInitial];
 			}
 		}
-	}, [stableInitial, normalizedOptions, submitted, disabled, noneOption]);
+	}, [stableInitial, normalizedOptions, submitted, disabled, noneOption, userHasModified]);
 
 	useInput((input, key) => {
 		if (submitted || completed || disabled) return;
@@ -304,11 +314,21 @@ export function MultiField({
 				return;
 			}
 
-			// Only go back if no regular options are selected (or no noneOption)
-			if (allowBack && onBack) {
-				onBack();
-				return;
+			// Handle escape behavior
+			if (allowBack) {
+				if (rest.saveOnEscape) {
+					// Save current selections and go back
+					const finalValues = selectedValues.filter(
+						(val) => val !== NONE_VALUE
+					);
+					setSubmitted(true);
+					onSubmit({ __preserveAndBack: true, value: finalValues });
+				} else if (onBack) {
+					// Regular escape behavior - don't save values
+					onBack();
+				}
 			}
+			return;
 		}
 
 		if (key.return) {
@@ -345,6 +365,7 @@ export function MultiField({
 			const newIndex =
 				selectedIndex > 0 ? selectedIndex - 1 : totalOptions - 1;
 			setSelectedIndex(newIndex);
+			setUserHasModified(true);
 			return;
 		}
 
@@ -352,6 +373,7 @@ export function MultiField({
 			const newIndex =
 				selectedIndex < totalOptions - 1 ? selectedIndex + 1 : 0;
 			setSelectedIndex(newIndex);
+			setUserHasModified(true);
 			return;
 		}
 
@@ -371,6 +393,7 @@ export function MultiField({
 			if (!isNaN(num) && num >= 1 && num <= totalOptions) {
 				const newIndex = num - 1;
 				setSelectedIndex(newIndex);
+				setUserHasModified(true);
 
 				const isNoneOption = noneOption && newIndex === 0;
 				const currentOption = isNoneOption

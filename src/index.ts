@@ -2,12 +2,16 @@ import { createRuntime } from "./core.js";
 import { ui } from "./ui.js";
 
 // Type definitions for better IDE support
-export type GroupMeta = { message?: string; id?: string };
+export type GroupMeta = { message?: string; id?: string; saveOnEscape?: boolean };
 export type GroupOpts =
-	| { flow?: "progressive"; enableArrowNavigation?: never }
-	| { flow: "phased"; enableArrowNavigation?: never }
-	| { flow: "static"; enableArrowNavigation?: boolean }
-	| { flow?: undefined; enableArrowNavigation?: never };
+	| { flow?: "progressive"; enableArrowNavigation?: never; saveOnEscape?: boolean }
+	| { flow: "phased"; enableArrowNavigation?: never; saveOnEscape?: boolean }
+	| { flow: "static"; enableArrowNavigation?: boolean; saveOnEscape?: boolean }
+	| { flow?: undefined; enableArrowNavigation?: never; saveOnEscape?: boolean };
+
+export type AskOptions = {
+	saveOnEscape?: boolean;
+};
 export type FlowFunction<T> = (
 	api: {
 		group: {
@@ -28,16 +32,16 @@ export type FlowFunction<T> = (
 // Create runtime lazily to ensure all plugins are loaded first
 let runtime: any = null;
 
-function ensureRuntime() {
+function ensureRuntime(saveOnEscape?: boolean) {
 	if (!runtime) {
-		runtime = createRuntime(ui);
+		runtime = createRuntime(ui, saveOnEscape);
 	}
 	return runtime;
 }
 
 // Export lazy runtime functions with proper types
-export const ask = <T>(flow: FlowFunction<T>): Promise<T> =>
-	ensureRuntime().ask(flow);
+export const ask = <T>(flow: FlowFunction<T>, options?: AskOptions): Promise<T> =>
+	ensureRuntime(options?.saveOnEscape).ask(flow, options);
 // Support both old and new signatures for backward compatibility
 export function group(
 	meta: GroupMeta,

@@ -96,7 +96,7 @@ const flow = async () => {
 				}),
 			};
 		},
-		{ flow: "phased" }
+		{ flow: "phased", saveOnEscape: true }
 	);
 
 	await note(`**Plugged in and ready to go!**

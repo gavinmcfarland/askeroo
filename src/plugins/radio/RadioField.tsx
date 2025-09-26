@@ -35,6 +35,7 @@ interface Props {
 	enableArrowNavigation?: boolean;
 	onHintChange?: (hint: React.ReactNode) => void;
 	isFirstRootPrompt?: boolean;
+	saveOnEscape?: boolean;
 }
 
 export function RadioField({
@@ -59,6 +60,7 @@ export function RadioField({
 	enableArrowNavigation = false,
 	onHintChange,
 	isFirstRootPrompt = false,
+	saveOnEscape = false,
 }: Props) {
 	const [selectedIndex, setSelectedIndex] = useState(() => {
 		if (initialValue && options) {
@@ -73,6 +75,7 @@ export function RadioField({
 	const [internalSearchQuery, setInternalSearchQuery] = useState("");
 	const currentSearchQuery = internalSearchQuery;
 	const [submitted, setSubmitted] = useState(false);
+	const [userHasModified, setUserHasModified] = useState(false);
 
 	// Filter options based on search query
 	const filteredOptions =
@@ -104,7 +107,8 @@ export function RadioField({
 
 	// Update selected index when initialValue changes
 	useEffect(() => {
-		if (initialValue !== undefined) {
+		// Only restore the initialValue if user hasn't modified the field
+		if (initialValue !== undefined && !userHasModified) {
 			const index = options.findIndex(
 				(option) => option.value === initialValue
 			);
@@ -112,7 +116,7 @@ export function RadioField({
 				setSelectedIndex(index);
 			}
 		}
-	}, [initialValue, options]);
+	}, [initialValue, options, userHasModified]);
 
 	// Provide hint text to parent component
 	useEffect(() => {
@@ -160,11 +164,19 @@ export function RadioField({
 				return;
 			}
 
-			// Only go back if allowed
-			if (allowBack && onBack) {
-				onBack();
-				return;
+			// Handle escape behavior
+			if (allowBack) {
+				if (saveOnEscape && filteredOptions.length > 0) {
+					// Save current selection and go back
+					const selectedValue = filteredOptions[selectedIndex].value;
+					setSubmitted(true);
+					onSubmit({ __preserveAndBack: true, value: selectedValue });
+				} else if (onBack) {
+					// Regular escape behavior - don't save value
+					onBack();
+				}
 			}
+			return;
 		}
 
 		// Handle arrow navigation for groups
@@ -224,6 +236,7 @@ export function RadioField({
 					? filteredOptions.length - 1
 					: selectedIndex;
 			setSelectedIndex(newIndex);
+			setUserHasModified(true);
 			return;
 		}
 
@@ -235,6 +248,7 @@ export function RadioField({
 					? 0
 					: selectedIndex;
 			setSelectedIndex(newIndex);
+			setUserHasModified(true);
 			return;
 		}
 
@@ -246,6 +260,7 @@ export function RadioField({
 					: filteredOptions.length - 1
 				: Math.max(0, selectedIndex - 1);
 			setSelectedIndex(newIndex);
+			setUserHasModified(true);
 			return;
 		}
 
@@ -256,6 +271,7 @@ export function RadioField({
 					: 0
 				: Math.min(filteredOptions.length - 1, selectedIndex + 1);
 			setSelectedIndex(newIndex);
+			setUserHasModified(true);
 			return;
 		}
 
@@ -265,6 +281,7 @@ export function RadioField({
 			if (!isNaN(num) && num >= 1 && num <= filteredOptions.length) {
 				const newIndex = num - 1;
 				setSelectedIndex(newIndex);
+				setUserHasModified(true);
 				const selectedValue = filteredOptions[newIndex].value;
 				setSubmitted(true);
 				onSubmit(selectedValue);

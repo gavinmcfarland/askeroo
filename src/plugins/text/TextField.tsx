@@ -24,6 +24,7 @@ interface Props {
 	enableArrowNavigation?: boolean;
 	onHintChange?: (hint: React.ReactNode) => void;
 	isFirstRootPrompt?: boolean;
+	saveOnEscape?: boolean;
 }
 
 export function TextField({
@@ -44,12 +45,14 @@ export function TextField({
 	enableArrowNavigation = false,
 	onHintChange,
 	isFirstRootPrompt = false,
+	saveOnEscape = false,
 }: Props) {
 	// Use label if provided, fallback to message for compatibility
 	const displayLabel = label || message || "Enter text";
 	const [value, setValue] = useState(initialValue);
 	const [cursorPosition, setCursorPosition] = useState(initialValue.length);
 	const [submitted, setSubmitted] = useState(false);
+	const [userHasModified, setUserHasModified] = useState(false);
 
 	// Reset submitted state when field becomes active again (not disabled)
 	useEffect(() => {
@@ -60,13 +63,14 @@ export function TextField({
 
 	// Separately handle value restoration when initialValue changes
 	useEffect(() => {
-		// Always restore the initialValue when the field becomes active (not disabled)
+		// Only restore the initialValue if user hasn't modified the field
 		// This ensures preserved values are restored when navigating back to fields
-		if (!disabled) {
+		// but doesn't overwrite user changes
+		if (!disabled && !userHasModified) {
 			setValue(initialValue);
 			setCursorPosition(initialValue.length);
 		}
-	}, [initialValue, disabled]);
+	}, [initialValue, disabled, userHasModified]);
 
 	// Provide hint text to parent component
 	useEffect(() => {
@@ -179,11 +183,19 @@ export function TextField({
 					value.slice(cursorPosition);
 				setValue(newValue);
 				setCursorPosition(cursorPosition - 1);
+				setUserHasModified(true);
 			}
 		} else if (key.escape && flow !== "static") {
-			// Regular escape behavior for non-static groups
-			if (allowBack && onBack) {
-				onBack();
+			// Handle escape behavior for non-static groups
+			if (allowBack) {
+				if (saveOnEscape) {
+					// Save current value and go back
+					setSubmitted(true);
+					onSubmit({ __preserveAndBack: true, value: value });
+				} else if (onBack) {
+					// Regular escape behavior - don't save value
+					onBack();
+				}
 			}
 		} else if (!key.ctrl && !key.meta && input) {
 			const newValue =
@@ -192,6 +204,7 @@ export function TextField({
 				value.slice(cursorPosition);
 			setValue(newValue);
 			setCursorPosition(cursorPosition + 1);
+			setUserHasModified(true);
 		}
 	});
 

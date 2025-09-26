@@ -4,7 +4,7 @@ import React from 'react';
 export type PromptPlugin = {
   type: string;
   component: React.ComponentType<any>; // Plugin provides its own React component
-  prompt: (opts: any, context: { currentGroup?: string }, id: string) => any;
+  prompt: (opts: any, context: { currentGroup?: string; saveOnEscape?: boolean; existingAnswer?: any }, id: string) => any;
   interactive?: boolean; // Whether this prompt requires user interaction (default: true)
 };
 

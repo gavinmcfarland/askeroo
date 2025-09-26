@@ -26,7 +26,9 @@ export const radio = createPlugin<RadioOptions, string>({
 	component: RadioField,
 
 	// The prompt logic - just return the options, runtime handles UI
-	prompt(opts: RadioOptions, { currentGroup }, id: string) {
-		return opts;
+	prompt(opts: RadioOptions, context: { currentGroup?: string; saveOnEscape?: boolean; existingAnswer?: any }, id: string) {
+		// Use existing answer as initial value if available
+		const initialValue = context.existingAnswer !== undefined ? context.existingAnswer : opts.initialValue;
+		return { ...opts, initialValue, saveOnEscape: context.saveOnEscape };
 	},
 });
