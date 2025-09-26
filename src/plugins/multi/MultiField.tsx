@@ -424,15 +424,43 @@ export function MultiField({
 				const isSelected = selectedValues.includes(option.value);
 				const isFocused = optionIndex === selectedIndex;
 				const color = isFocused ? "cyan" : isSelected ? "cyan" : "gray";
+
+				// Highlight matching text if searching
+				const renderLabel = () => {
+					if (!searchable || !currentSearchQuery.trim()) {
+						return option.label;
+					}
+
+					const query = currentSearchQuery.toLowerCase();
+					const label = option.label;
+					const lowerLabel = label.toLowerCase();
+					const matchIndex = lowerLabel.indexOf(query);
+
+					if (matchIndex === -1) {
+						return label; // No match found, return original
+					}
+
+					const beforeMatch = label.slice(0, matchIndex);
+					const match = label.slice(matchIndex, matchIndex + query.length);
+					const afterMatch = label.slice(matchIndex + query.length);
+
+					return (
+						<>
+							{beforeMatch}
+							<Text backgroundColor="yellow" color="black">{match}</Text>
+							{afterMatch}
+						</>
+					);
+				};
+
 				return (
 					<Text key={option.value} color={color}>
 						{isSelected ? "■" : "□"}{" "}
 						{showNumbers && `${displayIndex}. `}
-						{option.label}
+						{renderLabel()}
 					</Text>
 				);
 			})}
-			{searchable && <Text dimColor>{currentSearchQuery}</Text>}
 			{searchable &&
 				filteredOptions.length === 0 &&
 				currentSearchQuery.trim() && (
