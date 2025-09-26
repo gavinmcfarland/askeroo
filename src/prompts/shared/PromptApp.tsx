@@ -679,38 +679,39 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	const handleBack = () => {
 		if (resolverRef.current && currentPrompt) {
-			// ⬇️ Defer cleanup so there's no intermediate frame before the controller
-			// installs the previous prompt. This avoids the flicker.
-			const toMaybeDelete = currentPrompt.id;
+			// Capture the current field ID to clean up
+			const currentFieldId = currentPrompt.id;
+
+			// Cleanup visited prompts and field values for the current field
+			setVisitedPrompts((prev) => {
+				if (!prev.has(currentFieldId)) return prev;
+				const next = new Set(prev);
+				next.delete(currentFieldId);
+				return next;
+			});
+
+			// Clear the current field value to reset it to initial state
+			setFieldValues((prev) => {
+				if (!(currentFieldId in prev)) return prev;
+				const next = { ...prev };
+				delete next[currentFieldId];
+				return next;
+			});
+
+			// Remove this field from completed status immediately when going back
+			setCompletedFields((prev) => {
+				if (!prev.has(currentFieldId)) return prev;
+				const next = new Set(prev);
+				next.delete(currentFieldId);
+				console.log('DEBUG: Removed field from completed status during handleBack:', currentFieldId);
+				return next;
+			});
 
 			const r = resolverRef.current;
 			resolverRef.current = null;
 
-			// Resolve first (previous prompt will be pushed synchronously/soon).
+			// Resolve navigation
 			r({ __back: true });
-
-			// Cleanup visited prompts and completed fields immediately
-			setVisitedPrompts((prev) => {
-				if (!prev.has(toMaybeDelete)) return prev;
-				const next = new Set(prev);
-				next.delete(toMaybeDelete);
-				return next;
-			});
-
-			setCompletedFields((prev) => {
-				if (!prev.has(toMaybeDelete)) return prev;
-				const next = new Set(prev);
-				next.delete(toMaybeDelete);
-				return next;
-			});
-
-			// Clear the field value to reset it to initial state
-			setFieldValues((prev) => {
-				if (!(toMaybeDelete in prev)) return prev;
-				const next = { ...prev };
-				delete next[toMaybeDelete];
-				return next;
-			});
 
 			// When navigating back, unmark any groups that should no longer be considered completed
 			const currentPromptGroup =
@@ -827,35 +828,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const effectivePrompt =
 		currentPrompt?.type === "group" ? null : currentPrompt;
 
-	// Helper function to determine if a field should be displayed based on conditions
-	const shouldDisplayField = (
-		field: { id: string; message: string; type: string },
-		executedFields: Array<{ id: string; message: string; type: string }>
-	) => {
-		// Always show executed fields
-		if (
-			executedFields.some(
-				(f) => f.message === field.message && f.type === field.type
-			)
-		) {
-			return true;
-		}
-
-		// For non-executed fields, show them all initially
-		// The runtime will handle the discovery and conditional logic internally
-		// This makes the static flow generic and not dependent on specific field names
-		return true;
-	};
-
-	// Helper function to get field values by field information
-	const getFieldValue = (fieldInfo: {
-		id: string;
-		message: string;
-		type: string;
-	}) => {
-		// Get the actual submitted value for this field
-		return fieldValues[fieldInfo.id];
-	};
 
 	// Render completed fields for all groups (sequential by default)
 	const renderCompletedFields = () => {

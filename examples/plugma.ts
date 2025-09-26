@@ -4,7 +4,7 @@ import { completedFields } from "../src/plugins/completed-fields/index.js";
 import { note } from "../src/plugins/note/index.js";
 
 const flow = async () => {
-	await note("[ Plugma ]{bgMagenta} [v2.1.0]{dim}");
+	// await note("[ Plugma ]{bgMagenta} [v2.1.0]{dim}");
 	await completedFields();
 
 	const answers = await group(
@@ -12,6 +12,7 @@ const flow = async () => {
 			return {
 				type: await radio({
 					label: "Choose a type:",
+					shortLabel: "Type",
 					options: [
 						{ value: "react", label: "React" },
 						{ value: "vue", label: "Vue.js" },
