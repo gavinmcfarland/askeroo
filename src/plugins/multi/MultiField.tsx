@@ -411,7 +411,7 @@ export function MultiField({
 					const isSelected = selectedValues.includes(NONE_VALUE);
 					const isFocused = selectedIndex === 0;
 					const color = isFocused
-						? "cyan"
+						? "red"
 						: isSelected
 						? "cyan"
 						: "gray";
@@ -427,7 +427,11 @@ export function MultiField({
 				const optionIndex = index + (noneOption ? 1 : 0);
 				const isSelected = selectedValues.includes(option.value);
 				const isFocused = optionIndex === selectedIndex;
-				const color = isFocused ? "red" : isSelected ? "cyan" : "gray";
+				const color = isFocused
+					? "cyan"
+					: isSelected
+					? "white"
+					: "gray";
 
 				// Highlight matching text if searching
 				const renderLabel = () => {
