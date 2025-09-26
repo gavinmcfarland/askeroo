@@ -411,9 +411,9 @@ export function MultiField({
 					const isSelected = selectedValues.includes(NONE_VALUE);
 					const isFocused = selectedIndex === 0;
 					const color = isFocused
-						? "red"
-						: isSelected
 						? "cyan"
+						: isSelected
+						? "white"
 						: "gray";
 					return (
 						<Text color={color}>
@@ -455,10 +455,13 @@ export function MultiField({
 					);
 					const afterMatch = label.slice(matchIndex + query.length);
 
+					// Use cyan for focused items, white for non-focused
+					const highlightColor = isFocused ? "cyan" : "white";
+
 					return (
 						<>
 							{beforeMatch}
-							<Text backgroundColor="grey" color="black">
+							<Text underline color={highlightColor}>
 								{match}
 							</Text>
 							{afterMatch}
