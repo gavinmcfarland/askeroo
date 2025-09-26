@@ -15,7 +15,7 @@ interface EnhancedConfirmFieldProps {
 	shortLabel?: string;
 	options?: ConfirmOption[];
 	allowLoop?: boolean; // Whether to allow looping when navigating with arrow keys (default: true)
-	hintPosition?: "bottom" | "inline" | "side"; // Where to display option hints (default: "bottom")
+	hintPosition?: "bottom" | "inline" | "side"; // Where to display option hints (default: "inline")
 	onSubmit: (
 		value:
 			| any
@@ -44,7 +44,7 @@ export function EnhancedConfirmField({
 	shortLabel,
 	options,
 	allowLoop = true,
-	hintPosition = "bottom",
+	hintPosition = "inline",
 	onSubmit,
 	onBack,
 	initialValue,

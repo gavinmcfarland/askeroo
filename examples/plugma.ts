@@ -37,7 +37,7 @@ const flow = async () => {
 				template: await radio({
 					shortLabel: "Template",
 					label: "Choose a template:",
-					hintPosition: "side",
+					hintPosition: "bottom",
 					options: [
 						{
 							value: "default",
@@ -55,12 +55,36 @@ const flow = async () => {
 					shortLabel: "Addons",
 					label: "Choose addons:",
 					options: [
-						{ value: "tailwind", label: "Tailwind" },
-						{ value: "shadcn", label: "Shadcn" },
-						{ value: "eslint", label: "ESLint" },
-						{ value: "prettier", label: "Prettier" },
-						{ value: "vitest", label: "Vitest" },
-						{ value: "playwright", label: "Playwright" },
+						{
+							value: "tailwind",
+							label: "Tailwind",
+							hint: "A utility-first CSS framework",
+						},
+						{
+							value: "shadcn",
+							label: "Shadcn",
+							hint: "A library of components for building websites",
+						},
+						{
+							value: "eslint",
+							label: "ESLint",
+							hint: "A linter for JavaScript",
+						},
+						{
+							value: "prettier",
+							label: "Prettier",
+							hint: "A formatter for JavaScript",
+						},
+						{
+							value: "vitest",
+							label: "Vitest",
+							hint: "A testing framework for JavaScript",
+						},
+						{
+							value: "playwright",
+							label: "Playwright",
+							hint: "A testing framework for JavaScript",
+						},
 					],
 					noneOption: { label: "None" },
 					searchable: true,

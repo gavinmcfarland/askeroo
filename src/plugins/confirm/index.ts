@@ -7,7 +7,7 @@ export interface ConfirmOptions {
   shortLabel?: string;
   options?: ConfirmOption[];
   allowLoop?: boolean;
-  hintPosition?: "bottom" | "inline" | "side"; // Where to display option hints (default: "bottom")
+  hintPosition?: "bottom" | "inline" | "side"; // Where to display option hints (default: "inline")
   initialValue?: any;
   id?: string;
 }

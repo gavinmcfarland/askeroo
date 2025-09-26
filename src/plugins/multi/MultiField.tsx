@@ -26,7 +26,7 @@ interface MultiFieldProps {
 	showNumbers?: boolean;
 	allowLoop?: boolean;
 	searchable?: boolean;
-	hintPosition?: "bottom" | "inline" | "side"; // Where to display option hints (default: "bottom")
+	hintPosition?: "bottom" | "inline" | "side"; // Where to display option hints (default: "inline")
 	searchQuery?: string;
 	onSearchQueryChange?: (query: string) => void;
 	[key: string]: any; // Allow any additional options
@@ -48,7 +48,7 @@ export function MultiField({
 	showNumbers = false,
 	allowLoop = true,
 	searchable = false,
-	hintPosition = "bottom",
+	hintPosition = "inline",
 	searchQuery = "",
 	onSearchQueryChange,
 	...rest

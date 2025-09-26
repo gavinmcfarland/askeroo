@@ -15,7 +15,7 @@ interface Props {
 	showNumbers?: boolean; // Whether to show numbers for selection
 	allowLoop?: boolean; // Whether to allow looping when navigating with up/down arrows (default: true)
 	searchable?: boolean; // Whether to enable search functionality (default: false)
-	hintPosition?: "bottom" | "inline" | "side"; // Where to display option hints (default: "bottom")
+	hintPosition?: "bottom" | "inline" | "side"; // Where to display option hints (default: "inline")
 	onSubmit: (
 		value:
 			| string
@@ -44,7 +44,7 @@ export function RadioField({
 	showNumbers = false,
 	allowLoop = true,
 	searchable = false,
-	hintPosition = "bottom",
+	hintPosition = "inline",
 	onSubmit,
 	onBack,
 	initialValue,

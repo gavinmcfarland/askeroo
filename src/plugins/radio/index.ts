@@ -15,7 +15,7 @@ export interface RadioOptions {
 	showNumbers?: boolean; // Whether to show numbers for selection
 	allowLoop?: boolean; // Whether to allow looping when navigating with up/down arrows (default: true)
 	searchable?: boolean; // Whether to enable search functionality (default: false)
-	hintPosition?: "bottom" | "inline" | "side"; // Where to display option hints (default: "bottom")
+	hintPosition?: "bottom" | "inline" | "side"; // Where to display option hints (default: "inline")
 	initialValue?: string;
 	id?: string;
 }
