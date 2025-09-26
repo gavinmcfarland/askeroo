@@ -35,7 +35,11 @@ function formatValue(value: any, fieldProperties: any): string {
 		}
 
 		// For multi-select fields, get the labels from the options
-		if (fieldProperties && fieldProperties.options && Array.isArray(fieldProperties.options)) {
+		if (
+			fieldProperties &&
+			fieldProperties.options &&
+			Array.isArray(fieldProperties.options)
+		) {
 			const selectedLabels = value
 				.map((val) => {
 					const option = fieldProperties.options.find(
@@ -51,7 +55,11 @@ function formatValue(value: any, fieldProperties: any): string {
 
 	if (typeof value === "boolean") {
 		// For confirm fields, try to get the label from options
-		if (fieldProperties && fieldProperties.options && Array.isArray(fieldProperties.options)) {
+		if (
+			fieldProperties &&
+			fieldProperties.options &&
+			Array.isArray(fieldProperties.options)
+		) {
 			const option = fieldProperties.options.find(
 				(opt: any) => opt.value === value
 			);
@@ -69,7 +77,11 @@ function formatValue(value: any, fieldProperties: any): string {
 	}
 
 	// For radio fields, get the label from options
-	if (fieldProperties && fieldProperties.options && Array.isArray(fieldProperties.options)) {
+	if (
+		fieldProperties &&
+		fieldProperties.options &&
+		Array.isArray(fieldProperties.options)
+	) {
 		const option = fieldProperties.options.find(
 			(opt: any) => opt.value === value
 		);
@@ -264,13 +276,15 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 				)}
 				{filteredFields.map((field) => (
 					<Box key={field.id} gap={1}>
-						<Box width={14}>
-							<Text dimColor>
+						<Box width={16}>
+							<Text color="gray">
 								{field.shortLabel || field.label}
 							</Text>
 						</Box>
 						<Text>
-							<Text color="blue">{field.formattedValue || field.value}</Text>
+							<Text color="blue">
+								{field.formattedValue || field.value}
+							</Text>
 						</Text>
 					</Box>
 				))}
@@ -303,13 +317,15 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 							gap={1}
 							marginLeft={groupName !== "Other" ? 2 : 0}
 						>
-							<Box width={14}>
-								<Text dimColor>
+							<Box width={16}>
+								<Text color="gray">
 									{field.shortLabel || field.label}
 								</Text>
 							</Box>
 							<Text>
-								<Text color="blue">{field.formattedValue || field.value}</Text>
+								<Text color="blue">
+									{field.formattedValue || field.value}
+								</Text>
 							</Text>
 						</Box>
 					))}
