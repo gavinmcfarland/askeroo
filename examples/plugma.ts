@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { ask, group, text, confirm } from "../src/index.js";
+import { ask, group, text, confirm, radio } from "../src/index.js";
 import { completedFields } from "../src/plugins/completed-fields/index.js";
 import { note } from "../src/plugins/note/index.js";
 
@@ -10,9 +10,14 @@ const flow = async () => {
 	const answers = await group(
 		async () => {
 			return {
-				type: await text({
-					shortLabel: "Type",
+				type: await radio({
 					label: "Choose a type:",
+					options: [
+						{ value: "react", label: "React" },
+						{ value: "vue", label: "Vue.js" },
+						{ value: "angular", label: "Angular" },
+						{ value: "svelte", label: "Svelte" },
+					],
 				}),
 				framework: await text({
 					shortLabel: "Framework",

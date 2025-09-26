@@ -4,6 +4,15 @@ import { PromptApp } from "./prompts/shared/PromptApp.js";
 import { debugLogger } from "./debug.js";
 import { globalRegistry } from "./registry.js";
 
+// Import all plugins to ensure they are registered
+import "./plugins/text/index.js";
+import "./plugins/confirm/index.js";
+import "./plugins/custom-text/index.js";
+import "./plugins/multi/index.js";
+import "./plugins/validated-text/index.js";
+import "./plugins/note/index.js";
+import "./plugins/radio/index.js";
+
 type BackToken = { __back: true };
 
 // Generic prompt request that works with any plugin

@@ -72,6 +72,7 @@ export {
 	type ValidatedTextOptions,
 } from "./plugins/validated-text/index.js";
 export { note } from "./plugins/note/index.js";
+export { radio, type RadioOptions, type RadioOption } from "./plugins/radio/index.js";
 
 // Export markdown utilities
 export { md, mdString, mdWithTheme, type MarkdownString } from "./utils/markdown.js";
