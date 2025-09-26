@@ -82,7 +82,7 @@ export {
 
 // Export plugins and their types
 export { text, type TextOptions } from "./plugins/text/index.js";
-export { confirm, type ConfirmOptions } from "./plugins/confirm/index.js";
+export { confirm, type ConfirmOptions, type ConfirmOption } from "./plugins/confirm/index.js";
 export { multi, type MultiOptions } from "./plugins/multi/index.js";
 export { note } from "./plugins/note/index.js";
 export {

@@ -26,7 +26,7 @@ const flow = async () => {
 				}),
 				framework: await radio({
 					label: "Select a framework:",
-					shortLabel: "Type",
+					shortLabel: "Framework",
 					options: [
 						{ value: "react", label: "React" },
 						{ value: "vue", label: "Vue" },
@@ -42,15 +42,23 @@ const flow = async () => {
 						{ value: "minimal", label: "Rectangle creator" },
 					],
 				}),
-				typescript: await text({
+				typescript: await confirm({
 					shortLabel: "TypeScript",
 					label: "Use TypeScript?",
+					initialValue: true,
 				}),
-				setup: await text({ shortLabel: "Setup", label: "Setup" }),
 			};
 		},
 		{ flow: "phased" }
 	);
+
+	await note(`**Plugged in and ready to go!**
+
+		1. \`cd ./my-plugin\`
+		2. \`npm run dev\`
+		3. Import \`dist/manifest.json\` in Figma
+
+		Check out the docs at https://plugma.dev.`);
 
 	return { answers };
 };
@@ -59,7 +67,7 @@ const flow = async () => {
 	try {
 		const result = await ask(flow);
 
-		console.log("\nResult:", JSON.stringify(result, null, 2));
+		// console.log("\nResult:", JSON.stringify(result, null, 2));
 	} catch (error) {
 		console.error("Error:", error);
 		process.exit(1);

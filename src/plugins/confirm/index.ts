@@ -1,15 +1,22 @@
 import { createPlugin } from '../../registry.js';
-import { ConfirmField } from './ConfirmField.js';
+import { EnhancedConfirmField, ConfirmOption } from './EnhancedConfirmField.js';
 
 export interface ConfirmOptions {
-  message: string;
+  message?: string;
+  label?: string; // Alternative to message for compatibility
+  shortLabel?: string;
+  options?: ConfirmOption[];
+  allowLoop?: boolean;
+  initialValue?: any;
   id?: string;
 }
 
-// Core confirm input plugin
-export const confirm = createPlugin<ConfirmOptions, boolean>({
+export type { ConfirmOption } from './EnhancedConfirmField.js';
+
+// Enhanced confirm input plugin with custom options support
+export const confirm = createPlugin<ConfirmOptions, any>({
   type: 'confirm',
-  component: ConfirmField,
+  component: EnhancedConfirmField,
 
   // The prompt logic - just return the options, runtime handles UI
   prompt(opts: ConfirmOptions, { currentGroup }, id: string) {
