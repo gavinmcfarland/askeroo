@@ -6,6 +6,7 @@ export interface CompletedFieldsOptions {
 	showGroupHeaders?: boolean;
 	maxFields?: number;
 	title?: string;
+	emptyPlaceholder?: string;
 	// Plugin component props
 	onSubmit?: (value: void) => void;
 	onBack?: () => void;
@@ -87,10 +88,15 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 				const groupId = appState.groupIds[fieldId];
 
 				// Get the original field properties
-				const originalProperties = appState.fieldProperties.get(fieldId) || {};
+				const originalProperties =
+					appState.fieldProperties.get(fieldId) || {};
 
 				// Use the original field's label and shortLabel properties
-				const label = originalProperties.label || originalProperties.message || appState.fieldMessages[fieldId] || fieldId;
+				const label =
+					originalProperties.label ||
+					originalProperties.message ||
+					appState.fieldMessages[fieldId] ||
+					fieldId;
 				const shortLabel = originalProperties.shortLabel;
 
 				fields.push({
@@ -143,6 +149,11 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 	}, [filteredFields]);
 
 	if (filteredFields.length === 0) {
+		// Only render if title or emptyPlaceholder is defined
+		if (!props.title && !props.emptyPlaceholder) {
+			return null;
+		}
+
 		return (
 			<Box flexDirection="column">
 				{props.title && (
@@ -152,7 +163,9 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 						</Text>
 					</Box>
 				)}
-				<Text dimColor>No completed fields yet.</Text>
+				{props.emptyPlaceholder && (
+					<Text dimColor>{props.emptyPlaceholder}</Text>
+				)}
 			</Box>
 		);
 	}
@@ -240,10 +253,15 @@ export const completedFieldsUtils = {
 				const groupId = globalAppState.groupIds[fieldId];
 
 				// Get the original field properties
-				const originalProperties = globalAppState.fieldProperties.get(fieldId) || {};
+				const originalProperties =
+					globalAppState.fieldProperties.get(fieldId) || {};
 
 				// Use the original field's label and shortLabel properties
-				const label = originalProperties.label || originalProperties.message || globalAppState.fieldMessages[fieldId] || fieldId;
+				const label =
+					originalProperties.label ||
+					originalProperties.message ||
+					globalAppState.fieldMessages[fieldId] ||
+					fieldId;
 				const shortLabel = originalProperties.shortLabel;
 
 				fields.push({
