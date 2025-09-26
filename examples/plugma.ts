@@ -24,13 +24,19 @@ const flow = async () => {
 						{ value: "widget", label: "Widget" },
 					],
 				}),
-				framework: await text({
-					shortLabel: "Framework",
-					label: "Choose a framework:",
+				framework: await radio({
+					label: "Select a framework:",
+					shortLabel: "Type",
+					options: [
+						{ value: "react", label: "React" },
+						{ value: "vue", label: "Vue" },
+						{ value: "svelte", label: "Svelte" },
+						{ value: "no-ui", label: "No UI" },
+					],
 				}),
 				template: await text({
 					shortLabel: "Template",
-					label: "Pick a template to start from:",
+					label: "Choose a template:",
 				}),
 				typescript: await text({
 					shortLabel: "TypeScript",

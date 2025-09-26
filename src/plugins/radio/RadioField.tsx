@@ -288,7 +288,7 @@ export function RadioField({
 				return (
 					<Text
 						key={option.value}
-						color={isSelected ? "magenta" : "gray"}
+						color={isSelected ? "cyan" : "gray"}
 					>
 						{isSelected ? "●" : "○"}{" "}
 						{showNumbers === true && `${index + 1}. `}

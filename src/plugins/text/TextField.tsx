@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Text, Box, useInput } from "ink";
 
 interface Props {
-	label: string;
+	label?: string;
+	message?: string; // Alternative to label for compatibility
 	shortLabel?: string;
 	onSubmit: (
 		value:
@@ -27,6 +28,7 @@ interface Props {
 
 export function TextField({
 	label,
+	message,
 	shortLabel,
 	onSubmit,
 	onBack,
@@ -43,6 +45,8 @@ export function TextField({
 	onHintChange,
 	isFirstRootPrompt = false,
 }: Props) {
+	// Use label if provided, fallback to message for compatibility
+	const displayLabel = label || message || "Enter text";
 	const [value, setValue] = useState(initialValue);
 	const [cursorPosition, setCursorPosition] = useState(initialValue.length);
 	const [submitted, setSubmitted] = useState(false);
@@ -195,7 +199,7 @@ export function TextField({
 		return (
 			<Box gap={1}>
 				<Box width={14}>
-					<Text>{shortLabel || label}</Text>
+					<Text>{shortLabel || displayLabel}</Text>
 				</Box>
 
 				<Text>
@@ -209,7 +213,7 @@ export function TextField({
 		return (
 			<Box gap={1}>
 				<Box width={14}>
-					<Text dimColor>{shortLabel || label}</Text>
+					<Text dimColor>{shortLabel || displayLabel}</Text>
 				</Box>
 				<Text dimColor>
 					<Text color="gray">...</Text>
@@ -225,7 +229,7 @@ export function TextField({
 			marginBottom={flow === "static" && !isLastInGroup ? 1 : 0}
 		>
 			<Box width={flow === "static" ? 14 : undefined}>
-				<Text>{label}</Text>
+				<Text>{displayLabel}</Text>
 			</Box>
 			<Text color="cyan">
 				{value.slice(0, cursorPosition)}
