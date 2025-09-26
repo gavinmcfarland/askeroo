@@ -5,6 +5,8 @@ import { isMarkdownString, parseMarkdown } from "../../utils/markdown.js";
 export interface ConfirmOption {
 	value: any;
 	label: string;
+	color?: string;
+	hint?: string;
 }
 
 interface EnhancedConfirmFieldProps {
@@ -13,6 +15,7 @@ interface EnhancedConfirmFieldProps {
 	shortLabel?: string;
 	options?: ConfirmOption[];
 	allowLoop?: boolean; // Whether to allow looping when navigating with arrow keys (default: true)
+	hintPosition?: "bottom" | "inline" | "side"; // Where to display option hints (default: "bottom")
 	onSubmit: (
 		value:
 			| any
@@ -41,6 +44,7 @@ export function EnhancedConfirmField({
 	shortLabel,
 	options,
 	allowLoop = true,
+	hintPosition = "bottom",
 	onSubmit,
 	onBack,
 	initialValue,
@@ -289,16 +293,51 @@ export function EnhancedConfirmField({
 	return (
 		<Box flexDirection="column">
 			{renderMessage()}
-			<Box flexDirection="row" gap={2}>
-				{confirmOptions.map((option, index) => (
-					<Text
-						key={String(option.value)}
-						color={index === selectedIndex ? "cyan" : "gray"}
-					>
-						{index === selectedIndex ? "●" : "○"} {option.label}
-					</Text>
-				))}
-			</Box>
+			{hintPosition === "side" ? (
+				// Side layout - two columns, hint only for selected option
+				<Box flexDirection="row">
+					<Box flexDirection="column" width={25}>
+						{confirmOptions.map((option, index) => (
+							<Text key={String(option.value)} color={index === selectedIndex ? "cyan" : (option.color || "gray")}>
+								{index === selectedIndex ? "●" : "○"} {option.label}
+							</Text>
+						))}
+					</Box>
+					<Box flexDirection="column" flexGrow={1}>
+						{confirmOptions.map((option, index) => (
+							<Text key={String(option.value)} color="gray">
+								{index === selectedIndex && option.hint ? option.hint : ""}
+							</Text>
+						))}
+					</Box>
+				</Box>
+			) : (
+				// Original horizontal layout for inline and bottom
+				<Box flexDirection="row" gap={2}>
+					{confirmOptions.map((option, index) => (
+						<Box key={String(option.value)} flexDirection="row">
+							<Text color={index === selectedIndex ? "cyan" : (option.color || "gray")}>
+								{index === selectedIndex ? "●" : "○"} {option.label}
+							</Text>
+							{hintPosition === "inline" && index === selectedIndex && option.hint && (
+								<Text color="gray" dimColor>
+									{" "}{option.hint}
+								</Text>
+							)}
+						</Box>
+					))}
+				</Box>
+			)}
+			{hintPosition === "bottom" && (() => {
+				const selectedOption = confirmOptions[selectedIndex];
+				return selectedOption?.hint ? (
+					<Box marginTop={1}>
+						<Text color="gray" dimColor>
+							{selectedOption.hint}
+						</Text>
+					</Box>
+				) : null;
+			})()}
 		</Box>
 	);
 }

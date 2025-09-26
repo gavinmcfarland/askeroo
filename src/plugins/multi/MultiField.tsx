@@ -4,6 +4,8 @@ import { Text, Box, useInput } from "ink";
 interface MultiFieldOption {
 	value: string;
 	label: string;
+	color?: string;
+	hint?: string;
 }
 
 interface MultiFieldProps {
@@ -24,6 +26,7 @@ interface MultiFieldProps {
 	showNumbers?: boolean;
 	allowLoop?: boolean;
 	searchable?: boolean;
+	hintPosition?: "bottom" | "inline" | "side"; // Where to display option hints (default: "bottom")
 	searchQuery?: string;
 	onSearchQueryChange?: (query: string) => void;
 	[key: string]: any; // Allow any additional options
@@ -45,6 +48,7 @@ export function MultiField({
 	showNumbers = false,
 	allowLoop = true,
 	searchable = false,
+	hintPosition = "bottom",
 	searchQuery = "",
 	onSearchQueryChange,
 	...rest
@@ -420,61 +424,177 @@ export function MultiField({
 						</Text>
 					);
 				})()}
-			{filteredOptions.map((option, index) => {
-				const displayIndex = index + (noneOption ? 2 : 1);
-				const optionIndex = index + (noneOption ? 1 : 0);
-				const isSelected = selectedValues.includes(option.value);
-				const isFocused = optionIndex === selectedIndex;
-				const color = isFocused
-					? "cyan"
-					: isSelected
-					? "white"
-					: "gray";
-
-				// Highlight matching text if searching
-				const renderLabel = () => {
-					if (!searchable || !currentSearchQuery.trim()) {
-						return option.label;
-					}
-
-					const query = currentSearchQuery.toLowerCase();
-					const label = option.label;
-					const lowerLabel = label.toLowerCase();
-					const matchIndex = lowerLabel.indexOf(query);
-
-					if (matchIndex === -1) {
-						return label; // No match found, return original
-					}
-
-					const beforeMatch = label.slice(0, matchIndex);
-					const match = label.slice(
-						matchIndex,
-						matchIndex + query.length
-					);
-					const afterMatch = label.slice(matchIndex + query.length);
-
-					// Use cyan for focused items, white for non-focused
-					const highlightColor = isFocused ? "cyan" : "white";
-
-					return (
-						<>
-							{beforeMatch}
-							<Text underline color={highlightColor}>
-								{match}
+			{hintPosition === "side" ? (
+				<Box flexDirection="row">
+					<Box flexDirection="column" width={25}>
+						{noneOption && (
+							<Text color={selectedIndex === 0 ? "cyan" : "white"}>
+								{selectedValues.includes("__NONE__") ? "■" : "□"} {showNumbers && "1. "}
+								{noneOption.label}
 							</Text>
-							{afterMatch}
-						</>
-					);
-				};
+						)}
+						{filteredOptions.map((option, index) => {
+							const displayIndex = index + (noneOption ? 2 : 1);
+							const optionIndex = index + (noneOption ? 1 : 0);
+							const isSelected = selectedValues.includes(option.value);
+							const isFocused = optionIndex === selectedIndex;
+							const color = isFocused
+								? "cyan"
+								: isSelected
+								? "white"
+								: option.color || "gray";
 
-				return (
-					<Text key={option.value} color={color}>
-						{isSelected ? "■" : "□"}{" "}
-						{showNumbers && `${displayIndex}. `}
-						{renderLabel()}
-					</Text>
-				);
-			})}
+							// Highlight matching text if searching
+							const renderLabel = () => {
+								if (!searchable || !currentSearchQuery.trim()) {
+									return option.label;
+								}
+
+								const query = currentSearchQuery.toLowerCase();
+								const label = option.label;
+								const lowerLabel = label.toLowerCase();
+								const matchIndex = lowerLabel.indexOf(query);
+
+								if (matchIndex === -1) {
+									return label; // No match found, return original
+								}
+
+								const beforeMatch = label.slice(0, matchIndex);
+								const match = label.slice(
+									matchIndex,
+									matchIndex + query.length
+								);
+								const afterMatch = label.slice(matchIndex + query.length);
+
+								// Use cyan for focused items, option color or white for non-focused
+								const highlightColor = isFocused
+									? "cyan"
+									: option.color || "white";
+
+								return (
+									<>
+										{beforeMatch}
+										<Text underline color={highlightColor}>
+											{match}
+										</Text>
+										{afterMatch}
+									</>
+								);
+							};
+
+							return (
+								<Text key={option.value} color={color}>
+									{isSelected ? "■" : "□"}{" "}
+									{showNumbers && `${displayIndex}. `}
+									{renderLabel()}
+								</Text>
+							);
+						})}
+					</Box>
+					<Box flexDirection="column" flexGrow={1}>
+						{noneOption && (
+							<Text color="gray">
+								{selectedIndex === 0 ? "" : ""}
+							</Text>
+						)}
+						{filteredOptions.map((option, index) => {
+							const optionIndex = index + (noneOption ? 1 : 0);
+							const isFocused = optionIndex === selectedIndex;
+							return (
+								<Text key={option.value} color="gray">
+									{isFocused && option.hint ? option.hint : ""}
+								</Text>
+							);
+						})}
+					</Box>
+				</Box>
+			) : (
+				<>
+					{noneOption &&
+						(() => {
+							const isSelected = selectedValues.includes("__NONE__");
+							const isFocused = selectedIndex === 0;
+							const color = isFocused
+								? "cyan"
+								: isSelected
+								? "white"
+								: "gray";
+							return (
+								<Text color={color}>
+									{isSelected ? "■" : "□"} {showNumbers && "1. "}
+									{noneOption.label}
+								</Text>
+							);
+						})()}
+					{filteredOptions.map((option, index) => {
+						const displayIndex = index + (noneOption ? 2 : 1);
+						const optionIndex = index + (noneOption ? 1 : 0);
+						const isSelected = selectedValues.includes(option.value);
+						const isFocused = optionIndex === selectedIndex;
+						const color = isFocused
+							? "cyan"
+							: isSelected
+							? "white"
+							: option.color || "gray";
+
+						// Highlight matching text if searching
+						const renderLabel = () => {
+							if (!searchable || !currentSearchQuery.trim()) {
+								return option.label;
+							}
+
+							const query = currentSearchQuery.toLowerCase();
+							const label = option.label;
+							const lowerLabel = label.toLowerCase();
+							const matchIndex = lowerLabel.indexOf(query);
+
+							if (matchIndex === -1) {
+								return label; // No match found, return original
+							}
+
+							const beforeMatch = label.slice(0, matchIndex);
+							const match = label.slice(
+								matchIndex,
+								matchIndex + query.length
+							);
+							const afterMatch = label.slice(matchIndex + query.length);
+
+							// Use cyan for focused items, option color or white for non-focused
+							const highlightColor = isFocused
+								? "cyan"
+								: option.color || "white";
+
+							return (
+								<>
+									{beforeMatch}
+									<Text underline color={highlightColor}>
+										{match}
+									</Text>
+									{afterMatch}
+								</>
+							);
+						};
+
+						return (
+							<Box key={option.value} flexDirection="row">
+								<Text color={color}>
+									{isSelected ? "■" : "□"}{" "}
+									{showNumbers && `${displayIndex}. `}
+									{renderLabel()}
+								</Text>
+								{hintPosition === "inline" &&
+									isFocused &&
+									option.hint && (
+										<Text color="gray">
+											{"  "}
+											{option.hint}
+										</Text>
+									)}
+							</Box>
+						);
+					})}
+				</>
+			)}
 			{searchable &&
 				filteredOptions.length === 0 &&
 				currentSearchQuery.trim() && (
@@ -483,6 +603,20 @@ export function MultiField({
 					</Text>
 				)}
 			{error && <Text color="red">{error}</Text>}
+			{hintPosition === "bottom" &&
+				(() => {
+					const focusedOption = filteredOptions.find(
+						(option, index) => {
+							const optionIndex = index + (noneOption ? 1 : 0);
+							return optionIndex === selectedIndex;
+						}
+					);
+					return focusedOption?.hint ? (
+						<Box marginTop={1}>
+							<Text color="gray">{focusedOption.hint}</Text>
+						</Box>
+					) : null;
+				})()}
 		</Box>
 	);
 }

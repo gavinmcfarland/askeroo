@@ -4,6 +4,8 @@ import { MultiField } from './MultiField.js';
 export interface MultiOption {
   value: string;
   label: string;
+  color?: string;
+  hint?: string;
 }
 
 export interface MultiOptions {
@@ -17,6 +19,7 @@ export interface MultiOptions {
   showNumbers?: boolean;
   allowLoop?: boolean;
   searchable?: boolean;
+  hintPosition?: "bottom" | "inline" | "side"; // Where to display option hints (default: "bottom")
 }
 
 // Example multi-select prompt plugin

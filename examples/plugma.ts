@@ -28,18 +28,27 @@ const flow = async () => {
 					label: "Select a framework:",
 					shortLabel: "Framework",
 					options: [
-						{ value: "react", label: "React" },
-						{ value: "vue", label: "Vue" },
-						{ value: "svelte", label: "Svelte" },
+						{ value: "react", label: "React", color: "red" },
+						{ value: "vue", label: "Vue", color: "green" },
+						{ value: "svelte", label: "Svelte", color: "yellow" },
 						{ value: "no-ui", label: "No UI" },
 					],
 				}),
 				template: await radio({
 					shortLabel: "Template",
 					label: "Choose a template:",
+					hintPosition: "side",
 					options: [
-						{ value: "default", label: "Default" },
-						{ value: "minimal", label: "Rectangle creator" },
+						{
+							value: "default",
+							label: "Default",
+							hint: "A basic template to get you started",
+						},
+						{
+							value: "minimal",
+							label: "Rectangle creator",
+							hint: "A minimal template to create rectangles",
+						},
 					],
 				}),
 				addons: await multi({
