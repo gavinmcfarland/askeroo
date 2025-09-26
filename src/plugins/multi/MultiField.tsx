@@ -103,25 +103,17 @@ export function MultiField({
 			return normalizedOptions;
 		}
 
-		// Always include selected options at the top, even if they don't match search
-		const selectedOptions = normalizedOptions.filter((option) =>
-			selectedValues.includes(option.value)
-		);
+		// Keep all options in their original order, showing both selected and matching options
+		// Selected options stay in place, they don't move to the top
+		return normalizedOptions.filter((option) => {
+			const isSelected = selectedValues.includes(option.value);
+			const matchesSearch =
+				option.label.toLowerCase().includes(currentSearchQuery.toLowerCase()) ||
+				option.value.toLowerCase().includes(currentSearchQuery.toLowerCase());
 
-		// Get non-selected options that match the search
-		const matchingOptions = normalizedOptions.filter(
-			(option) =>
-				!selectedValues.includes(option.value) &&
-				(option.label
-					.toLowerCase()
-					.includes(currentSearchQuery.toLowerCase()) ||
-					option.value
-						.toLowerCase()
-						.includes(currentSearchQuery.toLowerCase()))
-		);
-
-		// Combine selected options first, then matching options
-		return [...selectedOptions, ...matchingOptions];
+			// Show option if it's selected OR if it matches the search
+			return isSelected || matchesSearch;
+		});
 	}, [normalizedOptions, searchable, currentSearchQuery, selectedValues]);
 
 	const totalOptions = filteredOptions.length + (noneOption ? 1 : 0);
