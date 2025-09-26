@@ -6,6 +6,7 @@ import { MarkdownString } from '../../utils/markdown.js';
 const noteInternal = createPlugin<NoteOptions, void>({
 	type: 'note',
 	component: NoteDisplay,
+	interactive: false, // Notes don't require user interaction
 
 	// The prompt logic - just return the options, runtime handles UI
 	prompt(opts: NoteOptions, { currentGroup }, id: string) {

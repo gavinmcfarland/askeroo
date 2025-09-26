@@ -5,6 +5,7 @@ export type PromptPlugin = {
   type: string;
   component: React.ComponentType<any>; // Plugin provides its own React component
   prompt: (opts: any, context: { currentGroup?: string }, id: string) => any;
+  interactive?: boolean; // Whether this prompt requires user interaction (default: true)
 };
 
 class PromptRegistry {
@@ -26,6 +27,11 @@ class PromptRegistry {
   getComponent(type: string): React.ComponentType<any> | undefined {
     const plugin = this.plugins.get(type);
     return plugin?.component;
+  }
+
+  isInteractive(type: string): boolean {
+    const plugin = this.plugins.get(type);
+    return plugin?.interactive !== false; // Default to true if not specified
   }
 
   getComponents(): Record<string, React.ComponentType<any>> {
@@ -56,11 +62,13 @@ export function createPlugin<T = any, R = any>(config: {
   type: string;
   component: React.ComponentType<any>;
   prompt: (opts: T, context: { currentGroup?: string }, id: string) => T;
+  interactive?: boolean;
 }): (opts: T) => Promise<R> {
   const plugin: PromptPlugin = {
     type: config.type,
     component: config.component,
-    prompt: config.prompt
+    prompt: config.prompt,
+    interactive: config.interactive
   };
 
   // Auto-register the plugin

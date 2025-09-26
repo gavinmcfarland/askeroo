@@ -167,7 +167,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 				if (
 					request.type !== "group" &&
-					firstFieldIdRef.current === null
+					firstFieldIdRef.current === null &&
+					globalRegistry.isInteractive(request.type)
 				) {
 					firstFieldIdRef.current = request.id;
 				}
