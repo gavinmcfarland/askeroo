@@ -11,14 +11,17 @@ const flow = async () => {
 	const answers = await group(
 		async () => {
 			return {
+				path: await text({
+					shortLabel: "Path",
+					label: "Where should it be created?",
+					initialValue: "./",
+				}),
 				type: await radio({
 					label: "Choose a type:",
 					shortLabel: "Type",
 					options: [
-						{ value: "react", label: "React" },
-						{ value: "vue", label: "Vue.js" },
-						{ value: "angular", label: "Angular" },
-						{ value: "svelte", label: "Svelte" },
+						{ value: "plugin", label: "Plugin" },
+						{ value: "widget", label: "Widget" },
 					],
 				}),
 				framework: await text({

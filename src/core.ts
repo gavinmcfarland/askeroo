@@ -4,9 +4,7 @@ import { globalRegistry, setCurrentRuntime } from "./registry.js";
 // Import all plugins to ensure they're registered
 import "./plugins/text/index.js";
 import "./plugins/confirm/index.js";
-import "./plugins/custom-text/index.js";
 import "./plugins/multi/index.js";
-import "./plugins/validated-text/index.js";
 import "./plugins/completed-fields/index.js";
 import "./plugins/note/index.js";
 
@@ -414,7 +412,11 @@ export function createRuntime(ui: UI) {
 		});
 	}
 
-	async function group(meta: GroupMeta, body: () => Promise<any>, opts?: GroupOpts) {
+	async function group(
+		meta: GroupMeta,
+		body: () => Promise<any>,
+		opts?: GroupOpts
+	) {
 		if (!asking) throw new Error("group() must be called inside ask()");
 
 		// Combine meta and opts for the engine step
@@ -445,10 +447,12 @@ export function createRuntime(ui: UI) {
 	}
 
 	async function ask<T>(
-		flow: (api: {
-			group: typeof group;
-			BACK: BackToken;
-		} & Record<string, any>) => Promise<T>
+		flow: (
+			api: {
+				group: typeof group;
+				BACK: BackToken;
+			} & Record<string, any>
+		) => Promise<T>
 	): Promise<T> {
 		debugLogger.log("ASK_START", {
 			currentStep,
@@ -524,7 +528,7 @@ export function createRuntime(ui: UI) {
 					extendedUI.completeFlow?.();
 
 					// Add a small delay to allow the completion state to update
-					await new Promise(resolve => setTimeout(resolve, 100));
+					await new Promise((resolve) => setTimeout(resolve, 100));
 
 					extendedUI.cleanup?.();
 					return result;

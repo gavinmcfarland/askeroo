@@ -7,9 +7,7 @@ import { globalRegistry } from "./registry.js";
 // Import all plugins to ensure they are registered
 import "./plugins/text/index.js";
 import "./plugins/confirm/index.js";
-import "./plugins/custom-text/index.js";
 import "./plugins/multi/index.js";
-import "./plugins/validated-text/index.js";
 import "./plugins/note/index.js";
 import "./plugins/radio/index.js";
 
@@ -148,9 +146,14 @@ function createUI() {
 			// Create the request object with all options spread in
 			const request: PromptRequest = {
 				type: plugin.type,
-				id: id || generatePromptId(plugin.type, opts.message || `${plugin.type} field`),
+				id:
+					id ||
+					generatePromptId(
+						plugin.type,
+						opts.message || `${plugin.type} field`
+					),
 				groupName: appInstance.currentGroup,
-				...opts // Spread all options from the plugin
+				...opts, // Spread all options from the plugin
 			};
 
 			return promptFn(request);

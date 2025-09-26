@@ -110,6 +110,36 @@ export function RadioField({
 		}
 	}, [initialValue, options]);
 
+	// Provide hint text to parent component
+	useEffect(() => {
+		if (!onHintChange) return;
+
+		if (!disabled && !completed) {
+			const hintText = (
+				<>
+					<Text color="yellow">&lt;enter&gt;</Text> proceed
+					{!isFirstRootPrompt && (
+						<>
+							, <Text color="yellow">&lt;escape&gt;</Text> go back
+						</>
+					)}
+				</>
+			);
+			onHintChange(hintText);
+		} else {
+			// Clear hint when field is disabled/completed
+			onHintChange(null);
+		}
+	}, [
+		disabled,
+		completed,
+		isFirstRootPrompt,
+		allowBack,
+		showNumbers,
+		searchable,
+		filteredOptions.length,
+	]); // Removed onHintChange from dependencies
+
 	useInput((input, key) => {
 		if (disabled || submitted) return;
 
@@ -241,32 +271,13 @@ export function RadioField({
 		);
 	}
 
-	// Render message - either as markdown or plain text
-	const renderMessage = () => {
-		if (!label) return null;
-
-		if (isMarkdownString(label)) {
-			const elements = parseMarkdown(label.content, label.theme);
-			return (
-				<Box flexDirection="column">
-					{elements.map((element, index) => (
-						<Box key={index}>{element}</Box>
-					))}
-				</Box>
-			);
-		}
-
-		// Always render as markdown - plain text will render normally
-		return <>{parseMarkdown(label)}</>;
-	};
-
 	return (
 		<Box
 			flexDirection="column"
 			marginBottom={isLastInGroup && flow === "phased" ? 1 : 0}
 			marginTop={isFirstInGroup ? 0 : 0}
 		>
-			{renderMessage()}
+			<Text>{label}</Text>
 			{searchable && (
 				<Text color="blue">
 					Search: {searchQuery || "(type to search)"}
