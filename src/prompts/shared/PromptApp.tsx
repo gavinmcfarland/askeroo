@@ -674,10 +674,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			const r = resolverRef.current;
 			resolverRef.current = null;
 
-			// Add a small delay to allow completion state to update and re-render
-			setTimeout(() => {
-				r(value);
-			}, 50);
+			r(value);
 		}
 	};
 
