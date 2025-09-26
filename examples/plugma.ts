@@ -54,6 +54,7 @@ const flow = async () => {
 						{ value: "playwright", label: "Playwright" },
 					],
 					noneOption: { label: "None" },
+					searchable: true,
 				}),
 				typescript: await confirm({
 					shortLabel: "TypeScript",

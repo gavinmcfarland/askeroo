@@ -182,14 +182,15 @@ export function MultiField({
 					<Text color="yellow">&lt;enter&gt;</Text> proceed
 					{!isFirstRootPrompt && (
 						<>
-							, <Text color="yellow">&lt;escape&gt;</Text> go back{" "}
+							, <Text color="yellow">&lt;escape&gt;</Text> go
+							back,{" "}
 						</>
 					)}
 					<Text color="yellow">&lt;↑↓&gt;</Text> navigate,{" "}
-					<Text color="yellow">&lt;space&gt;</Text> select,{" "}
+					<Text color="yellow">&lt;space&gt;</Text> select{" "}
 					{searchable && (
 						<>
-							, <Text color="yellow">type</Text> to search
+							, <Text color="yellow">&lt;type&gt;</Text> to search
 						</>
 					)}
 				</>
