@@ -9,10 +9,10 @@ import { updateAppState } from "../../plugins/completed-fields/CompletedFields.j
 type PromptRequest = {
 	type: string;
 	id: string;
-	message?: string; // Optional for group prompts
+	label?: string; // Optional for group prompts
 	groupName?: string; // Only present for field prompts
 	flow?: "progressive" | "phased" | "static"; // Only present for group prompts
-	discoveredFields?: Array<{ id: string; message: string; type: string }>; // Only present for group prompts
+	discoveredFields?: Array<{ id: string; label: string; type: string }>; // Only present for group prompts
 	enableArrowNavigation?: boolean; // Only present for group prompts
 	[key: string]: any; // Allow any additional properties for plugin-specific options
 };
@@ -43,10 +43,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const [phaseGroups, setPhaseGroups] = useState<Set<string>>(new Set());
 	const [staticGroups, setStaticGroups] = useState<Set<string>>(new Set());
 	const [staticGroupFields, setStaticGroupFields] = useState<
-		Map<string, Array<{ id: string; message: string; type: string }>>
+		Map<string, Array<{ id: string; label: string; type: string }>>
 	>(new Map());
 	const [groupFieldHistory, setGroupFieldHistory] = useState<
-		Map<string, Array<{ id: string; message: string; type: string }>>
+		Map<string, Array<{ id: string; label: string; type: string }>>
 	>(new Map());
 	const [completedGroups, setCompletedGroups] = useState<Set<string>>(
 		new Set()
@@ -64,7 +64,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		Array<{ id: string; type: "field" | "group"; groupName?: string }>
 	>([]);
 	const [rootFieldHistory, setRootFieldHistory] = useState<
-		Array<{ id: string; message: string; type: string }>
+		Array<{ id: string; label: string; type: string }>
 	>([]);
 	// Store complete field properties for proper rendering
 	const [fieldProperties, setFieldProperties] = useState<Map<string, any>>(
@@ -110,7 +110,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	// Helper function to render field components dynamically
 	const renderFieldComponent = (
-		fieldInfo: { id: string; message: string; type: string },
+		fieldInfo: { id: string; label: string; type: string },
 		props: any,
 		includeHintHandler = false
 	) => {
@@ -127,7 +127,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			return (
 				<PluginComponent
 					key={key}
-					message={fieldInfo.message}
+					message={fieldInfo.label}
 					{...originalProperties} // Spread original properties like shortMessage
 					{...restProps} // Spread rendering props (these take precedence)
 					{...(includeHintHandler && {
@@ -186,7 +186,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					// Track field metadata for completed fields plugin
 					// Try to get the field label from various possible properties
-					const fieldLabel = request.message || request.label || `${request.type} field`;
+					const fieldLabel = request.label || request.message || `${request.type} field`;
 					setFieldMessages(prev => ({
 						...prev,
 						[request.id]: fieldLabel
@@ -198,7 +198,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							[request.id]: request.groupName!
 						}));
 
-						// Store the group display name (for UI display) - only if there's actually a message
+						// Store the group display name (for UI display) - only if there's actually a label
 						const groupDisplayName = groupIdToMessage.get(request.groupName);
 						if (groupDisplayName) {
 							setFieldGroupNames(prev => ({
@@ -234,16 +234,16 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								newMap.get(request.groupName!) || [];
 							const fieldInfo = {
 								id: request.id,
-								message:
-									request.message || `${request.type} field`,
+								label:
+									request.label || `${request.type} field`,
 								type: request.type,
 							};
 
-							// Only add if not already present (check by message and type to avoid duplicates from discovery vs execution)
+							// Only add if not already present (check by label and type to avoid duplicates from discovery vs execution)
 							if (
 								!groupFields.some(
 									(f) =>
-										f.message === fieldInfo.message &&
+										f.label === fieldInfo.label &&
 										f.type === fieldInfo.type
 								)
 							) {
@@ -268,10 +268,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						return prev;
 					});
 
-					// Track group ID to message mapping
+					// Track group ID to label mapping
 					setGroupIdToMessage((prev) => {
 						const newMap = new Map(prev);
-						newMap.set(request.id, request.message);
+						newMap.set(request.id, request.label);
 						return newMap;
 					});
 
@@ -462,8 +462,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 									newMap.get(currentPrompt.groupName!) || [];
 								const fieldInfo = {
 									id: currentPrompt.id,
-									message:
-										currentPrompt.message ||
+									label:
+										currentPrompt.label ||
 										`${currentPrompt.type} field`,
 									type: currentPrompt.type,
 								};
@@ -472,7 +472,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								if (
 									!groupFields.some(
 										(f) =>
-											f.message === fieldInfo.message &&
+											f.label === fieldInfo.label &&
 											f.type === fieldInfo.type
 									)
 								) {
@@ -499,8 +499,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 									newMap.get(currentPrompt.groupName!) || [];
 								const fieldInfo = {
 									id: currentPrompt.id,
-									message:
-										currentPrompt.message ||
+									label:
+										currentPrompt.label ||
 										`${currentPrompt.type} field`,
 									type: currentPrompt.type,
 								};
@@ -523,8 +523,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						setRootFieldHistory((prev) => {
 							const fieldInfo = {
 								id: currentPrompt.id,
-								message:
-									currentPrompt.message ||
+								label:
+									currentPrompt.label ||
 									`${currentPrompt.type} field`,
 								type: currentPrompt.type,
 							};
@@ -577,17 +577,17 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								newMap.get(currentPrompt.groupName!) || [];
 							const fieldInfo = {
 								id: currentPrompt.id,
-								message:
-									currentPrompt.message ||
+								label:
+									currentPrompt.label ||
 									`${currentPrompt.type} field`,
 								type: currentPrompt.type,
 							};
 
-							// Only add if not already present (check by message and type)
+							// Only add if not already present (check by label and type)
 							if (
 								!groupFields.some(
 									(f) =>
-										f.message === fieldInfo.message &&
+										f.label === fieldInfo.label &&
 										f.type === fieldInfo.type
 								)
 							) {
@@ -613,8 +613,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								newMap.get(currentPrompt.groupName!) || [];
 							const fieldInfo = {
 								id: currentPrompt.id,
-								message:
-									currentPrompt.message ||
+								label:
+									currentPrompt.label ||
 									`${currentPrompt.type} field`,
 								type: currentPrompt.type,
 							};
@@ -657,8 +657,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					setRootFieldHistory((prev) => {
 						const fieldInfo = {
 							id: currentPrompt.id,
-							message:
-								currentPrompt.message ||
+							label:
+								currentPrompt.label ||
 								`${currentPrompt.type} field`,
 							type: currentPrompt.type,
 						};
@@ -722,7 +722,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			// When navigating back, unmark any groups that should no longer be considered completed
 			const currentPromptGroup =
 				currentPrompt.type === "group"
-					? currentPrompt.id // Use the stable group ID, not the message
+					? currentPrompt.id // Use the stable group ID, not the label
 					: currentPrompt.groupName;
 
 			// Consolidate group completion cleanup in a single state update
@@ -856,18 +856,18 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 			// Add discovered fields first
 			discoveredFields.forEach((field) => {
-				allFields.set(field.message + "|" + field.type, field);
+				allFields.set(field.label + "|" + field.type, field);
 			});
 
 			// Add executed fields (they take precedence)
 			executedFields.forEach((field) => {
-				allFields.set(field.message + "|" + field.type, field);
+				allFields.set(field.label + "|" + field.type, field);
 			});
 
 			const allFieldsArray = Array.from(allFields.values());
 
 			return allFieldsArray.map((field, index) => {
-				// For static groups, find the stored value by matching message and type
+				// For static groups, find the stored value by matching label and type
 				// since field IDs might differ between discovery and execution
 				let fieldValue = fieldValues[field.id];
 				let isCompleted =
@@ -880,25 +880,25 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						? fieldValue.trim() !== ""
 						: fieldValue);
 
-				// If not found by direct ID match, search by message and type
+				// If not found by direct ID match, search by label and type
 				if (fieldValue === undefined) {
 					for (const [storedId, storedValue] of Object.entries(
 						fieldValues
 					)) {
-						// Check if this stored value belongs to a field with matching message and type in our group
+						// Check if this stored value belongs to a field with matching label and type in our group
 						const matchingEntry = rootPromptOrder.find(
 							(entry) =>
 								entry.id === storedId &&
 								entry.groupName === currentGroup
 						);
 						if (matchingEntry) {
-							// Find the field info in group history to check message/type
+							// Find the field info in group history to check label/type
 							const allGroupFields =
 								groupFieldHistory.get(currentGroup) || [];
 							const matchingField = allGroupFields.find(
 								(f) =>
 									f.id === storedId &&
-									f.message === field.message &&
+									f.label === field.label &&
 									f.type === field.type
 							);
 							if (matchingField) {
@@ -919,10 +919,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					}
 				}
 
-				// For static groups, match fields based on message and type since IDs might differ between discovery and execution
+				// For static groups, match fields based on label and type since IDs might differ between discovery and execution
 				const isActive = effectivePrompt
 					? field.id === effectivePrompt.id ||
-					  (field.message === effectivePrompt.message &&
+					  (field.label === effectivePrompt.label &&
 							field.type === effectivePrompt.type)
 					: false;
 
@@ -951,7 +951,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					field.type === effectivePrompt.type
 				) {
 					// Pass all properties from the effective prompt except the base ones
-					const { type, id, message, groupName, ...additionalProps } =
+					const { type, id, label, groupName, ...additionalProps } =
 						effectivePrompt;
 					Object.assign(typeSpecificProps, additionalProps);
 				}
@@ -970,7 +970,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				return renderFieldComponent(
 					field,
 					{
-						key: `static-${field.message}-${field.type}`,
+						key: `static-${field.label}-${field.type}`,
 						initialValue: getInitialValue(),
 						completed: isCompleted && !isActive,
 						completedValue: isCompleted ? fieldValue : undefined,
@@ -1060,7 +1060,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					if (phaseGroups.has(groupId)) {
 						// For phase groups, show a simple completion indicator
-						// Only show if group has a message, otherwise show fields without group header
+						// Only show if group has a label, otherwise show fields without group header
 						if (groupDisplayName) {
 							return (
 								<GroupContainer
@@ -1071,7 +1071,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								/>
 							);
 						} else {
-							// Phase group without message - just show completion indicator without group header
+							// Phase group without label - just show completion indicator without group header
 							return (
 								<GroupContainer
 									key={`completed-group-${groupId}`}
@@ -1115,7 +1115,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						return (
 							<GroupContainer
 								key={`completed-group-${groupId}`}
-								groupName={groupDisplayName} // Only show if there's actually a message
+								groupName={groupDisplayName} // Only show if there's actually a label
 								completed={true}
 								completedFields={completedGroupFieldComponents}
 							/>

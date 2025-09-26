@@ -2,7 +2,7 @@ import { createRuntime } from "./core.js";
 import { ui } from "./ui.js";
 
 // Type definitions for better IDE support
-export type GroupMeta = { message?: string; id?: string };
+export type GroupMeta = { label?: string; id?: string };
 export type GroupOpts =
 	| { flow?: "progressive"; enableArrowNavigation?: never }
 	| { flow: "phased"; enableArrowNavigation?: never }

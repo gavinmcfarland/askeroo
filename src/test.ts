@@ -28,7 +28,7 @@ const flow = async () => {
 			const news = await confirm({ message: "Subscribe to newsletter?" });
 			return { name, role, news };
 		},
-		{ message: "Static", flow: "static" }
+		{ label: "Static", flow: "static" }
 	);
 
 	// Example of validated text input plugin
@@ -62,7 +62,7 @@ const flow = async () => {
 			const address = await text({ label: "Address" });
 			return { name, email, phone, address };
 		},
-		{ message: "Phased", flow: "phased" }
+		{ label: "Phased", flow: "phased" }
 	);
 
 	const stackedForm = await group(
@@ -77,7 +77,7 @@ const flow = async () => {
 			const address = await text({ label: "Address" });
 			return { name, email, phone, address };
 		},
-		{ message: "Stacked" }
+		{ label: "Stacked" }
 	);
 
 	// Static group - shows all prompts at once, only one active
@@ -93,7 +93,7 @@ const flow = async () => {
 			const address = await text({ label: "Address" });
 			return { name, email };
 		},
-		{ message: "Static", flow: "static" }
+		{ label: "Static", flow: "static" }
 	);
 
 	// Static group with arrow navigation enabled - use arrow keys to navigate between fields
@@ -108,7 +108,7 @@ const flow = async () => {
 			return { firstName, lastName, newsletter, phone };
 		},
 		{
-			message: "Static with Arrow Navigation",
+			label: "Static with Arrow Navigation",
 			flow: "static",
 			enableArrowNavigation: true,
 		}
@@ -122,7 +122,7 @@ const flow = async () => {
 			const confirmPassword = await text({ label: "Confirm password" });
 			return { username, password, confirmPassword };
 		},
-		{ message: "Static without Arrow Navigation", flow: "static" }
+		{ label: "Static without Arrow Navigation", flow: "static" }
 	);
 
 	// Group with no message - should not show group header in UI
@@ -148,7 +148,7 @@ const flow = async () => {
 			const news = await confirm({ message: "Subscribe to newsletter?" });
 			return { role, news };
 		},
-		{ message: "Preferences" }
+		{ label: "Preferences" }
 	);
 
 	return {

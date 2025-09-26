@@ -10,20 +10,20 @@ type BackToken = { __back: true };
 type PromptRequest = {
 	type: string;
 	id: string;
-	message?: string;
+	label?: string;
 	groupName?: string;
 	flow?: "phased" | "static";
-	discoveredFields?: Array<{ id: string; message: string; type: string }>;
+	discoveredFields?: Array<{ id: string; label: string; type: string }>;
 	[key: string]: any; // Allow any plugin-specific properties
 };
 
 // Generate stable IDs for prompts based on content and context
 const generatePromptId = (
 	type: string,
-	message: string,
+	label: string,
 	groupName?: string
 ) => {
-	const parts = [type, message];
+	const parts = [type, label];
 	if (groupName) parts.push(`group:${groupName}`);
 	return parts.join("|");
 };
@@ -65,7 +65,7 @@ function createUI() {
 			id?: string,
 			discoveredFields?: Array<{
 				id: string;
-				message: string;
+				label: string;
 				type: string;
 			}>,
 			enableArrowNavigation?: boolean
@@ -75,7 +75,7 @@ function createUI() {
 			await promptFn({
 				type: "group",
 				id: id || generatePromptId("group", label || "group"),
-				message: label,
+				label: label,
 				flow,
 				discoveredFields,
 				enableArrowNavigation,
@@ -149,7 +149,7 @@ function createUI() {
 							id ||
 							generatePromptId(
 								plugin.type,
-								opts.message || `${plugin.type} field`
+								opts.label || `${plugin.type} field`
 							),
 						groupName: appInstance.currentGroup,
 						...opts, // Spread all options from the plugin

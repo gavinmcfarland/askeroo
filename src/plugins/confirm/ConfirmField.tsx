@@ -10,8 +10,8 @@ export interface ConfirmOption {
 }
 
 interface ConfirmFieldProps {
-	message?: string;
-	label?: string; // Alternative to message for compatibility
+	label?: string;
+	message?: string; // Alternative to label for compatibility
 	shortLabel?: string;
 	options?: ConfirmOption[];
 	allowLoop?: boolean; // Whether to allow looping when navigating with arrow keys (default: true)

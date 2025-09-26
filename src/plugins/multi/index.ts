@@ -9,8 +9,8 @@ export interface MultiOption {
 }
 
 export interface MultiOptions {
-  message?: string;
   label?: string;
+  message?: string; // Alternative to label for compatibility
   shortLabel?: string;
   options?: string[] | MultiOption[];
   noneOption?: {

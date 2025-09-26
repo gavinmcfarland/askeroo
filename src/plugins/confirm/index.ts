@@ -2,8 +2,8 @@ import { createPlugin } from "../../registry.js";
 import { ConfirmField, ConfirmOption } from "./ConfirmField.js";
 
 export interface ConfirmOptions {
-	message?: string;
-	label?: string; // Alternative to message for compatibility
+	label?: string;
+	message?: string; // Alternative to label for compatibility
 	shortLabel?: string;
 	options?: ConfirmOption[];
 	allowLoop?: boolean;

@@ -24,12 +24,10 @@ export function GroupContainer({
 		}
 
 		return (
-			<Box flexDirection="column">
+			<Box flexDirection="row" gap={2}>
 				{groupName && (
-					<Box marginTop={1} marginBottom={1}>
-						<Text color="green" bold>
-							{groupName}:
-						</Text>
+					<Box width={16}>
+						<Text color="gray">{groupName}</Text>
 					</Box>
 				)}
 				<Box flexDirection="column" gap={1}>
@@ -41,22 +39,20 @@ export function GroupContainer({
 
 	// Active state - show children and hints
 	return (
-		<Box flexDirection="column">
+		<Box flexDirection="row" gap={2}>
 			{groupName && (
-				<Box marginTop={1} marginBottom={1}>
-					<Text color="green" bold>
-						{groupName}:
-					</Text>
+				<Box width={14}>
+					<Text color="gray">{groupName}</Text>
 				</Box>
 			)}
 			<Box flexDirection="column" gap={1}>
 				{children}
+				{hintText && (
+					<Box>
+						<Text dimColor>{hintText}</Text>
+					</Box>
+				)}
 			</Box>
-			{hintText && (
-				<Box marginTop={1}>
-					<Text dimColor>{hintText}</Text>
-				</Box>
-			)}
 		</Box>
 	);
 }

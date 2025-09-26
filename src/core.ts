@@ -5,7 +5,7 @@ export type Answers = Record<string, unknown>;
 
 type PromptKind = string; // Generic type that works with any plugin
 type PromptOpts = { message: string; id?: string };
-type GroupMeta = { message?: string; id?: string };
+type GroupMeta = { label?: string; id?: string };
 type GroupOpts =
 	| { flow?: "progressive"; enableArrowNavigation?: never }
 	| { flow: "phased"; enableArrowNavigation?: never }
@@ -17,7 +17,7 @@ type UI = {
 		label: string | undefined,
 		flow?: "progressive" | "phased" | "static",
 		id?: string,
-		discoveredFields?: Array<{ id: string; message: string; type: string }>,
+		discoveredFields?: Array<{ id: string; label: string; type: string }>,
 		enableArrowNavigation?: boolean
 	): Promise<void> | void;
 	clearGroup?(): void;
@@ -37,6 +37,17 @@ type Engine = {
 	): Promise<T>;
 	BACK: BackToken;
 };
+
+// Helper function to get text from opts (either message or label)
+function getOptsText(opts: PromptOpts | (GroupMeta & GroupOpts)): string {
+	if ('message' in opts) {
+		return opts.message;
+	}
+	if ('label' in opts) {
+		return opts.label || '';
+	}
+	return '';
+}
 
 // Generate stable, deterministic ID based on execution context
 function generateStableId(
@@ -124,7 +135,7 @@ export function createRuntime(ui: UI) {
 	let isDiscoveryMode = false; // Track if we're in discovery mode for static groups
 	let discoveredFields: Map<
 		string,
-		Array<{ id: string; message: string; type: string }>
+		Array<{ id: string; label: string; type: string }>
 	> = new Map(); // Track discovered fields for static groups
 	let staticGroupBodies: Map<string, () => Promise<any>> = new Map(); // Store group body functions for re-discovery
 
@@ -188,7 +199,7 @@ export function createRuntime(ui: UI) {
 				if (shouldShowGroup) {
 					debugLogger.log("GROUP_SHOW", {
 						groupId,
-						groupMessage: groupOpts.message,
+						groupLabel: groupOpts.label,
 						flow: groupOpts.flow,
 						shouldShowGroup,
 					});
@@ -197,7 +208,7 @@ export function createRuntime(ui: UI) {
 							? discoveredFields.get(groupId)
 							: undefined;
 					await extendedUI.showGroup?.(
-						groupOpts.message,
+						groupOpts.label,
 						groupOpts.flow || "progressive",
 						groupId,
 						fields,
@@ -211,7 +222,7 @@ export function createRuntime(ui: UI) {
 				} else {
 					debugLogger.log("GROUP_SKIP", {
 						groupId,
-						groupMessage: groupOpts.message,
+						groupLabel: groupOpts.label,
 						shouldShowGroup,
 						isReplaying,
 					});
@@ -229,7 +240,7 @@ export function createRuntime(ui: UI) {
 				("id" in opts ? opts.id : undefined) ??
 				generateStableId(
 					kind,
-					opts.message || `${kind}-${stepIndex}`,
+					getOptsText(opts) || `${kind}-${stepIndex}`,
 					groupStack,
 					stepIndex
 				);
@@ -240,7 +251,7 @@ export function createRuntime(ui: UI) {
 				debugLogger.log("DISCOVERY_FIELD", {
 					currentGroupId,
 					id,
-					message: opts.message,
+					label: getOptsText(opts),
 					kind,
 				});
 				if (currentGroupId) {
@@ -248,7 +259,7 @@ export function createRuntime(ui: UI) {
 					if (!fields.some((f) => f.id === id)) {
 						fields.push({
 							id,
-							message: opts.message || `${kind} field`,
+							label: getOptsText(opts) || `${kind} field`,
 							type: kind,
 						});
 						discoveredFields.set(currentGroupId, fields);
@@ -282,7 +293,7 @@ export function createRuntime(ui: UI) {
 
 				debugLogger.log("DISCOVERY_PLACEHOLDER", {
 					kind,
-					message: opts.message,
+					label: getOptsText(opts),
 					placeholderValue,
 				});
 				return placeholderValue as T;
@@ -314,7 +325,7 @@ export function createRuntime(ui: UI) {
 				debugLogger.log("PROMPT_ASK", {
 					id,
 					stepIndex,
-					message: opts.message,
+					label: getOptsText(opts),
 				});
 				const result = await askFn(id);
 				if (isBack(result)) {
