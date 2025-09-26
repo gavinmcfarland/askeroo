@@ -126,23 +126,21 @@ export function MultiField({
 	const [selectedIndex, setSelectedIndex] = useState(0);
 
 	const navigateUp = () => {
-		if (allowLoop) {
-			setSelectedIndex((prev) =>
-				prev > 0 ? prev - 1 : totalOptions - 1
-			);
-		} else {
-			setSelectedIndex((prev) => Math.max(0, prev - 1));
-		}
+		const newIndex = allowLoop
+			? selectedIndex > 0
+				? selectedIndex - 1
+				: totalOptions - 1
+			: Math.max(0, selectedIndex - 1);
+		setSelectedIndex(newIndex);
 	};
 
 	const navigateDown = () => {
-		if (allowLoop) {
-			setSelectedIndex((prev) =>
-				prev < totalOptions - 1 ? prev + 1 : 0
-			);
-		} else {
-			setSelectedIndex((prev) => Math.min(totalOptions - 1, prev + 1));
-		}
+		const newIndex = allowLoop
+			? selectedIndex < totalOptions - 1
+				? selectedIndex + 1
+				: 0
+			: Math.min(totalOptions - 1, selectedIndex + 1);
+		setSelectedIndex(newIndex);
 	};
 	const [submitted, setSubmitted] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -174,10 +172,13 @@ export function MultiField({
 		setError(null);
 	};
 
-	// Reset selected index when search query changes
+	// Adjust focus when filtered options change to ensure it stays within bounds
 	useEffect(() => {
-		setSelectedIndex(0);
-	}, [currentSearchQuery]);
+		const maxIndex = filteredOptions.length + (noneOption ? 1 : 0) - 1;
+		if (selectedIndex > maxIndex) {
+			setSelectedIndex(Math.max(0, maxIndex));
+		}
+	}, [filteredOptions, noneOption, selectedIndex]);
 
 	// Reset submitted state when field becomes active again (not disabled)
 	useEffect(() => {
@@ -426,7 +427,7 @@ export function MultiField({
 				const optionIndex = index + (noneOption ? 1 : 0);
 				const isSelected = selectedValues.includes(option.value);
 				const isFocused = optionIndex === selectedIndex;
-				const color = isFocused ? "cyan" : isSelected ? "cyan" : "gray";
+				const color = isFocused ? "red" : isSelected ? "cyan" : "gray";
 
 				// Highlight matching text if searching
 				const renderLabel = () => {
