@@ -1,26 +1,26 @@
-import { createPlugin } from '../../registry.js';
-import { EnhancedConfirmField, ConfirmOption } from './EnhancedConfirmField.js';
+import { createPlugin } from "../../registry.js";
+import { ConfirmField, ConfirmOption } from "./ConfirmField.js";
 
 export interface ConfirmOptions {
-  message?: string;
-  label?: string; // Alternative to message for compatibility
-  shortLabel?: string;
-  options?: ConfirmOption[];
-  allowLoop?: boolean;
-  hintPosition?: "bottom" | "inline" | "side"; // Where to display option hints (default: "inline")
-  initialValue?: any;
-  id?: string;
+	message?: string;
+	label?: string; // Alternative to message for compatibility
+	shortLabel?: string;
+	options?: ConfirmOption[];
+	allowLoop?: boolean;
+	hintPosition?: "bottom" | "inline" | "side"; // Where to display option hints (default: "inline")
+	initialValue?: any;
+	id?: string;
 }
 
-export type { ConfirmOption } from './EnhancedConfirmField.js';
+export type { ConfirmOption } from "./ConfirmField.js";
 
 // Enhanced confirm input plugin with custom options support
 export const confirm = createPlugin<ConfirmOptions, any>({
-  type: 'confirm',
-  component: EnhancedConfirmField,
+	type: "confirm",
+	component: ConfirmField,
 
-  // The prompt logic - just return the options, runtime handles UI
-  prompt(opts: ConfirmOptions, { currentGroup }, id: string) {
-    return opts;
-  },
+	// The prompt logic - just return the options, runtime handles UI
+	prompt(opts: ConfirmOptions, { currentGroup }, id: string) {
+		return opts;
+	},
 });
