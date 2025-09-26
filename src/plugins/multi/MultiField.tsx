@@ -93,19 +93,36 @@ export function MultiField({
 		getInitialValues()
 	);
 
+	// Internal search state management
+	const [internalSearchQuery, setInternalSearchQuery] = useState("");
+	const currentSearchQuery = internalSearchQuery;
+
 	// Filter options based on search query
 	const filteredOptions = useMemo(() => {
-		if (!searchable || !searchQuery.trim()) {
+		if (!searchable || !currentSearchQuery.trim()) {
 			return normalizedOptions;
 		}
-		return normalizedOptions.filter(
-			(option) =>
-				option.label
-					.toLowerCase()
-					.includes(searchQuery.toLowerCase()) ||
-				option.value.toLowerCase().includes(searchQuery.toLowerCase())
+
+		// Always include selected options at the top, even if they don't match search
+		const selectedOptions = normalizedOptions.filter((option) =>
+			selectedValues.includes(option.value)
 		);
-	}, [normalizedOptions, searchable, searchQuery]);
+
+		// Get non-selected options that match the search
+		const matchingOptions = normalizedOptions.filter(
+			(option) =>
+				!selectedValues.includes(option.value) &&
+				(option.label
+					.toLowerCase()
+					.includes(currentSearchQuery.toLowerCase()) ||
+					option.value
+						.toLowerCase()
+						.includes(currentSearchQuery.toLowerCase()))
+		);
+
+		// Combine selected options first, then matching options
+		return [...selectedOptions, ...matchingOptions];
+	}, [normalizedOptions, searchable, currentSearchQuery, selectedValues]);
 
 	const totalOptions = filteredOptions.length + (noneOption ? 1 : 0);
 
@@ -163,7 +180,7 @@ export function MultiField({
 	// Reset selected index when search query changes
 	useEffect(() => {
 		setSelectedIndex(0);
-	}, [searchQuery]);
+	}, [currentSearchQuery]);
 
 	// Reset submitted state when field becomes active again (not disabled)
 	useEffect(() => {
@@ -248,6 +265,27 @@ export function MultiField({
 	useInput((input, key) => {
 		if (submitted || completed || disabled) return;
 
+		// Handle search input FIRST if searchable is enabled
+		if (searchable && input && input !== " ") {
+			// Debug log
+			// Check if it's a printable character (not a special key)
+			if (
+				input.length === 1 &&
+				!key.ctrl &&
+				!key.meta &&
+				!key.return &&
+				!key.escape &&
+				!key.upArrow &&
+				!key.downArrow &&
+				!key.leftArrow &&
+				!key.rightArrow
+			) {
+				const newQuery = currentSearchQuery + input;
+				setInternalSearchQuery(newQuery);
+				return;
+			}
+		}
+
 		// Handle back navigation (Escape)
 		if (key.escape) {
 			// If there's a noneOption and regular options are selected, clear selections and select none first
@@ -290,20 +328,10 @@ export function MultiField({
 			return;
 		}
 
-		// Handle search input if searchable is enabled
-		if (searchable && !key.ctrl && !key.meta && input.length === 1) {
-			// Allow typing for search (excluding spacebar which is handled above)
-			if (input.match(/[a-zA-Z0-9]/)) {
-				const newQuery = searchQuery + input;
-				onSearchQueryChange?.(newQuery);
-				return;
-			}
-		}
-
 		// Handle backspace for search
 		if (searchable && (key.backspace || key.delete || input === "\b")) {
-			const newQuery = searchQuery.slice(0, -1);
-			onSearchQueryChange?.(newQuery);
+			const newQuery = currentSearchQuery.slice(0, -1);
+			setInternalSearchQuery(newQuery);
 			return;
 		}
 
@@ -374,11 +402,6 @@ export function MultiField({
 	return (
 		<Box flexDirection="column">
 			<Text>{label}</Text>
-			{searchable && (
-				<Text color="blue">
-					Search: {searchQuery || "(type to search)"}
-				</Text>
-			)}
 			{noneOption &&
 				(() => {
 					const isSelected = selectedValues.includes(NONE_VALUE);
@@ -409,10 +432,13 @@ export function MultiField({
 					</Text>
 				);
 			})}
+			{searchable && <Text dimColor>{currentSearchQuery}</Text>}
 			{searchable &&
 				filteredOptions.length === 0 &&
-				searchQuery.trim() && (
-					<Text color="red">No options match "{searchQuery}"</Text>
+				currentSearchQuery.trim() && (
+					<Text color="red">
+						No options match "{currentSearchQuery}"
+					</Text>
 				)}
 			{error && <Text color="red">{error}</Text>}
 		</Box>
