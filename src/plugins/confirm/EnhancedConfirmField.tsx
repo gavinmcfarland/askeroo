@@ -61,10 +61,13 @@ export function EnhancedConfirmField({
 	const displayMessage = label || message || "Confirm?";
 
 	// Default options if none provided (memoized to prevent re-creation)
-	const defaultOptions: ConfirmOption[] = React.useMemo(() => [
-		{ value: true, label: "Yes" },
-		{ value: false, label: "No" },
-	], []);
+	const defaultOptions: ConfirmOption[] = React.useMemo(
+		() => [
+			{ value: true, label: "Yes" },
+			{ value: false, label: "No" },
+		],
+		[]
+	);
 	const confirmOptions = options || defaultOptions;
 
 	const [selectedIndex, setSelectedIndex] = useState(() => {
@@ -109,14 +112,15 @@ export function EnhancedConfirmField({
 			const hintText = (
 				<>
 					<Text color="yellow">&lt;enter&gt;</Text> proceed
-					{isUsingDefaultOptions && (
-						<>
-							, <Text color="yellow">y/n</Text> quick select
-						</>
-					)}
 					{!isFirstRootPrompt && (
 						<>
 							, <Text color="yellow">&lt;escape&gt;</Text> go back
+						</>
+					)}
+					{isUsingDefaultOptions && (
+						<>
+							, <Text color="yellow">&lt;y/n&gt;</Text> quick
+							select
 						</>
 					)}
 				</>
@@ -246,7 +250,9 @@ export function EnhancedConfirmField({
 	// Show completed state
 	if (completed) {
 		const displayValue =
-			completedValue !== undefined ? completedValue : confirmOptions[selectedIndex]?.value;
+			completedValue !== undefined
+				? completedValue
+				: confirmOptions[selectedIndex]?.value;
 
 		// Find the option that matches the completed value
 		const completedOption = confirmOptions.find(
