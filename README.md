@@ -114,7 +114,8 @@ console.log(result);
 
     ```ts
     interface TextOpts {
-        label?: string;
+        label: string;
+        shortLabel?: string;
         initialValue?: string;
         placeholder?: string;
         required?: boolean;
@@ -130,6 +131,7 @@ console.log(result);
     ```ts
     interface ConfirmOpts {
         label?: string;
+        shortLabel?: string;
         allowLoop?: boolean;
         options?: AtLeastTwo<{ value: any; label: string }>[];
     }
@@ -142,6 +144,7 @@ console.log(result);
     ```ts
     interface RadioOpts {
         label?: string;
+        shortLabel?: string;
         allowLoop?: boolean;
         searchable: boolean;
         options: Array<{ value: string; label: string }>;
@@ -156,6 +159,7 @@ console.log(result);
     ```ts
     interface MultiOpts {
         label?: string;
+        shortLabel?: string;
         allowLoop?: boolean;
         searchable: boolean;
         options: Array<{ value: string; label: string }>;
@@ -165,15 +169,9 @@ console.log(result);
     }
     ```
 
--   ### `note(options: NoteOpts)`
+-   ### `note(MarkdownString)`
 
     Show a note using markdown.
-
-    ```ts
-    interface NoteOpts {
-        message: MarkdownString;
-    }
-    ```
 
 -   ### `component(options: ComponentOpts)`
 
