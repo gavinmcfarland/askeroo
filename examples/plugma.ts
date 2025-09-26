@@ -54,7 +54,7 @@ const flow = async () => {
 
 	await note(`**Plugged in and ready to go!**
 
-		1. \`cd ./my-plugin\`
+		1. \`cd ${answers.path}\`
 		2. \`npm run dev\`
 		3. Import \`dist/manifest.json\` in Figma
 
