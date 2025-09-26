@@ -149,11 +149,12 @@ export function MultiField({
 		let newSelectedValues: string[];
 
 		if (isNoneOption) {
-			// Toggle None option - if selected, clear all others; if not selected, select only None
-			if (selectedValues.includes(NONE_VALUE)) {
-				newSelectedValues = [];
-			} else {
+			// None option - if not selected, select it; if already selected, do nothing (can't unselect)
+			if (!selectedValues.includes(NONE_VALUE)) {
 				newSelectedValues = [NONE_VALUE];
+			} else {
+				// None is already selected, don't allow unselecting it
+				return;
 			}
 		} else {
 			// Regular option - if None is selected, clear it first
