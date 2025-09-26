@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Text, Box } from "ink";
+import { isMarkdownString, MarkdownString } from "../../utils/markdown.js";
 
 export interface CompletedFieldsOptions {
 	filter?: string[];
@@ -21,7 +22,83 @@ export interface CompletedField {
 	label: string;
 	shortLabel?: string;
 	value: string;
+	formattedValue?: string; // The formatted/display value with labels
 	timestamp: number;
+}
+
+// Helper functions for formatting values and extracting field messages
+function formatValue(value: any, fieldProperties: any): string {
+	// Handle empty arrays
+	if (Array.isArray(value)) {
+		if (value.length === 0) {
+			return "None";
+		}
+
+		// For multi-select fields, get the labels from the options
+		if (fieldProperties && fieldProperties.options && Array.isArray(fieldProperties.options)) {
+			const selectedLabels = value
+				.map((val) => {
+					const option = fieldProperties.options.find(
+						(opt: any) => opt.value === val
+					);
+					return option ? option.label : val;
+				})
+				.filter(Boolean);
+			return selectedLabels.join(", ");
+		}
+		return value.join(", ");
+	}
+
+	if (typeof value === "boolean") {
+		// For confirm fields, try to get the label from options
+		if (fieldProperties && fieldProperties.options && Array.isArray(fieldProperties.options)) {
+			const option = fieldProperties.options.find(
+				(opt: any) => opt.value === value
+			);
+			return option ? option.label : value.toString();
+		}
+		return value ? "Yes" : "No";
+	}
+
+	// Handle falsey values (null, undefined, empty string, 0, false)
+	if (!value && value !== 0 && value !== false) {
+		if (value === null) return "None";
+		if (value === undefined) return "Not set";
+		if (value === "") return "Empty";
+		return "None";
+	}
+
+	// For radio fields, get the label from options
+	if (fieldProperties && fieldProperties.options && Array.isArray(fieldProperties.options)) {
+		const option = fieldProperties.options.find(
+			(opt: any) => opt.value === value
+		);
+		if (option) {
+			return option.label;
+		}
+	}
+
+	return String(value);
+}
+
+function getFieldMessage(fieldProperties: any): string {
+	const message = fieldProperties?.label || fieldProperties?.message;
+
+	if (typeof message === "string") {
+		return message;
+	}
+
+	if (isMarkdownString(message)) {
+		// Extract plain text from markdown for the question
+		// Remove markdown syntax and return clean text
+		return message.content
+			.replace(/#+\s*/g, "")
+			.replace(/\*\*(.*?)\*\*/g, "$1")
+			.replace(/\*(.*?)\*/g, "$1")
+			.trim();
+	}
+
+	return "Field";
 }
 
 // Global state for tracking completed fields from the app
@@ -99,6 +176,9 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 					fieldId;
 				const shortLabel = originalProperties.shortLabel;
 
+				// Format the value using the original field properties
+				const formattedValue = formatValue(value, originalProperties);
+
 				fields.push({
 					id: fieldId,
 					groupName,
@@ -106,6 +186,7 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 					label,
 					shortLabel,
 					value: String(value),
+					formattedValue,
 					timestamp: Date.now(), // We don't have timestamps from the app state
 				});
 			}
@@ -189,7 +270,7 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 							</Text>
 						</Box>
 						<Text>
-							<Text color="blue">{field.value}</Text>
+							<Text color="blue">{field.formattedValue || field.value}</Text>
 						</Text>
 					</Box>
 				))}
@@ -228,7 +309,7 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 								</Text>
 							</Box>
 							<Text>
-								<Text color="blue">{field.value}</Text>
+								<Text color="blue">{field.formattedValue || field.value}</Text>
 							</Text>
 						</Box>
 					))}
@@ -264,6 +345,9 @@ export const completedFieldsUtils = {
 					fieldId;
 				const shortLabel = originalProperties.shortLabel;
 
+				// Format the value using the original field properties
+				const formattedValue = formatValue(value, originalProperties);
+
 				fields.push({
 					id: fieldId,
 					groupName,
@@ -271,6 +355,7 @@ export const completedFieldsUtils = {
 					label,
 					shortLabel,
 					value: String(value),
+					formattedValue,
 					timestamp: Date.now(),
 				});
 			}

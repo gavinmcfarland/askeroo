@@ -34,9 +34,13 @@ const flow = async () => {
 						{ value: "no-ui", label: "No UI" },
 					],
 				}),
-				template: await text({
+				template: await radio({
 					shortLabel: "Template",
 					label: "Choose a template:",
+					options: [
+						{ value: "default", label: "Default" },
+						{ value: "minimal", label: "Rectangle creator" },
+					],
 				}),
 				typescript: await text({
 					shortLabel: "TypeScript",
