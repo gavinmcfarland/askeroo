@@ -46,7 +46,6 @@ export function TextField({
 	isFirstRootPrompt = false,
 }: Props) {
 	// Use label if provided, fallback to message for compatibility
-	const displayLabel = label || message || "Enter text";
 	const [value, setValue] = useState(initialValue);
 	const [cursorPosition, setCursorPosition] = useState(initialValue.length);
 	const [submitted, setSubmitted] = useState(false);
@@ -197,11 +196,8 @@ export function TextField({
 
 	if (completed) {
 		return (
-			<Box gap={1}>
-				<Box width={14}>
-					<Text>{shortLabel || displayLabel}</Text>
-				</Box>
-
+			<Box flexDirection="column">
+				<Text>{label}</Text>
 				<Text>
 					<Text color="blue">{completedValue || value}</Text>
 				</Text>
@@ -213,7 +209,7 @@ export function TextField({
 		return (
 			<Box gap={1}>
 				<Box width={14}>
-					<Text dimColor>{shortLabel || displayLabel}</Text>
+					<Text dimColor>{shortLabel || label}</Text>
 				</Box>
 				<Text dimColor>
 					<Text color="gray">...</Text>
@@ -229,7 +225,7 @@ export function TextField({
 			marginBottom={flow === "static" && !isLastInGroup ? 1 : 0}
 		>
 			<Box width={flow === "static" ? 14 : undefined}>
-				<Text>{displayLabel}</Text>
+				<Text>{label}</Text>
 			</Box>
 			<Text color="cyan">
 				{value.slice(0, cursorPosition)}

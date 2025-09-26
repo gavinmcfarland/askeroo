@@ -387,9 +387,13 @@ export function MultiField({
 
 	if (completed) {
 		return (
-			<Box flexDirection="row" gap={1}>
+			<Box flexDirection="column">
 				<Text>{label}</Text>
-				<Text color="blue">{(completedValue || []).join(", ")}</Text>
+				<Text>
+					<Text color="blue">
+						{(completedValue || []).join(", ")}
+					</Text>
+				</Text>
 			</Box>
 		);
 	}
@@ -412,15 +416,28 @@ export function MultiField({
 				<Box flexDirection="row">
 					<Box flexDirection="column" width={25}>
 						{noneOption && (
-							<Text color={selectedIndex === 0 ? "cyan" : selectedValues.includes(NONE_VALUE) ? "white" : "gray"}>
-								{selectedValues.includes(NONE_VALUE) ? "■" : "□"} {showNumbers && "1. "}
+							<Text
+								color={
+									selectedIndex === 0
+										? "cyan"
+										: selectedValues.includes(NONE_VALUE)
+										? "white"
+										: "gray"
+								}
+							>
+								{selectedValues.includes(NONE_VALUE)
+									? "■"
+									: "□"}{" "}
+								{showNumbers && "1. "}
 								{noneOption.label}
 							</Text>
 						)}
 						{filteredOptions.map((option, index) => {
 							const displayIndex = index + (noneOption ? 2 : 1);
 							const optionIndex = index + (noneOption ? 1 : 0);
-							const isSelected = selectedValues.includes(option.value);
+							const isSelected = selectedValues.includes(
+								option.value
+							);
 							const isFocused = optionIndex === selectedIndex;
 							const color = isFocused
 								? "cyan"
@@ -448,7 +465,9 @@ export function MultiField({
 									matchIndex,
 									matchIndex + query.length
 								);
-								const afterMatch = label.slice(matchIndex + query.length);
+								const afterMatch = label.slice(
+									matchIndex + query.length
+								);
 
 								// Use cyan for focused items, option color or white for non-focused
 								const highlightColor = isFocused
@@ -486,7 +505,9 @@ export function MultiField({
 							const isFocused = optionIndex === selectedIndex;
 							return (
 								<Text key={option.value} color="gray">
-									{isFocused && option.hint ? option.hint : ""}
+									{isFocused && option.hint
+										? option.hint
+										: ""}
 								</Text>
 							);
 						})}
@@ -496,7 +517,8 @@ export function MultiField({
 				<>
 					{noneOption &&
 						(() => {
-							const isSelected = selectedValues.includes("__NONE__");
+							const isSelected =
+								selectedValues.includes("__NONE__");
 							const isFocused = selectedIndex === 0;
 							const color = isFocused
 								? "cyan"
@@ -507,7 +529,8 @@ export function MultiField({
 								<Box flexDirection="row">
 									<Box width={25}>
 										<Text color={color}>
-											{isSelected ? "■" : "□"} {showNumbers && "1. "}
+											{isSelected ? "■" : "□"}{" "}
+											{showNumbers && "1. "}
 											{noneOption.label}
 										</Text>
 									</Box>
@@ -522,7 +545,9 @@ export function MultiField({
 					{filteredOptions.map((option, index) => {
 						const displayIndex = index + (noneOption ? 2 : 1);
 						const optionIndex = index + (noneOption ? 1 : 0);
-						const isSelected = selectedValues.includes(option.value);
+						const isSelected = selectedValues.includes(
+							option.value
+						);
 						const isFocused = optionIndex === selectedIndex;
 						const color = isFocused
 							? "cyan"
@@ -550,7 +575,9 @@ export function MultiField({
 								matchIndex,
 								matchIndex + query.length
 							);
-							const afterMatch = label.slice(matchIndex + query.length);
+							const afterMatch = label.slice(
+								matchIndex + query.length
+							);
 
 							// Use cyan for focused items, option color or white for non-focused
 							const highlightColor = isFocused
@@ -579,7 +606,9 @@ export function MultiField({
 								</Box>
 								<Box flexGrow={1}>
 									<Text color="gray">
-										{isFocused && option.hint ? option.hint : ""}
+										{isFocused && option.hint
+											? option.hint
+											: ""}
 									</Text>
 								</Box>
 							</Box>
@@ -590,7 +619,8 @@ export function MultiField({
 				<>
 					{noneOption &&
 						(() => {
-							const isSelected = selectedValues.includes("__NONE__");
+							const isSelected =
+								selectedValues.includes("__NONE__");
 							const isFocused = selectedIndex === 0;
 							const color = isFocused
 								? "cyan"
@@ -599,7 +629,8 @@ export function MultiField({
 								: "gray";
 							return (
 								<Text color={color}>
-									{isSelected ? "■" : "□"} {showNumbers && "1. "}
+									{isSelected ? "■" : "□"}{" "}
+									{showNumbers && "1. "}
 									{noneOption.label}
 								</Text>
 							);
@@ -607,7 +638,9 @@ export function MultiField({
 					{filteredOptions.map((option, index) => {
 						const displayIndex = index + (noneOption ? 2 : 1);
 						const optionIndex = index + (noneOption ? 1 : 0);
-						const isSelected = selectedValues.includes(option.value);
+						const isSelected = selectedValues.includes(
+							option.value
+						);
 						const isFocused = optionIndex === selectedIndex;
 						const color = isFocused
 							? "cyan"
@@ -635,7 +668,9 @@ export function MultiField({
 								matchIndex,
 								matchIndex + query.length
 							);
-							const afterMatch = label.slice(matchIndex + query.length);
+							const afterMatch = label.slice(
+								matchIndex + query.length
+							);
 
 							// Use cyan for focused items, option color or white for non-focused
 							const highlightColor = isFocused
@@ -692,8 +727,10 @@ export function MultiField({
 							}
 
 							// Find the focused option from filteredOptions
-							const focusedOptionIndex = selectedIndex - (noneOption ? 1 : 0);
-							const focusedOption = filteredOptions[focusedOptionIndex];
+							const focusedOptionIndex =
+								selectedIndex - (noneOption ? 1 : 0);
+							const focusedOption =
+								filteredOptions[focusedOptionIndex];
 
 							return focusedOption?.hint || " ";
 						})()}

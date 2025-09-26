@@ -266,10 +266,8 @@ export function ConfirmField({
 			: String(displayValue);
 
 		return (
-			<Box gap={1}>
-				<Box width={14}>
-					<Text>{shortLabel || displayMessage}</Text>
-				</Box>
+			<Box flexDirection="column">
+				<Text>{shortLabel || label}</Text>
 				<Text>
 					<Text color="blue">{displayLabel}</Text>
 				</Text>
@@ -281,7 +279,7 @@ export function ConfirmField({
 	if (disabled) {
 		return (
 			<Box flexDirection="column">
-				<Text dimColor>{displayMessage}</Text>
+				<Text dimColor>{label}</Text>
 				<Text dimColor>
 					<Text color="gray">...</Text>
 				</Text>

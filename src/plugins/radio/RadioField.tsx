@@ -283,16 +283,11 @@ export function RadioField({
 			: completedValue;
 
 		return (
-			<Box
-				marginBottom={isLastInGroup && flow === "phased" ? 1 : 0}
-				marginTop={isFirstInGroup ? 0 : 0}
-			>
-				<Text color="green">✓</Text>
-				<Text color="gray" dimColor>
-					{" "}
-					{shortLabel || label}:{" "}
+			<Box flexDirection="column">
+				<Text>{label}</Text>
+				<Text>
+					<Text color="blue">{displayLabel}</Text>
 				</Text>
-				<Text>{displayLabel}</Text>
 			</Box>
 		);
 	}
@@ -309,7 +304,9 @@ export function RadioField({
 					<Box flexDirection="column" width={25}>
 						{filteredOptions.map((option, index) => {
 							const isSelected = index === selectedIndex;
-							const color = isSelected ? "cyan" : option.color || "gray";
+							const color = isSelected
+								? "cyan"
+								: option.color || "gray";
 
 							// Highlight matching text if searching
 							const renderLabel = () => {
@@ -331,7 +328,9 @@ export function RadioField({
 									matchIndex,
 									matchIndex + query.length
 								);
-								const afterMatch = label.slice(matchIndex + query.length);
+								const afterMatch = label.slice(
+									matchIndex + query.length
+								);
 
 								// Use cyan for focused items, option color or white for non-focused
 								const highlightColor = isSelected
@@ -363,7 +362,9 @@ export function RadioField({
 							const isSelected = index === selectedIndex;
 							return (
 								<Text key={option.value} color="gray">
-									{isSelected && option.hint ? option.hint : ""}
+									{isSelected && option.hint
+										? option.hint
+										: ""}
 								</Text>
 							);
 						})}
@@ -394,7 +395,9 @@ export function RadioField({
 							matchIndex,
 							matchIndex + query.length
 						);
-						const afterMatch = label.slice(matchIndex + query.length);
+						const afterMatch = label.slice(
+							matchIndex + query.length
+						);
 
 						// Use cyan for focused items, option color or white for non-focused
 						const highlightColor = isSelected
@@ -423,7 +426,9 @@ export function RadioField({
 							</Box>
 							<Box flexGrow={1}>
 								<Text color="gray">
-									{isSelected && option.hint ? option.hint : ""}
+									{isSelected && option.hint
+										? option.hint
+										: ""}
 								</Text>
 							</Box>
 						</Box>
@@ -454,7 +459,9 @@ export function RadioField({
 							matchIndex,
 							matchIndex + query.length
 						);
-						const afterMatch = label.slice(matchIndex + query.length);
+						const afterMatch = label.slice(
+							matchIndex + query.length
+						);
 
 						// Use cyan for focused items, option color or white for non-focused
 						const highlightColor = isSelected

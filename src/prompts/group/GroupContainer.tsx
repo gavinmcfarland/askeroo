@@ -32,7 +32,9 @@ export function GroupContainer({
 						</Text>
 					</Box>
 				)}
-				<Box flexDirection="column">{completedFields}</Box>
+				<Box flexDirection="column" gap={1}>
+					{completedFields}
+				</Box>
 			</Box>
 		);
 	}
@@ -47,7 +49,9 @@ export function GroupContainer({
 					</Text>
 				</Box>
 			)}
-			<Box flexDirection="column">{children}</Box>
+			<Box flexDirection="column" gap={1}>
+				{children}
+			</Box>
 			{hintText && (
 				<Box marginTop={1}>
 					<Text dimColor>{hintText}</Text>
