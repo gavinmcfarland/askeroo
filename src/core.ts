@@ -1,12 +1,8 @@
 import { debugLogger } from "./debug.js";
 import { globalRegistry, setCurrentRuntime } from "./registry.js";
 
-// Import all plugins to ensure they're registered
-import "./plugins/text/index.js";
-import "./plugins/confirm/index.js";
-import "./plugins/multi/index.js";
-import "./plugins/completed-fields/index.js";
-import "./plugins/note/index.js";
+// Import core plugins (they self-register when imported)
+import "./plugins/core.js";
 
 export type Answers = Record<string, unknown>;
 

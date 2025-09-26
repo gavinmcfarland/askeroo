@@ -50,6 +50,11 @@ class PromptRegistry {
 // Global singleton registry
 export const globalRegistry = new PromptRegistry();
 
+// Manual plugin registration function for external developers
+export function registerPlugin(plugin: PromptPlugin): void {
+  globalRegistry.register(plugin);
+}
+
 // Store current runtime context
 let currentRuntime: any = null;
 

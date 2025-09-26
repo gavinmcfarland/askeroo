@@ -72,6 +72,14 @@ export const BACK = { __back: true };
 export { createRuntime } from "./core.js";
 export { ui };
 
+// Export plugin system for developers
+export {
+  globalRegistry,
+  registerPlugin,
+  createPlugin,
+  type PromptPlugin
+} from "./registry.js";
+
 // Export plugins and their types
 export { text, type TextOptions } from "./plugins/text/index.js";
 export { confirm, type ConfirmOptions } from "./plugins/confirm/index.js";
