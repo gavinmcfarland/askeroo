@@ -194,18 +194,16 @@ export function MultiField({
 		if (!disabled && !completed) {
 			const hintText = (
 				<>
-					<Text color="yellow">&lt;enter&gt;</Text> proceed
+					<Text color="yellow">enter</Text> proceed
 					{!isFirstRootPrompt && (
 						<>
-							, <Text color="yellow">&lt;escape&gt;</Text> go
-							back,{" "}
+							, <Text color="yellow">escape</Text> go back,{" "}
 						</>
 					)}
-					<Text color="yellow">&lt;↑↓&gt;</Text> navigate,{" "}
-					<Text color="yellow">&lt;space&gt;</Text> select{" "}
+					<Text color="yellow">space</Text> select{" "}
 					{searchable && (
 						<>
-							, <Text color="yellow">&lt;type&gt;</Text> to search
+							, <Text color="yellow">type</Text> to search
 						</>
 					)}
 				</>

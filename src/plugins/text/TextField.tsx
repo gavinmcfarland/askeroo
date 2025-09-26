@@ -75,10 +75,10 @@ export function TextField({
 		if (!disabled && !completed) {
 			const hintText = (
 				<>
-					<Text color="yellow">&lt;enter&gt;</Text> proceed
+					<Text color="yellow">enter</Text> proceed
 					{!isFirstRootPrompt && (
 						<>
-							, <Text color="yellow">&lt;escape&gt;</Text> go back
+							, <Text color="yellow">escape</Text> go back
 						</>
 					)}
 				</>

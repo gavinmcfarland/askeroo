@@ -67,20 +67,21 @@ export function RadioField({
 		return 0;
 	});
 
-	const [searchQuery, setSearchQuery] = useState("");
+	const [internalSearchQuery, setInternalSearchQuery] = useState("");
+	const currentSearchQuery = internalSearchQuery;
 	const [submitted, setSubmitted] = useState(false);
 
 	// Filter options based on search query
 	const filteredOptions =
-		searchable && searchQuery.trim() && options
+		searchable && currentSearchQuery.trim() && options
 			? options.filter(
 					(option) =>
 						option.label
 							.toLowerCase()
-							.includes(searchQuery.toLowerCase()) ||
+							.includes(currentSearchQuery.toLowerCase()) ||
 						option.value
 							.toLowerCase()
-							.includes(searchQuery.toLowerCase())
+							.includes(currentSearchQuery.toLowerCase())
 			  )
 			: options || [];
 
@@ -89,7 +90,7 @@ export function RadioField({
 		if (selectedIndex >= filteredOptions.length) {
 			setSelectedIndex(Math.max(0, filteredOptions.length - 1));
 		}
-	}, [searchQuery, filteredOptions.length, selectedIndex]);
+	}, [currentSearchQuery, filteredOptions.length, selectedIndex]);
 
 	// Reset submitted state when field becomes active again (not disabled)
 	useEffect(() => {
@@ -117,10 +118,15 @@ export function RadioField({
 		if (!disabled && !completed) {
 			const hintText = (
 				<>
-					<Text color="yellow">&lt;enter&gt;</Text> proceed
+					<Text color="yellow">enter</Text> proceed
 					{!isFirstRootPrompt && (
 						<>
-							, <Text color="yellow">&lt;escape&gt;</Text> go back
+							, <Text color="yellow">escape</Text> go back
+						</>
+					)}
+					{searchable && (
+						<>
+							, <Text color="yellow">type</Text> to search
 						</>
 					)}
 				</>
@@ -144,11 +150,18 @@ export function RadioField({
 		if (disabled || submitted) return;
 
 		// Handle back navigation (Escape)
-		if (key.escape && allowBack) {
-			if (onBack) {
-				onBack();
+		if (key.escape) {
+			// If searching, clear the search query first
+			if (searchable && currentSearchQuery.trim()) {
+				setInternalSearchQuery("");
+				return;
 			}
-			return;
+
+			// Only go back if allowed
+			if (allowBack && onBack) {
+				onBack();
+				return;
+			}
 		}
 
 		// Handle arrow navigation for groups
@@ -173,19 +186,29 @@ export function RadioField({
 		}
 
 		// Handle search input if searchable is enabled
-		if (searchable && !key.ctrl && !key.meta && input.length === 1) {
-			// Allow typing for search
-			if (input.match(/[a-zA-Z0-9\s]/)) {
-				const newQuery = searchQuery + input;
-				setSearchQuery(newQuery);
+		if (searchable && input && input !== " ") {
+			// Check if it's a printable character (not a special key)
+			if (
+				input.length === 1 &&
+				!key.ctrl &&
+				!key.meta &&
+				!key.return &&
+				!key.escape &&
+				!key.upArrow &&
+				!key.downArrow &&
+				!key.leftArrow &&
+				!key.rightArrow
+			) {
+				const newQuery = currentSearchQuery + input;
+				setInternalSearchQuery(newQuery);
 				return;
 			}
 		}
 
 		// Handle backspace for search
 		if (searchable && (key.backspace || key.delete || input === "\b")) {
-			const newQuery = searchQuery.slice(0, -1);
-			setSearchQuery(newQuery);
+			const newQuery = currentSearchQuery.slice(0, -1);
+			setInternalSearchQuery(newQuery);
 			return;
 		}
 
@@ -278,28 +301,60 @@ export function RadioField({
 			marginTop={isFirstInGroup ? 0 : 0}
 		>
 			<Text>{label}</Text>
-			{searchable && (
-				<Text color="blue">
-					Search: {searchQuery || "(type to search)"}
-				</Text>
-			)}
 			{filteredOptions.map((option, index) => {
 				const isSelected = index === selectedIndex;
+				const color = isSelected ? "cyan" : "gray";
+
+				// Highlight matching text if searching
+				const renderLabel = () => {
+					if (!searchable || !currentSearchQuery.trim()) {
+						return option.label;
+					}
+
+					const query = currentSearchQuery.toLowerCase();
+					const label = option.label;
+					const lowerLabel = label.toLowerCase();
+					const matchIndex = lowerLabel.indexOf(query);
+
+					if (matchIndex === -1) {
+						return label; // No match found, return original
+					}
+
+					const beforeMatch = label.slice(0, matchIndex);
+					const match = label.slice(
+						matchIndex,
+						matchIndex + query.length
+					);
+					const afterMatch = label.slice(matchIndex + query.length);
+
+					// Use cyan for focused items, white for non-focused
+					const highlightColor = isSelected ? "cyan" : "white";
+
+					return (
+						<>
+							{beforeMatch}
+							<Text underline color={highlightColor}>
+								{match}
+							</Text>
+							{afterMatch}
+						</>
+					);
+				};
+
 				return (
-					<Text
-						key={option.value}
-						color={isSelected ? "cyan" : "gray"}
-					>
+					<Text key={option.value} color={color}>
 						{isSelected ? "●" : "○"}{" "}
 						{showNumbers === true && `${index + 1}. `}
-						{option.label}
+						{renderLabel()}
 					</Text>
 				);
 			})}
 			{searchable &&
 				filteredOptions.length === 0 &&
-				searchQuery.trim() && (
-					<Text color="red">No options match "{searchQuery}"</Text>
+				currentSearchQuery.trim() && (
+					<Text color="red">
+						No options match "{currentSearchQuery}"
+					</Text>
 				)}
 		</Box>
 	);
