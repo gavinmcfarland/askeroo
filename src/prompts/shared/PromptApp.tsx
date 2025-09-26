@@ -36,6 +36,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const [completedFields, setCompletedFields] = useState<Set<string>>(
 		new Set()
 	);
+	const completionHistoryRef = useRef<string[]>([]);
 	const [progressiveGroups, setProgressiveGroups] = useState<Set<string>>(
 		new Set()
 	);
@@ -151,6 +152,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						// Add all field values as completed
 						Object.keys(fieldValues).forEach(fieldId => {
 							newCompleted.add(fieldId);
+							completionHistoryRef.current.push(fieldId);
 						});
 						return newCompleted;
 					});
@@ -442,6 +444,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						setCompletedFields((prev) =>
 							new Set(prev).add(currentPrompt.id)
 						);
+						completionHistoryRef.current.push(currentPrompt.id);
 					}
 
 					// Handle group tracking for static groups
@@ -552,6 +555,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				setCompletedFields((prev) =>
 					new Set(prev).add(currentPrompt.id)
 				);
+				completionHistoryRef.current.push(currentPrompt.id);
 
 				if (currentPrompt.groupName) {
 					// For grouped fields, track in group history
@@ -698,14 +702,18 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				return next;
 			});
 
-			// Remove this field from completed status immediately when going back
-			setCompletedFields((prev) => {
-				if (!prev.has(currentFieldId)) return prev;
-				const next = new Set(prev);
-				next.delete(currentFieldId);
-				console.log('DEBUG: Removed field from completed status during handleBack:', currentFieldId);
-				return next;
-			});
+			// Remove the most recently completed field from completed status when going back
+			const lastCompletedField = completionHistoryRef.current[completionHistoryRef.current.length - 1];
+			if (lastCompletedField) {
+				setCompletedFields((prev) => {
+					if (!prev.has(lastCompletedField)) return prev;
+					const next = new Set(prev);
+					next.delete(lastCompletedField);
+					return next;
+				});
+				// Remove from completion history
+				completionHistoryRef.current.pop();
+			}
 
 			const r = resolverRef.current;
 			resolverRef.current = null;
