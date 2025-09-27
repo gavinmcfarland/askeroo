@@ -6,6 +6,7 @@ export interface TextOptions {
 	shortLabel?: string;
 	initialValue?: string;
 	id?: string;
+	excludeFromCompleted?: boolean;
 }
 
 // Core text input plugin

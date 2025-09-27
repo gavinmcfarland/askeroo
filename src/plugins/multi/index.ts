@@ -1,34 +1,35 @@
-import { createPlugin } from '../../registry.js';
-import { MultiField } from './MultiField.js';
+import { createPlugin } from "../../registry.js";
+import { MultiField } from "./MultiField.js";
 
 export interface MultiOption {
-  value: string;
-  label: string;
-  color?: string;
-  hint?: string;
+	value: string;
+	label: string;
+	color?: string;
+	hint?: string;
 }
 
 export interface MultiOptions {
-  label?: string;
-  message?: string; // Alternative to label for compatibility
-  shortLabel?: string;
-  options?: string[] | MultiOption[];
-  noneOption?: {
-    label: string;
-  };
-  showNumbers?: boolean;
-  allowLoop?: boolean;
-  searchable?: boolean;
-  hintPosition?: "bottom" | "inline" | "side" | "inline-fixed"; // Where to display option hints (default: "inline")
+	label?: string;
+	message?: string; // Alternative to label for compatibility
+	shortLabel?: string;
+	options?: string[] | MultiOption[];
+	noneOption?: {
+		label: string;
+	};
+	showNumbers?: boolean;
+	allowLoop?: boolean;
+	searchable?: boolean;
+	hintPosition?: "bottom" | "inline" | "side" | "inline-fixed"; // Where to display option hints (default: "inline")
+	excludeFromCompleted?: boolean;
 }
 
 // Example multi-select prompt plugin
 export const multi = createPlugin<MultiOptions, string[]>({
-  type: 'multi',
-  component: MultiField, // Plugin provides its own component
+	type: "multi",
+	component: MultiField, // Plugin provides its own component
 
-  // The prompt logic - just return the options, runtime handles UI
-  prompt(opts: MultiOptions, { currentGroup }, id: string) {
-    return opts;
-  },
+	// The prompt logic - just return the options, runtime handles UI
+	prompt(opts: MultiOptions, { currentGroup }, id: string) {
+		return opts;
+	},
 });

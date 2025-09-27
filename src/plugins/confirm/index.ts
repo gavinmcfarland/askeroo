@@ -10,6 +10,7 @@ export interface ConfirmOptions {
 	hintPosition?: "bottom" | "inline" | "side"; // Where to display option hints (default: "inline")
 	initialValue?: any;
 	id?: string;
+	excludeFromCompleted?: boolean;
 }
 
 export type { ConfirmOption } from "./ConfirmField.js";
