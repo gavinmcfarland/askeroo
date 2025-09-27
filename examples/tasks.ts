@@ -1,29 +1,29 @@
 #!/usr/bin/env node
-import { ask, tasks, TaskWarning } from '../src/index.js';
+import { ask, tasks, TaskWarning, text } from "../src/index.js";
 
 // Sleep helper function
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const flow = async () => {
-	await tasks([
+	const result = await tasks([
 		{
-			label: 'Create component',
+			label: "Create component",
 			action: async () => {
 				await sleep(6000); // 6 second delay
 			},
 		},
 		{
-			label: 'Setup',
+			label: "Setup",
 			concurrent: false,
 			tasks: [
 				{
-					label: 'Generate files',
+					label: "Generate files",
 					action: async () => {
 						await sleep(3000); // 3 second delay
 					},
 				},
 				{
-					label: 'Install dependencies',
+					label: "Install dependencies",
 					action: async () => {
 						await sleep(4000); // 4 second delay
 					},
@@ -31,15 +31,15 @@ const flow = async () => {
 			],
 		},
 		{
-			label: 'Parallel housekeeping',
+			label: "Parallel housekeeping",
 			concurrent: true,
 			tasks: [
 				{
 					label: {
-						idle: 'Initializing git',
-						running: 'Setting up git repository',
-						done: 'Git initialized',
-						error: 'Failed to initialize git'
+						idle: "Initializing git",
+						running: "Setting up git repository",
+						done: "Git initialized",
+						error: "Failed to initialize git",
 					},
 					action: async () => {
 						await sleep(2000); // 2 second delay
@@ -47,21 +47,23 @@ const flow = async () => {
 				},
 				{
 					label: {
-						idle: 'Checking environment',
-						running: 'Validating environment',
-						done: 'Environment checked',
-						error: 'Environment validation failed'
+						idle: "Checking environment",
+						running: "Validating environment",
+						done: "Environment checked",
+						error: "Environment validation failed",
 					},
 					action: async () => {
 						await sleep(2500); // 2.5 second delay
 						// Demonstrate a warning that doesn't fail the run
-						throw new TaskWarning('Node v18 detected; v20 recommended');
+						throw new TaskWarning(
+							"Node v18 detected; v20 recommended"
+						);
 					},
 				},
 			],
 		},
 		{
-			label: 'Finalize',
+			label: "Finalize",
 			action: async () => {
 				await sleep(6000); // 6 second delay
 				// Uncomment to see error handling
@@ -71,7 +73,7 @@ const flow = async () => {
 		},
 	]);
 
-	return 'Tasks completed!';
+	return "Tasks completed!";
 };
 
 (async () => {

@@ -51,6 +51,36 @@ function clearGlobalTaskState() {
 	globalUpdateListeners.forEach((listener) => listener());
 }
 
+// Global task storage for result generation
+let globalTasks: Task[] = [];
+
+// Export functions for accessing global state
+export function getGlobalTaskStates(): Map<string, TaskState> {
+	return new Map(globalTaskStates);
+}
+
+export function getTaskLabel(taskId: string): string | undefined {
+	// Parse task ID to find the corresponding task
+	const parts = taskId.split('.');
+	let currentTasks = globalTasks;
+	let task: Task | undefined;
+
+	for (let i = 0; i < parts.length; i++) {
+		const index = parseInt(parts[i]);
+		if (currentTasks && currentTasks[index]) {
+			task = currentTasks[index];
+			currentTasks = task.tasks || [];
+		} else {
+			return undefined;
+		}
+	}
+
+	if (task) {
+		return typeof task.label === 'string' ? task.label : task.label.idle || 'Task';
+	}
+	return undefined;
+}
+
 // Main component for the plugin
 export function TasksDisplay(props: TasksOptions) {
 	const [taskStates, setTaskStates] = useState<Map<string, TaskState>>(
@@ -252,6 +282,9 @@ export function TasksDisplay(props: TasksOptions) {
 	// Initialize all tasks as idle, then start execution after a brief delay
 	useEffect(() => {
 		if (!props.completed && !props.disabled && !isExecuting && globalTaskStates.size === 0) {
+			// Store tasks globally for result generation
+			globalTasks = props.tasks;
+
 			// Clear any previous state and initialize all tasks as idle
 			clearGlobalTaskState();
 			initializeTasksAsIdle(props.tasks);
