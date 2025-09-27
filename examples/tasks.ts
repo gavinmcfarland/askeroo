@@ -9,7 +9,15 @@ const flow = async () => {
 		{
 			label: "Create component",
 			action: async () => {
-				await sleep(6000); // 6 second delay
+				await sleep(2000); // 2 second delay
+
+				// Add a dynamic task during execution
+				tasks.add({
+					label: "Dynamic task added during execution",
+					action: async () => {
+						await sleep(1000);
+					},
+				});
 			},
 		},
 		{
@@ -19,13 +27,21 @@ const flow = async () => {
 				{
 					label: "Generate files",
 					action: async () => {
-						await sleep(3000); // 3 second delay
+						await sleep(1500); // 1.5 second delay
 					},
 				},
 				{
 					label: "Install dependencies",
 					action: async () => {
-						await sleep(4000); // 4 second delay
+						await sleep(2000); // 2 second delay
+
+						// Add another dynamic task
+						tasks.add({
+							label: "Additional cleanup task",
+							action: async () => {
+								await sleep(500);
+							},
+						});
 					},
 				},
 			],
@@ -42,7 +58,7 @@ const flow = async () => {
 						error: "Failed to initialize git",
 					},
 					action: async () => {
-						await sleep(2000); // 2 second delay
+						await sleep(1000); // 1 second delay
 					},
 				},
 				{
@@ -53,7 +69,7 @@ const flow = async () => {
 						error: "Environment validation failed",
 					},
 					action: async () => {
-						await sleep(2500); // 2.5 second delay
+						await sleep(1500); // 1.5 second delay
 						// Demonstrate a warning that doesn't fail the run
 						throw new TaskWarning(
 							"Node v18 detected; v20 recommended"
@@ -65,7 +81,7 @@ const flow = async () => {
 		{
 			label: "Finalize",
 			action: async () => {
-				await sleep(6000); // 6 second delay
+				await sleep(3000); // 3 second delay
 				// Uncomment to see error handling
 				// throw new Error('Network went brr');
 			},
@@ -74,8 +90,15 @@ const flow = async () => {
 	]);
 
 	if (result.totalTasks > 1) {
-		const name = await text({ label: "Name" });
+		await text({ label: "Name" });
 	}
+
+	tasks.add({
+		label: "Additional cleanup task",
+		action: async () => {
+			await sleep(500);
+		},
+	});
 
 	return "Tasks completed!";
 };

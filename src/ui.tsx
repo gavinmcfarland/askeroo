@@ -111,6 +111,21 @@ function createUI() {
 		},
 
 		async completeFlow(): Promise<void> {
+			// Check for incomplete tasks before completing the flow
+			try {
+				const { hasIncompleteTasks } = await import('./plugins/tasks/index.js');
+				if (hasIncompleteTasks()) {
+					// Don't complete the flow if there are incomplete tasks
+					// Wait a bit and check again (for dynamic tasks that might be added)
+					await new Promise(resolve => setTimeout(resolve, 100));
+					if (hasIncompleteTasks()) {
+						return;
+					}
+				}
+			} catch (error) {
+				// If tasks module isn't available, proceed normally
+			}
+
 			const promptFn = await ensureApp();
 			await promptFn({
 				type: "completeFlow",

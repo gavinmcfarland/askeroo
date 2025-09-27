@@ -90,7 +90,14 @@ export {
 	type RadioOptions,
 	type RadioOption,
 } from "./plugins/radio/index.js";
-export { tasks, TaskWarning, type Task, type TaskLabel } from "./plugins/tasks/index.js";
+export { TaskWarning, type Task, type TaskLabel } from "./plugins/tasks/index.js";
+
+// Create tasks object with both function and add method
+import { tasks as tasksFunction, addTask, type Task } from "./plugins/tasks/index.js";
+
+export const tasks = Object.assign(tasksFunction, {
+	add: (task: Task) => addTask(task)
+});
 
 // Export markdown utilities
 export {

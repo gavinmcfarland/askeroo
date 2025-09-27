@@ -4,6 +4,9 @@ import { TasksDisplay, TasksOptions } from './Tasks.js';
 // Re-export types
 export type { Task, TaskLabel } from './Tasks.js';
 
+// Re-export functions
+export { addTask, hasIncompleteTasks } from './Tasks.js';
+
 // Result types for task execution
 export interface TaskResult {
 	id: string;

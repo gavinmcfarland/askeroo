@@ -48,11 +48,13 @@ function updateGlobalTaskState(taskId: string, state: Partial<TaskState>) {
 // Function to clear global state (for new task runs)
 function clearGlobalTaskState() {
 	globalTaskStates.clear();
+	dynamicTasks.splice(0, dynamicTasks.length); // Clear dynamic tasks array
 	globalUpdateListeners.forEach((listener) => listener());
 }
 
 // Global task storage for result generation
 let globalTasks: Task[] = [];
+let dynamicTasks: Task[] = [];
 
 // Export functions for accessing global state
 export function getGlobalTaskStates(): Map<string, TaskState> {
@@ -62,7 +64,8 @@ export function getGlobalTaskStates(): Map<string, TaskState> {
 export function getTaskLabel(taskId: string): string | undefined {
 	// Parse task ID to find the corresponding task
 	const parts = taskId.split('.');
-	let currentTasks = globalTasks;
+	const allTasks = [...globalTasks, ...dynamicTasks];
+	let currentTasks = allTasks;
 	let task: Task | undefined;
 
 	for (let i = 0; i < parts.length; i++) {
@@ -79,6 +82,22 @@ export function getTaskLabel(taskId: string): string | undefined {
 		return typeof task.label === 'string' ? task.label : task.label.idle || 'Task';
 	}
 	return undefined;
+}
+
+// Function to add tasks dynamically
+export function addTask(task: Task) {
+	dynamicTasks.push(task);
+	globalUpdateListeners.forEach((listener) => listener());
+}
+
+// Function to check if there are incomplete tasks
+export function hasIncompleteTasks(): boolean {
+	for (const [, taskState] of globalTaskStates) {
+		if (taskState.status === 'idle' || taskState.status === 'running') {
+			return true;
+		}
+	}
+	return false;
 }
 
 // Main component for the plugin
@@ -201,12 +220,37 @@ export function TasksDisplay(props: TasksOptions) {
 		setIsExecuting(true);
 
 		try {
-			// Wait for all tasks to actually complete using Promise.allSettled
+			// Execute initial tasks first
 			await Promise.allSettled(
 				props.tasks.map((task, i) =>
 					executeTask(task, getTaskId(task, i))
 				)
 			);
+
+			// Then execute any dynamically added tasks
+			let processedDynamicTasks = 0;
+			while (processedDynamicTasks < dynamicTasks.length) {
+				const tasksToProcess = dynamicTasks.slice(processedDynamicTasks);
+				const baseIndex = props.tasks.length + processedDynamicTasks;
+
+				// Initialize dynamic tasks as idle first
+				tasksToProcess.forEach((task, i) => {
+					const taskId = getTaskId(task, baseIndex + i);
+					updateTaskState(taskId, { status: "idle" });
+				});
+
+				// Execute the tasks
+				await Promise.allSettled(
+					tasksToProcess.map((task, i) =>
+						executeTask(task, getTaskId(task, baseIndex + i))
+					)
+				);
+
+				processedDynamicTasks = dynamicTasks.length;
+
+				// Give a short delay to allow any new dynamic tasks to be added
+				await new Promise(resolve => setTimeout(resolve, 10));
+			}
 		} finally {
 			setIsExecuting(false);
 
@@ -296,9 +340,11 @@ export function TasksDisplay(props: TasksOptions) {
 		}
 	}, [props.completed, props.disabled]);
 
+	const allTasks = [...props.tasks, ...dynamicTasks];
+
 	return (
 		<Box flexDirection="column">
-			{props.tasks.map((task, index) => renderTask(task, index))}
+			{allTasks.map((task, index) => renderTask(task, index))}
 		</Box>
 	);
 }
