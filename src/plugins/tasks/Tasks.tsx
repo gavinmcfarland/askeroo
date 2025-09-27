@@ -9,16 +9,20 @@ export interface TaskLabel {
 	error?: string;
 }
 
+export type CompleteOn = 'children' | 'self' | 'either';
+
 export interface Task {
 	label: string | TaskLabel;
 	action?: () => Promise<void>;
 	tasks?: Task[];
 	concurrent?: boolean;
 	continueOnError?: boolean;
+	completeOn?: CompleteOn;
 }
 
 export interface TasksOptions {
 	tasks: Task[];
+	concurrent?: boolean; // Controls root-level task execution: true = parallel (default), false = sequential
 	// Plugin component props
 	onSubmit?: (value: void) => void;
 	onBack?: () => void;
@@ -237,33 +241,109 @@ export function TasksDisplay(props: TasksOptions) {
 		updateTaskState(taskId, { status: "running" });
 
 		try {
-			if (task.action) {
-				await task.action();
-			}
+			const completeOn = task.completeOn || 'children'; // Default to 'children'
+			let actionCompleted = false;
+			let childrenCompleted = false;
 
-			if (task.tasks && task.tasks.length > 0) {
-				if (task.concurrent) {
-					// Execute subtasks concurrently
-					const promises = task.tasks.map((subtask, index) => {
-						const subtaskId = getTaskId(
-							subtask,
-							index,
-							`${taskId}.`
-						);
-						return executeTask(subtask, subtaskId);
-					});
-					await Promise.all(promises);
-				} else {
-					// Execute subtasks sequentially
-					for (let i = 0; i < task.tasks.length; i++) {
-						const subtask = task.tasks[i];
-						const subtaskId = getTaskId(subtask, i, `${taskId}.`);
-						await executeTask(subtask, subtaskId);
+			// Execute action if present
+			const actionPromise = task.action ?
+				task.action().then(() => { actionCompleted = true; }) :
+				Promise.resolve().then(() => { actionCompleted = true; });
+
+			// Handle different completion modes
+			if (completeOn === 'self') {
+				// Complete after action, let children run in background
+				await actionPromise;
+				updateTaskState(taskId, { status: "done" });
+
+				// Start children in background (don't await)
+				if (task.tasks && task.tasks.length > 0) {
+					const tasks = task.tasks; // Store reference to avoid undefined issues
+					if (task.concurrent) {
+						// Execute subtasks concurrently in background
+						const promises = tasks.map((subtask, index) => {
+							const subtaskId = getTaskId(
+								subtask,
+								index,
+								`${taskId}.`
+							);
+							return executeTask(subtask, subtaskId);
+						});
+						Promise.allSettled(promises); // Don't await
+					} else {
+						// Execute subtasks sequentially in background
+						(async () => {
+							for (let i = 0; i < tasks.length; i++) {
+								const subtask = tasks[i];
+								const subtaskId = getTaskId(subtask, i, `${taskId}.`);
+								await executeTask(subtask, subtaskId);
+							}
+						})(); // Don't await
 					}
 				}
-			}
+			} else if (completeOn === 'either') {
+				// Complete when either action or all children finish first
+				const childrenPromise = task.tasks && task.tasks.length > 0 ?
+					(async () => {
+						const tasks = task.tasks!; // Store reference to avoid undefined issues
+						if (task.concurrent) {
+							// Execute subtasks concurrently
+							const promises = tasks.map((subtask, index) => {
+								const subtaskId = getTaskId(
+									subtask,
+									index,
+									`${taskId}.`
+								);
+								return executeTask(subtask, subtaskId);
+							});
+							await Promise.all(promises);
+						} else {
+							// Execute subtasks sequentially
+							for (let i = 0; i < tasks.length; i++) {
+								const subtask = tasks[i];
+								const subtaskId = getTaskId(subtask, i, `${taskId}.`);
+								await executeTask(subtask, subtaskId);
+							}
+						}
+						childrenCompleted = true;
+					})() : Promise.resolve().then(() => { childrenCompleted = true; });
 
-			updateTaskState(taskId, { status: "done" });
+				// Wait for whichever completes first
+				await Promise.race([actionPromise, childrenPromise]);
+				updateTaskState(taskId, { status: "done" });
+
+				// Continue other tasks in background if needed
+				if (!actionCompleted || !childrenCompleted) {
+					Promise.allSettled([actionPromise, childrenPromise]); // Don't await
+				}
+			} else {
+				// Default 'children' mode: complete after action + all children
+				await actionPromise;
+
+				if (task.tasks && task.tasks.length > 0) {
+					if (task.concurrent) {
+						// Execute subtasks concurrently
+						const promises = task.tasks.map((subtask, index) => {
+							const subtaskId = getTaskId(
+								subtask,
+								index,
+								`${taskId}.`
+							);
+							return executeTask(subtask, subtaskId);
+						});
+						await Promise.all(promises);
+					} else {
+						// Execute subtasks sequentially
+						for (let i = 0; i < task.tasks.length; i++) {
+							const subtask = task.tasks[i];
+							const subtaskId = getTaskId(subtask, i, `${taskId}.`);
+							await executeTask(subtask, subtaskId);
+						}
+					}
+				}
+
+				updateTaskState(taskId, { status: "done" });
+			}
 		} catch (error) {
 			if (error instanceof TaskWarning) {
 				updateTaskState(taskId, {
@@ -288,12 +368,21 @@ export function TasksDisplay(props: TasksOptions) {
 		setIsExecuting(true);
 
 		try {
-			// Wait for all tasks to actually complete using Promise.allSettled
-			await Promise.allSettled(
-				props.tasks.map((task, i) =>
-					executeTask(task, getTaskId(task, i))
-				)
-			);
+			// Execute tasks based on concurrent setting (default: parallel)
+			if (props.concurrent === false) {
+				// Sequential execution
+				for (let i = 0; i < props.tasks.length; i++) {
+					const task = props.tasks[i];
+					await executeTask(task, getTaskId(task, i));
+				}
+			} else {
+				// Parallel execution (default behavior)
+				await Promise.allSettled(
+					props.tasks.map((task, i) =>
+						executeTask(task, getTaskId(task, i))
+					)
+				);
+			}
 		} finally {
 			setIsExecuting(false);
 

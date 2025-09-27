@@ -110,24 +110,42 @@ const flow = async () => {
 		{ flow: "phased" }
 	);
 
-	const tasksResult = await tasks([
-		{
-			label: `Creating ${answers.type} from template`,
-			action: async () => {
-				await sleep(1000); // 3 second delay
-			},
-			concurrent: true,
-			tasks: [
-				{
-					label: `Integrating chosen add-ons`,
-
-					action: async () => {
-						await sleep(10000); // 3 second delay
-					},
+	// Example of sequential execution using the new API with completeOn setting
+	const tasksResult = await tasks(
+		[
+			{
+				label: `Creating ${answers.type} from template`,
+				action: async () => {
+					await sleep(200); // 1 second delay
 				},
-			],
-		},
-	]);
+				completeOn: "either", // Complete after action, children continue in background
+				tasks: [
+					{
+						label: "Setting up project structure",
+						action: async () => {
+							await sleep(1000); // This will run in background
+						},
+					},
+					// {
+					// 	label: "Installing dependencies",
+					// 	action: async () => {
+					// 		await sleep(1500); // This will also run in background
+					// 	},
+					// },
+				],
+			},
+			{
+				label: `Integrating chosen add-ons`,
+				action: async () => {
+					await sleep(3000); // 3 second delay
+				},
+				completeOn: "children", // Default: complete after action + all children
+			},
+		],
+		{
+			concurrent: false,
+		}
+	);
 
 	await note(`**Plugged in and ready to go!**
 

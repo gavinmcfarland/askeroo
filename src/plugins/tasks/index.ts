@@ -2,7 +2,7 @@ import { createPlugin } from '../../registry.js';
 import { TasksDisplay, TasksOptions, Task } from './Tasks.js';
 
 // Re-export types
-export type { Task, TaskLabel } from './Tasks.js';
+export type { Task, TaskLabel, CompleteOn } from './Tasks.js';
 
 // Result types for task execution
 export interface TaskResult {
@@ -89,9 +89,12 @@ const tasksInternal = createPlugin<TasksOptions, TasksResult>({
 	},
 });
 
-// Public API function with add method
-export async function tasks(taskList: TasksOptions['tasks']): Promise<TasksResult> {
-	await tasksInternal({ tasks: taskList });
+// Public API function with add method and execution mode options
+export async function tasks(taskList: TasksOptions['tasks'], options?: { concurrent?: boolean }): Promise<TasksResult> {
+	await tasksInternal({
+		tasks: taskList,
+		concurrent: options?.concurrent
+	});
 
 	// Wait for any pending tasks that were added dynamically
 	const { waitForPendingTasks } = await import('./Tasks.js');
@@ -99,6 +102,16 @@ export async function tasks(taskList: TasksOptions['tasks']): Promise<TasksResul
 
 	return await getTaskResults();
 }
+
+// Sequential execution method
+tasks.sequential = async function(taskList: TasksOptions['tasks']): Promise<TasksResult> {
+	return tasks(taskList, { concurrent: false });
+};
+
+// Parallel execution method (explicit, though this is default behavior)
+tasks.parallel = async function(taskList: TasksOptions['tasks']): Promise<TasksResult> {
+	return tasks(taskList, { concurrent: true });
+};
 
 // Standalone function for adding dynamic tasks
 export async function addTask(task: Task): Promise<void> {
