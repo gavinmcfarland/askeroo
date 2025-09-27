@@ -1,0 +1,2 @@
+-   Option to prevent fields/prompts from showing completed state
+-   Option to avoid fields being added/tracked to completed fields

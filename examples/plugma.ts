@@ -116,23 +116,8 @@ const flow = async () => {
 			{
 				label: `Creating ${answers.type} from template`,
 				action: async () => {
-					await sleep(200); // 1 second delay
+					await sleep(1000); // 1 second delay
 				},
-				completeOn: "either", // Complete after action, children continue in background
-				tasks: [
-					{
-						label: "Setting up project structure",
-						action: async () => {
-							await sleep(1000); // This will run in background
-						},
-					},
-					// {
-					// 	label: "Installing dependencies",
-					// 	action: async () => {
-					// 		await sleep(1500); // This will also run in background
-					// 	},
-					// },
-				],
 			},
 			{
 				label: `Integrating chosen add-ons`,
@@ -146,6 +131,31 @@ const flow = async () => {
 			concurrent: false,
 		}
 	);
+
+	await group(
+		async () => {
+			await radio({
+				label: "Install dependencies with",
+				shortLabel: "Dependencies",
+				initialValue: "npm",
+				options: [
+					{ value: "none", label: "None" },
+					{ value: "npm", label: "npm" },
+					{ value: "yarn", label: "yarn" },
+					{ value: "pnpm", label: "pnpm" },
+					{ value: "bun", label: "bun" },
+				],
+			});
+		},
+		{ flow: "phased" }
+	);
+
+	await tasks.add({
+		label: "Installing dependencies",
+		action: async () => {
+			await sleep(3000); // This will also run in background
+		},
+	});
 
 	await note(`**Plugged in and ready to go!**
 
