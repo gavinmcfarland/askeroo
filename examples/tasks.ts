@@ -73,6 +73,10 @@ const flow = async () => {
 		},
 	]);
 
+	if (result.totalTasks > 1) {
+		const name = await text({ label: "Name" });
+	}
+
 	return "Tasks completed!";
 };
 
