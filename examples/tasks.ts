@@ -9,7 +9,7 @@ const flow = async () => {
 		{
 			label: 'Create component',
 			action: async () => {
-				await sleep(400);
+				await sleep(6000); // 6 second delay
 			},
 		},
 		{
@@ -19,13 +19,13 @@ const flow = async () => {
 				{
 					label: 'Generate files',
 					action: async () => {
-						await sleep(300);
+						await sleep(3000); // 3 second delay
 					},
 				},
 				{
 					label: 'Install dependencies',
 					action: async () => {
-						await sleep(500);
+						await sleep(4000); // 4 second delay
 					},
 				},
 			],
@@ -42,7 +42,7 @@ const flow = async () => {
 						error: 'Failed to initialize git'
 					},
 					action: async () => {
-						await sleep(200);
+						await sleep(2000); // 2 second delay
 					},
 				},
 				{
@@ -53,7 +53,7 @@ const flow = async () => {
 						error: 'Environment validation failed'
 					},
 					action: async () => {
-						await sleep(200);
+						await sleep(2500); // 2.5 second delay
 						// Demonstrate a warning that doesn't fail the run
 						throw new TaskWarning('Node v18 detected; v20 recommended');
 					},
@@ -63,7 +63,7 @@ const flow = async () => {
 		{
 			label: 'Finalize',
 			action: async () => {
-				await sleep(250);
+				await sleep(6000); // 6 second delay
 				// Uncomment to see error handling
 				// throw new Error('Network went brr');
 			},

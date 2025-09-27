@@ -26,7 +26,7 @@ export interface TasksOptions {
 	disabled?: boolean;
 }
 
-type TaskStatus = 'idle' | 'running' | 'done' | 'error' | 'warning';
+type TaskStatus = "idle" | "running" | "done" | "error" | "warning";
 
 interface TaskState {
 	status: TaskStatus;
@@ -36,61 +36,63 @@ interface TaskState {
 
 // Main component for the plugin
 export function TasksDisplay(props: TasksOptions) {
-	const [taskStates, setTaskStates] = useState<Map<string, TaskState>>(new Map());
+	const [taskStates, setTaskStates] = useState<Map<string, TaskState>>(
+		new Map()
+	);
 	const [isExecuting, setIsExecuting] = useState(false);
 
-	const getTaskId = (_task: Task, index: number, parentId = ''): string => {
+	const getTaskId = (_task: Task, index: number, parentId = ""): string => {
 		return `${parentId}${index}`;
 	};
 
 	const getLabel = (task: Task, status: TaskStatus): string => {
-		if (typeof task.label === 'string') {
+		if (typeof task.label === "string") {
 			return task.label;
 		}
 
 		const labelObj = task.label as TaskLabel;
 		switch (status) {
-			case 'running':
-				return labelObj.running || labelObj.idle || 'Running...';
-			case 'done':
-				return labelObj.done || labelObj.idle || 'Done';
-			case 'error':
-				return labelObj.error || labelObj.idle || 'Error';
-			case 'warning':
-				return labelObj.done || labelObj.idle || 'Done (with warnings)';
+			case "running":
+				return labelObj.running || labelObj.idle || "Running...";
+			case "done":
+				return labelObj.done || labelObj.idle || "Done";
+			case "error":
+				return labelObj.error || labelObj.idle || "Error";
+			case "warning":
+				return labelObj.done || labelObj.idle || "Done (with warnings)";
 			default:
-				return labelObj.idle || 'Task';
+				return labelObj.idle || "Task";
 		}
 	};
 
 	const getSymbol = (status: TaskStatus): string => {
 		switch (status) {
-			case 'idle':
-				return '□';
-			case 'running':
-				return '⋯';
-			case 'done':
-				return '■';
-			case 'warning':
-				return '▲';
-			case 'error':
-				return '✗';
+			case "idle":
+				return "□";
+			case "running":
+				return "⋯";
+			case "done":
+				return "■";
+			case "warning":
+				return "▲";
+			case "error":
+				return "✗";
 			default:
-				return '□';
+				return "□";
 		}
 	};
 
 	const updateTaskState = (taskId: string, state: Partial<TaskState>) => {
-		setTaskStates(prev => {
+		setTaskStates((prev) => {
 			const newMap = new Map(prev);
-			const currentState = newMap.get(taskId) || { status: 'idle' };
+			const currentState = newMap.get(taskId) || { status: "idle" };
 			newMap.set(taskId, { ...currentState, ...state });
 			return newMap;
 		});
 	};
 
 	const executeTask = async (task: Task, taskId: string): Promise<void> => {
-		updateTaskState(taskId, { status: 'running' });
+		updateTaskState(taskId, { status: "running" });
 
 		try {
 			if (task.action) {
@@ -101,7 +103,11 @@ export function TasksDisplay(props: TasksOptions) {
 				if (task.concurrent) {
 					// Execute subtasks concurrently
 					const promises = task.tasks.map((subtask, index) => {
-						const subtaskId = getTaskId(subtask, index, `${taskId}.`);
+						const subtaskId = getTaskId(
+							subtask,
+							index,
+							`${taskId}.`
+						);
 						return executeTask(subtask, subtaskId);
 					});
 					await Promise.all(promises);
@@ -115,17 +121,18 @@ export function TasksDisplay(props: TasksOptions) {
 				}
 			}
 
-			updateTaskState(taskId, { status: 'done' });
+			updateTaskState(taskId, { status: "done" });
 		} catch (error) {
 			if (error instanceof TaskWarning) {
 				updateTaskState(taskId, {
-					status: 'warning',
-					warning: error.message
+					status: "warning",
+					warning: error.message,
 				});
 			} else {
 				updateTaskState(taskId, {
-					status: 'error',
-					error: error instanceof Error ? error.message : String(error)
+					status: "error",
+					error:
+						error instanceof Error ? error.message : String(error),
 				});
 
 				if (!task.continueOnError) {
@@ -139,37 +146,52 @@ export function TasksDisplay(props: TasksOptions) {
 		setIsExecuting(true);
 
 		try {
-			for (let i = 0; i < props.tasks.length; i++) {
-				const task = props.tasks[i];
-				const taskId = getTaskId(task, i);
-				await executeTask(task, taskId);
-			}
-		} catch (error) {
-			// Error handling is done in executeTask
-		}
+			// Wait for all tasks to actually complete using Promise.allSettled
+			await Promise.allSettled(
+				props.tasks.map((task, i) =>
+					executeTask(task, getTaskId(task, i))
+				)
+			);
+		} finally {
+			setIsExecuting(false);
 
-		setIsExecuting(false);
-
-		// Auto-submit when all tasks are done
-		if (props.onSubmit && !props.completed && !props.disabled) {
-			setTimeout(() => {
+			// Only submit after we know everything is done
+			if (props.onSubmit && !props.completed && !props.disabled) {
 				props.onSubmit!(undefined as any);
-			}, 500);
+			}
 		}
 	};
 
-	const renderTask = (task: Task, index: number, parentId = '', level = 0): React.ReactNode => {
+	const renderTask = (
+		task: Task,
+		index: number,
+		parentId = "",
+		level = 0
+	): React.ReactNode => {
 		const taskId = getTaskId(task, index, parentId);
-		const state = taskStates.get(taskId) || { status: 'idle' };
+		const state = taskStates.get(taskId) || { status: "idle" };
 		const label = getLabel(task, state.status);
 		const symbol = getSymbol(state.status);
-		const indent = '  '.repeat(level);
+		const indent = "  ".repeat(level);
 
 		return (
 			<Box key={taskId} flexDirection="column">
 				<Box>
-					<Text color={state.status === 'error' ? 'red' : state.status === 'warning' ? 'yellow' : state.status === 'done' ? 'green' : state.status === 'running' ? 'blue' : 'gray'}>
-						{indent}{symbol} {label}
+					<Text
+						color={
+							state.status === "error"
+								? "red"
+								: state.status === "warning"
+								? "yellow"
+								: state.status === "done"
+								? "green"
+								: state.status === "running"
+								? "blue"
+								: "gray"
+						}
+					>
+						{indent}
+						{symbol} {label}
 					</Text>
 				</Box>
 				{state.warning && (
@@ -182,17 +204,36 @@ export function TasksDisplay(props: TasksOptions) {
 						<Text color="red">✗ {state.error}</Text>
 					</Box>
 				)}
-				{task.tasks && task.tasks.map((subtask, subIndex) =>
-					renderTask(subtask, subIndex, `${taskId}.`, level + 1)
-				)}
+				{task.tasks &&
+					task.tasks.map((subtask, subIndex) =>
+						renderTask(subtask, subIndex, `${taskId}.`, level + 1)
+					)}
 			</Box>
 		);
 	};
 
-	// Auto-execute tasks when the component mounts
+	const initializeTasksAsIdle = (tasks: Task[], parentId = "") => {
+		tasks.forEach((task, index) => {
+			const taskId = getTaskId(task, index, parentId);
+			updateTaskState(taskId, { status: "idle" });
+
+			// Recursively initialize subtasks
+			if (task.tasks) {
+				initializeTasksAsIdle(task.tasks, `${taskId}.`);
+			}
+		});
+	};
+
+	// Initialize all tasks as idle, then start execution after a brief delay
 	useEffect(() => {
 		if (!props.completed && !props.disabled && !isExecuting) {
-			executeAllTasks();
+			// Initialize all tasks (and nested subtasks) as idle first
+			initializeTasksAsIdle(props.tasks);
+
+			// Start execution after a brief delay to show idle state
+			setTimeout(() => {
+				executeAllTasks();
+			}, 400);
 		}
 	}, [props.completed, props.disabled]);
 
