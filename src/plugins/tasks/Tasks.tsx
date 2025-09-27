@@ -34,12 +34,42 @@ interface TaskState {
 	warning?: string;
 }
 
+// Global state for tracking task states across component remounts
+let globalTaskStates: Map<string, TaskState> = new Map();
+let globalUpdateListeners: Set<() => void> = new Set();
+
+// Function to update global task state and notify listeners
+function updateGlobalTaskState(taskId: string, state: Partial<TaskState>) {
+	const currentState = globalTaskStates.get(taskId) || { status: "idle" };
+	globalTaskStates.set(taskId, { ...currentState, ...state });
+	globalUpdateListeners.forEach((listener) => listener());
+}
+
+// Function to clear global state (for new task runs)
+function clearGlobalTaskState() {
+	globalTaskStates.clear();
+	globalUpdateListeners.forEach((listener) => listener());
+}
+
 // Main component for the plugin
 export function TasksDisplay(props: TasksOptions) {
 	const [taskStates, setTaskStates] = useState<Map<string, TaskState>>(
-		new Map()
+		globalTaskStates
 	);
 	const [isExecuting, setIsExecuting] = useState(false);
+
+	// Subscribe to global state updates
+	useEffect(() => {
+		const updateListener = () => {
+			setTaskStates(new Map(globalTaskStates));
+		};
+
+		globalUpdateListeners.add(updateListener);
+
+		return () => {
+			globalUpdateListeners.delete(updateListener);
+		};
+	}, []);
 
 	const getTaskId = (_task: Task, index: number, parentId = ""): string => {
 		return `${parentId}${index}`;
@@ -83,12 +113,7 @@ export function TasksDisplay(props: TasksOptions) {
 	};
 
 	const updateTaskState = (taskId: string, state: Partial<TaskState>) => {
-		setTaskStates((prev) => {
-			const newMap = new Map(prev);
-			const currentState = newMap.get(taskId) || { status: "idle" };
-			newMap.set(taskId, { ...currentState, ...state });
-			return newMap;
-		});
+		updateGlobalTaskState(taskId, state);
 	};
 
 	const executeTask = async (task: Task, taskId: string): Promise<void> => {
@@ -226,8 +251,9 @@ export function TasksDisplay(props: TasksOptions) {
 
 	// Initialize all tasks as idle, then start execution after a brief delay
 	useEffect(() => {
-		if (!props.completed && !props.disabled && !isExecuting) {
-			// Initialize all tasks (and nested subtasks) as idle first
+		if (!props.completed && !props.disabled && !isExecuting && globalTaskStates.size === 0) {
+			// Clear any previous state and initialize all tasks as idle
+			clearGlobalTaskState();
 			initializeTasksAsIdle(props.tasks);
 
 			// Start execution after a brief delay to show idle state
