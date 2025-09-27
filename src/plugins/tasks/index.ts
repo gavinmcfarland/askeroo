@@ -1,5 +1,5 @@
 import { createPlugin } from '../../registry.js';
-import { TasksDisplay, TasksOptions } from './Tasks.js';
+import { TasksDisplay, TasksOptions, Task } from './Tasks.js';
 
 // Re-export types
 export type { Task, TaskLabel } from './Tasks.js';
@@ -46,8 +46,8 @@ async function getTaskResults(): Promise<TasksResult> {
 
 	// Convert global task states to results
 	for (const [taskId, taskState] of globalTaskStates) {
-		// Only include completed tasks (not idle/running) and top-level tasks
-		if (!taskId.includes('.') && ['done', 'error', 'warning'].includes(taskState.status)) {
+		// Include completed tasks (not idle/running) and top-level tasks, plus dynamic tasks
+		if ((!taskId.includes('.') || taskId.startsWith('dynamic.')) && ['done', 'error', 'warning'].includes(taskState.status)) {
 			totalTasks++;
 
 			const result: TaskResult = {
@@ -89,8 +89,22 @@ const tasksInternal = createPlugin<TasksOptions, TasksResult>({
 	},
 });
 
-// Public API function
+// Public API function with add method
 export async function tasks(taskList: TasksOptions['tasks']): Promise<TasksResult> {
 	await tasksInternal({ tasks: taskList });
+
+	// Wait for any pending tasks that were added dynamically
+	const { waitForPendingTasks } = await import('./Tasks.js');
+	await waitForPendingTasks();
+
 	return await getTaskResults();
 }
+
+// Standalone function for adding dynamic tasks
+export async function addTask(task: Task): Promise<void> {
+	const { addDynamicTask } = await import('./Tasks.js');
+	return addDynamicTask(task);
+}
+
+// Add the dynamic task addition method to the tasks function
+tasks.add = addTask;

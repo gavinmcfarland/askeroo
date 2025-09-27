@@ -5,11 +5,20 @@ import { ask, tasks, TaskWarning, text } from "../src/index.js";
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const flow = async () => {
+	// Run the main tasks with dynamic task addition capabilities
 	const result = await tasks([
 		{
 			label: "Create component",
 			action: async () => {
-				await sleep(6000); // 6 second delay
+				await sleep(3000); // 3 second delay
+
+				// Add a dynamic task from within a running task
+				await tasks.add({
+					label: "Dynamic task from component creation",
+					action: async () => {
+						await sleep(2000); // 2 second delay
+					},
+				});
 			},
 		},
 		{
@@ -26,6 +35,14 @@ const flow = async () => {
 					label: "Install dependencies",
 					action: async () => {
 						await sleep(4000); // 4 second delay
+
+						// Add another dynamic task during setup
+						await tasks.add({
+							label: "Configure environment",
+							action: async () => {
+								await sleep(1500);
+							},
+						});
 					},
 				},
 			],
@@ -65,7 +82,7 @@ const flow = async () => {
 		{
 			label: "Finalize",
 			action: async () => {
-				await sleep(6000); // 6 second delay
+				await sleep(2000); // 2 second delay
 				// Uncomment to see error handling
 				// throw new Error('Network went brr');
 			},
@@ -73,9 +90,23 @@ const flow = async () => {
 		},
 	]);
 
+	await tasks.add({
+		label: "Clean up",
+		action: async () => {
+			await sleep(1500);
+		},
+	});
+
 	if (result.totalTasks > 1) {
-		const name = await text({ label: "Name" });
+		await text({ label: "Name" });
 	}
+
+	await tasks.add({
+		label: "Post-completion cleanup task",
+		action: async () => {
+			await sleep(2000);
+		},
+	});
 
 	return "Tasks completed!";
 };

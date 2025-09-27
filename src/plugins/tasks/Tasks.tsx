@@ -38,6 +38,11 @@ interface TaskState {
 let globalTaskStates: Map<string, TaskState> = new Map();
 let globalUpdateListeners: Set<() => void> = new Set();
 
+// Global pending tasks queue for dynamic task addition
+let globalPendingTasks: Task[] = [];
+let globalPendingTaskPromises: Promise<void>[] = [];
+let globalTaskCounter = 0;
+
 // Function to update global task state and notify listeners
 function updateGlobalTaskState(taskId: string, state: Partial<TaskState>) {
 	const currentState = globalTaskStates.get(taskId) || { status: "idle" };
@@ -48,6 +53,9 @@ function updateGlobalTaskState(taskId: string, state: Partial<TaskState>) {
 // Function to clear global state (for new task runs)
 function clearGlobalTaskState() {
 	globalTaskStates.clear();
+	globalPendingTasks = [];
+	globalPendingTaskPromises = [];
+	globalTaskCounter = 0;
 	globalUpdateListeners.forEach((listener) => listener());
 }
 
@@ -60,6 +68,16 @@ export function getGlobalTaskStates(): Map<string, TaskState> {
 }
 
 export function getTaskLabel(taskId: string): string | undefined {
+	// Handle dynamic tasks
+	if (taskId.startsWith('dynamic.')) {
+		const index = parseInt(taskId.split('.')[1]);
+		const task = globalPendingTasks[index];
+		if (task) {
+			return typeof task.label === 'string' ? task.label : task.label.idle || 'Dynamic Task';
+		}
+		return 'Dynamic Task';
+	}
+
 	// Parse task ID to find the corresponding task
 	const parts = taskId.split('.');
 	let currentTasks = globalTasks;
@@ -79,6 +97,69 @@ export function getTaskLabel(taskId: string): string | undefined {
 		return typeof task.label === 'string' ? task.label : task.label.idle || 'Task';
 	}
 	return undefined;
+}
+
+// Function to add a task dynamically
+export function addDynamicTask(task: Task): Promise<void> {
+	// Add task to pending tasks
+	globalPendingTasks.push(task);
+
+	// Create a promise that will resolve when this task completes
+	const taskPromise = new Promise<void>((resolve, reject) => {
+		const taskId = `dynamic.${globalTaskCounter++}`;
+
+		// Initialize the task as idle
+		updateGlobalTaskState(taskId, { status: "idle" });
+
+		// Execute the task after a short delay to show in UI
+		setTimeout(async () => {
+			try {
+				updateGlobalTaskState(taskId, { status: "running" });
+
+				if (task.action) {
+					await task.action();
+				}
+
+				updateGlobalTaskState(taskId, { status: "done" });
+				resolve();
+			} catch (error) {
+				if (error instanceof TaskWarning) {
+					updateGlobalTaskState(taskId, {
+						status: "warning",
+						warning: error.message,
+					});
+					resolve(); // Warnings don't reject
+				} else {
+					updateGlobalTaskState(taskId, {
+						status: "error",
+						error: error instanceof Error ? error.message : String(error),
+					});
+					reject(error);
+				}
+			}
+		}, 100);
+	});
+
+	// Add to global promises to track
+	globalPendingTaskPromises.push(taskPromise);
+
+	return taskPromise;
+}
+
+// Function to wait for all pending tasks to complete
+export async function waitForPendingTasks(): Promise<void> {
+	while (globalPendingTaskPromises.length > 0) {
+		const currentPromises = [...globalPendingTaskPromises];
+		globalPendingTaskPromises = [];
+
+		await Promise.allSettled(currentPromises);
+
+		// Check if new tasks were added during execution
+		if (globalPendingTaskPromises.length > 0) {
+			continue;
+		}
+		break;
+	}
 }
 
 // Main component for the plugin
@@ -296,9 +377,64 @@ export function TasksDisplay(props: TasksOptions) {
 		}
 	}, [props.completed, props.disabled]);
 
+	const renderDynamicTasks = (): React.ReactNode[] => {
+		const dynamicTasks: React.ReactNode[] = [];
+
+		// Render all dynamic tasks that have been added
+		for (let i = 0; i < globalTaskCounter; i++) {
+			const taskId = `dynamic.${i}`;
+			const state = taskStates.get(taskId);
+
+			if (state) {
+				const taskIndex = i;
+				const task = globalPendingTasks[taskIndex];
+
+				if (task) {
+					const label = getLabel(task, state.status);
+					const symbol = getSymbol(state.status);
+
+					dynamicTasks.push(
+						<Box key={taskId} flexDirection="column">
+							<Box>
+								<Text
+									color={
+										state.status === "error"
+											? "red"
+											: state.status === "warning"
+											? "yellow"
+											: state.status === "done"
+											? "green"
+											: state.status === "running"
+											? "blue"
+											: "gray"
+									}
+								>
+									{symbol} {label}
+								</Text>
+							</Box>
+							{state.warning && (
+								<Box marginLeft={2}>
+									<Text color="yellow">⚠ {state.warning}</Text>
+								</Box>
+							)}
+							{state.error && (
+								<Box marginLeft={2}>
+									<Text color="red">✗ {state.error}</Text>
+								</Box>
+							)}
+						</Box>
+					);
+				}
+			}
+		}
+
+		return dynamicTasks;
+	};
+
 	return (
 		<Box flexDirection="column">
 			{props.tasks.map((task, index) => renderTask(task, index))}
+			{renderDynamicTasks()}
 		</Box>
 	);
 }
