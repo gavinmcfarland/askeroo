@@ -18,7 +18,8 @@
       "Bash(npm test)",
       "Bash(npm install:*)",
       "Bash(npx tsx:*)",
-      "Read(//Users/gavinmcfarland/Developer/**)"
+      "Read(//Users/gavinmcfarland/Developer/**)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

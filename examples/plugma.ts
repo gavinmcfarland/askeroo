@@ -146,6 +146,7 @@ const flow = async () => {
 					{ value: "bun", label: "bun" },
 					{ value: "deno", label: "deno" },
 				],
+				excludeFromCompleted: true,
 			});
 		},
 		{ flow: "phased" }

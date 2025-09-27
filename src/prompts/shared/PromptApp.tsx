@@ -14,6 +14,7 @@ type PromptRequest = {
 	flow?: "progressive" | "phased" | "static"; // Only present for group prompts
 	discoveredFields?: Array<{ id: string; label: string; type: string }>; // Only present for group prompts
 	enableArrowNavigation?: boolean; // Only present for group prompts
+	excludeFromCompleted?: boolean; // If true, this field won't be added to completedFields
 	[key: string]: any; // Allow any additional properties for plugin-specific options
 };
 
@@ -441,7 +442,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							? actualValue.trim() !== ""
 							: actualValue !== undefined;
 
-					if (shouldMarkCompleted) {
+					if (shouldMarkCompleted && !currentPrompt.excludeFromCompleted) {
 						setCompletedFields((prev) =>
 							new Set(prev).add(currentPrompt.id)
 						);
@@ -553,10 +554,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				);
 
 				// Mark field as completed and track history
-				setCompletedFields((prev) =>
-					new Set(prev).add(currentPrompt.id)
-				);
-				completionHistoryRef.current.push(currentPrompt.id);
+				if (!currentPrompt.excludeFromCompleted) {
+					setCompletedFields((prev) =>
+						new Set(prev).add(currentPrompt.id)
+					);
+					completionHistoryRef.current.push(currentPrompt.id);
+				}
 
 				if (currentPrompt.groupName) {
 					// For grouped fields, track in group history

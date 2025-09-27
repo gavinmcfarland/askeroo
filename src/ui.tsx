@@ -14,6 +14,7 @@ type PromptRequest = {
 	groupName?: string;
 	flow?: "phased" | "static";
 	discoveredFields?: Array<{ id: string; label: string; type: string }>;
+	excludeFromCompleted?: boolean; // If true, this field won't be added to completedFields
 	[key: string]: any; // Allow any plugin-specific properties
 };
 

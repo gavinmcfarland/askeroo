@@ -18,12 +18,14 @@ const flow = async () => {
 					await sleep(3000); // 3 second delay
 
 					// Add a dynamic task from within a running task
-					await tasks.add({
-						label: "Dynamic task from component creation",
-						action: async () => {
-							await sleep(2000); // 2 second delay
+					await tasks.add([
+						{
+							label: "Dynamic task from component creation",
+							action: async () => {
+								await sleep(2000); // 2 second delay
+							},
 						},
-					});
+					]);
 				},
 			},
 			{
@@ -42,12 +44,14 @@ const flow = async () => {
 							await sleep(4000); // 4 second delay
 
 							// Add another dynamic task during setup
-							await tasks.add({
-								label: "Configure environment",
-								action: async () => {
-									await sleep(1500);
+							await tasks.add([
+								{
+									label: "Configure environment",
+									action: async () => {
+										await sleep(1500);
+									},
 								},
-							});
+							]);
 						},
 					},
 				],
@@ -95,23 +99,27 @@ const flow = async () => {
 			},
 		]);
 
-		await tasks.add({
-			label: "Clean up",
-			action: async () => {
-				await sleep(1500);
+		await tasks.add([
+			{
+				label: "Clean up",
+				action: async () => {
+					await sleep(1500);
+				},
 			},
-		});
+		]);
 	}
 
 	if (result?.totalTasks && result.totalTasks > 1) {
 		await text({ label: "Name" });
 
-		await tasks.add({
-			label: "Post-completion cleanup task",
-			action: async () => {
-				await sleep(2000);
+		await tasks.add([
+			{
+				label: "Post-completion cleanup task",
+				action: async () => {
+					await sleep(2000);
+				},
 			},
-		});
+		]);
 	}
 
 	return "Tasks completed!";

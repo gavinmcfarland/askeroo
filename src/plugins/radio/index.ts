@@ -18,6 +18,7 @@ export interface RadioOptions {
 	hintPosition?: "bottom" | "inline" | "side" | "inline-fixed"; // Where to display option hints (default: "inline")
 	initialValue?: string;
 	id?: string;
+	excludeFromCompleted?: boolean;
 }
 
 // Core radio input plugin
