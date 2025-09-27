@@ -15,6 +15,7 @@ type PromptRequest = {
 	flow?: "phased" | "static";
 	discoveredFields?: Array<{ id: string; label: string; type: string }>;
 	excludeFromCompleted?: boolean; // If true, this field won't be added to completedFields
+	hideAfterSubmit?: boolean; // If true, this field won't be rendered after completion
 	[key: string]: any; // Allow any plugin-specific properties
 };
 

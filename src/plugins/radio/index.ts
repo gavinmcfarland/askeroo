@@ -19,6 +19,7 @@ export interface RadioOptions {
 	initialValue?: string;
 	id?: string;
 	excludeFromCompleted?: boolean;
+	hideAfterSubmit?: boolean;
 }
 
 // Core radio input plugin

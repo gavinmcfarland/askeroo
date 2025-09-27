@@ -132,8 +132,8 @@ const flow = async () => {
 		}
 	);
 
-	await group(
-		async () => {
+	// await group(
+	// 	async () => {
 			await radio({
 				label: "Install dependencies?",
 				shortLabel: "Dependencies",
@@ -147,10 +147,11 @@ const flow = async () => {
 					{ value: "deno", label: "deno" },
 				],
 				excludeFromCompleted: true,
+				hideAfterSubmit: true
 			});
-		},
-		{ flow: "phased" }
-	);
+		}
+	// 	{ flow: "phased" }
+	// );
 
 	await tasks.add([
 		{

@@ -15,6 +15,7 @@ type PromptRequest = {
 	discoveredFields?: Array<{ id: string; label: string; type: string }>; // Only present for group prompts
 	enableArrowNavigation?: boolean; // Only present for group prompts
 	excludeFromCompleted?: boolean; // If true, this field won't be added to completedFields
+	hideAfterSubmit?: boolean; // If true, this field won't be rendered after completion
 	[key: string]: any; // Allow any additional properties for plugin-specific options
 };
 
@@ -44,10 +45,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const [phaseGroups, setPhaseGroups] = useState<Set<string>>(new Set());
 	const [staticGroups, setStaticGroups] = useState<Set<string>>(new Set());
 	const [staticGroupFields, setStaticGroupFields] = useState<
-		Map<string, Array<{ id: string; label: string; type: string }>>
+		Map<string, Array<{ id: string; label: string; type: string; hideAfterSubmit?: boolean }>>
 	>(new Map());
 	const [groupFieldHistory, setGroupFieldHistory] = useState<
-		Map<string, Array<{ id: string; label: string; type: string }>>
+		Map<string, Array<{ id: string; label: string; type: string; hideAfterSubmit?: boolean }>>
 	>(new Map());
 	const [completedGroups, setCompletedGroups] = useState<Set<string>>(
 		new Set()
@@ -65,7 +66,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		Array<{ id: string; type: "field" | "group"; groupName?: string }>
 	>([]);
 	const [rootFieldHistory, setRootFieldHistory] = useState<
-		Array<{ id: string; label: string; type: string }>
+		Array<{ id: string; label: string; type: string; hideAfterSubmit?: boolean }>
 	>([]);
 	// Store complete field properties for proper rendering
 	const [fieldProperties, setFieldProperties] = useState<Map<string, any>>(
@@ -238,6 +239,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								label:
 									request.label || `${request.type} field`,
 								type: request.type,
+								hideAfterSubmit: request.hideAfterSubmit,
 							};
 
 							// Only add if not already present (check by label and type to avoid duplicates from discovery vs execution)
@@ -467,6 +469,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 										currentPrompt.label ||
 										`${currentPrompt.type} field`,
 									type: currentPrompt.type,
+									hideAfterSubmit: currentPrompt.hideAfterSubmit,
 								};
 
 								// Only add if not already present
@@ -504,6 +507,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 										currentPrompt.label ||
 										`${currentPrompt.type} field`,
 									type: currentPrompt.type,
+									hideAfterSubmit: currentPrompt.hideAfterSubmit,
 								};
 
 								if (
@@ -528,6 +532,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 									currentPrompt.label ||
 									`${currentPrompt.type} field`,
 								type: currentPrompt.type,
+								hideAfterSubmit: currentPrompt.hideAfterSubmit,
 							};
 
 							if (!prev.some((f) => f.id === currentPrompt.id)) {
@@ -584,6 +589,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 									currentPrompt.label ||
 									`${currentPrompt.type} field`,
 								type: currentPrompt.type,
+								hideAfterSubmit: currentPrompt.hideAfterSubmit,
 							};
 
 							// Only add if not already present (check by label and type)
@@ -620,6 +626,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 									currentPrompt.label ||
 									`${currentPrompt.type} field`,
 								type: currentPrompt.type,
+								hideAfterSubmit: currentPrompt.hideAfterSubmit,
 							};
 
 							// Extra validation: ensure this field ID doesn't already exist in any other group
@@ -664,6 +671,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								currentPrompt.label ||
 								`${currentPrompt.type} field`,
 							type: currentPrompt.type,
+							hideAfterSubmit: currentPrompt.hideAfterSubmit,
 						};
 
 						// Extra validation: ensure this field doesn't get added multiple times
@@ -867,7 +875,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				allFields.set(field.label + "|" + field.type, field);
 			});
 
-			const allFieldsArray = Array.from(allFields.values());
+			const allFieldsArray = Array.from(allFields.values()).filter(field => !field.hideAfterSubmit);
 
 			return allFieldsArray.map((field, index) => {
 				// For static groups, find the stored value by matching label and type
@@ -997,7 +1005,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				.filter(
 					(field) =>
 						completedFields.has(field.id) &&
-						field.id !== effectivePrompt?.id
+						field.id !== effectivePrompt?.id &&
+						!field.hideAfterSubmit
 				)
 				.map((field) => {
 					const fieldValue = fieldValues[field.id];
@@ -1039,7 +1048,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					const fieldInfo = rootFieldHistory.find(
 						(f) => f.id === entry.id
 					);
-					if (!fieldInfo) return null;
+					if (!fieldInfo || fieldInfo.hideAfterSubmit) return null;
 
 					const fieldValue = fieldValues[entry.id];
 
