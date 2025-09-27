@@ -119,5 +119,20 @@ export async function addTask(task: Task): Promise<void> {
 	return addDynamicTask(task);
 }
 
+// Function for adding multiple dynamic tasks
+export async function addTasks(taskList: Task[], options?: { concurrent?: boolean }): Promise<void> {
+	const { addDynamicTask } = await import('./Tasks.js');
+
+	if (options?.concurrent === false) {
+		// Sequential execution
+		for (const task of taskList) {
+			await addDynamicTask(task);
+		}
+	} else {
+		// Parallel execution (default)
+		await Promise.allSettled(taskList.map(task => addDynamicTask(task)));
+	}
+}
+
 // Add the dynamic task addition method to the tasks function
-tasks.add = addTask;
+tasks.add = addTasks;

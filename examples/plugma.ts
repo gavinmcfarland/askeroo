@@ -151,12 +151,14 @@ const flow = async () => {
 		{ flow: "phased" }
 	);
 
-	await tasks.add({
-		label: "Installing dependencies",
-		action: async () => {
-			await sleep(3000); // This will also run in background
+	await tasks.add([
+		{
+			label: "Installing dependencies",
+			action: async () => {
+				await sleep(3000); // This will also run in background
+			},
 		},
-	});
+	]);
 
 	await note(`**Plugged in and ready to go!**
 
