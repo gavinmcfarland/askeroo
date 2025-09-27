@@ -114,8 +114,9 @@ const flow = async () => {
 		{
 			label: `Creating ${answers.type} from template`,
 			action: async () => {
-				await sleep(5000); // 3 second delay
+				await sleep(1000); // 3 second delay
 			},
+			concurrent: true,
 			tasks: [
 				{
 					label: `Integrating chosen add-ons`,
