@@ -1,7 +1,18 @@
 #!/usr/bin/env node
-import { ask, group, text, confirm, radio, multi } from "../src/index.js";
+import {
+	ask,
+	group,
+	text,
+	confirm,
+	radio,
+	multi,
+	tasks,
+} from "../src/index.js";
 import { completedFields } from "../src/plugins/completed-fields/index.js";
 import { note } from "../src/plugins/note/index.js";
+
+// Sleep helper function
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const flow = async () => {
 	await note("[ Plugma ]{bgMagenta} [v2.1.0]{dim}");
@@ -98,6 +109,24 @@ const flow = async () => {
 		},
 		{ flow: "phased" }
 	);
+
+	const tasksResult = await tasks([
+		{
+			label: `Creating ${answers.type} from template`,
+			action: async () => {
+				await sleep(5000); // 3 second delay
+			},
+			tasks: [
+				{
+					label: `Integrating chosen add-ons`,
+
+					action: async () => {
+						await sleep(1000); // 3 second delay
+					},
+				},
+			],
+		},
+	]);
 
 	await note(`**Plugged in and ready to go!**
 

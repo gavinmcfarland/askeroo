@@ -69,17 +69,19 @@ export function getGlobalTaskStates(): Map<string, TaskState> {
 
 export function getTaskLabel(taskId: string): string | undefined {
 	// Handle dynamic tasks
-	if (taskId.startsWith('dynamic.')) {
-		const index = parseInt(taskId.split('.')[1]);
+	if (taskId.startsWith("dynamic.")) {
+		const index = parseInt(taskId.split(".")[1]);
 		const task = globalPendingTasks[index];
 		if (task) {
-			return typeof task.label === 'string' ? task.label : task.label.idle || 'Dynamic Task';
+			return typeof task.label === "string"
+				? task.label
+				: task.label.idle || "Dynamic Task";
 		}
-		return 'Dynamic Task';
+		return "Dynamic Task";
 	}
 
 	// Parse task ID to find the corresponding task
-	const parts = taskId.split('.');
+	const parts = taskId.split(".");
 	let currentTasks = globalTasks;
 	let task: Task | undefined;
 
@@ -94,7 +96,9 @@ export function getTaskLabel(taskId: string): string | undefined {
 	}
 
 	if (task) {
-		return typeof task.label === 'string' ? task.label : task.label.idle || 'Task';
+		return typeof task.label === "string"
+			? task.label
+			: task.label.idle || "Task";
 	}
 	return undefined;
 }
@@ -132,7 +136,10 @@ export function addDynamicTask(task: Task): Promise<void> {
 				} else {
 					updateGlobalTaskState(taskId, {
 						status: "error",
-						error: error instanceof Error ? error.message : String(error),
+						error:
+							error instanceof Error
+								? error.message
+								: String(error),
 					});
 					reject(error);
 				}
@@ -164,9 +171,8 @@ export async function waitForPendingTasks(): Promise<void> {
 
 // Main component for the plugin
 export function TasksDisplay(props: TasksOptions) {
-	const [taskStates, setTaskStates] = useState<Map<string, TaskState>>(
-		globalTaskStates
-	);
+	const [taskStates, setTaskStates] =
+		useState<Map<string, TaskState>>(globalTaskStates);
 	const [isExecuting, setIsExecuting] = useState(false);
 
 	// Subscribe to global state updates
@@ -332,12 +338,12 @@ export function TasksDisplay(props: TasksOptions) {
 				</Box>
 				{state.warning && (
 					<Box marginLeft={indent.length + 2}>
-						<Text color="yellow">⚠ {state.warning}</Text>
+						<Text color="yellow">{state.warning}</Text>
 					</Box>
 				)}
 				{state.error && (
 					<Box marginLeft={indent.length + 2}>
-						<Text color="red">✗ {state.error}</Text>
+						<Text color="red">{state.error}</Text>
 					</Box>
 				)}
 				{task.tasks &&
@@ -362,7 +368,12 @@ export function TasksDisplay(props: TasksOptions) {
 
 	// Initialize all tasks as idle, then start execution after a brief delay
 	useEffect(() => {
-		if (!props.completed && !props.disabled && !isExecuting && globalTaskStates.size === 0) {
+		if (
+			!props.completed &&
+			!props.disabled &&
+			!isExecuting &&
+			globalTaskStates.size === 0
+		) {
 			// Store tasks globally for result generation
 			globalTasks = props.tasks;
 
@@ -414,7 +425,9 @@ export function TasksDisplay(props: TasksOptions) {
 							</Box>
 							{state.warning && (
 								<Box marginLeft={2}>
-									<Text color="yellow">⚠ {state.warning}</Text>
+									<Text color="yellow">
+										⚠ {state.warning}
+									</Text>
 								</Box>
 							)}
 							{state.error && (
