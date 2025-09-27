@@ -135,15 +135,16 @@ const flow = async () => {
 	await group(
 		async () => {
 			await radio({
-				label: "Install dependencies with",
+				label: "Install dependencies?",
 				shortLabel: "Dependencies",
 				initialValue: "npm",
 				options: [
 					{ value: "none", label: "None" },
 					{ value: "npm", label: "npm" },
-					{ value: "yarn", label: "yarn" },
 					{ value: "pnpm", label: "pnpm" },
+					{ value: "yarn", label: "yarn" },
 					{ value: "bun", label: "bun" },
+					{ value: "deno", label: "deno" },
 				],
 			});
 		},
