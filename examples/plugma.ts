@@ -121,7 +121,7 @@ const flow = async () => {
 					label: `Integrating chosen add-ons`,
 
 					action: async () => {
-						await sleep(1000); // 3 second delay
+						await sleep(10000); // 3 second delay
 					},
 				},
 			],
