@@ -335,6 +335,18 @@ export function createRuntime(ui: UI) {
 				debugLogger.log("PROMPT_ANSWER", { id, stepIndex, result });
 				answers[id] = result;
 				currentStep += 1;
+
+				// Check if this was the last field and notify UI immediately
+				if (currentStep >= interactivePrompts.length) {
+					debugLogger.log("LAST_FIELD_COMPLETE", {
+						id,
+						stepIndex,
+						totalSteps: interactivePrompts.length,
+					});
+					// Notify UI that the flow is complete so the last field can be marked as completed immediately
+					extendedUI.completeFlow?.();
+				}
+
 				return result as T;
 			}
 
