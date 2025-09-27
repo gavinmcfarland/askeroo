@@ -90,6 +90,7 @@ export {
 	type RadioOptions,
 	type RadioOption,
 } from "./plugins/radio/index.js";
+export { tasks, TaskWarning, type Task, type TaskLabel } from "./plugins/tasks/index.js";
 
 // Export markdown utilities
 export {
