@@ -29,13 +29,13 @@ const flow = async () => {
 				{
 					label: "Generate files",
 					action: async () => {
-						await sleep(3000); // 3 second delay
+						await sleep(6000); // 3 second delay
 					},
 				},
 				{
 					label: "Install dependencies",
 					action: async () => {
-						await sleep(4000); // 4 second delay
+						await sleep(6000);
 
 						// Add another dynamic task during setup
 						await tasks.add([
@@ -102,18 +102,18 @@ const flow = async () => {
 		},
 	]);
 
-	if (result?.totalTasks && result.totalTasks > 1) {
-		await text({ label: "Name" });
+	// if (result?.totalTasks && result.totalTasks > 1) {
+	// 	await text({ label: "Name" });
 
-		await tasks.add([
-			{
-				label: "Post-completion cleanup task",
-				action: async () => {
-					await sleep(2000);
-				},
-			},
-		]);
-	}
+	// 	await tasks.add([
+	// 		{
+	// 			label: "Post-completion cleanup task",
+	// 			action: async () => {
+	// 				await sleep(2000);
+	// 			},
+	// 		},
+	// 	]);
+	// }
 
 	return "Tasks completed!";
 };
