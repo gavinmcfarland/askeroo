@@ -93,7 +93,8 @@ const flow = async () => {
 					shortLabel: "Addons",
 					label: "Choose addons:",
 					hintPosition: "inline-fixed",
-					maxVisible: 6,
+					maxVisible: 3,
+					allowLoop: false,
 					options: [
 						{
 							value: "tailwind",
