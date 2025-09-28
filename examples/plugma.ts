@@ -106,7 +106,7 @@ const flow = async () => {
 						hint: "A utility-first CSS framework",
 					},
 					{
-						value: "shadcn",
+						value: "shadcn2",
 						label: "Shadcn",
 						hint: "A library of components for building websites",
 					},
@@ -136,10 +136,10 @@ const flow = async () => {
 
 			// Conditionally prompt for shadcn config immediately after addons
 			let shadcnConfig;
-			if (addons.includes("shadcn")) {
+			if (addons.includes("shadcn2")) {
 				shadcnConfig = await radio({
-					label: "asas",
-					shortLabel: "asas",
+					label: "asassss",
+					shortLabel: "asassss",
 					options: [
 						{ value: "default", label: "Default" },
 						{ value: "shadcn-grape", label: "Grape" },
@@ -152,6 +152,13 @@ const flow = async () => {
 						{ value: "shadcn-mint", label: "Mint" },
 					],
 				});
+
+				if (shadcnConfig === "shadcn-grape") {
+					await text({
+						label: "Hello2",
+						shortLabel: "Hello2",
+					});
+				}
 			}
 
 			const typescript = await confirm({

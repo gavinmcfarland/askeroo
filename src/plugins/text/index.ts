@@ -18,8 +18,12 @@ export const text = createPlugin<TextOptions, string>({
 	type: "text",
 	component: TextField,
 
-	// The prompt logic - just return the options, runtime handles UI
-	prompt(opts: TextOptions, { currentGroup }, id: string) {
-		return opts;
+	// The prompt logic - include conditional depth in the label
+	prompt(opts: TextOptions, { currentGroup, conditionalDepth }, id: string) {
+		const depthIndicator = conditionalDepth && conditionalDepth > 0 ? ` [depth:${conditionalDepth}]` : "";
+		return {
+			...opts,
+			label: opts.label + depthIndicator,
+		};
 	},
 });

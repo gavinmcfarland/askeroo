@@ -50,6 +50,8 @@
     "author": "",
     "license": "MIT",
     "dependencies": {
+        "acorn": "^8.15.0",
+        "acorn-walk": "^8.3.4",
         "chalk": "^5.6.2",
         "ink": "^4.4.0",
         "marked": "^16.3.0",

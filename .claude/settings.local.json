@@ -20,7 +20,8 @@
       "Bash(npx tsx:*)",
       "Read(//Users/gavinmcfarland/Developer/**)",
       "Bash(cat:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(DEBUG_DEPTH=true node dist/examples/plugma.js)"
     ],
     "deny": [],
     "ask": []

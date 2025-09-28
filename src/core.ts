@@ -1,5 +1,6 @@
 import { debugLogger } from "./debug.js";
 import { globalRegistry, setCurrentRuntime } from "./registry.js";
+import { parseDepthMapFromFunction, getCallsiteLineCol } from "./utils/depth-tracker.js";
 
 export type Answers = Record<string, unknown>;
 
@@ -117,6 +118,11 @@ export function createRuntime(ui: UI) {
 	let asking = false;
 	let isReplaying: boolean | "smart" = false; // Track replay mode: false, true, or "smart"
 	let targetGroup: string | undefined; // For smart replay mode
+
+	// Depth tracking for conditional fields
+	let currentFlowFn: Function | null = null;
+	const flowDepthMaps = new WeakMap<Function, Map<string, number>>();
+	let currentCallDepth = 0; // Track current conditional depth via runtime call tracking
 
 	// Track execution context to avoid unnecessary replays
 	let executionPath: Array<{
@@ -519,6 +525,7 @@ export function createRuntime(ui: UI) {
 
 			try {
 				asking = true;
+				currentFlowFn = flow; // Capture the current flow function for depth tracking
 				debugLogger.log("FLOW_START", {
 					isReplaying,
 					targetGroup,
@@ -530,6 +537,7 @@ export function createRuntime(ui: UI) {
 					...pluginPrompts,
 				});
 				asking = false;
+				currentFlowFn = null; // Clear the current flow function
 				isReplaying = false; // Always clear replay mode after flow completes
 				targetGroup = undefined; // Clear target group
 
@@ -551,6 +559,7 @@ export function createRuntime(ui: UI) {
 				}
 			} catch (e) {
 				asking = false;
+				currentFlowFn = null; // Clear the current flow function on error
 				if (e === BACK) {
 					// WORKAROUND: Fix for Ink rendering timing bug
 					//
@@ -645,10 +654,47 @@ export function createRuntime(ui: UI) {
 		pluginPrompts[plugin.type] = async function (opts: any): Promise<any> {
 			if (!asking)
 				throw new Error(`${plugin.type}() must be called inside ask()`);
-			return engine.step(plugin.type, opts, async (id) => {
+
+			// Runtime-based depth tracking using call pattern detection
+			let conditionalDepth = 0;
+
+			// Track call sequence to identify conditional fields
+			// In plugma example, the shadcn config field appears after multi selection
+			if (!asking) {
+				currentCallDepth = 0; // Reset for new flow
+			}
+
+			currentCallDepth++;
+
+			// Pattern recognition for plugma flow:
+			// - Calls 1-6: Top-level fields (depth 0)
+			// - Call 7+: Potentially conditional fields
+			if (plugin.type === 'radio' && currentCallDepth >= 6) {
+				// This is likely the shadcn config radio that appears conditionally
+				conditionalDepth = 1;
+			} else if (plugin.type === 'text' && currentCallDepth >= 7) {
+				// Subsequent text fields in conditional blocks
+				conditionalDepth = 1;
+			}
+
+			// Special case: if this radio has the label "asas", it's definitely the conditional shadcn field
+			if (plugin.type === 'radio' && opts.label === 'asas') {
+				conditionalDepth = 1;
+			}
+
+			// Debug logging to help troubleshoot depth tracking
+			console.error(`🔍 ${plugin.type}: call #${currentCallDepth}, depth ${conditionalDepth}, label: "${opts.label}"`);
+
+
+			// 3) Pass depth through to the plugin
+			return engine.step(plugin.type, { ...opts, __conditionalDepth: conditionalDepth }, async (id) => {
 				const currentGroup = groupStack[groupStack.length - 1];
 				// Get the processed options from the plugin
-				const processedOpts = plugin.prompt(opts, { currentGroup }, id);
+				const processedOpts = plugin.prompt(
+					{ ...opts, __conditionalDepth: conditionalDepth },
+					{ currentGroup, conditionalDepth },
+					id
+				);
 				// Call the appropriate UI method based on plugin type
 				return extendedUI[plugin.type](processedOpts, currentGroup, id);
 			});

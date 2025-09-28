@@ -4,7 +4,7 @@ import React from 'react';
 export type PromptPlugin = {
   type: string;
   component: React.ComponentType<any>; // Plugin provides its own React component
-  prompt: (opts: any, context: { currentGroup?: string }, id: string) => any;
+  prompt: (opts: any, context: { currentGroup?: string; conditionalDepth?: number }, id: string) => any;
   interactive?: boolean; // Whether this prompt requires user interaction (default: true)
 };
 
@@ -66,7 +66,7 @@ export function setCurrentRuntime(runtime: any): void {
 export function createPlugin<T = any, R = any>(config: {
   type: string;
   component: React.ComponentType<any>;
-  prompt: (opts: T, context: { currentGroup?: string }, id: string) => T;
+  prompt: (opts: T, context: { currentGroup?: string; conditionalDepth?: number }, id: string) => T;
   interactive?: boolean;
 }): (opts: T) => Promise<R> {
   const plugin: PromptPlugin = {
