@@ -116,13 +116,13 @@ const flow = async () => {
 			{
 				label: `Creating ${answers.type} from template`,
 				action: async () => {
-					await sleep(1000); // 1 second delay
+					await sleep(1000);
 				},
 			},
 			{
 				label: `Integrating chosen add-ons`,
 				action: async () => {
-					await sleep(3000); // 3 second delay
+					await sleep(10000);
 				},
 				completeOn: "children", // Default: complete after action + all children
 			},
@@ -134,25 +134,25 @@ const flow = async () => {
 
 	// await group(
 	// 	async () => {
-			const dependencies = await radio({
-				label: "Install dependencies?",
-				shortLabel: "Dependencies",
-				initialValue: "npm",
-				options: [
-					{ value: "none", label: "None" },
-					{ value: "npm", label: "npm" },
-					{ value: "pnpm", label: "pnpm" },
-					{ value: "yarn", label: "yarn" },
-					{ value: "bun", label: "bun" },
-					{ value: "deno", label: "deno" },
-				],
-				excludeFromCompleted: true,
-				hideAfterSubmit: true
-			});
+	const pkgManager = await radio({
+		label: "Install dependencies?",
+		shortLabel: "Dependencies",
+		initialValue: "npm",
+		options: [
+			{ value: "none", label: "None" },
+			{ value: "npm", label: "npm" },
+			{ value: "pnpm", label: "pnpm" },
+			{ value: "yarn", label: "yarn" },
+			{ value: "bun", label: "bun" },
+			{ value: "deno", label: "deno" },
+		],
+		excludeFromCompleted: true,
+		hideAfterSubmit: true,
+	});
 
 	await tasks.add([
 		{
-			label: "Installing dependencies",
+			label: `Installing dependencies with ${pkgManager}`,
 			action: async () => {
 				await sleep(3000); // This will also run in background
 			},
@@ -167,7 +167,7 @@ const flow = async () => {
 
 		Check out the docs at https://plugma.dev.`);
 
-	return { answers, dependencies };
+	return { answers, pkgManager };
 };
 
 (async () => {

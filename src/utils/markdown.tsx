@@ -63,14 +63,17 @@ export function isMarkdownString(value: any): value is MarkdownString {
 
 // Helper function to apply chalk styles to text
 function applyChalkStyles(text: string, styles: string): string {
-	const styleArray = styles.split(' ').filter(s => s.length > 0);
+	const styleArray = styles.split(" ").filter((s) => s.length > 0);
 	let styledText = text;
 
 	// Apply each style using chalk
 	for (const style of styleArray) {
 		try {
 			// Handle background colors and regular styles
-			if ((chalk as any)[style] && typeof (chalk as any)[style] === 'function') {
+			if (
+				(chalk as any)[style] &&
+				typeof (chalk as any)[style] === "function"
+			) {
 				styledText = (chalk as any)[style](styledText);
 			}
 		} catch (e) {
@@ -84,8 +87,8 @@ function applyChalkStyles(text: string, styles: string): string {
 
 // Chalk token extension for marked
 const chalkTokenExtension = {
-	name: 'chalkToken',
-	level: 'inline' as const,
+	name: "chalkToken",
+	level: "inline" as const,
 	start(src: string) {
 		// Find the first occurrence of [text]{styles} pattern
 		const match = src.match(/\[([^\]]+)\]\{([^}]+)\}/);
@@ -97,7 +100,7 @@ const chalkTokenExtension = {
 		const match = rule.exec(src);
 		if (match) {
 			return {
-				type: 'chalkToken',
+				type: "chalkToken",
 				raw: match[0],
 				text: match[1], // The text content
 				styles: match[2].trim(), // The chalk styles
@@ -225,11 +228,7 @@ function formatInlineTokens(tokens: any[], theme: any): ReactElement[] {
 			case "chalkToken":
 				// Apply chalk styles to the text
 				const styledText = applyChalkStyles(token.text, token.styles);
-				elements.push(
-					<InkText key={key++}>
-						{styledText}
-					</InkText>
-				);
+				elements.push(<InkText key={key++}>{styledText}</InkText>);
 				break;
 
 			default:
@@ -372,7 +371,7 @@ export function parseMarkdown(
 						defaultTheme
 					);
 					elements.push(
-						<Box key={key++}>
+						<Box key={key++} marginLeft={2}>
 							<InkText color={defaultTheme.text}>
 								{marker}{" "}
 							</InkText>
