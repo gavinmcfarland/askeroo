@@ -71,6 +71,11 @@ export function getGlobalTaskStates(): Map<string, TaskState> {
 	return new Map(globalTaskStates);
 }
 
+// Function to check if any tasks exist (initial tasks or dynamic tasks)
+export function hasExistingTasks(): boolean {
+	return globalTasks.length > 0 || globalTaskStates.size > 0;
+}
+
 export function getTaskLabel(taskId: string): string | undefined {
 	// Handle dynamic tasks
 	if (taskId.startsWith("dynamic.")) {

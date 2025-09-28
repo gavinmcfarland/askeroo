@@ -115,13 +115,24 @@ tasks.parallel = async function(taskList: TasksOptions['tasks']): Promise<TasksR
 
 // Standalone function for adding dynamic tasks
 export async function addTask(task: Task): Promise<void> {
-	const { addDynamicTask } = await import('./Tasks.js');
+	const { addDynamicTask, hasExistingTasks } = await import('./Tasks.js');
+
+	// Only add task if some already exist, otherwise silently fail
+	if (!hasExistingTasks()) {
+		return;
+	}
+
 	return addDynamicTask(task);
 }
 
 // Function for adding multiple dynamic tasks
 export async function addTasks(taskList: Task[], options?: { concurrent?: boolean }): Promise<void> {
-	const { addDynamicTask } = await import('./Tasks.js');
+	const { addDynamicTask, hasExistingTasks } = await import('./Tasks.js');
+
+	// Only add tasks if some already exist, otherwise silently fail
+	if (!hasExistingTasks()) {
+		return;
+	}
 
 	if (options?.concurrent === false) {
 		// Sequential execution
