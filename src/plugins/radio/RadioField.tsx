@@ -121,10 +121,9 @@ export function RadioField({
 		if (!disabled && !completed) {
 			const hintText = (
 				<>
-					<Text color="yellow">enter</Text> proceed
 					{!isFirstRootPrompt && (
 						<>
-							, <Text color="yellow">escape</Text> go back
+							<Text color="yellow">escape</Text> go back
 						</>
 					)}
 					{searchable && (

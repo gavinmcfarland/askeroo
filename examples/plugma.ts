@@ -139,7 +139,7 @@ const flow = async () => {
 		shortLabel: "Dependencies",
 		initialValue: "npm",
 		options: [
-			{ value: "none", label: "None" },
+			{ value: "skip", label: "Skip" },
 			{ value: "npm", label: "npm" },
 			{ value: "pnpm", label: "pnpm" },
 			{ value: "yarn", label: "yarn" },
@@ -151,14 +151,16 @@ const flow = async () => {
 		allowBack: false,
 	});
 
-	await tasks.add([
-		{
-			label: `Installing dependencies with ${pkgManager}`,
-			action: async () => {
-				await sleep(3000); // This will also run in background
+	if (pkgManager !== "skip") {
+		await tasks.add([
+			{
+				label: `Installing dependencies with ${pkgManager}`,
+				action: async () => {
+					await sleep(3000); // This will also run in background
+				},
 			},
-		},
-	]);
+		]);
+	}
 
 	await note(`**Plugged in and ready to go!**
 
