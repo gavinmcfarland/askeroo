@@ -10,6 +10,7 @@ import {
 } from "../src/index.js";
 import { completedFields } from "../src/plugins/completed-fields/index.js";
 import { note } from "../src/plugins/note/index.js";
+import { md } from "../src/utils/markdown.js";
 
 // Sleep helper function
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -21,120 +22,156 @@ const flow = async () => {
 
 	const answers = await group(
 		async () => {
-			return {
-				path: await text({
-					shortLabel: "Path",
-					label: "Where should it be created?",
-					initialValue: "./my-plugin",
-					onValidate: async (value) => {
-						if (!value.trim()) return "Path cannot be empty";
-						if (value.includes(".."))
-							return "Path cannot contain '..'";
-						if (value === "." || value === "./" || value === "/")
-							return "Please specify a folder name, not the root directory";
-						if (value.includes("//"))
-							return "Invalid path: double slashes not allowed";
-						if (value.endsWith("/"))
-							return "Path cannot end with a slash";
+			// Collect prompts individually
+			const path = await text({
+				shortLabel: "Path",
+				label: "Where should it be created?",
+				initialValue: "./my-plugin",
+				onValidate: async (value) => {
+					if (!value.trim()) return "Path cannot be empty";
+					if (value.includes("..")) return "Path cannot contain '..'";
+					if (value === "." || value === "./" || value === "/")
+						return "Please specify a folder name, not the root directory";
+					if (value.includes("//"))
+						return "Invalid path: double slashes not allowed";
+					if (value.endsWith("/"))
+						return "Path cannot end with a slash";
 
-						// Check if the base directory exists (parent path for nested paths)
-						try {
-							const fs = await import("fs");
-							const path = await import("path");
-							const resolvedPath = path.resolve(value);
-							const parentPath = path.dirname(resolvedPath);
-							const stats = await fs.promises.stat(parentPath);
-							if (!stats.isDirectory()) {
-								return "Base directory does not exist";
-							}
-						} catch (error) {
-							return "Base directory does not exist or is not accessible";
+					// Check if the base directory exists (parent path for nested paths)
+					try {
+						const fs = await import("fs");
+						const path = await import("path");
+						const resolvedPath = path.resolve(value);
+						const parentPath = path.dirname(resolvedPath);
+						const stats = await fs.promises.stat(parentPath);
+						if (!stats.isDirectory()) {
+							return "Base directory does not exist";
 						}
+					} catch (error) {
+						return "Base directory does not exist or is not accessible";
+					}
 
-						return null;
+					return null;
+				},
+			});
+
+			const type = await radio({
+				label: "Choose a type:",
+				shortLabel: "Type",
+				options: [
+					{ value: "plugin", label: "Plugin" },
+					{ value: "widget", label: "Widget" },
+				],
+			});
+
+			const framework = await radio({
+				label: "Select a framework:",
+				shortLabel: "Framework",
+				options: [
+					{ value: "react", label: "React", color: "red" },
+					{ value: "vue", label: "Vue", color: "green" },
+					{ value: "svelte", label: "Svelte", color: "yellow" },
+					{ value: "no-ui", label: "No UI" },
+				],
+			});
+
+			const template = await radio({
+				shortLabel: "Template",
+				label: "Choose a template:",
+				hintPosition: "inline-fixed",
+				options: [
+					{
+						value: "default",
+						label: "Default",
+						hint: "A basic template to get you started",
 					},
-				}),
-				type: await radio({
-					label: "Choose a type:",
-					shortLabel: "Type",
+					{
+						value: "minimal",
+						label: "Rectangle creator",
+						hint: "A minimal template to create rectangles",
+					},
+				],
+			});
+
+			const addons = await multi({
+				shortLabel: "Addons",
+				label: "Choose addons:",
+				hintPosition: "inline-fixed",
+				maxVisible: 3,
+				allowLoop: false,
+				options: [
+					{
+						value: "tailwind",
+						label: "Tailwind",
+						hint: "A utility-first CSS framework",
+					},
+					{
+						value: "shadcn",
+						label: "Shadcn",
+						hint: "A library of components for building websites",
+					},
+					{
+						value: "eslint",
+						label: "ESLint",
+					},
+					{
+						value: "prettier",
+						label: "Prettier",
+						hint: "A formatter for JavaScript",
+					},
+					{
+						value: "vitest",
+						label: "Vitest",
+						hint: "A testing framework for JavaScript",
+					},
+					{
+						value: "playwright",
+						label: "Playwright",
+						hint: "A testing framework for JavaScript",
+					},
+				],
+				noneOption: { label: "None" },
+				searchable: true,
+			});
+
+			// Conditionally prompt for shadcn config immediately after addons
+			let shadcnConfig;
+			if (addons.includes("shadcn")) {
+				shadcnConfig = await radio({
+					label: "asas",
+					shortLabel: "asas",
 					options: [
-						{ value: "plugin", label: "Plugin" },
-						{ value: "widget", label: "Widget" },
+						{ value: "default", label: "Default" },
+						{ value: "shadcn-grape", label: "Grape" },
+						{ value: "shadcn-honey", label: "Honey" },
+						{ value: "shadcn-lavender", label: "Lavender" },
+						{ value: "shadcn-lemon", label: "Lemon" },
+						{ value: "shadcn-lime", label: "Lime" },
+						{ value: "shadcn-mango", label: "Mango" },
+						{ value: "shadcn-melon", label: "Melon" },
+						{ value: "shadcn-mint", label: "Mint" },
 					],
-				}),
-				framework: await radio({
-					label: "Select a framework:",
-					shortLabel: "Framework",
-					options: [
-						{ value: "react", label: "React", color: "red" },
-						{ value: "vue", label: "Vue", color: "green" },
-						{ value: "svelte", label: "Svelte", color: "yellow" },
-						{ value: "no-ui", label: "No UI" },
-					],
-				}),
-				template: await radio({
-					shortLabel: "Template",
-					label: "Choose a template:",
-					hintPosition: "inline-fixed",
-					options: [
-						{
-							value: "default",
-							label: "Default",
-							hint: "A basic template to get you started",
-						},
-						{
-							value: "minimal",
-							label: "Rectangle creator",
-							hint: "A minimal template to create rectangles",
-						},
-					],
-				}),
-				addons: await multi({
-					shortLabel: "Addons",
-					label: "Choose addons:",
-					hintPosition: "inline-fixed",
-					maxVisible: 3,
-					allowLoop: false,
-					options: [
-						{
-							value: "tailwind",
-							label: "Tailwind",
-							hint: "A utility-first CSS framework",
-						},
-						{
-							value: "shadcn",
-							label: "Shadcn",
-							hint: "A library of components for building websites",
-						},
-						{
-							value: "eslint",
-							label: "ESLint",
-						},
-						{
-							value: "prettier",
-							label: "Prettier",
-							hint: "A formatter for JavaScript",
-						},
-						{
-							value: "vitest",
-							label: "Vitest",
-							hint: "A testing framework for JavaScript",
-						},
-						{
-							value: "playwright",
-							label: "Playwright",
-							hint: "A testing framework for JavaScript",
-						},
-					],
-					noneOption: { label: "None" },
-					searchable: true,
-				}),
-				typescript: await confirm({
-					shortLabel: "TypeScript",
-					label: "Use TypeScript?",
-					initialValue: true,
-				}),
+				});
+			}
+
+			const typescript = await confirm({
+				shortLabel: "TypeScript",
+				label: "Use TypeScript?",
+				initialValue: true,
+			});
+
+			// Build the final answers object
+			const answers = {
+				path,
+				type,
+				framework,
+				template,
+				addons,
+				typescript,
+				...(shadcnConfig && { shadcnConfig }),
 			};
+
+			return answers;
 		},
 		{ flow: "phased" }
 	);
