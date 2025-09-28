@@ -17,6 +17,7 @@ export interface RadioOptions {
 	allowLoop?: boolean; // Whether to allow looping when navigating with up/down arrows (default: true)
 	searchable?: boolean; // Whether to enable search functionality (default: false)
 	hintPosition?: "bottom" | "inline" | "side" | "inline-fixed"; // Where to display option hints (default: "inline")
+	maxVisible?: number; // Maximum number of options visible at once (enables scrolling)
 	initialValue?: string;
 	id?: string;
 	excludeFromCompleted?: boolean;

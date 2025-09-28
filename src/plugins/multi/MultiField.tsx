@@ -28,10 +28,10 @@ interface MultiFieldProps {
 	allowLoop?: boolean;
 	searchable?: boolean;
 	hintPosition?: "bottom" | "inline" | "side" | "inline-fixed"; // Where to display option hints (default: "inline")
+	maxVisible?: number; // Maximum number of options visible at once (enables scrolling)
 	searchQuery?: string;
 	onSearchQueryChange?: (query: string) => void;
 	onValidate?: ValidatorFunction<string[]>;
-	[key: string]: any; // Allow any additional options
 }
 
 export function MultiField({
@@ -51,10 +51,10 @@ export function MultiField({
 	allowLoop = true,
 	searchable = false,
 	hintPosition = "inline",
+	maxVisible,
 	searchQuery = "",
 	onSearchQueryChange,
 	onValidate,
-	...rest
 }: MultiFieldProps) {
 	const NONE_VALUE = "__NONE__";
 	// Normalize options to support both string[] and MultiFieldOption[]
@@ -133,6 +133,9 @@ export function MultiField({
 	// Simple navigation state
 	const [selectedIndex, setSelectedIndex] = useState(0);
 
+	// Track current window position for edge-scrolling
+	const [windowStart, setWindowStart] = useState(0);
+
 	const navigateUp = () => {
 		const newIndex = allowLoop
 			? selectedIndex > 0
@@ -188,12 +191,92 @@ export function MultiField({
 		}
 	}, [filteredOptions.length, noneOption]);
 
+	// Reset window position when options change significantly
+	useEffect(() => {
+		setWindowStart(0);
+	}, [filteredOptions.length, maxVisible]);
+
 	// Reset submitted state when field becomes active again (not disabled)
 	useEffect(() => {
 		if (!disabled && submitted) {
 			setSubmitted(false);
 		}
 	}, [disabled, submitted]);
+
+	// Calculate visible window for options (including none option)
+	// Combined list positions: 0=none (if present), 1=first_option, 2=second_option, etc.
+	const getVisibleWindow = () => {
+		const totalOptions = filteredOptions.length + (noneOption ? 1 : 0);
+
+		if (!maxVisible || totalOptions <= maxVisible) {
+			return {
+				showNoneOption: !!noneOption,
+				visibleOptions: filteredOptions,
+				startIndex: 0,
+				showStartEllipsis: false,
+				showEndEllipsis: false,
+			};
+		}
+
+		// Calculate visible window - scroll only when at edges
+		// The window operates on the combined list (none option + filtered options)
+		let currentWindowStart = windowStart;
+		let currentWindowEnd = Math.min(currentWindowStart + maxVisible, totalOptions);
+
+		// If selected index is at or beyond the bottom of current window, scroll down
+		if (selectedIndex >= currentWindowEnd) {
+			currentWindowStart = selectedIndex - maxVisible + 1;
+			currentWindowEnd = selectedIndex + 1;
+		}
+		// If selected index is before the top of current window, scroll up
+		else if (selectedIndex < currentWindowStart) {
+			currentWindowStart = selectedIndex;
+			currentWindowEnd = selectedIndex + maxVisible;
+		}
+
+		// Ensure we don't exceed bounds
+		currentWindowStart = Math.max(0, currentWindowStart);
+		currentWindowEnd = Math.min(totalOptions, currentWindowEnd);
+
+		// Adjust windowStart if we hit the end and have room to show more
+		if (currentWindowEnd - currentWindowStart < maxVisible && currentWindowStart > 0) {
+			currentWindowStart = Math.max(0, currentWindowEnd - maxVisible);
+		}
+
+		// Update window position state if it changed
+		if (currentWindowStart !== windowStart) {
+			setWindowStart(currentWindowStart);
+		}
+
+		// Determine if none option should be shown (it's at position 0 in combined list)
+		const showNoneOption = noneOption && currentWindowStart === 0;
+
+		// Calculate which regular options to show
+		// If none option is present, it occupies position 0, so regular options start at position 1
+		let optionsStart, optionsEnd;
+
+		if (noneOption) {
+			// With none option: positions 0=none, 1=first_option, 2=second_option, etc.
+			optionsStart = Math.max(0, currentWindowStart - 1);
+			optionsEnd = Math.min(filteredOptions.length, currentWindowEnd - 1);
+		} else {
+			// Without none option: positions 0=first_option, 1=second_option, etc.
+			optionsStart = currentWindowStart;
+			optionsEnd = Math.min(filteredOptions.length, currentWindowEnd);
+		}
+
+		const visibleOptions = filteredOptions.slice(optionsStart, optionsEnd);
+		const showStartEllipsis = currentWindowStart > 0;
+		const showEndEllipsis = currentWindowEnd < totalOptions;
+
+		return {
+			showNoneOption,
+			visibleOptions,
+			startIndex: optionsStart,
+			showStartEllipsis,
+			showEndEllipsis,
+		};
+	};
 
 	// Helper function to run validation on submission attempt
 	const runValidation = async (
@@ -443,123 +526,213 @@ export function MultiField({
 			{hintPosition === "side" ? (
 				<Box flexDirection="row">
 					<Box flexDirection="column" width={25}>
-						{noneOption && (
-							<Text
-								color={
-									selectedIndex === 0
-										? "cyan"
-										: selectedValues.includes(NONE_VALUE)
-										? "white"
-										: "gray"
-								}
-							>
-								{selectedValues.includes(NONE_VALUE)
-									? "■"
-									: "□"}{" "}
-								{showNumbers && "1. "}
-								{noneOption.label}
-							</Text>
-						)}
-						{filteredOptions.map((option, index) => {
-							const displayIndex = index + (noneOption ? 2 : 1);
-							const optionIndex = index + (noneOption ? 1 : 0);
-							const isSelected = selectedValues.includes(
-								option.value
-							);
-							const isFocused = optionIndex === selectedIndex;
-							const color = isFocused
-								? "cyan"
-								: isSelected
-								? "white"
-								: option.color || "gray";
-
-							// Highlight matching text if searching
-							const renderLabel = () => {
-								if (!searchable || !currentSearchQuery.trim()) {
-									return option.label;
-								}
-
-								const query = currentSearchQuery.toLowerCase();
-								const label = option.label;
-								const lowerLabel = label.toLowerCase();
-								const matchIndex = lowerLabel.indexOf(query);
-
-								if (matchIndex === -1) {
-									return label; // No match found, return original
-								}
-
-								const beforeMatch = label.slice(0, matchIndex);
-								const match = label.slice(
-									matchIndex,
-									matchIndex + query.length
-								);
-								const afterMatch = label.slice(
-									matchIndex + query.length
-								);
-
-								// Use cyan for focused items, option color or white for non-focused
-								const highlightColor = isFocused
-									? "cyan"
-									: option.color || "white";
-
-								return (
-									<>
-										{beforeMatch}
-										<Text underline color={highlightColor}>
-											{match}
-										</Text>
-										{afterMatch}
-									</>
-								);
-							};
-
+						{(() => {
+							const {
+								showNoneOption,
+								visibleOptions,
+								startIndex,
+								showStartEllipsis,
+								showEndEllipsis,
+							} = getVisibleWindow();
 							return (
-								<Text key={option.value} color={color}>
-									{isSelected ? "■" : "□"}{" "}
-									{showNumbers && `${displayIndex}. `}
-									{renderLabel()}
-								</Text>
+								<>
+									{showStartEllipsis && (
+										<Text color="gray">⋯</Text>
+									)}
+									{showNoneOption && (
+										<Text
+											color={
+												selectedIndex === 0
+													? "cyan"
+													: selectedValues.includes(
+															NONE_VALUE
+													  )
+													? "white"
+													: "gray"
+											}
+										>
+											{selectedValues.includes(NONE_VALUE)
+												? "■"
+												: "□"}{" "}
+											{showNumbers && "1. "}
+											{noneOption!.label}
+										</Text>
+									)}
+									{visibleOptions.map(
+										(option, visibleIndex) => {
+											const actualIndex =
+												startIndex + visibleIndex;
+											const displayIndex =
+												actualIndex +
+												(noneOption ? 2 : 1);
+											const optionIndex =
+												actualIndex +
+												(noneOption ? 1 : 0);
+											const isSelected =
+												selectedValues.includes(
+													option.value
+												);
+											const isFocused =
+												optionIndex === selectedIndex;
+											const color = isFocused
+												? "cyan"
+												: isSelected
+												? "white"
+												: option.color || "gray";
+
+											// Highlight matching text if searching
+											const renderLabel = () => {
+												if (
+													!searchable ||
+													!currentSearchQuery.trim()
+												) {
+													return option.label;
+												}
+
+												const query =
+													currentSearchQuery.toLowerCase();
+												const label = option.label;
+												const lowerLabel =
+													label.toLowerCase();
+												const matchIndex =
+													lowerLabel.indexOf(query);
+
+												if (matchIndex === -1) {
+													return label; // No match found, return original
+												}
+
+												const beforeMatch = label.slice(
+													0,
+													matchIndex
+												);
+												const match = label.slice(
+													matchIndex,
+													matchIndex + query.length
+												);
+												const afterMatch = label.slice(
+													matchIndex + query.length
+												);
+
+												// Use cyan for focused items, option color or white for non-focused
+												const highlightColor = isFocused
+													? "cyan"
+													: option.color || "white";
+
+												return (
+													<>
+														{beforeMatch}
+														<Text
+															underline
+															color={
+																highlightColor
+															}
+														>
+															{match}
+														</Text>
+														{afterMatch}
+													</>
+												);
+											};
+
+											return (
+												<Text
+													key={option.value}
+													color={color}
+												>
+													{isSelected ? "■" : "□"}{" "}
+													{showNumbers &&
+														`${displayIndex}. `}
+													{renderLabel()}
+												</Text>
+											);
+										}
+									)}
+									{showEndEllipsis && (
+										<Text color="gray">⋯</Text>
+									)}
+								</>
 							);
-						})}
+						})()}
 					</Box>
 					<Box flexDirection="column" flexGrow={1}>
-						{noneOption && (
-							<Text color="gray">
-								{/* Placeholder for noneOption - no hint support */}
-							</Text>
-						)}
-						{filteredOptions.map((option, index) => {
-							const optionIndex = index + (noneOption ? 1 : 0);
-							const isFocused = optionIndex === selectedIndex;
+						{(() => {
+							const {
+								showNoneOption,
+								visibleOptions,
+								startIndex,
+								showStartEllipsis,
+								showEndEllipsis,
+							} = getVisibleWindow();
 							return (
-								<Text key={option.value} color="gray">
-									{isFocused && option.hint
-										? option.hint
-										: ""}
-								</Text>
+								<>
+									{showStartEllipsis && (
+										<Text color="gray"></Text>
+									)}
+									{showNoneOption && (
+										<Text color="gray">
+											{/* Placeholder for noneOption - no hint support */}
+										</Text>
+									)}
+									{visibleOptions.map(
+										(option, visibleIndex) => {
+											const actualIndex =
+												startIndex + visibleIndex;
+											const optionIndex =
+												actualIndex +
+												(noneOption ? 1 : 0);
+											const isFocused =
+												optionIndex === selectedIndex;
+											return (
+												<Text
+													key={option.value}
+													color="gray"
+												>
+													{isFocused && option.hint
+														? option.hint
+														: ""}
+												</Text>
+											);
+										}
+									)}
+									{showEndEllipsis && (
+										<Text color="gray"></Text>
+									)}
+								</>
 							);
-						})}
+						})()}
 					</Box>
 				</Box>
 			) : hintPosition === "inline-fixed" ? (
-				<>
-					{noneOption &&
-						(() => {
-							const isSelected =
-								selectedValues.includes("__NONE__");
-							const isFocused = selectedIndex === 0;
-							const color = isFocused
-								? "cyan"
-								: isSelected
-								? "white"
-								: "gray";
-							return (
+				(() => {
+					const {
+						showNoneOption,
+						visibleOptions,
+						startIndex,
+						showStartEllipsis,
+						showEndEllipsis,
+					} = getVisibleWindow();
+					return (
+						<>
+							{showStartEllipsis && <Text color="gray">⋯</Text>}
+							{showNoneOption && (
 								<Box flexDirection="row">
 									<Box width={25}>
-										<Text color={color}>
-											{isSelected ? "■" : "□"}{" "}
+										<Text
+											color={
+												selectedIndex === 0
+													? "cyan"
+													: selectedValues.includes(
+															NONE_VALUE
+													  )
+													? "white"
+													: "gray"
+											}
+										>
+											{selectedValues.includes(NONE_VALUE)
+												? "■"
+												: "□"}{" "}
 											{showNumbers && "1. "}
-											{noneOption.label}
+											{noneOption!.label}
 										</Text>
 									</Box>
 									<Box flexGrow={1}>
@@ -568,173 +741,218 @@ export function MultiField({
 										</Text>
 									</Box>
 								</Box>
-							);
-						})()}
-					{filteredOptions.map((option, index) => {
-						const displayIndex = index + (noneOption ? 2 : 1);
-						const optionIndex = index + (noneOption ? 1 : 0);
-						const isSelected = selectedValues.includes(
-							option.value
-						);
-						const isFocused = optionIndex === selectedIndex;
-						const color = isFocused
-							? "cyan"
-							: isSelected
-							? "white"
-							: option.color || "gray";
+							)}
+							{visibleOptions.map((option, visibleIndex) => {
+								const actualIndex = startIndex + visibleIndex;
+								const displayIndex =
+									actualIndex + (noneOption ? 2 : 1);
+								const optionIndex =
+									actualIndex + (noneOption ? 1 : 0);
+								const isSelected = selectedValues.includes(
+									option.value
+								);
+								const isFocused = optionIndex === selectedIndex;
+								const color = isFocused
+									? "cyan"
+									: isSelected
+									? "white"
+									: option.color || "gray";
 
-						// Highlight matching text if searching
-						const renderLabel = () => {
-							if (!searchable || !currentSearchQuery.trim()) {
-								return option.label;
-							}
+								// Highlight matching text if searching
+								const renderLabel = () => {
+									if (
+										!searchable ||
+										!currentSearchQuery.trim()
+									) {
+										return option.label;
+									}
 
-							const query = currentSearchQuery.toLowerCase();
-							const label = option.label;
-							const lowerLabel = label.toLowerCase();
-							const matchIndex = lowerLabel.indexOf(query);
+									const query =
+										currentSearchQuery.toLowerCase();
+									const label = option.label;
+									const lowerLabel = label.toLowerCase();
+									const matchIndex =
+										lowerLabel.indexOf(query);
 
-							if (matchIndex === -1) {
-								return label; // No match found, return original
-							}
+									if (matchIndex === -1) {
+										return label; // No match found, return original
+									}
 
-							const beforeMatch = label.slice(0, matchIndex);
-							const match = label.slice(
-								matchIndex,
-								matchIndex + query.length
-							);
-							const afterMatch = label.slice(
-								matchIndex + query.length
-							);
+									const beforeMatch = label.slice(
+										0,
+										matchIndex
+									);
+									const match = label.slice(
+										matchIndex,
+										matchIndex + query.length
+									);
+									const afterMatch = label.slice(
+										matchIndex + query.length
+									);
 
-							// Use cyan for focused items, option color or white for non-focused
-							const highlightColor = isFocused
-								? "cyan"
-								: option.color || "white";
+									// Use cyan for focused items, option color or white for non-focused
+									const highlightColor = isFocused
+										? "cyan"
+										: option.color || "white";
 
-							return (
-								<>
-									{beforeMatch}
-									<Text underline color={highlightColor}>
-										{match}
-									</Text>
-									{afterMatch}
-								</>
-							);
-						};
+									return (
+										<>
+											{beforeMatch}
+											<Text
+												underline
+												color={highlightColor}
+											>
+												{match}
+											</Text>
+											{afterMatch}
+										</>
+									);
+								};
 
-						return (
-							<Box key={option.value} flexDirection="row">
-								<Box width={25}>
-									<Text color={color}>
-										{isSelected ? "■" : "□"}{" "}
-										{showNumbers && `${displayIndex}. `}
-										{renderLabel()}
-									</Text>
-								</Box>
-								<Box flexGrow={1}>
-									<Text color="gray">
-										{isFocused && option.hint
-											? option.hint
-											: ""}
-									</Text>
-								</Box>
-							</Box>
-						);
-					})}
-				</>
+								return (
+									<Box key={option.value} flexDirection="row">
+										<Box width={25}>
+											<Text color={color}>
+												{isSelected ? "■" : "□"}{" "}
+												{showNumbers &&
+													`${displayIndex}. `}
+												{renderLabel()}
+											</Text>
+										</Box>
+										<Box flexGrow={1}>
+											<Text color="gray">
+												{isFocused && option.hint
+													? option.hint
+													: ""}
+											</Text>
+										</Box>
+									</Box>
+								);
+							})}
+							{showEndEllipsis && <Text color="gray">⋯</Text>}
+						</>
+					);
+				})()
 			) : (
-				<>
-					{noneOption &&
-						(() => {
-							const isSelected =
-								selectedValues.includes("__NONE__");
-							const isFocused = selectedIndex === 0;
-							const color = isFocused
-								? "cyan"
-								: isSelected
-								? "white"
-								: "gray";
-							return (
-								<Text color={color}>
-									{isSelected ? "■" : "□"}{" "}
+				(() => {
+					const {
+						showNoneOption,
+						visibleOptions,
+						startIndex,
+						showStartEllipsis,
+						showEndEllipsis,
+					} = getVisibleWindow();
+					return (
+						<>
+							{showStartEllipsis && <Text color="gray">⋯</Text>}
+							{showNoneOption && (
+								<Text
+									color={
+										selectedIndex === 0
+											? "cyan"
+											: selectedValues.includes(
+													NONE_VALUE
+											  )
+											? "white"
+											: "gray"
+									}
+								>
+									{selectedValues.includes(NONE_VALUE)
+										? "■"
+										: "□"}{" "}
 									{showNumbers && "1. "}
-									{noneOption.label}
+									{noneOption!.label}
 								</Text>
-							);
-						})()}
-					{filteredOptions.map((option, index) => {
-						const displayIndex = index + (noneOption ? 2 : 1);
-						const optionIndex = index + (noneOption ? 1 : 0);
-						const isSelected = selectedValues.includes(
-							option.value
-						);
-						const isFocused = optionIndex === selectedIndex;
-						const color = isFocused
-							? "cyan"
-							: isSelected
-							? "white"
-							: option.color || "gray";
+							)}
+							{visibleOptions.map((option, visibleIndex) => {
+								const actualIndex = startIndex + visibleIndex;
+								const displayIndex =
+									actualIndex + (noneOption ? 2 : 1);
+								const optionIndex =
+									actualIndex + (noneOption ? 1 : 0);
+								const isSelected = selectedValues.includes(
+									option.value
+								);
+								const isFocused = optionIndex === selectedIndex;
+								const color = isFocused
+									? "cyan"
+									: isSelected
+									? "white"
+									: option.color || "gray";
 
-						// Highlight matching text if searching
-						const renderLabel = () => {
-							if (!searchable || !currentSearchQuery.trim()) {
-								return option.label;
-							}
+								// Highlight matching text if searching
+								const renderLabel = () => {
+									if (
+										!searchable ||
+										!currentSearchQuery.trim()
+									) {
+										return option.label;
+									}
 
-							const query = currentSearchQuery.toLowerCase();
-							const label = option.label;
-							const lowerLabel = label.toLowerCase();
-							const matchIndex = lowerLabel.indexOf(query);
+									const query =
+										currentSearchQuery.toLowerCase();
+									const label = option.label;
+									const lowerLabel = label.toLowerCase();
+									const matchIndex =
+										lowerLabel.indexOf(query);
 
-							if (matchIndex === -1) {
-								return label; // No match found, return original
-							}
+									if (matchIndex === -1) {
+										return label; // No match found, return original
+									}
 
-							const beforeMatch = label.slice(0, matchIndex);
-							const match = label.slice(
-								matchIndex,
-								matchIndex + query.length
-							);
-							const afterMatch = label.slice(
-								matchIndex + query.length
-							);
+									const beforeMatch = label.slice(
+										0,
+										matchIndex
+									);
+									const match = label.slice(
+										matchIndex,
+										matchIndex + query.length
+									);
+									const afterMatch = label.slice(
+										matchIndex + query.length
+									);
 
-							// Use cyan for focused items, option color or white for non-focused
-							const highlightColor = isFocused
-								? "cyan"
-								: option.color || "white";
+									// Use cyan for focused items, option color or white for non-focused
+									const highlightColor = isFocused
+										? "cyan"
+										: option.color || "white";
 
-							return (
-								<>
-									{beforeMatch}
-									<Text underline color={highlightColor}>
-										{match}
-									</Text>
-									{afterMatch}
-								</>
-							);
-						};
+									return (
+										<>
+											{beforeMatch}
+											<Text
+												underline
+												color={highlightColor}
+											>
+												{match}
+											</Text>
+											{afterMatch}
+										</>
+									);
+								};
 
-						return (
-							<Box key={option.value} flexDirection="row">
-								<Text color={color}>
-									{isSelected ? "■" : "□"}{" "}
-									{showNumbers && `${displayIndex}. `}
-									{renderLabel()}
-								</Text>
-								{hintPosition === "inline" &&
-									isFocused &&
-									option.hint && (
-										<Text color="gray">
-											{"  "}
-											{option.hint}
+								return (
+									<Box key={option.value} flexDirection="row">
+										<Text color={color}>
+											{isSelected ? "■" : "□"}{" "}
+											{showNumbers && `${displayIndex}. `}
+											{renderLabel()}
 										</Text>
-									)}
-							</Box>
-						);
-					})}
-				</>
+										{hintPosition === "inline" &&
+											isFocused &&
+											option.hint && (
+												<Text color="gray">
+													{"  "}
+													{option.hint}
+												</Text>
+											)}
+									</Box>
+								);
+							})}
+							{showEndEllipsis && <Text color="gray">⋯</Text>}
+						</>
+					);
+				})()
 			)}
 			{searchable &&
 				filteredOptions.length === 0 &&

@@ -12,17 +12,20 @@ const flow = async () => {
 	});
 	console.log("Basic selection:", basicResult);
 
-	// Test 2: Rich options with value/label pairs
+	// Test 2: Rich options with value/label pairs and maxVisible
 	const richResult = await multi({
-		label: "Choose your preferred frameworks:",
+		label: "Choose your preferred frameworks (max 3 visible):",
 		options: [
 			{ value: "react", label: "React (by Meta)" },
 			{ value: "vue", label: "Vue.js (Progressive Framework)" },
 			{ value: "angular", label: "Angular (by Google)" },
-			{ value: "svelte", label: "Svelte (Cybernetically Enhanced)" }
+			{ value: "svelte", label: "Svelte (Cybernetically Enhanced)" },
+			{ value: "nextjs", label: "Next.js (React Framework)" },
+			{ value: "nuxtjs", label: "Nuxt.js (Vue Framework)" }
 		],
 		searchable: true,
-		showNumbers: true
+		showNumbers: true,
+		maxVisible: 3 // Only show 3 options at a time
 	});
 	console.log("Rich selection:", richResult);
 

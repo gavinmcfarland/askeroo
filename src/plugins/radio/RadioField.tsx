@@ -17,6 +17,7 @@ interface Props {
 	allowLoop?: boolean; // Whether to allow looping when navigating with up/down arrows (default: true)
 	searchable?: boolean; // Whether to enable search functionality (default: false)
 	hintPosition?: "bottom" | "inline" | "side" | "inline-fixed"; // Where to display option hints (default: "inline")
+	maxVisible?: number; // Maximum number of options visible at once (enables scrolling)
 	onSubmit: (
 		value:
 			| string
@@ -47,6 +48,7 @@ export function RadioField({
 	allowLoop = true,
 	searchable = false,
 	hintPosition = "inline",
+	maxVisible,
 	onSubmit,
 	onBack,
 	initialValue,
@@ -72,6 +74,9 @@ export function RadioField({
 		}
 		return 0;
 	});
+
+	// Track current window position for edge-scrolling
+	const [windowStart, setWindowStart] = useState(0);
 
 	const [internalSearchQuery, setInternalSearchQuery] = useState("");
 	const currentSearchQuery = internalSearchQuery;
@@ -99,12 +104,69 @@ export function RadioField({
 		}
 	}, [currentSearchQuery, filteredOptions.length, selectedIndex]);
 
+	// Reset window position when options change significantly
+	useEffect(() => {
+		setWindowStart(0);
+	}, [filteredOptions.length, maxVisible]);
+
 	// Reset submitted state when field becomes active again (not disabled)
 	useEffect(() => {
 		if (!disabled && submitted) {
 			setSubmitted(false);
 		}
 	}, [disabled, submitted]);
+
+	// Calculate visible window for scrolling
+	const getVisibleOptions = () => {
+		if (!maxVisible || filteredOptions.length <= maxVisible) {
+			return {
+				visibleOptions: filteredOptions,
+				startIndex: 0,
+				showStartEllipsis: false,
+				showEndEllipsis: false,
+			};
+		}
+
+		// Calculate visible window - scroll only when at edges
+		let currentWindowStart = windowStart;
+		let currentWindowEnd = Math.min(currentWindowStart + maxVisible, filteredOptions.length);
+
+		// If selected index is at the bottom of current window, scroll down
+		if (selectedIndex >= currentWindowEnd) {
+			currentWindowStart = selectedIndex - maxVisible + 1;
+			currentWindowEnd = selectedIndex + 1;
+		}
+		// If selected index is at the top of current window, scroll up
+		else if (selectedIndex < currentWindowStart) {
+			currentWindowStart = selectedIndex;
+			currentWindowEnd = selectedIndex + maxVisible;
+		}
+
+		// Ensure we don't exceed bounds
+		currentWindowStart = Math.max(0, currentWindowStart);
+		currentWindowEnd = Math.min(filteredOptions.length, currentWindowEnd);
+
+		// Adjust windowStart if we hit the end
+		if (currentWindowEnd - currentWindowStart < maxVisible && currentWindowStart > 0) {
+			currentWindowStart = Math.max(0, currentWindowEnd - maxVisible);
+		}
+
+		// Update window position state if it changed
+		if (currentWindowStart !== windowStart) {
+			setWindowStart(currentWindowStart);
+		}
+
+		const visibleOptions = filteredOptions.slice(currentWindowStart, currentWindowEnd);
+		const showStartEllipsis = currentWindowStart > 0;
+		const showEndEllipsis = currentWindowEnd < filteredOptions.length;
+
+		return {
+			visibleOptions,
+			startIndex: currentWindowStart,
+			showStartEllipsis,
+			showEndEllipsis,
+		};
+	};
 
 	// Update selected index when initialValue changes
 	useEffect(() => {
@@ -336,218 +398,353 @@ export function RadioField({
 				{hintPosition === "side" ? (
 					<Box flexDirection="row">
 						<Box flexDirection="column" width={25}>
-							{filteredOptions.map((option, index) => {
-								const isSelected = index === selectedIndex;
-								const color = isSelected
-									? "cyan"
-									: option.color || "gray";
-
-								// Highlight matching text if searching
-								const renderLabel = () => {
-									if (
-										!searchable ||
-										!currentSearchQuery.trim()
-									) {
-										return option.label;
-									}
-
-									const query =
-										currentSearchQuery.toLowerCase();
-									const label = option.label;
-									const lowerLabel = label.toLowerCase();
-									const matchIndex =
-										lowerLabel.indexOf(query);
-
-									if (matchIndex === -1) {
-										return label; // No match found, return original
-									}
-
-									const beforeMatch = label.slice(
-										0,
-										matchIndex
-									);
-									const match = label.slice(
-										matchIndex,
-										matchIndex + query.length
-									);
-									const afterMatch = label.slice(
-										matchIndex + query.length
-									);
-
-									// Use cyan for focused items, option color or white for non-focused
-									const highlightColor = isSelected
-										? "cyan"
-										: option.color || "white";
-
-									return (
-										<>
-											{beforeMatch}
-											<Text
-												underline
-												color={highlightColor}
-											>
-												{match}
-											</Text>
-											{afterMatch}
-										</>
-									);
-								};
-
+							{(() => {
+								const {
+									visibleOptions,
+									startIndex,
+									showStartEllipsis,
+									showEndEllipsis,
+								} = getVisibleOptions();
 								return (
-									<Text key={option.value} color={color}>
-										{isSelected ? "●" : "○"}{" "}
-										{showNumbers === true &&
-											`${index + 1}. `}
-										{renderLabel()}
-									</Text>
+									<>
+										{showStartEllipsis && (
+											<Text color="gray">⋯</Text>
+										)}
+										{visibleOptions.map(
+											(option, visibleIndex) => {
+												const actualIndex =
+													startIndex + visibleIndex;
+												const isSelected =
+													actualIndex ===
+													selectedIndex;
+												const color = isSelected
+													? "cyan"
+													: option.color || "gray";
+
+												// Highlight matching text if searching
+												const renderLabel = () => {
+													if (
+														!searchable ||
+														!currentSearchQuery.trim()
+													) {
+														return option.label;
+													}
+
+													const query =
+														currentSearchQuery.toLowerCase();
+													const label = option.label;
+													const lowerLabel =
+														label.toLowerCase();
+													const matchIndex =
+														lowerLabel.indexOf(
+															query
+														);
+
+													if (matchIndex === -1) {
+														return label; // No match found, return original
+													}
+
+													const beforeMatch =
+														label.slice(
+															0,
+															matchIndex
+														);
+													const match = label.slice(
+														matchIndex,
+														matchIndex +
+															query.length
+													);
+													const afterMatch =
+														label.slice(
+															matchIndex +
+																query.length
+														);
+
+													// Use cyan for focused items, option color or white for non-focused
+													const highlightColor =
+														isSelected
+															? "cyan"
+															: option.color ||
+															  "white";
+
+													return (
+														<>
+															{beforeMatch}
+															<Text
+																underline
+																color={
+																	highlightColor
+																}
+															>
+																{match}
+															</Text>
+															{afterMatch}
+														</>
+													);
+												};
+
+												return (
+													<Text
+														key={option.value}
+														color={color}
+													>
+														{isSelected ? "●" : "○"}{" "}
+														{showNumbers === true &&
+															`${
+																actualIndex + 1
+															}. `}
+														{renderLabel()}
+													</Text>
+												);
+											}
+										)}
+										{showEndEllipsis && (
+											<Text color="gray">⋯</Text>
+										)}
+									</>
 								);
-							})}
+							})()}
 						</Box>
 						<Box flexDirection="column" flexGrow={1}>
-							{filteredOptions.map((option, index) => {
-								const isSelected = index === selectedIndex;
+							{(() => {
+								const {
+									visibleOptions,
+									startIndex,
+									showStartEllipsis,
+									showEndEllipsis,
+								} = getVisibleOptions();
 								return (
-									<Text key={option.value} color="gray">
-										{isSelected && option.hint
-											? option.hint
-											: ""}
-									</Text>
+									<>
+										{showStartEllipsis && (
+											<Text color="gray"></Text>
+										)}
+										{visibleOptions.map(
+											(option, visibleIndex) => {
+												const actualIndex =
+													startIndex + visibleIndex;
+												const isSelected =
+													actualIndex ===
+													selectedIndex;
+												return (
+													<Text
+														key={option.value}
+														color="gray"
+													>
+														{isSelected &&
+														option.hint
+															? option.hint
+															: ""}
+													</Text>
+												);
+											}
+										)}
+										{showEndEllipsis && (
+											<Text color="gray"></Text>
+										)}
+									</>
 								);
-							})}
+							})()}
 						</Box>
 					</Box>
 				) : hintPosition === "inline-fixed" ? (
-					filteredOptions.map((option, index) => {
-						const isSelected = index === selectedIndex;
-						const color = isSelected
-							? "cyan"
-							: option.color || "gray";
-
-						// Highlight matching text if searching
-						const renderLabel = () => {
-							if (!searchable || !currentSearchQuery.trim()) {
-								return option.label;
-							}
-
-							const query = currentSearchQuery.toLowerCase();
-							const label = option.label;
-							const lowerLabel = label.toLowerCase();
-							const matchIndex = lowerLabel.indexOf(query);
-
-							if (matchIndex === -1) {
-								return label; // No match found, return original
-							}
-
-							const beforeMatch = label.slice(0, matchIndex);
-							const match = label.slice(
-								matchIndex,
-								matchIndex + query.length
-							);
-							const afterMatch = label.slice(
-								matchIndex + query.length
-							);
-
-							// Use cyan for focused items, option color or white for non-focused
-							const highlightColor = isSelected
-								? "cyan"
-								: option.color || "white";
-
-							return (
-								<>
-									{beforeMatch}
-									<Text underline color={highlightColor}>
-										{match}
-									</Text>
-									{afterMatch}
-								</>
-							);
-						};
-
+					(() => {
+						const {
+							visibleOptions,
+							startIndex,
+							showStartEllipsis,
+							showEndEllipsis,
+						} = getVisibleOptions();
 						return (
-							<Box key={option.value} flexDirection="row">
-								<Box width={25}>
-									<Text color={color}>
-										{isSelected ? "●" : "○"}{" "}
-										{showNumbers === true &&
-											`${index + 1}. `}
-										{renderLabel()}
-									</Text>
-								</Box>
-								<Box flexGrow={1}>
-									<Text color="gray">
-										{isSelected && option.hint
-											? option.hint
-											: ""}
-									</Text>
-								</Box>
-							</Box>
+							<>
+								{showStartEllipsis && (
+									<Text color="gray">⋯</Text>
+								)}
+								{visibleOptions.map((option, visibleIndex) => {
+									const actualIndex =
+										startIndex + visibleIndex;
+									const isSelected =
+										actualIndex === selectedIndex;
+									const color = isSelected
+										? "cyan"
+										: option.color || "gray";
+
+									// Highlight matching text if searching
+									const renderLabel = () => {
+										if (
+											!searchable ||
+											!currentSearchQuery.trim()
+										) {
+											return option.label;
+										}
+
+										const query =
+											currentSearchQuery.toLowerCase();
+										const label = option.label;
+										const lowerLabel = label.toLowerCase();
+										const matchIndex =
+											lowerLabel.indexOf(query);
+
+										if (matchIndex === -1) {
+											return label; // No match found, return original
+										}
+
+										const beforeMatch = label.slice(
+											0,
+											matchIndex
+										);
+										const match = label.slice(
+											matchIndex,
+											matchIndex + query.length
+										);
+										const afterMatch = label.slice(
+											matchIndex + query.length
+										);
+
+										// Use cyan for focused items, option color or white for non-focused
+										const highlightColor = isSelected
+											? "cyan"
+											: option.color || "white";
+
+										return (
+											<>
+												{beforeMatch}
+												<Text
+													underline
+													color={highlightColor}
+												>
+													{match}
+												</Text>
+												{afterMatch}
+											</>
+										);
+									};
+
+									return (
+										<Box
+											key={option.value}
+											flexDirection="row"
+										>
+											<Box width={25}>
+												<Text color={color}>
+													{isSelected ? "●" : "○"}{" "}
+													{showNumbers === true &&
+														`${actualIndex + 1}. `}
+													{renderLabel()}
+												</Text>
+											</Box>
+											<Box flexGrow={1}>
+												<Text color="gray">
+													{isSelected && option.hint
+														? option.hint
+														: ""}
+												</Text>
+											</Box>
+										</Box>
+									);
+								})}
+								{showEndEllipsis && <Text color="gray">⋯</Text>}
+							</>
 						);
-					})
+					})()
 				) : (
-					filteredOptions.map((option, index) => {
-						const isSelected = index === selectedIndex;
-						const color = isSelected
-							? "cyan"
-							: option.color || "gray";
-
-						// Highlight matching text if searching
-						const renderLabel = () => {
-							if (!searchable || !currentSearchQuery.trim()) {
-								return option.label;
-							}
-
-							const query = currentSearchQuery.toLowerCase();
-							const label = option.label;
-							const lowerLabel = label.toLowerCase();
-							const matchIndex = lowerLabel.indexOf(query);
-
-							if (matchIndex === -1) {
-								return label; // No match found, return original
-							}
-
-							const beforeMatch = label.slice(0, matchIndex);
-							const match = label.slice(
-								matchIndex,
-								matchIndex + query.length
-							);
-							const afterMatch = label.slice(
-								matchIndex + query.length
-							);
-
-							// Use cyan for focused items, option color or white for non-focused
-							const highlightColor = isSelected
-								? "cyan"
-								: option.color || "white";
-
-							return (
-								<>
-									{beforeMatch}
-									<Text underline color={highlightColor}>
-										{match}
-									</Text>
-									{afterMatch}
-								</>
-							);
-						};
-
+					(() => {
+						const {
+							visibleOptions,
+							startIndex,
+							showStartEllipsis,
+							showEndEllipsis,
+						} = getVisibleOptions();
 						return (
-							<Box key={option.value} flexDirection="row">
-								<Text color={color}>
-									{isSelected ? "●" : "○"}{" "}
-									{showNumbers === true && `${index + 1}. `}
-									{renderLabel()}
-								</Text>
-								{hintPosition === "inline" &&
-									isSelected &&
-									option.hint && (
-										<Text color="gray">
-											{"  "}
-											{option.hint}
-										</Text>
-									)}
-							</Box>
+							<>
+								{showStartEllipsis && (
+									<Text color="gray">⋯</Text>
+								)}
+								{visibleOptions.map((option, visibleIndex) => {
+									const actualIndex =
+										startIndex + visibleIndex;
+									const isSelected =
+										actualIndex === selectedIndex;
+									const color = isSelected
+										? "cyan"
+										: option.color || "gray";
+
+									// Highlight matching text if searching
+									const renderLabel = () => {
+										if (
+											!searchable ||
+											!currentSearchQuery.trim()
+										) {
+											return option.label;
+										}
+
+										const query =
+											currentSearchQuery.toLowerCase();
+										const label = option.label;
+										const lowerLabel = label.toLowerCase();
+										const matchIndex =
+											lowerLabel.indexOf(query);
+
+										if (matchIndex === -1) {
+											return label; // No match found, return original
+										}
+
+										const beforeMatch = label.slice(
+											0,
+											matchIndex
+										);
+										const match = label.slice(
+											matchIndex,
+											matchIndex + query.length
+										);
+										const afterMatch = label.slice(
+											matchIndex + query.length
+										);
+
+										// Use cyan for focused items, option color or white for non-focused
+										const highlightColor = isSelected
+											? "cyan"
+											: option.color || "white";
+
+										return (
+											<>
+												{beforeMatch}
+												<Text
+													underline
+													color={highlightColor}
+												>
+													{match}
+												</Text>
+												{afterMatch}
+											</>
+										);
+									};
+
+									return (
+										<Box
+											key={option.value}
+											flexDirection="row"
+										>
+											<Text color={color}>
+												{isSelected ? "●" : "○"}{" "}
+												{showNumbers === true &&
+													`${actualIndex + 1}. `}
+												{renderLabel()}
+											</Text>
+											{hintPosition === "inline" &&
+												isSelected &&
+												option.hint && (
+													<Text color="gray">
+														{"  "}
+														{option.hint}
+													</Text>
+												)}
+										</Box>
+									);
+								})}
+								{showEndEllipsis && <Text color="gray">⋯</Text>}
+							</>
 						);
-					})
+					})()
 				)}
 				{searchable &&
 					filteredOptions.length === 0 &&
@@ -566,9 +763,7 @@ export function RadioField({
 			</Box>
 			{validationError && (
 				<Box>
-					<Text color="red">
-						{validationError}
-					</Text>
+					<Text color="red">{validationError}</Text>
 				</Box>
 			)}
 		</Box>

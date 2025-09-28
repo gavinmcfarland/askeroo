@@ -21,6 +21,7 @@ export interface MultiOptions {
 	allowLoop?: boolean;
 	searchable?: boolean;
 	hintPosition?: "bottom" | "inline" | "side" | "inline-fixed"; // Where to display option hints (default: "inline")
+	maxVisible?: number; // Maximum number of options visible at once (enables scrolling)
 	excludeFromCompleted?: boolean;
 	hideAfterSubmit?: boolean;
 	allowBack?: boolean; // If false, prevents user from going back with escape key

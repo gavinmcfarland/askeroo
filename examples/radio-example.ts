@@ -24,9 +24,10 @@ const flow = async () => {
 	});
 
 	const features = await radio({
-		label: "Select additional features (searchable):",
+		label: "Select additional features (searchable, max 4 visible):",
 		shortLabel: "Features",
 		searchable: true,
+		maxVisible: 4, // Only show 4 options at a time
 		options: [
 			{ value: "routing", label: "Router" },
 			{ value: "state", label: "State Management" },
