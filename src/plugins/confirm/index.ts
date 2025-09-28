@@ -11,6 +11,8 @@ export interface ConfirmOptions {
 	initialValue?: any;
 	id?: string;
 	excludeFromCompleted?: boolean;
+	hideAfterSubmit?: boolean;
+	allowBack?: boolean; // If false, prevents user from going back with escape key
 }
 
 export type { ConfirmOption } from "./ConfirmField.js";

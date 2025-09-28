@@ -148,6 +148,7 @@ const flow = async () => {
 		],
 		excludeFromCompleted: true,
 		hideAfterSubmit: true,
+		allowBack: false,
 	});
 
 	await tasks.add([

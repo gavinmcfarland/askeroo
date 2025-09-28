@@ -16,6 +16,7 @@ type PromptRequest = {
 	enableArrowNavigation?: boolean; // Only present for group prompts
 	excludeFromCompleted?: boolean; // If true, this field won't be added to completedFields
 	hideAfterSubmit?: boolean; // If true, this field won't be rendered after completion
+	allowBack?: boolean; // If false, prevents user from going back with escape key
 	[key: string]: any; // Allow any additional properties for plugin-specific options
 };
 
@@ -1180,8 +1181,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			const hasCompletedFields =
 				isSequentialGroup && completedFields.size > 0;
 			const allowBack =
-				effectivePrompt.id !== firstFieldIdRef.current ||
-				hasCompletedFields;
+				effectivePrompt.allowBack !== false && (
+					effectivePrompt.id !== firstFieldIdRef.current ||
+					hasCompletedFields
+				);
 
 			// Get initial value based on prompt type
 			const getInitialValue = () => {

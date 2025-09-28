@@ -20,6 +20,7 @@ export interface RadioOptions {
 	id?: string;
 	excludeFromCompleted?: boolean;
 	hideAfterSubmit?: boolean;
+	allowBack?: boolean; // If false, prevents user from going back with escape key
 }
 
 // Core radio input plugin

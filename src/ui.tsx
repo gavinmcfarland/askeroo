@@ -16,6 +16,7 @@ type PromptRequest = {
 	discoveredFields?: Array<{ id: string; label: string; type: string }>;
 	excludeFromCompleted?: boolean; // If true, this field won't be added to completedFields
 	hideAfterSubmit?: boolean; // If true, this field won't be rendered after completion
+	allowBack?: boolean; // If false, prevents user from going back with escape key
 	[key: string]: any; // Allow any plugin-specific properties
 };
 

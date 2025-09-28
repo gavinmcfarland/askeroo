@@ -7,6 +7,8 @@ export interface TextOptions {
 	initialValue?: string;
 	id?: string;
 	excludeFromCompleted?: boolean;
+	hideAfterSubmit?: boolean;
+	allowBack?: boolean; // If false, prevents user from going back with escape key
 }
 
 // Core text input plugin

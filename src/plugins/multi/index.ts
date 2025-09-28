@@ -21,6 +21,8 @@ export interface MultiOptions {
 	searchable?: boolean;
 	hintPosition?: "bottom" | "inline" | "side" | "inline-fixed"; // Where to display option hints (default: "inline")
 	excludeFromCompleted?: boolean;
+	hideAfterSubmit?: boolean;
+	allowBack?: boolean; // If false, prevents user from going back with escape key
 }
 
 // Example multi-select prompt plugin
