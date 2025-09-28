@@ -841,6 +841,16 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		}
 	}, [currentPrompt]);
 
+	// Clear hint text when switching to non-interactive components
+	useEffect(() => {
+		if (currentPrompt && currentPrompt.type !== "group") {
+			const isInteractive = globalRegistry.isInteractive(currentPrompt.type);
+			if (!isInteractive) {
+				setCurrentHintText(null);
+			}
+		}
+	}, [currentPrompt]);
+
 	// Completely ignore group prompts in render
 	const effectivePrompt =
 		currentPrompt?.type === "group" ? null : currentPrompt;
@@ -1162,6 +1172,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		);
 
 		if (PluginComponent) {
+			const isInteractive = globalRegistry.isInteractive(effectivePrompt.type);
 			const isSequentialGroup = !!(
 				effectivePrompt.groupName &&
 				!phaseGroups.has(effectivePrompt.groupName)
@@ -1239,7 +1250,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					allowBack={allowBack}
 					onSubmit={handleSubmit}
 					onBack={handleBack}
-					onHintChange={handleHintChange}
+					{...(isInteractive && { onHintChange: handleHintChange })}
 					flow={flowType}
 					isFirstRootPrompt={isFirstRootPrompt}
 					isFirstInGroup={isFirstInGroup}

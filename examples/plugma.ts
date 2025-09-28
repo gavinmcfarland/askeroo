@@ -134,7 +134,7 @@ const flow = async () => {
 
 	// await group(
 	// 	async () => {
-			await radio({
+			const dependencies = await radio({
 				label: "Install dependencies?",
 				shortLabel: "Dependencies",
 				initialValue: "npm",
@@ -149,9 +149,6 @@ const flow = async () => {
 				excludeFromCompleted: true,
 				hideAfterSubmit: true
 			});
-		}
-	// 	{ flow: "phased" }
-	// );
 
 	await tasks.add([
 		{
@@ -164,13 +161,13 @@ const flow = async () => {
 
 	await note(`**Plugged in and ready to go!**
 
-		1. \`cd ${answers.path}\`
+		1. \`cd ./my-plugin\`
 		2. \`npm run dev\`
 		3. Import \`dist/manifest.json\` in Figma
 
 		Check out the docs at https://plugma.dev.`);
 
-	return { answers };
+	return { answers, dependencies };
 };
 
 (async () => {
