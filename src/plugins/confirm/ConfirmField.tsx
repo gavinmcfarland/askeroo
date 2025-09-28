@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Text, Box, useInput } from "ink";
 import { isMarkdownString, parseMarkdown } from "../../utils/markdown.js";
+import { ValidatorFunction } from "../../types/validation.js";
 
 export interface ConfirmOption {
 	value: any;
@@ -35,6 +36,7 @@ interface ConfirmFieldProps {
 	enableArrowNavigation?: boolean;
 	onHintChange?: (hint: React.ReactNode) => void;
 	isFirstRootPrompt?: boolean;
+	onValidate?: ValidatorFunction<any>;
 	[key: string]: any; // Allow any additional options
 }
 
@@ -59,6 +61,7 @@ export function ConfirmField({
 	enableArrowNavigation = false,
 	onHintChange,
 	isFirstRootPrompt = false,
+	onValidate,
 	...rest
 }: ConfirmFieldProps) {
 	// Use label if provided, fallback to message for compatibility
@@ -79,8 +82,12 @@ export function ConfirmField({
 
 		// If there's an initialValue, make it the second option
 		if (initialValue !== undefined) {
-			const initialOption = defaultOptions.find(opt => opt.value === initialValue);
-			const otherOption = defaultOptions.find(opt => opt.value !== initialValue);
+			const initialOption = defaultOptions.find(
+				(opt) => opt.value === initialValue
+			);
+			const otherOption = defaultOptions.find(
+				(opt) => opt.value !== initialValue
+			);
 
 			if (initialOption && otherOption) {
 				return [otherOption, initialOption];
@@ -106,6 +113,7 @@ export function ConfirmField({
 	});
 
 	const [submitted, setSubmitted] = useState(false);
+	const [validationError, setValidationError] = useState<string | null>(null);
 
 	// Reset submitted state when field becomes active again (not disabled)
 	useEffect(() => {
@@ -131,6 +139,23 @@ export function ConfirmField({
 		}
 	}, [initialValue, confirmOptions, options]);
 
+	// Helper function to run validation on submission attempt
+	const runValidation = async (valueToValidate: any): Promise<boolean> => {
+		if (!onValidate || disabled || completed) {
+			setValidationError(null);
+			return true;
+		}
+
+		try {
+			const result = await onValidate(valueToValidate);
+			setValidationError(result);
+			return result === null;
+		} catch (error) {
+			setValidationError("Validation error occurred");
+			return false;
+		}
+	};
+
 	// Provide hint text to parent component
 	useEffect(() => {
 		if (!onHintChange) return;
@@ -148,7 +173,8 @@ export function ConfirmField({
 					)}
 					{isUsingDefaultOptions && (
 						<>
-							{!isFirstRootPrompt && allowBack ? ", " : ""}<Text color="yellow">y/n</Text> quick select
+							{!isFirstRootPrompt && allowBack ? ", " : ""}
+							<Text color="yellow">y/n</Text> quick select
 						</>
 					)}
 				</>
@@ -160,7 +186,7 @@ export function ConfirmField({
 		}
 	}, [disabled, completed, isFirstRootPrompt, options]); // Removed confirmOptions and defaultOptions
 
-	useInput((input, key) => {
+	useInput(async (input, key) => {
 		if (submitted || completed || disabled) return;
 
 		// Handle static group navigation with arrow keys (only if enabled)
@@ -168,6 +194,12 @@ export function ConfirmField({
 			if (key.downArrow) {
 				if (!isLastInGroup) {
 					const selectedValue = confirmOptions[selectedIndex].value;
+					// Check validation before moving to next field
+					const isValid = await runValidation(selectedValue);
+					if (!isValid) {
+						// Don't move if there's a validation error
+						return;
+					}
 					setSubmitted(true);
 					onSubmit(selectedValue);
 					return;
@@ -176,6 +208,12 @@ export function ConfirmField({
 			} else if (key.upArrow) {
 				if (!isFirstInGroup) {
 					const selectedValue = confirmOptions[selectedIndex].value;
+					// Check validation before navigating up
+					const isValid = await runValidation(selectedValue);
+					if (!isValid) {
+						// Don't navigate if there's a validation error
+						return;
+					}
 					setSubmitted(true);
 					onSubmit({
 						__preserveAndBack: true,
@@ -190,6 +228,12 @@ export function ConfirmField({
 		if (flow === "static" && key.escape) {
 			if (enableArrowNavigation && !isFirstInGroup) {
 				const selectedValue = confirmOptions[selectedIndex].value;
+				// Check validation before navigating up with escape
+				const isValid = await runValidation(selectedValue);
+				if (!isValid) {
+					// Don't navigate if there's a validation error
+					return;
+				}
 				setSubmitted(true);
 				onSubmit({ __preserveAndBack: true, value: selectedValue });
 			} else if (enableArrowNavigation && isFirstInGroup) {
@@ -205,6 +249,12 @@ export function ConfirmField({
 
 		if (key.return) {
 			const selectedValue = confirmOptions[selectedIndex].value;
+			// Check validation before submitting
+			const isValid = await runValidation(selectedValue);
+			if (!isValid) {
+				// Don't submit if there's a validation error
+				return;
+			}
 			setSubmitted(true);
 			onSubmit(selectedValue);
 			return;
@@ -227,6 +277,12 @@ export function ConfirmField({
 				(option) => option.value === newValue
 			);
 			setSelectedIndex(newIndex);
+			// Check validation before submitting with Y/N shortcut
+			const isValid = await runValidation(newValue);
+			if (!isValid) {
+				// Don't submit if there's a validation error
+				return;
+			}
 			setSubmitted(true);
 			onSubmit(newValue);
 			return;
@@ -382,6 +438,13 @@ export function ConfirmField({
 						</Box>
 					) : null;
 				})()}
+			{validationError && (
+				<Box>
+					<Text color="red">
+						{validationError}
+					</Text>
+				</Box>
+			)}
 		</Box>
 	);
 }

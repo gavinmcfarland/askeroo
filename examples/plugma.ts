@@ -25,7 +25,34 @@ const flow = async () => {
 				path: await text({
 					shortLabel: "Path",
 					label: "Where should it be created?",
-					initialValue: "./",
+					initialValue: "./my-plugin",
+					onValidate: async (value) => {
+						if (!value.trim()) return "Path cannot be empty";
+						if (value.includes(".."))
+							return "Path cannot contain '..'";
+						if (value === "." || value === "./" || value === "/")
+							return "Please specify a folder name, not the root directory";
+						if (value.includes("//"))
+							return "Invalid path: double slashes not allowed";
+						if (value.endsWith("/"))
+							return "Path cannot end with a slash";
+
+						// Check if the base directory exists (parent path for nested paths)
+						try {
+							const fs = await import("fs");
+							const path = await import("path");
+							const resolvedPath = path.resolve(value);
+							const parentPath = path.dirname(resolvedPath);
+							const stats = await fs.promises.stat(parentPath);
+							if (!stats.isDirectory()) {
+								return "Base directory does not exist";
+							}
+						} catch (error) {
+							return "Base directory does not exist or is not accessible";
+						}
+
+						return null;
+					},
 				}),
 				type: await radio({
 					label: "Choose a type:",

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Text, Box, useInput } from "ink";
+import { ValidatorFunction } from "../../types/validation.js";
 
 interface MultiFieldOption {
 	value: string;
@@ -29,6 +30,7 @@ interface MultiFieldProps {
 	hintPosition?: "bottom" | "inline" | "side" | "inline-fixed"; // Where to display option hints (default: "inline")
 	searchQuery?: string;
 	onSearchQueryChange?: (query: string) => void;
+	onValidate?: ValidatorFunction<string[]>;
 	[key: string]: any; // Allow any additional options
 }
 
@@ -51,6 +53,7 @@ export function MultiField({
 	hintPosition = "inline",
 	searchQuery = "",
 	onSearchQueryChange,
+	onValidate,
 	...rest
 }: MultiFieldProps) {
 	const NONE_VALUE = "__NONE__";
@@ -96,6 +99,7 @@ export function MultiField({
 	const [selectedValues, setSelectedValues] = useState<string[]>(
 		getInitialValues()
 	);
+	const [validationError, setValidationError] = useState<string | null>(null);
 
 	// Internal search state management
 	const [internalSearchQuery, setInternalSearchQuery] = useState("");
@@ -191,6 +195,23 @@ export function MultiField({
 		}
 	}, [disabled, submitted]);
 
+	// Helper function to run validation on submission attempt
+	const runValidation = async (valuesToValidate: string[]): Promise<boolean> => {
+		if (!onValidate || disabled || completed) {
+			setValidationError(null);
+			return true;
+		}
+
+		try {
+			const result = await onValidate(valuesToValidate);
+			setValidationError(result);
+			return result === null;
+		} catch (error) {
+			setValidationError("Validation error occurred");
+			return false;
+		}
+	};
+
 	// Provide hint text to parent component
 	useEffect(() => {
 		if (!onHintChange) return;
@@ -261,7 +282,7 @@ export function MultiField({
 		}
 	}, [stableInitial, normalizedOptions, submitted, disabled, noneOption]);
 
-	useInput((input, key) => {
+	useInput(async (input, key) => {
 		if (submitted || completed || disabled) return;
 
 		// Handle search input FIRST if searchable is enabled
@@ -311,10 +332,16 @@ export function MultiField({
 		}
 
 		if (key.return) {
-			// Filter out NONE_VALUE from the final result
+			// Filter out NONE_VALUE from the final result for validation
 			const finalValues = selectedValues.filter(
 				(val) => val !== NONE_VALUE
 			);
+			// Check validation before submitting
+			const isValid = await runValidation(finalValues);
+			if (!isValid) {
+				// Don't submit if there's a validation error
+				return;
+			}
 			setSubmitted(true);
 			onSubmit(finalValues);
 			return;
@@ -733,6 +760,13 @@ export function MultiField({
 
 							return focusedOption?.hint || " ";
 						})()}
+					</Text>
+				</Box>
+			)}
+			{validationError && (
+				<Box>
+					<Text color="red">
+						{validationError}
 					</Text>
 				</Box>
 			)}

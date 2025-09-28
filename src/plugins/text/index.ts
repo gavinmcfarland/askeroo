@@ -1,5 +1,6 @@
 import { createPlugin } from "../../registry.js";
 import { TextField } from "./TextField.js";
+import { ValidatorFunction } from "../../types/validation.js";
 
 export interface TextOptions {
 	label: string;
@@ -9,6 +10,7 @@ export interface TextOptions {
 	excludeFromCompleted?: boolean;
 	hideAfterSubmit?: boolean;
 	allowBack?: boolean; // If false, prevents user from going back with escape key
+	onValidate?: ValidatorFunction<string>;
 }
 
 // Core text input plugin

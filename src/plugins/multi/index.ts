@@ -1,5 +1,6 @@
 import { createPlugin } from "../../registry.js";
 import { MultiField } from "./MultiField.js";
+import { ValidatorFunction } from "../../types/validation.js";
 
 export interface MultiOption {
 	value: string;
@@ -23,6 +24,7 @@ export interface MultiOptions {
 	excludeFromCompleted?: boolean;
 	hideAfterSubmit?: boolean;
 	allowBack?: boolean; // If false, prevents user from going back with escape key
+	onValidate?: ValidatorFunction<string[]>;
 }
 
 // Example multi-select prompt plugin

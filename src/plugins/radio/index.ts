@@ -1,5 +1,6 @@
 import { createPlugin } from "../../registry.js";
 import { RadioField } from "./RadioField.js";
+import { ValidatorFunction } from "../../types/validation.js";
 
 export interface RadioOption {
 	value: string;
@@ -21,6 +22,7 @@ export interface RadioOptions {
 	excludeFromCompleted?: boolean;
 	hideAfterSubmit?: boolean;
 	allowBack?: boolean; // If false, prevents user from going back with escape key
+	onValidate?: ValidatorFunction<string>;
 }
 
 // Core radio input plugin

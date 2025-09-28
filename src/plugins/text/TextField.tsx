@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Text, Box, useInput } from "ink";
+import { ValidatorFunction } from "../../types/validation.js";
 
 interface Props {
 	label?: string;
@@ -24,6 +25,7 @@ interface Props {
 	enableArrowNavigation?: boolean;
 	onHintChange?: (hint: React.ReactNode) => void;
 	isFirstRootPrompt?: boolean;
+	onValidate?: ValidatorFunction<string>;
 }
 
 export function TextField({
@@ -44,11 +46,13 @@ export function TextField({
 	enableArrowNavigation = false,
 	onHintChange,
 	isFirstRootPrompt = false,
+	onValidate,
 }: Props) {
 	// Use label if provided, fallback to message for compatibility
 	const [value, setValue] = useState(initialValue);
 	const [cursorPosition, setCursorPosition] = useState(initialValue.length);
 	const [submitted, setSubmitted] = useState(false);
+	const [validationError, setValidationError] = useState<string | null>(null);
 
 	// Reset submitted state when field becomes active again (not disabled)
 	useEffect(() => {
@@ -66,6 +70,23 @@ export function TextField({
 			setCursorPosition(initialValue.length);
 		}
 	}, [initialValue, disabled]);
+
+	// Helper function to run validation on submission attempt
+	const runValidation = async (valueToValidate: string): Promise<boolean> => {
+		if (!onValidate || disabled || completed) {
+			setValidationError(null);
+			return true;
+		}
+
+		try {
+			const result = await onValidate(valueToValidate);
+			setValidationError(result);
+			return result === null;
+		} catch (error) {
+			setValidationError("Validation error occurred");
+			return false;
+		}
+	};
 
 	// Provide hint text to parent component
 	useEffect(() => {
@@ -88,7 +109,7 @@ export function TextField({
 		}
 	}, [disabled, completed, flow, isFirstRootPrompt]); // Removed onHintChange from dependencies
 
-	useInput((input, key) => {
+	useInput(async (input, key) => {
 		if (submitted || completed || disabled) return;
 
 		// Handle Ctrl+U or Cmd+K to clear entire input (common terminal shortcuts)
@@ -127,6 +148,12 @@ export function TextField({
 		if (flow === "static" && enableArrowNavigation) {
 			if (key.downArrow) {
 				if (!isLastInGroup) {
+					// Check validation before moving to next field
+					const isValid = await runValidation(value);
+					if (!isValid) {
+						// Don't move to next field if there's a validation error
+						return;
+					}
 					// Always submit current value (even if empty) and move to next field
 					// The completion logic will determine if empty fields are considered "completed"
 					setSubmitted(true);
@@ -138,6 +165,12 @@ export function TextField({
 			} else if (key.upArrow) {
 				// For up navigation in static groups with arrow navigation enabled
 				if (!isFirstInGroup) {
+					// Check validation before navigating up
+					const isValid = await runValidation(value);
+					if (!isValid) {
+						// Don't navigate if there's a validation error
+						return;
+					}
 					// Only navigate up if not on the first field (stay within group bounds)
 					setSubmitted(true);
 					onSubmit({ __preserveAndBack: true, value: value });
@@ -150,6 +183,12 @@ export function TextField({
 		// Handle escape key for static groups (always enabled regardless of arrow navigation)
 		if (flow === "static" && key.escape) {
 			if (enableArrowNavigation && !isFirstInGroup) {
+				// Check validation before navigating up with escape
+				const isValid = await runValidation(value);
+				if (!isValid) {
+					// Don't navigate if there's a validation error
+					return;
+				}
 				// If arrow navigation is enabled and not on first field, escape moves up within group (preserve value)
 				setSubmitted(true);
 				onSubmit({ __preserveAndBack: true, value: value });
@@ -167,7 +206,13 @@ export function TextField({
 		}
 
 		if (key.return) {
-			// Enter always submits the current value
+			// Check validation before submitting
+			const isValid = await runValidation(value);
+			if (!isValid) {
+				// Don't submit if there's a validation error
+				return;
+			}
+			// Enter submits the current value
 			setSubmitted(true);
 			onSubmit(value);
 		} else if (key.backspace || key.delete) {
@@ -218,31 +263,40 @@ export function TextField({
 	}
 
 	return (
-		<Box
-			flexDirection={flow === "static" ? "row" : "column"}
-			gap={flow === "static" ? 1 : 0}
-			marginBottom={flow === "static" && !isLastInGroup ? 1 : 0}
-		>
-			<Box width={flow === "static" ? 14 : undefined}>
-				<Text>{label}</Text>
+		<Box flexDirection="column">
+			<Box
+				flexDirection={flow === "static" ? "row" : "column"}
+				gap={flow === "static" ? 1 : 0}
+				marginBottom={flow === "static" && !isLastInGroup ? 1 : 0}
+			>
+				<Box width={flow === "static" ? 14 : undefined}>
+					<Text>{label}</Text>
+				</Box>
+				<Text color="cyan">
+					{value.slice(0, cursorPosition)}
+					{cursorPosition < value.length && (
+						<Text backgroundColor="grey" color="black">
+							{value[cursorPosition]}
+						</Text>
+					)}
+					{cursorPosition >= value.length && (
+						<Text backgroundColor="grey" color="black">
+							{" "}
+						</Text>
+					)}
+					{value.slice(
+						cursorPosition + (cursorPosition < value.length ? 1 : 0)
+					)}
+					{value.length === 0 && cursorPosition === 0 && "\u200B"}
+				</Text>
 			</Box>
-			<Text color="cyan">
-				{value.slice(0, cursorPosition)}
-				{cursorPosition < value.length && (
-					<Text backgroundColor="grey" color="black">
-						{value[cursorPosition]}
+			{validationError && (
+				<Box>
+					<Text color="red">
+						{validationError}
 					</Text>
-				)}
-				{cursorPosition >= value.length && (
-					<Text backgroundColor="grey" color="black">
-						{" "}
-					</Text>
-				)}
-				{value.slice(
-					cursorPosition + (cursorPosition < value.length ? 1 : 0)
-				)}
-				{value.length === 0 && cursorPosition === 0 && "\u200B"}
-			</Text>
+				</Box>
+			)}
 		</Box>
 	);
 }

@@ -4,3 +4,4 @@
 -   Investigate how back navigation should be handled for none interactive prompts
 -   Add, onCancel or onExit listener
 -   Add onValidate, onChange
+-   CMD + backspace should only clear text before cursor

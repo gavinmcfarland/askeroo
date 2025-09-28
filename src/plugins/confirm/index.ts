@@ -1,5 +1,6 @@
 import { createPlugin } from "../../registry.js";
 import { ConfirmField, ConfirmOption } from "./ConfirmField.js";
+import { ValidatorFunction } from "../../types/validation.js";
 
 export interface ConfirmOptions {
 	label?: string;
@@ -13,6 +14,7 @@ export interface ConfirmOptions {
 	excludeFromCompleted?: boolean;
 	hideAfterSubmit?: boolean;
 	allowBack?: boolean; // If false, prevents user from going back with escape key
+	onValidate?: ValidatorFunction<any>;
 }
 
 export type { ConfirmOption } from "./ConfirmField.js";
