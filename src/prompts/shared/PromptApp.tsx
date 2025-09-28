@@ -4,6 +4,7 @@ import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../../registry.js";
 import { updateAppState } from "../../plugins/completed-fields/CompletedFields.js";
+import { initializeTaskStore, initializeAllTaskStates, type TaskStoreState } from "../../plugins/task-store/TaskStore.js";
 
 // Generic prompt request that works for all plugins
 type PromptRequest = {
@@ -74,6 +75,18 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		new Map()
 	);
 
+	// Task storage similar to field storage
+	const [taskListDynamicTasks, setTaskListDynamicTasks] = useState<Map<string, Array<any>>>(
+		new Map()
+	);
+	const [taskListStates, setTaskListStates] = useState<Map<string, Map<string, any>>>(
+		new Map()
+	);
+	// Store all task states (including regular tasks, not just dynamic)
+	const [allTaskStates, setAllTaskStates] = useState<Map<string, Map<string, any>>>(
+		new Map()
+	);
+
 	// Update completed fields plugin state whenever relevant data changes
 	useEffect(() => {
 		updateAppState({
@@ -85,6 +98,21 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			fieldProperties
 		});
 	}, [completedFields, fieldValues, fieldGroupNames, fieldGroupIds, fieldMessages, fieldProperties]);
+
+	// Initialize task store
+	useEffect(() => {
+		const updateTaskStore = (taskState: TaskStoreState) => {
+			setTaskListDynamicTasks(new Map(taskState.taskListDynamicTasks));
+			setTaskListStates(new Map(taskState.taskListStates));
+		};
+
+		const updateAllTaskStates = (states: Map<string, Map<string, any>>) => {
+			setAllTaskStates(new Map(states));
+		};
+
+		initializeTaskStore(updateTaskStore);
+		initializeAllTaskStates(updateAllTaskStates);
+	}, []);
 
 	const firstFieldIdRef = useRef<string | null>(null);
 	const staticGroupsRef = useRef<Set<string>>(new Set());
