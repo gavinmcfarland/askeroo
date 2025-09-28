@@ -9,7 +9,7 @@ export interface TaskLabel {
 	error?: string;
 }
 
-export type CompleteOn = 'children' | 'self' | 'either';
+export type CompleteOn = "children" | "self" | "either";
 
 export interface Task {
 	label: string | TaskLabel;
@@ -178,14 +178,30 @@ export function TasksDisplay(props: TasksOptions) {
 	const [taskStates, setTaskStates] =
 		useState<Map<string, TaskState>>(globalTaskStates);
 	const [isExecuting, setIsExecuting] = useState(false);
+	const [spinnerFrame, setSpinnerFrame] = useState(0);
+
+	// Animated spinner frames
+	// const spinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+	// const spinnerFrames = ["⢄", "⢂", "⢁", "⡁", "⡈", "⡐", "⡠"];
+	// const spinnerFrames = ["-", "\\", "|", "/"];
+	const spinnerFrames = ["⠂", "-", "–", "—", "–", "-"];
 
 	// Block all input during task execution to prevent escape sequences from showing
-	useInput((input, key) => {
+	useInput((_input, _key) => {
 		// Consume and discard all input during execution to prevent it from appearing on screen
 		if (isExecuting) {
 			return; // Silently consume all input
 		}
 	});
+
+	// Animate spinner for running tasks
+	useEffect(() => {
+		const interval = setInterval(() => {
+			setSpinnerFrame((prev) => (prev + 1) % spinnerFrames.length);
+		}, 100); // Update every 100ms
+
+		return () => clearInterval(interval);
+	}, []);
 
 	// Subscribe to global state updates
 	useEffect(() => {
@@ -229,7 +245,7 @@ export function TasksDisplay(props: TasksOptions) {
 			case "idle":
 				return "□";
 			case "running":
-				return "⋯";
+				return spinnerFrames[spinnerFrame];
 			case "done":
 				return "■";
 			case "warning":
@@ -249,17 +265,21 @@ export function TasksDisplay(props: TasksOptions) {
 		updateTaskState(taskId, { status: "running" });
 
 		try {
-			const completeOn = task.completeOn || 'children'; // Default to 'children'
+			const completeOn = task.completeOn || "children"; // Default to 'children'
 			let actionCompleted = false;
 			let childrenCompleted = false;
 
 			// Execute action if present
-			const actionPromise = task.action ?
-				task.action().then(() => { actionCompleted = true; }) :
-				Promise.resolve().then(() => { actionCompleted = true; });
+			const actionPromise = task.action
+				? task.action().then(() => {
+						actionCompleted = true;
+				  })
+				: Promise.resolve().then(() => {
+						actionCompleted = true;
+				  });
 
 			// Handle different completion modes
-			if (completeOn === 'self') {
+			if (completeOn === "self") {
 				// Complete after action, let children run in background
 				await actionPromise;
 				updateTaskState(taskId, { status: "done" });
@@ -283,38 +303,55 @@ export function TasksDisplay(props: TasksOptions) {
 						(async () => {
 							for (let i = 0; i < tasks.length; i++) {
 								const subtask = tasks[i];
-								const subtaskId = getTaskId(subtask, i, `${taskId}.`);
+								const subtaskId = getTaskId(
+									subtask,
+									i,
+									`${taskId}.`
+								);
 								await executeTask(subtask, subtaskId);
 							}
 						})(); // Don't await
 					}
 				}
-			} else if (completeOn === 'either') {
+			} else if (completeOn === "either") {
 				// Complete when either action or all children finish first
-				const childrenPromise = task.tasks && task.tasks.length > 0 ?
-					(async () => {
-						const tasks = task.tasks!; // Store reference to avoid undefined issues
-						if (task.concurrent) {
-							// Execute subtasks concurrently
-							const promises = tasks.map((subtask, index) => {
-								const subtaskId = getTaskId(
-									subtask,
-									index,
-									`${taskId}.`
-								);
-								return executeTask(subtask, subtaskId);
-							});
-							await Promise.all(promises);
-						} else {
-							// Execute subtasks sequentially
-							for (let i = 0; i < tasks.length; i++) {
-								const subtask = tasks[i];
-								const subtaskId = getTaskId(subtask, i, `${taskId}.`);
-								await executeTask(subtask, subtaskId);
-							}
-						}
-						childrenCompleted = true;
-					})() : Promise.resolve().then(() => { childrenCompleted = true; });
+				const childrenPromise =
+					task.tasks && task.tasks.length > 0
+						? (async () => {
+								const tasks = task.tasks!; // Store reference to avoid undefined issues
+								if (task.concurrent) {
+									// Execute subtasks concurrently
+									const promises = tasks.map(
+										(subtask, index) => {
+											const subtaskId = getTaskId(
+												subtask,
+												index,
+												`${taskId}.`
+											);
+											return executeTask(
+												subtask,
+												subtaskId
+											);
+										}
+									);
+									await Promise.all(promises);
+								} else {
+									// Execute subtasks sequentially
+									for (let i = 0; i < tasks.length; i++) {
+										const subtask = tasks[i];
+										const subtaskId = getTaskId(
+											subtask,
+											i,
+											`${taskId}.`
+										);
+										await executeTask(subtask, subtaskId);
+									}
+								}
+								childrenCompleted = true;
+						  })()
+						: Promise.resolve().then(() => {
+								childrenCompleted = true;
+						  });
 
 				// Wait for whichever completes first
 				await Promise.race([actionPromise, childrenPromise]);
@@ -344,7 +381,11 @@ export function TasksDisplay(props: TasksOptions) {
 						// Execute subtasks sequentially
 						for (let i = 0; i < task.tasks.length; i++) {
 							const subtask = task.tasks[i];
-							const subtaskId = getTaskId(subtask, i, `${taskId}.`);
+							const subtaskId = getTaskId(
+								subtask,
+								i,
+								`${taskId}.`
+							);
 							await executeTask(subtask, subtaskId);
 						}
 					}
