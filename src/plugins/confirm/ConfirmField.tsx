@@ -141,14 +141,14 @@ export function ConfirmField({
 
 			const hintText = (
 				<>
-					{!isFirstRootPrompt && (
+					{!isFirstRootPrompt && allowBack && (
 						<>
 							<Text color="yellow">escape</Text> go back
 						</>
 					)}
 					{isUsingDefaultOptions && (
 						<>
-							, <Text color="yellow">y/n</Text> quick select
+							{!isFirstRootPrompt && allowBack ? ", " : ""}<Text color="yellow">y/n</Text> quick select
 						</>
 					)}
 				</>

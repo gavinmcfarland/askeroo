@@ -1,2 +1,6 @@
--   Option to prevent fields/prompts from showing completed state
--   Option to avoid fields being added/tracked to completed fields
+-   Option to prevent fields/prompts from showing completed state DONE
+-   Option to avoid fields being added/tracked to completed fields DONE
+-   Find a way to prevent input unless input active
+-   Investigate how back navigation should be handled for none interactive prompts
+-   Add, onCancel or onExit listener
+-   Add onValidate, onChange

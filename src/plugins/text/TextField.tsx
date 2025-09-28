@@ -74,7 +74,7 @@ export function TextField({
 		if (!disabled && !completed) {
 			const hintText = (
 				<>
-					{!isFirstRootPrompt && (
+					{!isFirstRootPrompt && allowBack && (
 						<>
 							<Text color="yellow">escape</Text> go back
 						</>
