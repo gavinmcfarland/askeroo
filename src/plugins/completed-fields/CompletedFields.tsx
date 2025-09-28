@@ -24,6 +24,7 @@ export interface CompletedField {
 	value: string;
 	formattedValue?: string; // The formatted/display value with labels
 	timestamp: number;
+	conditionalDepth?: number; // How many levels deep this conditional field is (0 = not conditional, 1+ = nested levels)
 }
 
 // Helper functions for formatting values and extracting field messages
@@ -138,6 +139,110 @@ export function updateAppState(state: typeof globalAppState) {
 	globalUpdateListeners.forEach((listener) => listener());
 }
 
+// Function to detect conditional field depth based on patterns and field relationships
+function detectConditionalDepth(
+	fieldId: string,
+	index: number,
+	completedFields: string[],
+	groupIds: { [fieldId: string]: string },
+	fieldProperties: Map<string, any>,
+	previousDepths: number[] // Array of depths for fields processed so far
+): number {
+	// If this is the first field, it can't be conditional
+	if (index === 0) return 0;
+
+	const currentGroupId = groupIds[fieldId];
+	const currentProps = fieldProperties.get(fieldId) || {};
+	const currentLabel = (
+		currentProps.shortLabel ||
+		currentProps.label ||
+		fieldId
+	).toLowerCase();
+
+	// Look backward through recent fields to find potential parent relationships
+	let bestParentDepth = -1;
+
+	// Check the last few fields for potential parent relationships (up to 3 fields back)
+	for (let lookBack = 1; lookBack <= Math.min(3, index); lookBack++) {
+		const candidateIndex = index - lookBack;
+		const candidateFieldId = completedFields[candidateIndex];
+		const candidateGroupId = groupIds[candidateFieldId];
+
+		// Only consider fields in the same group
+		if (candidateGroupId !== currentGroupId) continue;
+
+		const candidateProps = fieldProperties.get(candidateFieldId) || {};
+		const candidateLabel = (
+			candidateProps.shortLabel ||
+			candidateProps.label ||
+			candidateFieldId
+		).toLowerCase();
+
+		// Check for parent-child relationships
+		let isChildOf = false;
+
+		// 1. Contains the parent field name (e.g., "shadcn" -> "shadcn config")
+		const candidateLabelBase = candidateLabel.replace(/s$/, ""); // Remove plural 's'
+		if (
+			currentLabel.includes(candidateLabelBase) &&
+			currentLabel !== candidateLabel
+		) {
+			isChildOf = true;
+		}
+
+		// 2. Configuration/setting fields often follow selection fields
+		const configWords = [
+			"config",
+			"configuration",
+			"setting",
+			"options",
+			"path",
+			"file",
+			"url",
+			"endpoint",
+		];
+		const isConfigField = configWords.some((word) =>
+			currentLabel.includes(word)
+		);
+
+		const selectionWords = [
+			"addon",
+			"plugin",
+			"framework",
+			"template",
+			"library",
+			"provider",
+			"service",
+		];
+		const isCandidateSelection = selectionWords.some((word) =>
+			candidateLabel.includes(word)
+		);
+
+		if (isConfigField && isCandidateSelection) {
+			isChildOf = true;
+		}
+
+		// 3. Fields with similar prefixes (e.g., "database" -> "database host", "database port")
+		const commonPrefixes = candidateLabel.split(" ")[0];
+		if (
+			commonPrefixes.length > 3 &&
+			currentLabel.startsWith(commonPrefixes) &&
+			currentLabel !== candidateLabel
+		) {
+			isChildOf = true;
+		}
+
+		// If we found a parent relationship, calculate the depth
+		if (isChildOf) {
+			const candidateDepth = previousDepths[candidateIndex] || 0;
+			bestParentDepth = Math.max(bestParentDepth, candidateDepth);
+		}
+	}
+
+	// If we found a parent, this field is one level deeper
+	return bestParentDepth >= 0 ? bestParentDepth + 1 : 0;
+}
+
 // Main component for the plugin
 export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 	const [appState, setAppState] = useState(globalAppState);
@@ -169,8 +274,11 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 	// Convert app state to CompletedField objects
 	const completedFieldsFromApp = React.useMemo(() => {
 		const fields: CompletedField[] = [];
+		const completedFieldsArray = Array.from(appState.completedFields);
+		const depths: number[] = []; // Track depths for each processed field
 
-		for (const fieldId of appState.completedFields) {
+		for (let i = 0; i < completedFieldsArray.length; i++) {
+			const fieldId = completedFieldsArray[i];
 			if (appState.fieldValues[fieldId] !== undefined) {
 				const value = appState.fieldValues[fieldId];
 				const groupName = appState.groupNames[fieldId];
@@ -191,6 +299,17 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 				// Format the value using the original field properties
 				const formattedValue = formatValue(value, originalProperties);
 
+				// Detect conditional depth
+				const conditionalDepth = detectConditionalDepth(
+					fieldId,
+					i,
+					completedFieldsArray,
+					appState.groupIds,
+					appState.fieldProperties,
+					depths
+				);
+				depths.push(conditionalDepth); // Store depth for future fields to reference
+
 				fields.push({
 					id: fieldId,
 					groupName,
@@ -200,6 +319,7 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 					value: String(value),
 					formattedValue,
 					timestamp: Date.now(), // We don't have timestamps from the app state
+					conditionalDepth,
 				});
 			}
 		}
@@ -278,11 +398,13 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 					<Box key={field.id} gap={1}>
 						<Box width={16}>
 							<Text color="gray">
+								{"  ".repeat(field.conditionalDepth || 0)}
 								{field.shortLabel || field.label}
 							</Text>
 						</Box>
 						<Text>
 							<Text color="blue">
+								{"  ".repeat(field.conditionalDepth || 0)}
 								{field.formattedValue || field.value}
 							</Text>
 						</Text>
@@ -319,11 +441,13 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 						>
 							<Box width={16}>
 								<Text color="gray">
+									{"  ".repeat(field.conditionalDepth || 0)}
 									{field.shortLabel || field.label}
 								</Text>
 							</Box>
 							<Text>
 								<Text color="blue">
+									{"  ".repeat(field.conditionalDepth || 0)}
 									{field.formattedValue || field.value}
 								</Text>
 							</Text>

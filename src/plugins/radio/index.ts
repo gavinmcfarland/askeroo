@@ -1,6 +1,7 @@
 import { createPlugin } from "../../registry.js";
 import { RadioField } from "./RadioField.js";
 import { ValidatorFunction } from "../../types/validation.js";
+import { MarkdownString } from "../../utils/markdown.js";
 
 export interface RadioOption {
 	value: string;
@@ -10,8 +11,8 @@ export interface RadioOption {
 }
 
 export interface RadioOptions {
-	label: string;
-	shortLabel?: string;
+	label: string | MarkdownString;
+	shortLabel?: string | MarkdownString;
 	options: RadioOption[];
 	showNumbers?: boolean; // Whether to show numbers for selection
 	allowLoop?: boolean; // Whether to allow looping when navigating with up/down arrows (default: true)
