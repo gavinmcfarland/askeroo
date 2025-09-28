@@ -196,7 +196,9 @@ export function MultiField({
 	}, [disabled, submitted]);
 
 	// Helper function to run validation on submission attempt
-	const runValidation = async (valuesToValidate: string[]): Promise<boolean> => {
+	const runValidation = async (
+		valuesToValidate: string[]
+	): Promise<boolean> => {
 		if (!onValidate || disabled || completed) {
 			setValidationError(null);
 			return true;
@@ -224,7 +226,7 @@ export function MultiField({
 							<Text color="yellow">escape</Text> go back,{" "}
 						</>
 					)}
-					<Text color="yellow">space</Text> select{" "}
+					<Text color="yellow">space</Text> select
 					{searchable && (
 						<>
 							, <Text color="yellow">type</Text> to search
@@ -765,9 +767,7 @@ export function MultiField({
 			)}
 			{validationError && (
 				<Box>
-					<Text color="red">
-						{validationError}
-					</Text>
+					<Text color="red">{validationError}</Text>
 				</Box>
 			)}
 		</Box>

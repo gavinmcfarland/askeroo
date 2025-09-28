@@ -171,12 +171,6 @@ export function ConfirmField({
 							<Text color="yellow">escape</Text> go back
 						</>
 					)}
-					{isUsingDefaultOptions && (
-						<>
-							{!isFirstRootPrompt && allowBack ? ", " : ""}
-							<Text color="yellow">y/n</Text> quick select
-						</>
-					)}
 				</>
 			);
 			onHintChange(hintText);
@@ -440,9 +434,7 @@ export function ConfirmField({
 				})()}
 			{validationError && (
 				<Box>
-					<Text color="red">
-						{validationError}
-					</Text>
+					<Text color="red">{validationError}</Text>
 				</Box>
 			)}
 		</Box>
