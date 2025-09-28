@@ -99,6 +99,15 @@ const flow = async () => {
 		]);
 	}
 
+	await tasks.add([
+		{
+			label: "Clean up",
+			action: async () => {
+				await sleep(1500);
+			},
+		},
+	]);
+
 	await tasks([
 		{
 			label: "Second task list",
