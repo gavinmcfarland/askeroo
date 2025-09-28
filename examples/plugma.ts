@@ -168,7 +168,7 @@ const flow = async () => {
 		2. \`npm run dev\`
 		3. Import \`dist/manifest.json\` in Figma
 
-		Check out the docs at https://plugma.dev.`);
+		Check the docs out at plugma.dev.`);
 
 	return { answers, pkgManager };
 };
