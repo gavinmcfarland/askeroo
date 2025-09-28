@@ -182,6 +182,73 @@ console.log(result);
         component: ReactComponent;
     }
     ```
+-   ### `tasks(taskList: Task[], options?: TasksOpts)`
+
+    Execute a list of tasks with progress indication and error handling.
+
+    ```ts
+    interface Task {
+        label: string | TaskLabel;
+        action?: () => Promise<void>;
+        tasks?: Task[]; // Nested subtasks
+        concurrent?: boolean;
+        continueOnError?: boolean;
+        completeOn?: 'children' | 'self' | 'either';
+    }
+
+    interface TaskLabel {
+        idle?: string;
+        running?: string;
+        done?: string;
+        error?: string;
+    }
+
+    interface TasksOpts {
+        concurrent?: boolean; // true = parallel (default), false = sequential
+    }
+
+    interface TasksResult {
+        success: boolean;
+        totalTasks: number;
+        completedTasks: number;
+        failedTasks: number;
+        warningTasks: number;
+        results: TaskResult[];
+    }
+    ```
+
+    **Usage**
+
+    ```ts
+    // Basic task execution
+    const result = await tasks([
+        {
+            label: "Installing dependencies",
+            action: async () => {
+                await installDependencies();
+            }
+        },
+        {
+            label: "Building project",
+            action: async () => {
+                await buildProject();
+            }
+        }
+    ]);
+
+    // Sequential execution
+    await tasks(taskList, { concurrent: false });
+
+    // Parallel execution (default)
+    await tasks(taskList, { concurrent: true });
+    ```
+
+    **Methods**
+
+    -   `tasks.add(taskList: Task[], options?: { concurrent?: boolean })` - Add tasks dynamically during execution
+    -   `tasks.sequential(taskList: Task[])` - Execute tasks sequentially
+    -   `tasks.parallel(taskList: Task[])` - Execute tasks in parallel
+
 -   ### `completedFields(options: CompletedFieldsOpts)`
 
     Show the status of completed fields.
