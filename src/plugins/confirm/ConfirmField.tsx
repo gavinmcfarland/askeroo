@@ -65,17 +65,38 @@ export function ConfirmField({
 	const displayMessage = label || message || "Confirm?";
 
 	// Default options if none provided (memoized to prevent re-creation)
-	const defaultOptions: ConfirmOption[] = React.useMemo(
-		() => [
+	const confirmOptions: ConfirmOption[] = React.useMemo(() => {
+		if (options) {
+			// If custom options are provided, use them as-is
+			return options;
+		}
+
+		// Default behavior: create options based on initialValue
+		const defaultOptions = [
 			{ value: true, label: "Yes" },
 			{ value: false, label: "No" },
-		],
-		[]
-	);
-	const confirmOptions = options || defaultOptions;
+		];
+
+		// If there's an initialValue, make it the second option
+		if (initialValue !== undefined) {
+			const initialOption = defaultOptions.find(opt => opt.value === initialValue);
+			const otherOption = defaultOptions.find(opt => opt.value !== initialValue);
+
+			if (initialOption && otherOption) {
+				return [otherOption, initialOption];
+			}
+		}
+
+		return defaultOptions;
+	}, [options, initialValue]);
 
 	const [selectedIndex, setSelectedIndex] = useState(() => {
-		if (initialValue !== undefined) {
+		if (initialValue !== undefined && !options) {
+			// When using default options and there's an initialValue,
+			// the initial value becomes the second option (index 1)
+			return 1;
+		} else if (initialValue !== undefined) {
+			// For custom options, find the index normally
 			const index = confirmOptions.findIndex(
 				(option) => option.value === initialValue
 			);
@@ -95,7 +116,12 @@ export function ConfirmField({
 
 	// Update selected index when initialValue changes
 	useEffect(() => {
-		if (initialValue !== undefined) {
+		if (initialValue !== undefined && !options) {
+			// When using default options and there's an initialValue,
+			// the initial value becomes the second option (index 1)
+			setSelectedIndex(1);
+		} else if (initialValue !== undefined) {
+			// For custom options, find the index normally
 			const index = confirmOptions.findIndex(
 				(option) => option.value === initialValue
 			);
@@ -103,7 +129,7 @@ export function ConfirmField({
 				setSelectedIndex(index);
 			}
 		}
-	}, [initialValue, confirmOptions]);
+	}, [initialValue, confirmOptions, options]);
 
 	// Provide hint text to parent component
 	useEffect(() => {
