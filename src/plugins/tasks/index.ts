@@ -1,5 +1,6 @@
 import { createPlugin } from '../../registry.js';
 import { TasksDisplay, TasksOptions, Task } from './Tasks.js';
+import { initializeTaskStore, initializeAllTaskStates } from '../task-store/TaskStore.js';
 
 // Re-export types
 export type { Task, TaskLabel, CompleteOn } from './Tasks.js';
@@ -147,3 +148,22 @@ export async function addTasks(taskList: Task[], options?: { concurrent?: boolea
 
 // Add the dynamic task addition method to the tasks function
 tasks.add = addTasks;
+
+// Function to initialize task storage at the PromptApp level
+export function initializeTasksInApp(
+	setTaskListDynamicTasks: (tasks: Map<string, Array<any>>) => void,
+	setTaskListStates: (states: Map<string, Map<string, any>>) => void,
+	setAllTaskStates: (states: Map<string, Map<string, any>>) => void
+) {
+	const updateTaskStore = (taskState: any) => {
+		setTaskListDynamicTasks(new Map(taskState.taskListDynamicTasks));
+		setTaskListStates(new Map(taskState.taskListStates));
+	};
+
+	const updateAllTaskStates = (states: Map<string, Map<string, any>>) => {
+		setAllTaskStates(new Map(states));
+	};
+
+	initializeTaskStore(updateTaskStore);
+	initializeAllTaskStates(updateAllTaskStates);
+}

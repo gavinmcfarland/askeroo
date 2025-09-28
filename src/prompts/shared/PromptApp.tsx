@@ -4,7 +4,7 @@ import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../../registry.js";
 import { updateAppState } from "../../plugins/completed-fields/CompletedFields.js";
-import { initializeTaskStore, initializeAllTaskStates, type TaskStoreState } from "../../plugins/task-store/TaskStore.js";
+import { initializeTasksInApp } from "../../plugins/tasks/index.js";
 
 // Generic prompt request that works for all plugins
 type PromptRequest = {
@@ -101,17 +101,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	// Initialize task store
 	useEffect(() => {
-		const updateTaskStore = (taskState: TaskStoreState) => {
-			setTaskListDynamicTasks(new Map(taskState.taskListDynamicTasks));
-			setTaskListStates(new Map(taskState.taskListStates));
-		};
-
-		const updateAllTaskStates = (states: Map<string, Map<string, any>>) => {
-			setAllTaskStates(new Map(states));
-		};
-
-		initializeTaskStore(updateTaskStore);
-		initializeAllTaskStates(updateAllTaskStates);
+		initializeTasksInApp(
+			setTaskListDynamicTasks,
+			setTaskListStates,
+			setAllTaskStates
+		);
 	}, []);
 
 	const firstFieldIdRef = useRef<string | null>(null);
