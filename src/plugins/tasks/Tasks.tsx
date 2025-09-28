@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Box, Text } from "ink";
+import { Box, Text, useInput } from "ink";
 import { TaskWarning } from "./index.js";
 
 export interface TaskLabel {
@@ -178,6 +178,14 @@ export function TasksDisplay(props: TasksOptions) {
 	const [taskStates, setTaskStates] =
 		useState<Map<string, TaskState>>(globalTaskStates);
 	const [isExecuting, setIsExecuting] = useState(false);
+
+	// Block all input during task execution to prevent escape sequences from showing
+	useInput((input, key) => {
+		// Consume and discard all input during execution to prevent it from appearing on screen
+		if (isExecuting) {
+			return; // Silently consume all input
+		}
+	});
 
 	// Subscribe to global state updates
 	useEffect(() => {
