@@ -34,7 +34,14 @@ export const multi = createPlugin<MultiOptions, string[]>({
 	component: MultiField, // Plugin provides its own component
 
 	// The prompt logic - just return the options, runtime handles UI
-	prompt(opts: MultiOptions, { currentGroup }, id: string) {
-		return opts;
+	prompt(opts: MultiOptions, { currentGroup, conditionalDepth }, id: string) {
+		// Add depth indicator to label if we're in a conditional context
+		const depthIndicator = conditionalDepth && conditionalDepth > 0 ? ` [depth:${conditionalDepth}]` : "";
+		const enhancedLabel = opts.label ? `${opts.label}${depthIndicator}` : opts.label;
+
+		return {
+			...opts,
+			label: enhancedLabel,
+		};
 	},
 });

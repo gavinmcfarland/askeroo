@@ -21,7 +21,21 @@
       "Read(//Users/gavinmcfarland/Developer/**)",
       "Bash(cat:*)",
       "Bash(git checkout:*)",
-      "Bash(DEBUG_DEPTH=true node dist/examples/plugma.js)"
+      "Bash(DEBUG_DEPTH=true node dist/examples/plugma.js)",
+      "Bash(DEBUG_DEPTH=true node dist/examples/nested-conditionals-test.js)",
+      "Bash(env DEBUG_DEPTH=true node dist/examples/nested-conditionals-test.js)",
+      "Bash(env DEBUG_DEPTH=true node dist/examples/debug-use-typescript.js)",
+      "Bash(env DEBUG_DEPTH=true node dist/examples/test-depth-prioritization.js)",
+      "Bash(env DEBUG_DEPTH=true node dist/examples/debug-typescript-config.js)",
+      "Bash(env DEBUG_DEPTH=true node dist/examples/debug-composition-api.js)",
+      "Bash(env DEBUG_DEPTH=true node dist/examples/complex-depth-test.js)",
+      "Bash(env DEBUG_DEPTH=true node dist/examples/runtime-depth-test.js)",
+      "Bash(env DEBUG_DEPTH=true node dist/examples/simple-depth-test.js)",
+      "Bash(env DEBUG_DEPTH=true timeout 10 node dist/examples/runtime-depth-test.js)",
+      "Bash(env DEBUG_DEPTH=true node dist/examples/depth-3-test.js)",
+      "Bash(env DEBUG_DEPTH=true timeout 5 node dist/examples/nested-conditionals-test.js)",
+      "Bash(env DEBUG_DEPTH=true gtimeout:*)",
+      "Bash(env:*)"
     ],
     "deny": [],
     "ask": []

@@ -21,9 +21,16 @@ export const text = createPlugin<TextOptions, string>({
 	// The prompt logic - include conditional depth in the label
 	prompt(opts: TextOptions, { currentGroup, conditionalDepth }, id: string) {
 		const depthIndicator = conditionalDepth && conditionalDepth > 0 ? ` [depth:${conditionalDepth}]` : "";
+		const newLabel = opts.label + depthIndicator;
+
+		// Optional debug logging
+		if (process.env.DEBUG_DEPTH) {
+			console.error(`📋 Text processing: "${opts.label}" → "${newLabel}" (depth: ${conditionalDepth})`);
+		}
+
 		return {
 			...opts,
-			label: opts.label + depthIndicator,
+			label: newLabel,
 		};
 	},
 });

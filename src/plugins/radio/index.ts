@@ -36,8 +36,10 @@ export const radio = createPlugin<RadioOptions, string>({
 		const depthIndicator = conditionalDepth && conditionalDepth > 0 ? ` [depth:${conditionalDepth}]` : "";
 		const newLabel = opts.label + depthIndicator;
 
-		// Debug logging to troubleshoot
-		console.error(`📋 Radio processing: "${opts.label}" → "${newLabel}" (depth: ${conditionalDepth})`);
+		// Optional debug logging
+		if (process.env.DEBUG_DEPTH) {
+			console.error(`📋 Radio processing: "${opts.label}" → "${newLabel}" (depth: ${conditionalDepth})`);
+		}
 
 		return {
 			...opts,

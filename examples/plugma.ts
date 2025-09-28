@@ -138,8 +138,8 @@ const flow = async () => {
 			let shadcnConfig;
 			if (addons.includes("shadcn2")) {
 				shadcnConfig = await radio({
-					label: "asassss",
-					shortLabel: "asassss",
+					label: "asasskkkk",
+					shortLabel: "asassshhhj",
 					options: [
 						{ value: "default", label: "Default" },
 						{ value: "shadcn-grape", label: "Grape" },
@@ -155,8 +155,8 @@ const flow = async () => {
 
 				if (shadcnConfig === "shadcn-grape") {
 					await text({
-						label: "Hello2",
-						shortLabel: "Hello2",
+						label: "Hell",
+						shortLabel: "Hel9090",
 					});
 				}
 			}

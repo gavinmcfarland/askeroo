@@ -1,148 +1,130 @@
-import * as acorn from "acorn";
-import * as walk from "acorn-walk";
+// Runtime execution context tracking for conditional depth detection
+// This approach tracks the actual conditional nesting during execution
+// instead of trying to map AST positions to runtime callsites
 
-type LocKey = `${number}:${number}`; // "line:column"
-type DepthMap = Map<LocKey, number>;
+let currentDepth = 0;
+const depthStack: number[] = [];
 
-// Cache per function body so we only parse once
-const depthCache = new WeakMap<Function, DepthMap>();
+// Global execution context for tracking conditional depth
+export class DepthTracker {
+  private static instance: DepthTracker;
+  private currentDepth = 0;
 
-export function parseDepthMapFromFunction(fn: Function): DepthMap {
-  if (depthCache.has(fn)) return depthCache.get(fn)!;
-
-  const src = Function.prototype.toString.call(fn);
-
-  // Debug: show the function source being analyzed
-  console.log(`🔧 Analyzing function source:`, src);
-
-  // Handle "function (...) { ... }" and arrow functions → we want the *body* location mapping to align.
-  // Acorn will give us positions; we'll also record a base offset to convert to line/col reliably.
-  const ast = acorn.parse(src, {
-    ecmaVersion: "latest",
-    sourceType: "module",
-    locations: true,
-  }) as any;
-
-  const map: DepthMap = new Map();
-
-  // Utility: record a call at its callee position
-  const recordCall = (node: any, depth: number) => {
-    const l = node.loc?.start;
-    if (!l) return;
-    const key: LocKey = `${l.line}:${l.column}`;
-    // Use max — the same call might be visited via multiple conditional wrappers
-    map.set(key, Math.max(map.get(key) ?? 0, depth));
-    console.log(`  📍 Recorded call at ${key} with depth ${depth} (type: ${node.type || 'unknown'})`);
-  };
-
-  // What counts as conditional regions:
-  // - IfStatement.consequent/alternate
-  // - ConditionalExpression.consequent/alternate
-  // - LogicalExpression.right for &&, ||, ??
-  // - SwitchCase.consequent[*]
-  // - Loop bodies (for/for..of/for..in/while/do)
-  // - catch block
-  // - optional-chaining guarded args (best effort)
-  // We *don't* count the test parts unless you want to (toggle below).
-
-  function withDepth(n: any, depth: number) {
-    walk.simple(n, visitors, undefined, { depth });
+  static getInstance(): DepthTracker {
+    if (!DepthTracker.instance) {
+      DepthTracker.instance = new DepthTracker();
+    }
+    return DepthTracker.instance;
   }
 
-  const visitors: walk.SimpleVisitors<any> = {
-    CallExpression(node: any, state: { depth: number }) {
-      // callee location marks the site; args may also be conditionally evaluated
-      recordCall(node.callee, state.depth);
+  getCurrentDepth(): number {
+    return this.currentDepth;
+  }
 
-      // Optional call: if guarded, args are conditional
-      if ((node as any).optional) {
-        for (const arg of node.arguments || []) {
-          withDepth(arg, state.depth + 1);
-        }
+  enterConditional(): void {
+    this.currentDepth++;
+    if (process.env.DEBUG_DEPTH) {
+      console.log(`📈 Entering conditional, depth now: ${this.currentDepth}`);
+    }
+  }
+
+  exitConditional(): void {
+    if (this.currentDepth > 0) {
+      this.currentDepth--;
+      if (process.env.DEBUG_DEPTH) {
+        console.log(`📉 Exiting conditional, depth now: ${this.currentDepth}`);
       }
-    },
+    }
+  }
 
-    IfStatement(node: any, state: { depth: number }) {
-      // (Optional) include test as conditional-compute:
-      // withDepth(node.test, state.depth + 1);
-
-      if (node.consequent) withDepth(node.consequent, state.depth + 1);
-      if (node.alternate) withDepth(node.alternate, state.depth + 1);
-    },
-
-    ConditionalExpression(node: any, state: { depth: number }) {
-      // withDepth(node.test, state.depth + 1);
-      withDepth(node.consequent, state.depth + 1);
-      withDepth(node.alternate, state.depth + 1);
-    },
-
-    LogicalExpression(node: any, state: { depth: number }) {
-      // left always evaluates; right is conditional
-      withDepth(node.left, state.depth);
-      if (["&&", "||", "??"].includes(node.operator)) {
-        withDepth(node.right, state.depth + 1);
-      } else {
-        withDepth(node.right, state.depth);
-      }
-    },
-
-    SwitchStatement(node: any, state: { depth: number }) {
-      for (const c of node.cases) {
-        for (const cons of c.consequent || []) {
-          withDepth(cons, state.depth + 1);
-        }
-      }
-    },
-
-    WhileStatement(n: any, s: { depth: number }) {
-      // withDepth(n.test, s.depth + 1);
-      withDepth(n.body, s.depth + 1);
-    },
-    DoWhileStatement(n: any, s: { depth: number }) {
-      withDepth(n.body, s.depth + 1);
-      // withDepth(n.test, s.depth + 1);
-    },
-    ForStatement(n: any, s: { depth: number }) {
-      withDepth(n.body, s.depth + 1);
-    },
-    ForInStatement(n: any, s: { depth: number }) {
-      withDepth(n.body, s.depth + 1);
-    },
-    ForOfStatement(n: any, s: { depth: number }) {
-      withDepth(n.body, s.depth + 1);
-    },
-
-    TryStatement(n: any, s: { depth: number }) {
-      if (n.handler?.body) withDepth(n.handler.body, s.depth + 1);
-      if (n.finalizer) withDepth(n.finalizer, s.depth); // finally always runs
-    },
-  };
-
-  // Kick off with depth 0
-  walk.simple(ast, visitors, undefined, { depth: 0 });
-
-  depthCache.set(fn, map);
-  return map;
+  reset(): void {
+    this.currentDepth = 0;
+    if (process.env.DEBUG_DEPTH) {
+      console.log(`🔄 Reset depth tracker to 0`);
+    }
+  }
 }
 
+// Proxy function wrapper that tracks conditional execution
+export function withConditionalDepth<T>(
+  condition: boolean | (() => boolean),
+  callback: () => T
+): T {
+  const tracker = DepthTracker.getInstance();
+
+  const shouldExecute = typeof condition === 'function' ? condition() : condition;
+
+  if (shouldExecute) {
+    tracker.enterConditional();
+    try {
+      return callback();
+    } finally {
+      tracker.exitConditional();
+    }
+  } else {
+    // If condition is false, we still need to return something
+    // This should only be used in scenarios where the callback is definitely called
+    throw new Error('withConditionalDepth called with false condition - this should not happen in normal flow');
+  }
+}
+
+// Async version of withConditionalDepth
+export async function withConditionalDepthAsync<T>(
+  condition: boolean | (() => boolean) | (() => Promise<boolean>),
+  callback: () => Promise<T>
+): Promise<T> {
+  const tracker = DepthTracker.getInstance();
+
+  const shouldExecute = typeof condition === 'function' ? await condition() : condition;
+
+  if (shouldExecute) {
+    tracker.enterConditional();
+    try {
+      return await callback();
+    } finally {
+      tracker.exitConditional();
+    }
+  } else {
+    // If condition is false, we still need to return something
+    // This should only be used in scenarios where the callback is definitely called
+    throw new Error('withConditionalDepthAsync called with false condition - this should not happen in normal flow');
+  }
+}
+
+// Helper to conditionally execute code with depth tracking
+export function conditional<T>(condition: boolean, callback: () => T): T | undefined {
+  if (condition) {
+    return withConditionalDepth(() => true, callback);
+  }
+  return undefined;
+}
+
+// Async version of conditional
+export async function conditionalAsync<T>(condition: boolean, callback: () => Promise<T>): Promise<T | undefined> {
+  if (condition) {
+    return await withConditionalDepthAsync(() => true, callback);
+  }
+  return undefined;
+}
+
+// Helper to get current depth without needing AST parsing
+export function getCurrentConditionalDepth(): number {
+  return DepthTracker.getInstance().getCurrentDepth();
+}
+
+// Reset depth when starting a new flow
+export function resetDepthTracking(): void {
+  DepthTracker.getInstance().reset();
+}
+
+// Legacy function kept for compatibility but will be replaced
+export function parseDepthMapFromFunction(fn: Function): Map<string, number> {
+  // Return empty map - we're not using AST-based tracking anymore
+  return new Map();
+}
+
+// Legacy function kept for compatibility but will be replaced
 export function getCallsiteLineCol(stackSkip = 2): { line: number; column: number } | null {
-  const e = new Error();
-  if (!e.stack) return null;
-  const lines = e.stack.split("\n");
-
-  // Debug: show all stack frames to understand the call structure
-  console.log(`📍 Stack frames:`);
-  lines.forEach((line, i) => {
-    console.log(`  ${i}: ${line}`);
-  });
-
-  // 0: "Error", 1: this function, 2: caller (pluginPrompts[plugin.type]), 3+: user site
-  const frame = lines[stackSkip + 1] ?? lines[lines.length - 1];
-  console.log(`📍 Using frame ${stackSkip + 1}:`, frame);
-
-  // Match "...:line:column)"
-  const m = /:(\d+):(\d+)\)?$/.exec(frame);
-  if (!m) return null;
-
-  return { line: Number(m[1]), column: Number(m[2]) };
+  // Return null - we're not using callsite tracking anymore
+  return null;
 }

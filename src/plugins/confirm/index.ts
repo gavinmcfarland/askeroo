@@ -25,7 +25,19 @@ export const confirm = createPlugin<ConfirmOptions, any>({
 	component: ConfirmField,
 
 	// The prompt logic - just return the options, runtime handles UI
-	prompt(opts: ConfirmOptions, { currentGroup }, id: string) {
-		return opts;
+	prompt(opts: ConfirmOptions, { currentGroup, conditionalDepth }, id: string) {
+		// Add depth indicator to label if we're in a conditional context
+		const depthIndicator = conditionalDepth && conditionalDepth > 0 ? ` [depth:${conditionalDepth}]` : "";
+		const enhancedLabel = opts.label ? `${opts.label}${depthIndicator}` : opts.label;
+
+		// Optional debug logging
+		if (process.env.DEBUG_DEPTH) {
+			console.error(`📋 Confirm processing: "${opts.label}" → "${enhancedLabel}" (depth: ${conditionalDepth})`);
+		}
+
+		return {
+			...opts,
+			label: enhancedLabel,
+		};
 	},
 });
