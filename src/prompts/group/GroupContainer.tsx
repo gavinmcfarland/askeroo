@@ -24,13 +24,17 @@ export function GroupContainer({
 		}
 
 		return (
-			<Box flexDirection="row" gap={2}>
+			<Box flexDirection="column">
 				{groupName && (
 					<Box width={15}>
 						<Text color="gray">{groupName}</Text>
 					</Box>
 				)}
-				<Box flexDirection="column" gap={1}>
+				<Box
+					flexDirection="column"
+					gap={1}
+					marginLeft={groupName ? 3 : 0}
+				>
 					{completedFields}
 				</Box>
 			</Box>
@@ -39,13 +43,13 @@ export function GroupContainer({
 
 	// Active state - show children and hints
 	return (
-		<Box flexDirection="row" gap={2}>
+		<Box flexDirection="column">
 			{groupName && (
 				<Box width={15}>
 					<Text color="gray">{groupName}</Text>
 				</Box>
 			)}
-			<Box flexDirection="column" gap={1}>
+			<Box flexDirection="column" gap={1} marginLeft={groupName ? 3 : 0}>
 				{children}
 				{hintText && (
 					<Box>

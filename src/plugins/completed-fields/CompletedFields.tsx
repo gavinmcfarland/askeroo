@@ -300,14 +300,9 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 						<Box
 							key={field.id}
 							gap={1}
-							marginLeft={groupName !== "Other" ? 2 : 0}
+							marginLeft={groupName !== "Other" ? 3 : 0}
 						>
-							<Box
-								width={16}
-								marginLeft={
-									field.meta?.depth ? field.meta.depth * 2 : 0
-								}
-							>
+							<Box width={16}>
 								<Text color="gray">
 									{field.meta?.group && (
 										<Text color="white">
