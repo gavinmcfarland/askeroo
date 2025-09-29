@@ -20,7 +20,8 @@
       "Bash(npx tsx:*)",
       "Read(//Users/gavinmcfarland/Developer/**)",
       "Bash(cat:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(DEBUG=*)"
     ],
     "deny": [],
     "ask": []

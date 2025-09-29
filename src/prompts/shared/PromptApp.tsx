@@ -56,6 +56,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		new Set()
 	);
 
+	// NESTED_GROUP_FIX: Track field declaration order for proper positioning
+	const [fieldDeclarationOrder, setFieldDeclarationOrder] = useState<Map<string, number>>(new Map());
+	const declarationCounterRef = useRef(0);
+
 	// Track field metadata for the completed fields plugin
 	const [fieldMessages, setFieldMessages] = useState<Record<string, string>>({});
 	const [fieldGroupNames, setFieldGroupNames] = useState<Record<string, string>>({});
@@ -147,6 +151,23 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		// Get the original field properties if available
 		const originalProperties = fieldProperties.get(fieldInfo.id) || {};
 
+		// NESTED_GROUP_FIX: Handle group type fields specially
+		if (fieldInfo.type === "group") {
+			console.log("🎯 Rendering nested group in completed fields", {
+				groupId: fieldInfo.id,
+				groupLabel: fieldInfo.label,
+				key
+			});
+
+			return (
+				<Box key={key} marginLeft={2}>
+					<Text color="gray" dimColor>
+						{fieldInfo.label} ✓
+					</Text>
+				</Box>
+			);
+		}
+
 		// Check for plugin components first
 		const PluginComponent = globalRegistry.getComponent(fieldInfo.type);
 		if (PluginComponent) {
@@ -170,6 +191,66 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	useEffect(() => {
 		const promptFn = (request: PromptRequest): Promise<any> => {
 			return new Promise((resolve) => {
+				// NESTED_GROUP_FIX: Handle adding groups to parent history
+				if (request.type === "addGroupToParent") {
+					const { parentGroupId, groupInfo } = request as any;
+
+					console.log("🔄 NESTED_GROUP_FIX: Adding group to parent history", {
+						parentGroupId,
+						groupInfo,
+						currentGroupFieldHistory: groupFieldHistory.get(parentGroupId) || []
+					});
+
+					setGroupFieldHistory(prev => {
+						const newMap = new Map(prev);
+						const parentFields = newMap.get(parentGroupId) || [];
+
+						// Insert at correct position based on declaration order
+						const insertIndex = parentFields.findIndex(field => {
+							const fieldDeclarationIndex = fieldDeclarationOrder.get(field.id);
+							console.log("🔍 Comparing field positions", {
+								fieldId: field.id,
+								fieldDeclarationIndex,
+								groupDeclarationIndex: groupInfo.declarationIndex,
+								shouldInsertBefore: fieldDeclarationIndex && fieldDeclarationIndex > groupInfo.declarationIndex
+							});
+							return fieldDeclarationIndex !== undefined && fieldDeclarationIndex > groupInfo.declarationIndex;
+						});
+
+						const newFields = [...parentFields];
+						if (insertIndex === -1) {
+							console.log("📝 Appending group to end of parent history");
+							newFields.push(groupInfo); // Append if no later fields
+						} else {
+							console.log(`📝 Inserting group at position ${insertIndex} in parent history`);
+							newFields.splice(insertIndex, 0, groupInfo); // Insert at correct position
+						}
+
+						console.log("✅ Updated parent group field history", {
+							parentGroupId,
+							oldFields: parentFields.map(f => ({ id: f.id, label: f.label, type: f.type })),
+							newFields: newFields.map(f => ({ id: f.id, label: f.label, type: f.type }))
+						});
+
+						newMap.set(parentGroupId, newFields);
+						return newMap;
+					});
+
+					// NESTED_GROUP_FIX: Mark the nested group as completed so it appears in completed fields
+					setCompletedFields(prev => {
+						const newCompleted = new Set(prev);
+						newCompleted.add(groupInfo.id);
+						console.log("🎯 Marking nested group as completed", {
+							groupId: groupInfo.id,
+							groupLabel: groupInfo.label
+						});
+						return newCompleted;
+					});
+
+					resolve(undefined);
+					return;
+				}
+
 				// Handle flow completion first
 				if (request.type === "completeFlow") {
 					// Handle flow completion - mark all fields as completed
@@ -204,6 +285,27 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 				// Store complete field properties for later rendering
 				if (request.type !== "group") {
+					// NESTED_GROUP_FIX: Track field declaration order
+					setFieldDeclarationOrder(prevOrder => {
+						if (!prevOrder.has(request.id)) {
+							declarationCounterRef.current += 1;
+							const newDeclarationIndex = declarationCounterRef.current;
+
+							console.log("📍 NESTED_GROUP_FIX: Recording field declaration", {
+								fieldId: request.id,
+								fieldLabel: request.label || request.message,
+								declarationIndex: newDeclarationIndex,
+								fieldType: request.type,
+								groupName: request.groupName
+							});
+
+							const newMap = new Map(prevOrder);
+							newMap.set(request.id, newDeclarationIndex);
+							return newMap;
+						}
+						return prevOrder;
+					});
+
 					setFieldProperties((prev) => {
 						const newMap = new Map(prev);
 						newMap.set(request.id, request);

@@ -438,6 +438,18 @@ export function createRuntime(ui: UI) {
 		// Combine meta and opts for the engine step
 		const combinedOpts = { ...meta, ...(opts || {}) };
 
+		// NESTED_GROUP_FIX: Track declaration position for proper ordering
+		const groupDeclarationIndex = interactivePrompts.length;
+		const parentGroupId = groupStack.length > 0 ? groupStack[groupStack.length - 1] : null;
+
+		console.log("🎯 GROUP_DECLARATION", {
+			groupLabel: combinedOpts.label,
+			declarationIndex: groupDeclarationIndex,
+			parentGroupId,
+			currentGroupStack: [...groupStack],
+			currentInteractivePrompts: interactivePrompts.length
+		});
+
 		// For static groups, we need to run discovery to find fields
 		if (opts?.flow === "static") {
 			const nextGroupCount = groupCount + 1;
@@ -451,15 +463,56 @@ export function createRuntime(ui: UI) {
 			await runStaticGroupDiscovery(combinedOpts, body);
 		}
 
-		await engine.step("group", combinedOpts, async () => undefined);
+		// Add declaration index to the combined options
+		const optsWithDeclarationIndex = {
+			...combinedOpts,
+			declarationIndex: groupDeclarationIndex
+		};
 
+		await engine.step("group", optsWithDeclarationIndex, async () => undefined);
+
+		let groupResult;
 		try {
-			return await body();
+			groupResult = await body();
 		} finally {
+			// NESTED_GROUP_FIX: Handle group completion and parent history update
+			const completedGroupId = groupStack[groupStack.length - 1];
+			const currentParentGroupId = groupStack.length > 1 ? groupStack[groupStack.length - 2] : null;
+
+			console.log("✅ GROUP_COMPLETION", {
+				completedGroupId,
+				groupLabel: combinedOpts.label,
+				parentGroupId: currentParentGroupId,
+				declarationIndex: groupDeclarationIndex,
+				groupStackBeforePop: [...groupStack]
+			});
+
+			// If this group has a parent, add it to the parent's history
+			if (currentParentGroupId) {
+				const groupInfo = {
+					id: completedGroupId,
+					label: combinedOpts.label || "Group",
+					type: "group" as const,
+					declarationIndex: groupDeclarationIndex,
+					hideAfterSubmit: false
+				};
+
+				console.log("🔗 ADDING_GROUP_TO_PARENT_HISTORY", {
+					parentGroupId: currentParentGroupId,
+					groupInfo,
+					action: "addGroupToParentHistory"
+				});
+
+				// Notify UI to add this group to parent's history
+				extendedUI.addGroupToParentHistory?.(currentParentGroupId, groupInfo);
+			}
+
 			// Pop the group from the stack when the group body completes
 			groupStack.pop();
 			extendedUI.clearGroup?.();
 		}
+
+		return groupResult;
 	}
 
 	async function ask<T>(

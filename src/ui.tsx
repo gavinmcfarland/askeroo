@@ -90,6 +90,23 @@ function createUI() {
 			appInstance.currentGroup = undefined;
 		},
 
+		// NESTED_GROUP_FIX: Add method to handle adding groups to parent history
+		async addGroupToParentHistory(parentGroupId: string, groupInfo: any): Promise<void> {
+			debugLogger.log("UI_ADD_GROUP_TO_PARENT", {
+				parentGroupId,
+				groupInfo,
+				action: "forwarding to PromptApp"
+			});
+
+			const promptFn = await ensureApp();
+			await promptFn({
+				type: "addGroupToParent",
+				id: `add-group-${Date.now()}`, // Add required id field
+				parentGroupId,
+				groupInfo,
+			} as any);
+		},
+
 		cleanup(): void {
 			if (appInstance.unmount) {
 				debugLogger.log("UI_CLEANUP", "UI cleanup triggered");
