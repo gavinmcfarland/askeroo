@@ -64,6 +64,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const [groupIdToMessage, setGroupIdToMessage] = useState<
 		Map<string, string | undefined>
 	>(new Map());
+	const groupIdToMessageRef = useRef<Map<string, string | undefined>>(new Map());
 	const [rootPromptOrder, setRootPromptOrder] = useState<
 		Array<{ id: string; type: "field" | "group"; groupName?: string }>
 	>([]);
@@ -125,7 +126,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// Helper function to get display name for a group
 	const getGroupDisplayName = (groupId: string | null): string | null => {
 		if (!groupId) return null;
-		return groupIdToMessage.get(groupId) || null;
+		return groupIdToMessageRef.current.get(groupId) || null;
 	};
 
 	// Handler for when fields provide hint text
@@ -224,7 +225,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						}));
 
 						// Store the group display name (for UI display) - only if there's actually a label
-						const groupDisplayName = groupIdToMessage.get(request.groupName);
+						const groupDisplayName = groupIdToMessageRef.current.get(request.groupName);
 						if (groupDisplayName) {
 							setFieldGroupNames(prev => ({
 								...prev,
@@ -295,6 +296,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					});
 
 					// Track group ID to label mapping
+					groupIdToMessageRef.current.set(request.id, request.label);
 					setGroupIdToMessage((prev) => {
 						const newMap = new Map(prev);
 						newMap.set(request.id, request.label);

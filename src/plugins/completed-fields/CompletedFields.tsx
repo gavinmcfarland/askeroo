@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Text, Box } from "ink";
-import { isMarkdownString, MarkdownString } from "../../utils/markdown.js";
 
 export interface CompletedFieldsOptions {
 	filter?: string[];
@@ -93,26 +92,6 @@ function formatValue(value: any, fieldProperties: any): string {
 	}
 
 	return String(value);
-}
-
-function getFieldMessage(fieldProperties: any): string {
-	const message = fieldProperties?.label || fieldProperties?.message;
-
-	if (typeof message === "string") {
-		return message;
-	}
-
-	if (isMarkdownString(message)) {
-		// Extract plain text from markdown for the question
-		// Remove markdown syntax and return clean text
-		return message.content
-			.replace(/#+\s*/g, "")
-			.replace(/\*\*(.*?)\*\*/g, "$1")
-			.replace(/\*(.*?)\*/g, "$1")
-			.trim();
-	}
-
-	return "Field";
 }
 
 // Global state for tracking completed fields from the app
@@ -312,13 +291,11 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 			)}
 			{Object.entries(groupedFields).map(([groupName, fields]) => (
 				<Box key={groupName} flexDirection="column">
-					{groupName !== "Other" && (
-						<Box marginBottom={0.5}>
-							<Text color="green" bold>
-								{groupName}:
-							</Text>
+					{/* {groupName !== "Other" && (
+						<Box>
+							<Text color="green">{groupName}</Text>
 						</Box>
-					)}
+					)} */}
 					{fields.map((field) => (
 						<Box
 							key={field.id}
@@ -332,7 +309,12 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 								}
 							>
 								<Text color="gray">
-									Group name:{groupName}{" "}
+									{field.meta?.group && (
+										<Text color="green">
+											{field.meta?.group}{" "}
+										</Text>
+									)}
+
 									{field.shortLabel || field.label}
 								</Text>
 							</Box>

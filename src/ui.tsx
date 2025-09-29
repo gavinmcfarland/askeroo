@@ -73,11 +73,12 @@ function createUI() {
 			}>,
 			enableArrowNavigation?: boolean
 		): Promise<void> {
-			appInstance.currentGroup = label;
+			const groupId = id || generatePromptId("group", label || "group");
+			appInstance.currentGroup = groupId;
 			const promptFn = await ensureApp();
 			await promptFn({
 				type: "group",
-				id: id || generatePromptId("group", label || "group"),
+				id: groupId,
 				label: label,
 				flow,
 				discoveredFields,
