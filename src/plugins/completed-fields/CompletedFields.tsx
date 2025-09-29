@@ -310,7 +310,7 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 							>
 								<Text color="gray">
 									{field.meta?.group && (
-										<Text color="green">
+										<Text color="white">
 											{field.meta?.group}{" "}
 										</Text>
 									)}

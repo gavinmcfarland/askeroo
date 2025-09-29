@@ -98,8 +98,6 @@ const flow = async () => {
 				shortLabel: "Addons",
 				label: "Choose addons:",
 				hintPosition: "inline-fixed",
-				maxVisible: 3,
-				allowLoop: false,
 				options: [
 					{
 						value: "tailwind",
@@ -132,15 +130,13 @@ const flow = async () => {
 					},
 				],
 				noneOption: { label: "None" },
-				searchable: true,
 			});
 
 			// Conditionally prompt for shadcn config immediately after addons
 			let shadcnConfig;
 			if (addons.includes("shadcn")) {
 				shadcnConfig = await radio({
-					label:
-						chalk.bgGreen(" Shadcn ") + "\n\n" + "Choose a style",
+					label: chalk.bgCyan(" Shadcn ") + "\n\n" + "Choose a style",
 					shortLabel: "Style",
 					options: [
 						{ value: "default", label: "Default" },
@@ -153,19 +149,13 @@ const flow = async () => {
 				});
 
 				shadcnConfig = await radio({
-					label:
-						chalk.bgGreen(" Shadcn ") + "\n\n" + "Choose a color",
+					label: chalk.bgCyan(" Shadcn ") + "\n\n" + "Choose a color",
 					shortLabel: "Color",
 					options: [
-						{ value: "default", label: "Default" },
-						{ value: "shadcn-grape", label: "Grape" },
-						{ value: "shadcn-honey", label: "Honey" },
-						{ value: "shadcn-lavender", label: "Lavender" },
-						{ value: "shadcn-lemon", label: "Lemon" },
-						{ value: "shadcn-lime", label: "Lime" },
-						{ value: "shadcn-mango", label: "Mango" },
-						{ value: "shadcn-melon", label: "Melon" },
-						{ value: "shadcn-mint", label: "Mint" },
+						{ value: "default", label: "Slate" },
+						{ value: "shadcn-zinc", label: "Zinc" },
+						{ value: "shadcn-neutral", label: "Neutral" },
+						{ value: "shadcn-gray", label: "Gray" },
 					],
 					meta: {
 						depth: 1,
@@ -207,9 +197,15 @@ const flow = async () => {
 			{
 				label: `Integrating chosen add-ons`,
 				action: async () => {
-					await sleep(10000);
+					await sleep(1000);
 				},
-				completeOn: "children", // Default: complete after action + all children
+				concurrent: true,
+				tasks: answers.addons.map((addon: string) => ({
+					label: `${addon}`,
+					action: async () => {
+						await sleep(Math.random() * 4000 + 1000);
+					},
+				})),
 			},
 		],
 		{
