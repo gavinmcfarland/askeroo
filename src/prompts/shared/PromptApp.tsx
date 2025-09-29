@@ -159,11 +159,51 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				key
 			});
 
+			// Get the completed fields for this nested group
+			const nestedGroupFields = groupFieldHistory.get(fieldInfo.id) || [];
+
+			console.log("🔍 Looking for nested group fields", {
+				nestedGroupId: fieldInfo.id,
+				nestedGroupFields: nestedGroupFields.map(f => ({ id: f.id, label: f.label, type: f.type })),
+				allGroupFieldHistory: Array.from(groupFieldHistory.entries()).map(([id, fields]) => ({
+					groupId: id,
+					fieldsCount: fields.length,
+					fields: fields.map(f => ({ id: f.id, label: f.label, type: f.type }))
+				})),
+				allCompletedFields: Array.from(completedFields)
+			});
+
+			const nestedCompletedFields = nestedGroupFields
+				.filter(field => completedFields.has(field.id) && !field.hideAfterSubmit)
+				.map(nestedField => {
+					const nestedFieldValue = fieldValues[nestedField.id];
+
+					console.log("🔸 Rendering nested field", {
+						nestedFieldId: nestedField.id,
+						nestedFieldLabel: nestedField.label,
+						nestedFieldValue,
+						nestedFieldType: nestedField.type
+					});
+
+					// Render the nested field as completed
+					return renderFieldComponent(nestedField, {
+						key: `nested-${nestedField.id}`,
+						completed: true,
+						completedValue: nestedFieldValue,
+						onSubmit: () => {},
+						allowBack: false,
+						flow: undefined
+					}, false);
+				});
+
 			return (
-				<Box key={key} marginLeft={2}>
-					<Text color="gray" dimColor>
-						{fieldInfo.label} ✓
+				<Box key={key} marginLeft={2} flexDirection="column">
+					<Text color="gray">
+						{fieldInfo.label}
 					</Text>
+					<Box flexDirection="column" marginLeft={2}>
+						{nestedCompletedFields}
+					</Box>
 				</Box>
 			);
 		}
