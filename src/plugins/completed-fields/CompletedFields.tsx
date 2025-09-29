@@ -332,6 +332,7 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 								}
 							>
 								<Text color="gray">
+									Group name:{groupName}{" "}
 									{field.shortLabel || field.label}
 								</Text>
 							</Box>

@@ -26,7 +26,7 @@ export function GroupContainer({
 		return (
 			<Box flexDirection="row" gap={2}>
 				{groupName && (
-					<Box width={16}>
+					<Box width={15}>
 						<Text color="gray">{groupName}</Text>
 					</Box>
 				)}
@@ -41,7 +41,7 @@ export function GroupContainer({
 	return (
 		<Box flexDirection="row" gap={2}>
 			{groupName && (
-				<Box width={14}>
+				<Box width={15}>
 					<Text color="gray">{groupName}</Text>
 				</Box>
 			)}

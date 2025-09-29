@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import chalk from "chalk";
 import {
 	ask,
 	group,
@@ -137,37 +138,44 @@ const flow = async () => {
 			// Conditionally prompt for shadcn config immediately after addons
 			let shadcnConfig;
 			if (addons.includes("shadcn")) {
-				shadcnConfig = await radio({
-					label: "Shadcn Theme",
-					shortLabel: "Shadcn Theme",
-					options: [
-						{ value: "default", label: "Default" },
-						{ value: "shadcn-grape", label: "Grape" },
-						{ value: "shadcn-honey", label: "Honey" },
-						{ value: "shadcn-lavender", label: "Lavender" },
-						{ value: "shadcn-lemon", label: "Lemon" },
-						{ value: "shadcn-lime", label: "Lime" },
-						{ value: "shadcn-mango", label: "Mango" },
-						{ value: "shadcn-melon", label: "Melon" },
-						{ value: "shadcn-mint", label: "Mint" },
-					],
-					meta: {
-						depth: 1,
-					},
-				});
+				await group(
+					async () => {
+						shadcnConfig = await radio({
+							label: "Choose a style",
+							shortLabel: "Style",
+							options: [
+								{ value: "default", label: "Default" },
+								{ value: "shadcn-grape", label: "New York" },
+							],
+							meta: {
+								depth: 1,
+							},
+						});
 
-				shadcnConfig = await radio({
-					label: "Shadcn Theme",
-					shortLabel: "Color",
-					options: [
-						{ value: "default", label: "Default" },
-						{ value: "shadcn-grape", label: "Grape" },
-						{ value: "shadcn-honey", label: "Honey" },
-					],
-					meta: {
-						depth: 1,
+						shadcnConfig = await radio({
+							label: "Choose a color",
+							shortLabel: "Color",
+							options: [
+								{ value: "default", label: "Default" },
+								{ value: "shadcn-grape", label: "Grape" },
+								{ value: "shadcn-honey", label: "Honey" },
+								{ value: "shadcn-lavender", label: "Lavender" },
+								{ value: "shadcn-lemon", label: "Lemon" },
+								{ value: "shadcn-lime", label: "Lime" },
+								{ value: "shadcn-mango", label: "Mango" },
+								{ value: "shadcn-melon", label: "Melon" },
+								{ value: "shadcn-mint", label: "Mint" },
+							],
+							meta: {
+								depth: 1,
+							},
+						});
 					},
-				});
+					{
+						flow: "phased",
+						label: chalk.bgCyan(" Shadcn "),
+					}
+				);
 			}
 
 			const typescript = await confirm({
