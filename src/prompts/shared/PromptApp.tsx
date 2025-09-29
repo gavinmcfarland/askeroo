@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useInput, Box, Text } from "ink";
+// Removed unused Text import
 import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../../registry.js";
@@ -196,15 +196,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					}, false);
 				});
 
+			// Use GroupContainer for consistent styling and gaps
 			return (
-				<Box key={key} marginLeft={2} flexDirection="column">
-					<Text color="gray">
-						{fieldInfo.label}
-					</Text>
-					<Box flexDirection="column" marginLeft={2}>
-						{nestedCompletedFields}
-					</Box>
-				</Box>
+				<GroupContainer
+					key={key}
+					groupName={fieldInfo.label}
+					completed={true}
+					completedFields={nestedCompletedFields}
+				/>
 			);
 		}
 
