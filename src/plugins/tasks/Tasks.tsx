@@ -173,22 +173,65 @@ export function TasksDisplay(props: TasksOptions) {
 
 		// Update dynamic tasks from centralized store
 		const updateDynamicTasks = () => {
-			setDynamicTasks(getDynamicTasksForList(taskListId));
+			setDynamicTasks(current => {
+				const newTasks = getDynamicTasksForList(taskListId);
+				// Only update if the tasks have actually changed
+				if (JSON.stringify(current) !== JSON.stringify(newTasks)) {
+					return newTasks;
+				}
+				return current;
+			});
 		};
 
 		// Initial load of dynamic tasks
 		updateDynamicTasks();
 
-		// Set up polling for dynamic tasks and state updates
-		const interval = setInterval(() => {
-			updateDynamicTasks();
-			// Also refresh states from centralized store
-			const latestStates = getAllTaskStatesForList(taskListId);
-			setTaskStates(new Map(latestStates));
-		}, 100);
+		// Set up polling for dynamic tasks and state updates - but only when needed
+		let interval: NodeJS.Timeout | null = null;
 
-		return () => clearInterval(interval);
-	}, [taskListId]);
+		const startPolling = () => {
+			if (interval) return; // Already polling
+			interval = setInterval(() => {
+				updateDynamicTasks();
+				// Also refresh states from centralized store - but only update if changed
+				const latestStates = getAllTaskStatesForList(taskListId);
+				setTaskStates(current => {
+					// Check if states have actually changed before updating
+					if (current.size !== latestStates.size) {
+						return new Map(latestStates);
+					}
+
+					// Check if any individual states have changed
+					for (const [key, value] of latestStates.entries()) {
+						const currentValue = current.get(key);
+						if (!currentValue ||
+							currentValue.status !== value.status ||
+							currentValue.error !== value.error ||
+							currentValue.warning !== value.warning) {
+							return new Map(latestStates);
+						}
+					}
+
+					// No changes, return current state to prevent re-render
+					return current;
+				});
+			}, 100);
+		};
+
+		const stopPolling = () => {
+			if (interval) {
+				clearInterval(interval);
+				interval = null;
+			}
+		};
+
+		// Only start polling if there are tasks or if we're executing
+		if (props.tasks.length > 0 || isExecuting) {
+			startPolling();
+		}
+
+		return () => stopPolling();
+	}, [taskListId, isExecuting, props.tasks.length]);
 
 	// Animated spinner frames
 	// const spinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
@@ -204,14 +247,21 @@ export function TasksDisplay(props: TasksOptions) {
 		}
 	});
 
-	// Animate spinner for running tasks
+	// Animate spinner for running tasks - only when tasks are actually running
 	useEffect(() => {
+		// Check if any tasks are currently running
+		const hasRunningTasks = Array.from(taskStates.values()).some(state => state.status === "running");
+
+		if (!hasRunningTasks && !isExecuting) {
+			return; // Don't start spinner if no tasks are running
+		}
+
 		const interval = setInterval(() => {
 			setSpinnerFrame((prev) => (prev + 1) % spinnerFrames.length);
 		}, 100); // Update every 100ms
 
 		return () => clearInterval(interval);
-	}, []);
+	}, [taskStates, isExecuting]); // Re-run when task states or execution status changes
 
 	// Cleanup task list when component unmounts
 	useEffect(() => {

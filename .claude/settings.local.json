@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(npm run build:*)",
-      "Bash(npm run example plugma)"
+      "Bash(npm run example plugma)",
+      "Bash(npm run example note-example)"
     ],
     "deny": [],
     "ask": []
