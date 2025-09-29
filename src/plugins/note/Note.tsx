@@ -13,6 +13,7 @@ export interface NoteOptions {
 	onBack?: () => void;
 	completed?: boolean;
 	disabled?: boolean;
+	meta?: Record<string, any>; // User-defined metadata for this field
 }
 
 // Main component for the plugin

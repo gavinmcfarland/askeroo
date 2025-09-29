@@ -26,6 +26,7 @@ export interface MultiOptions {
 	hideAfterSubmit?: boolean;
 	allowBack?: boolean; // If false, prevents user from going back with escape key
 	onValidate?: ValidatorFunction<string[]>;
+	meta?: Record<string, any>; // User-defined metadata for this field
 }
 
 // Example multi-select prompt plugin

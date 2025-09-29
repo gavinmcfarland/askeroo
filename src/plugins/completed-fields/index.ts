@@ -7,6 +7,7 @@ export interface CompletedFieldsOptions {
 	maxFields?: number;
 	title?: string;
 	emptyPlaceholder?: string;
+	meta?: Record<string, any>; // User-defined metadata for this field
 }
 
 // Internal plugin implementation

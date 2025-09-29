@@ -15,6 +15,7 @@ export interface ConfirmOptions {
 	hideAfterSubmit?: boolean;
 	allowBack?: boolean; // If false, prevents user from going back with escape key
 	onValidate?: ValidatorFunction<any>;
+	meta?: Record<string, any>; // User-defined metadata for this field
 }
 
 export type { ConfirmOption } from "./ConfirmField.js";

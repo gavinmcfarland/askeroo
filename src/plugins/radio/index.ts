@@ -24,6 +24,7 @@ export interface RadioOptions {
 	hideAfterSubmit?: boolean;
 	allowBack?: boolean; // If false, prevents user from going back with escape key
 	onValidate?: ValidatorFunction<string>;
+	meta?: Record<string, any>; // User-defined metadata for this field
 }
 
 // Core radio input plugin

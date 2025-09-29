@@ -13,6 +13,7 @@ export interface CompletedFieldsOptions {
 	onBack?: () => void;
 	completed?: boolean;
 	disabled?: boolean;
+	meta?: Record<string, any>; // User-defined metadata for this field
 }
 
 export interface CompletedField {
@@ -24,6 +25,7 @@ export interface CompletedField {
 	value: string;
 	formattedValue?: string; // The formatted/display value with labels
 	timestamp: number;
+	meta?: Record<string, any>; // User-defined metadata for this field
 }
 
 // Helper functions for formatting values and extracting field messages
@@ -200,6 +202,7 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 					value: String(value),
 					formattedValue,
 					timestamp: Date.now(), // We don't have timestamps from the app state
+					meta: originalProperties.meta, // Include meta from original field properties
 				});
 			}
 		}
@@ -276,7 +279,12 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 				)}
 				{filteredFields.map((field) => (
 					<Box key={field.id} gap={1}>
-						<Box width={16}>
+						<Box
+							width={16}
+							marginLeft={
+								field.meta?.depth ? field.meta.depth * 2 : 0
+							}
+						>
 							<Text color="gray">
 								{field.shortLabel || field.label}
 							</Text>
@@ -317,7 +325,12 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 							gap={1}
 							marginLeft={groupName !== "Other" ? 2 : 0}
 						>
-							<Box width={16}>
+							<Box
+								width={16}
+								marginLeft={
+									field.meta?.depth ? field.meta.depth * 2 : 0
+								}
+							>
 								<Text color="gray">
 									{field.shortLabel || field.label}
 								</Text>
@@ -373,6 +386,7 @@ export const completedFieldsUtils = {
 					value: String(value),
 					formattedValue,
 					timestamp: Date.now(),
+					meta: originalProperties.meta, // Include meta from original field properties
 				});
 			}
 		}

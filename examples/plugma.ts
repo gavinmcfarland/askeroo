@@ -138,8 +138,8 @@ const flow = async () => {
 			let shadcnConfig;
 			if (addons.includes("shadcn")) {
 				shadcnConfig = await radio({
-					label: "asas",
-					shortLabel: "asas",
+					label: "Shadcn Theme",
+					shortLabel: "Shadcn Theme",
 					options: [
 						{ value: "default", label: "Default" },
 						{ value: "shadcn-grape", label: "Grape" },
@@ -151,6 +151,22 @@ const flow = async () => {
 						{ value: "shadcn-melon", label: "Melon" },
 						{ value: "shadcn-mint", label: "Mint" },
 					],
+					meta: {
+						depth: 1,
+					},
+				});
+
+				shadcnConfig = await radio({
+					label: "Shadcn Theme",
+					shortLabel: "Color",
+					options: [
+						{ value: "default", label: "Default" },
+						{ value: "shadcn-grape", label: "Grape" },
+						{ value: "shadcn-honey", label: "Honey" },
+					],
+					meta: {
+						depth: 1,
+					},
 				});
 			}
 
@@ -168,7 +184,6 @@ const flow = async () => {
 				template,
 				addons,
 				typescript,
-				...(shadcnConfig && { shadcnConfig }),
 			};
 
 			return answers;
