@@ -289,16 +289,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				if (request.type === "addGroupToParent") {
 					const { parentGroupId, groupInfo } = request as any;
 
-					console.log(
-						"🔄 NESTED_GROUP_FIX: Adding group to parent history",
-						{
-							parentGroupId,
-							groupInfo,
-							currentGroupFieldHistory:
-								groupFieldHistory.get(parentGroupId) || [],
-						}
-					);
-
 					setGroupFieldHistory((prev) => {
 						const newMap = new Map(prev);
 						let parentFields = newMap.get(parentGroupId) || [];
@@ -349,30 +339,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 						const newFields = [...parentFields];
 						if (insertIndex === -1) {
-							console.log(
-								"📝 Appending group to end of parent history"
-							);
 							newFields.push(groupInfo); // Append if no later fields
 						} else {
-							console.log(
-								`📝 Inserting group at position ${insertIndex} in parent history`
-							);
 							newFields.splice(insertIndex, 0, groupInfo); // Insert at correct position
 						}
-
-						console.log("✅ Updated parent group field history", {
-							parentGroupId,
-							oldFields: parentFields.map((f) => ({
-								id: f.id,
-								label: f.label,
-								type: f.type,
-							})),
-							newFields: newFields.map((f) => ({
-								id: f.id,
-								label: f.label,
-								type: f.type,
-							})),
-						});
 
 						newMap.set(parentGroupId, newFields);
 						return newMap;
@@ -382,10 +352,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					setCompletedFields((prev) => {
 						const newCompleted = new Set(prev);
 						newCompleted.add(groupInfo.id);
-						console.log("🎯 Marking nested group as completed", {
-							groupId: groupInfo.id,
-							groupLabel: groupInfo.label,
-						});
 						return newCompleted;
 					});
 

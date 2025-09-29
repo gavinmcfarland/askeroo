@@ -483,11 +483,6 @@ export function createRuntime(ui: UI) {
 					hideAfterSubmit: false
 				};
 
-				console.log("🔗 ADDING_GROUP_TO_PARENT_HISTORY", {
-					parentGroupId: currentParentGroupId,
-					groupInfo,
-					action: "addGroupToParentHistory"
-				});
 
 				// Notify UI to add this group to parent's history
 				extendedUI.addGroupToParentHistory?.(currentParentGroupId, groupInfo);
