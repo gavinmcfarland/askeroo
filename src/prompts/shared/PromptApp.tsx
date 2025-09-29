@@ -168,7 +168,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// Helper function to get display name for a group
 	const getGroupDisplayName = (groupId: string | null): string | null => {
 		if (!groupId) return null;
-		return groupIdToMessageRef.current.get(groupId) || null;
+		const label = groupIdToMessageRef.current.get(groupId);
+		// Return null if label is undefined to prevent race condition display issues
+		return label !== undefined ? label : null;
 	};
 
 	// Handler for when fields provide hint text
@@ -489,6 +491,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						});
 					}
 				} else if (request.type === "group") {
+					// Track group ID to label mapping FIRST to prevent race conditions
+					groupIdToMessageRef.current.set(request.id, request.label);
+					setGroupIdToMessage((prev) => {
+						const newMap = new Map(prev);
+						newMap.set(request.id, request.label);
+						return newMap;
+					});
+
 					setRootPromptOrder((prev) => {
 						const entry = {
 							id: request.id,
@@ -499,14 +509,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							return [...prev, entry];
 						}
 						return prev;
-					});
-
-					// Track group ID to label mapping
-					groupIdToMessageRef.current.set(request.id, request.label);
-					setGroupIdToMessage((prev) => {
-						const newMap = new Map(prev);
-						newMap.set(request.id, request.label);
-						return newMap;
 					});
 
 					// Track group order using IDs
