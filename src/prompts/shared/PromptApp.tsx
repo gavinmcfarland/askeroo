@@ -1281,13 +1281,30 @@ export function PromptApp({ onReady }: PromptAppProps) {
 									rootPromptOrder.find(
 										(p) => p.id === field.id
 									)?.groupName === groupId;
+
+								// NESTED_GROUP_FIX: For nested groups, they may not be in rootPromptOrder
+								// but they should still be included if they're in the parent's groupFieldHistory
+								const isNestedGroup = field.type === "group" &&
+									!belongsToGroup &&
+									completedFields.has(field.id);
+
 								return (
 									completedFields.has(field.id) &&
-									belongsToGroup
+									(belongsToGroup || isNestedGroup)
 								);
 							})
 							.map((field) => {
 								const fieldValue = fieldValues[field.id];
+
+								// NESTED_GROUP_FIX: Ensure nested groups are rendered properly in completed state
+								if (field.type === "group") {
+									console.log("🎯 Rendering nested group in completed parent group", {
+										nestedGroupId: field.id,
+										nestedGroupLabel: field.label,
+										parentGroupId: groupId
+									});
+								}
+
 								return renderFieldComponent(field, {
 									key: `completed-group-field-${field.id}`,
 									completed: true,
