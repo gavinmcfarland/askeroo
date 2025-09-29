@@ -208,19 +208,19 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 		return fields;
 	}, [completedFieldsFromApp, props.filter, props.maxFields]);
 
-	// Group fields by group name for rendering
-	const groupedFields = React.useMemo(() => {
-		const groups: { [groupName: string]: CompletedField[] } = {};
-
-		filteredFields.forEach((field) => {
-			const groupName = field.groupName || "Other";
-			if (!groups[groupName]) {
-				groups[groupName] = [];
-			}
-			groups[groupName].push(field);
+	// Sort fields by declaration order (step number) instead of grouping by group name
+	const sortedFields = React.useMemo(() => {
+		// Extract step number from field ID for sorting
+		const fieldsWithOrder = filteredFields.map((field) => {
+			const stepMatch = field.id.match(/step:(\d+)/);
+			const stepNumber = stepMatch ? parseInt(stepMatch[1]) : 0;
+			return { ...field, stepNumber };
 		});
 
-		return groups;
+		// Sort by step number to maintain declaration order
+		fieldsWithOrder.sort((a, b) => a.stepNumber - b.stepNumber);
+
+		return fieldsWithOrder;
 	}, [filteredFields]);
 
 	if (filteredFields.length === 0) {
@@ -256,7 +256,7 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 						</Text>
 					</Box>
 				)}
-				{filteredFields.map((field) => (
+				{sortedFields.map((field) => (
 					<Box key={field.id} gap={1}>
 						<Box
 							width={16}
@@ -279,7 +279,7 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 		);
 	}
 
-	// Render with group headers
+	// Render with proper indentation based on field depth
 	return (
 		<Box flexDirection="column">
 			{props.title && (
@@ -289,85 +289,28 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 					</Text>
 				</Box>
 			)}
-			{Object.entries(groupedFields).map(([groupName, fields]) => (
-				<Box key={groupName} flexDirection="column">
-					{/* {groupName !== "Other" && (
-						<Box>
-							<Text color="green">{groupName}</Text>
-						</Box>
-					)} */}
-					{fields.map((field) => (
-						<Box
-							key={field.id}
-							gap={1}
-							marginLeft={groupName !== "Other" ? 3 : 0}
-						>
-							<Box width={16}>
-								<Text color="gray">
-									{field.meta?.group && (
-										<Text color="white">
-											{field.meta?.group}{" "}
-										</Text>
-									)}
-
-									{field.shortLabel || field.label}
-								</Text>
-							</Box>
-							<Text>
-								<Text color="blue">
-									{field.formattedValue || field.value}
-								</Text>
-							</Text>
-						</Box>
-					))}
+			{sortedFields.map((field) => (
+				<Box key={field.id} gap={1}>
+					<Box
+						width={16}
+						marginLeft={
+							field.meta?.depth ? field.meta.depth * 2 : 0
+						}
+					>
+						<Text color="gray">
+							{field.meta?.group && (
+								<Text color="white">{field.meta?.group} </Text>
+							)}
+							{field.shortLabel || field.label}
+						</Text>
+					</Box>
+					<Text>
+						<Text color="blue">
+							{field.formattedValue || field.value}
+						</Text>
+					</Text>
 				</Box>
 			))}
 		</Box>
 	);
 }
-
-// Utility functions for debugging (these are now handled automatically by the app)
-export const completedFieldsUtils = {
-	// Get current state for debugging
-	getAppState: () => ({ ...globalAppState }),
-
-	// Get completed fields as objects for debugging
-	getCompletedFields: () => {
-		const fields: CompletedField[] = [];
-		for (const fieldId of globalAppState.completedFields) {
-			if (globalAppState.fieldValues[fieldId] !== undefined) {
-				const value = globalAppState.fieldValues[fieldId];
-				const groupName = globalAppState.groupNames[fieldId];
-				const groupId = globalAppState.groupIds[fieldId];
-
-				// Get the original field properties
-				const originalProperties =
-					globalAppState.fieldProperties.get(fieldId) || {};
-
-				// Use the original field's label and shortLabel properties
-				const label =
-					originalProperties.label ||
-					originalProperties.message ||
-					globalAppState.fieldMessages[fieldId] ||
-					fieldId;
-				const shortLabel = originalProperties.shortLabel;
-
-				// Format the value using the original field properties
-				const formattedValue = formatValue(value, originalProperties);
-
-				fields.push({
-					id: fieldId,
-					groupName,
-					groupId,
-					label,
-					shortLabel,
-					value: String(value),
-					formattedValue,
-					timestamp: Date.now(),
-					meta: originalProperties.meta, // Include meta from original field properties
-				});
-			}
-		}
-		return fields;
-	},
-};

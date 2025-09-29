@@ -47,33 +47,64 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const [phaseGroups, setPhaseGroups] = useState<Set<string>>(new Set());
 	const [staticGroups, setStaticGroups] = useState<Set<string>>(new Set());
 	const [staticGroupFields, setStaticGroupFields] = useState<
-		Map<string, Array<{ id: string; label: string; type: string; hideAfterSubmit?: boolean }>>
+		Map<
+			string,
+			Array<{
+				id: string;
+				label: string;
+				type: string;
+				hideAfterSubmit?: boolean;
+			}>
+		>
 	>(new Map());
 	const [groupFieldHistory, setGroupFieldHistory] = useState<
-		Map<string, Array<{ id: string; label: string; type: string; hideAfterSubmit?: boolean }>>
+		Map<
+			string,
+			Array<{
+				id: string;
+				label: string;
+				type: string;
+				hideAfterSubmit?: boolean;
+			}>
+		>
 	>(new Map());
 	const [completedGroups, setCompletedGroups] = useState<Set<string>>(
 		new Set()
 	);
 
 	// NESTED_GROUP_FIX: Track field declaration order for proper positioning
-	const [fieldDeclarationOrder, setFieldDeclarationOrder] = useState<Map<string, number>>(new Map());
+	const [fieldDeclarationOrder, setFieldDeclarationOrder] = useState<
+		Map<string, number>
+	>(new Map());
 	const declarationCounterRef = useRef(0);
 
 	// Track field metadata for the completed fields plugin
-	const [fieldMessages, setFieldMessages] = useState<Record<string, string>>({});
-	const [fieldGroupNames, setFieldGroupNames] = useState<Record<string, string>>({});
-	const [fieldGroupIds, setFieldGroupIds] = useState<Record<string, string>>({});
+	const [fieldMessages, setFieldMessages] = useState<Record<string, string>>(
+		{}
+	);
+	const [fieldGroupNames, setFieldGroupNames] = useState<
+		Record<string, string>
+	>({});
+	const [fieldGroupIds, setFieldGroupIds] = useState<Record<string, string>>(
+		{}
+	);
 	const [groupOrder, setGroupOrder] = useState<string[]>([]);
 	const [groupIdToMessage, setGroupIdToMessage] = useState<
 		Map<string, string | undefined>
 	>(new Map());
-	const groupIdToMessageRef = useRef<Map<string, string | undefined>>(new Map());
+	const groupIdToMessageRef = useRef<Map<string, string | undefined>>(
+		new Map()
+	);
 	const [rootPromptOrder, setRootPromptOrder] = useState<
 		Array<{ id: string; type: "field" | "group"; groupName?: string }>
 	>([]);
 	const [rootFieldHistory, setRootFieldHistory] = useState<
-		Array<{ id: string; label: string; type: string; hideAfterSubmit?: boolean }>
+		Array<{
+			id: string;
+			label: string;
+			type: string;
+			hideAfterSubmit?: boolean;
+		}>
 	>([]);
 	// Store complete field properties for proper rendering
 	const [fieldProperties, setFieldProperties] = useState<Map<string, any>>(
@@ -81,16 +112,16 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	);
 
 	// Task storage similar to field storage
-	const [taskListDynamicTasks, setTaskListDynamicTasks] = useState<Map<string, Array<any>>>(
-		new Map()
-	);
-	const [taskListStates, setTaskListStates] = useState<Map<string, Map<string, any>>>(
-		new Map()
-	);
+	const [taskListDynamicTasks, setTaskListDynamicTasks] = useState<
+		Map<string, Array<any>>
+	>(new Map());
+	const [taskListStates, setTaskListStates] = useState<
+		Map<string, Map<string, any>>
+	>(new Map());
 	// Store all task states (including regular tasks, not just dynamic)
-	const [allTaskStates, setAllTaskStates] = useState<Map<string, Map<string, any>>>(
-		new Map()
-	);
+	const [allTaskStates, setAllTaskStates] = useState<
+		Map<string, Map<string, any>>
+	>(new Map());
 
 	// Update completed fields plugin state whenever relevant data changes
 	useEffect(() => {
@@ -100,9 +131,16 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			groupNames: fieldGroupNames,
 			groupIds: fieldGroupIds,
 			fieldMessages,
-			fieldProperties
+			fieldProperties,
 		});
-	}, [completedFields, fieldValues, fieldGroupNames, fieldGroupIds, fieldMessages, fieldProperties]);
+	}, [
+		completedFields,
+		fieldValues,
+		fieldGroupNames,
+		fieldGroupIds,
+		fieldMessages,
+		fieldProperties,
+	]);
 
 	// Initialize task store
 	useEffect(() => {
@@ -156,7 +194,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			console.log("🎯 Rendering nested group in completed fields", {
 				groupId: fieldInfo.id,
 				groupLabel: fieldInfo.label,
-				key
+				key,
 			});
 
 			// Get the completed fields for this nested group
@@ -164,36 +202,53 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 			console.log("🔍 Looking for nested group fields", {
 				nestedGroupId: fieldInfo.id,
-				nestedGroupFields: nestedGroupFields.map(f => ({ id: f.id, label: f.label, type: f.type })),
-				allGroupFieldHistory: Array.from(groupFieldHistory.entries()).map(([id, fields]) => ({
+				nestedGroupFields: nestedGroupFields.map((f) => ({
+					id: f.id,
+					label: f.label,
+					type: f.type,
+				})),
+				allGroupFieldHistory: Array.from(
+					groupFieldHistory.entries()
+				).map(([id, fields]) => ({
 					groupId: id,
 					fieldsCount: fields.length,
-					fields: fields.map(f => ({ id: f.id, label: f.label, type: f.type }))
+					fields: fields.map((f) => ({
+						id: f.id,
+						label: f.label,
+						type: f.type,
+					})),
 				})),
-				allCompletedFields: Array.from(completedFields)
+				allCompletedFields: Array.from(completedFields),
 			});
 
 			const nestedCompletedFields = nestedGroupFields
-				.filter(field => completedFields.has(field.id) && !field.hideAfterSubmit)
-				.map(nestedField => {
+				.filter(
+					(field) =>
+						completedFields.has(field.id) && !field.hideAfterSubmit
+				)
+				.map((nestedField) => {
 					const nestedFieldValue = fieldValues[nestedField.id];
 
 					console.log("🔸 Rendering nested field", {
 						nestedFieldId: nestedField.id,
 						nestedFieldLabel: nestedField.label,
 						nestedFieldValue,
-						nestedFieldType: nestedField.type
+						nestedFieldType: nestedField.type,
 					});
 
 					// Render the nested field as completed
-					return renderFieldComponent(nestedField, {
-						key: `nested-${nestedField.id}`,
-						completed: true,
-						completedValue: nestedFieldValue,
-						onSubmit: () => {},
-						allowBack: false,
-						flow: undefined
-					}, false);
+					return renderFieldComponent(
+						nestedField,
+						{
+							key: `nested-${nestedField.id}`,
+							completed: true,
+							completedValue: nestedFieldValue,
+							onSubmit: () => {},
+							allowBack: false,
+							flow: undefined,
+						},
+						false
+					);
 				});
 
 			// Use GroupContainer for consistent styling and gaps
@@ -234,41 +289,89 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				if (request.type === "addGroupToParent") {
 					const { parentGroupId, groupInfo } = request as any;
 
-					console.log("🔄 NESTED_GROUP_FIX: Adding group to parent history", {
-						parentGroupId,
-						groupInfo,
-						currentGroupFieldHistory: groupFieldHistory.get(parentGroupId) || []
-					});
+					console.log(
+						"🔄 NESTED_GROUP_FIX: Adding group to parent history",
+						{
+							parentGroupId,
+							groupInfo,
+							currentGroupFieldHistory:
+								groupFieldHistory.get(parentGroupId) || [],
+						}
+					);
 
-					setGroupFieldHistory(prev => {
+					setGroupFieldHistory((prev) => {
 						const newMap = new Map(prev);
-						const parentFields = newMap.get(parentGroupId) || [];
+						let parentFields = newMap.get(parentGroupId) || [];
+
+						// NESTED_GROUP_FIX: Ensure all parent group fields are tracked before insertion
+						// Find all completed fields that belong to the parent group
+						const parentGroupFields = Array.from(completedFields)
+							.filter((fieldId) => {
+								const fieldGroupName = fieldGroupNames[fieldId];
+								return fieldGroupName === parentGroupId;
+							})
+							.map((fieldId) => ({
+								id: fieldId,
+								label: fieldMessages[fieldId] || fieldId,
+								type: "field",
+							}))
+							.sort((a, b) => {
+								const aIndex =
+									fieldDeclarationOrder.get(a.id) || 0;
+								const bIndex =
+									fieldDeclarationOrder.get(b.id) || 0;
+								return aIndex - bIndex;
+							});
+
+						// Update parent fields to include all completed parent group fields
+						parentFields = parentGroupFields;
 
 						// Insert at correct position based on declaration order
-						const insertIndex = parentFields.findIndex(field => {
-							const fieldDeclarationIndex = fieldDeclarationOrder.get(field.id);
+						const insertIndex = parentFields.findIndex((field) => {
+							const fieldDeclarationIndex =
+								fieldDeclarationOrder.get(field.id);
 							console.log("🔍 Comparing field positions", {
 								fieldId: field.id,
 								fieldDeclarationIndex,
-								groupDeclarationIndex: groupInfo.declarationIndex,
-								shouldInsertBefore: fieldDeclarationIndex && fieldDeclarationIndex > groupInfo.declarationIndex
+								groupDeclarationIndex:
+									groupInfo.declarationIndex,
+								shouldInsertBefore:
+									fieldDeclarationIndex &&
+									fieldDeclarationIndex >
+										groupInfo.declarationIndex,
 							});
-							return fieldDeclarationIndex !== undefined && fieldDeclarationIndex > groupInfo.declarationIndex;
+							return (
+								fieldDeclarationIndex !== undefined &&
+								fieldDeclarationIndex >
+									groupInfo.declarationIndex
+							);
 						});
 
 						const newFields = [...parentFields];
 						if (insertIndex === -1) {
-							console.log("📝 Appending group to end of parent history");
+							console.log(
+								"📝 Appending group to end of parent history"
+							);
 							newFields.push(groupInfo); // Append if no later fields
 						} else {
-							console.log(`📝 Inserting group at position ${insertIndex} in parent history`);
+							console.log(
+								`📝 Inserting group at position ${insertIndex} in parent history`
+							);
 							newFields.splice(insertIndex, 0, groupInfo); // Insert at correct position
 						}
 
 						console.log("✅ Updated parent group field history", {
 							parentGroupId,
-							oldFields: parentFields.map(f => ({ id: f.id, label: f.label, type: f.type })),
-							newFields: newFields.map(f => ({ id: f.id, label: f.label, type: f.type }))
+							oldFields: parentFields.map((f) => ({
+								id: f.id,
+								label: f.label,
+								type: f.type,
+							})),
+							newFields: newFields.map((f) => ({
+								id: f.id,
+								label: f.label,
+								type: f.type,
+							})),
 						});
 
 						newMap.set(parentGroupId, newFields);
@@ -276,12 +379,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					});
 
 					// NESTED_GROUP_FIX: Mark the nested group as completed so it appears in completed fields
-					setCompletedFields(prev => {
+					setCompletedFields((prev) => {
 						const newCompleted = new Set(prev);
 						newCompleted.add(groupInfo.id);
 						console.log("🎯 Marking nested group as completed", {
 							groupId: groupInfo.id,
-							groupLabel: groupInfo.label
+							groupLabel: groupInfo.label,
 						});
 						return newCompleted;
 					});
@@ -296,7 +399,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					setCompletedFields((prev) => {
 						const newCompleted = new Set(prev);
 						// Add all field values as completed
-						Object.keys(fieldValues).forEach(fieldId => {
+						Object.keys(fieldValues).forEach((fieldId) => {
 							newCompleted.add(fieldId);
 							completionHistoryRef.current.push(fieldId);
 						});
@@ -325,18 +428,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				// Store complete field properties for later rendering
 				if (request.type !== "group") {
 					// NESTED_GROUP_FIX: Track field declaration order
-					setFieldDeclarationOrder(prevOrder => {
+					setFieldDeclarationOrder((prevOrder) => {
 						if (!prevOrder.has(request.id)) {
 							declarationCounterRef.current += 1;
-							const newDeclarationIndex = declarationCounterRef.current;
-
-							console.log("📍 NESTED_GROUP_FIX: Recording field declaration", {
-								fieldId: request.id,
-								fieldLabel: request.label || request.message,
-								declarationIndex: newDeclarationIndex,
-								fieldType: request.type,
-								groupName: request.groupName
-							});
+							const newDeclarationIndex =
+								declarationCounterRef.current;
 
 							const newMap = new Map(prevOrder);
 							newMap.set(request.id, newDeclarationIndex);
@@ -353,24 +449,28 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					// Track field metadata for completed fields plugin
 					// Try to get the field label from various possible properties
-					const fieldLabel = request.label || request.message || `${request.type} field`;
-					setFieldMessages(prev => ({
+					const fieldLabel =
+						request.label ||
+						request.message ||
+						`${request.type} field`;
+					setFieldMessages((prev) => ({
 						...prev,
-						[request.id]: fieldLabel
+						[request.id]: fieldLabel,
 					}));
 					if (request.groupName) {
 						// Store the group ID (for filtering)
-						setFieldGroupIds(prev => ({
+						setFieldGroupIds((prev) => ({
 							...prev,
-							[request.id]: request.groupName!
+							[request.id]: request.groupName!,
 						}));
 
 						// Store the group display name (for UI display) - only if there's actually a label
-						const groupDisplayName = groupIdToMessageRef.current.get(request.groupName);
+						const groupDisplayName =
+							groupIdToMessageRef.current.get(request.groupName);
 						if (groupDisplayName) {
-							setFieldGroupNames(prev => ({
+							setFieldGroupNames((prev) => ({
 								...prev,
-								[request.id]: groupDisplayName
+								[request.id]: groupDisplayName,
 							}));
 						}
 					}
@@ -401,8 +501,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								newMap.get(request.groupName!) || [];
 							const fieldInfo = {
 								id: request.id,
-								label:
-									request.label || `${request.type} field`,
+								label: request.label || `${request.type} field`,
 								type: request.type,
 								hideAfterSubmit: request.hideAfterSubmit,
 							};
@@ -610,7 +709,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							? actualValue.trim() !== ""
 							: actualValue !== undefined;
 
-					if (shouldMarkCompleted && !currentPrompt.excludeFromCompleted) {
+					if (
+						shouldMarkCompleted &&
+						!currentPrompt.excludeFromCompleted
+					) {
 						setCompletedFields((prev) =>
 							new Set(prev).add(currentPrompt.id)
 						);
@@ -635,7 +737,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 										currentPrompt.label ||
 										`${currentPrompt.type} field`,
 									type: currentPrompt.type,
-									hideAfterSubmit: currentPrompt.hideAfterSubmit,
+									hideAfterSubmit:
+										currentPrompt.hideAfterSubmit,
 								};
 
 								// Only add if not already present
@@ -673,7 +776,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 										currentPrompt.label ||
 										`${currentPrompt.type} field`,
 									type: currentPrompt.type,
-									hideAfterSubmit: currentPrompt.hideAfterSubmit,
+									hideAfterSubmit:
+										currentPrompt.hideAfterSubmit,
 								};
 
 								if (
@@ -878,7 +982,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			});
 
 			// Remove the most recently completed field from completed status when going back
-			const lastCompletedField = completionHistoryRef.current[completionHistoryRef.current.length - 1];
+			const lastCompletedField =
+				completionHistoryRef.current[
+					completionHistoryRef.current.length - 1
+				];
 			if (lastCompletedField) {
 				setCompletedFields((prev) => {
 					if (!prev.has(lastCompletedField)) return prev;
@@ -1010,7 +1117,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// Clear hint text when switching to non-interactive components
 	useEffect(() => {
 		if (currentPrompt && currentPrompt.type !== "group") {
-			const isInteractive = globalRegistry.isInteractive(currentPrompt.type);
+			const isInteractive = globalRegistry.isInteractive(
+				currentPrompt.type
+			);
 			if (!isInteractive) {
 				setCurrentHintText(null);
 			}
@@ -1020,7 +1129,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// Completely ignore group prompts in render
 	const effectivePrompt =
 		currentPrompt?.type === "group" ? null : currentPrompt;
-
 
 	// Render completed fields for all groups (sequential by default)
 	const renderCompletedFields = () => {
@@ -1051,7 +1159,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				allFields.set(field.label + "|" + field.type, field);
 			});
 
-			const allFieldsArray = Array.from(allFields.values()).filter(field => !field.hideAfterSubmit);
+			const allFieldsArray = Array.from(allFields.values()).filter(
+				(field) => !field.hideAfterSubmit
+			);
 
 			return allFieldsArray.map((field, index) => {
 				// For static groups, find the stored value by matching label and type
@@ -1284,7 +1394,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 								// NESTED_GROUP_FIX: For nested groups, they may not be in rootPromptOrder
 								// but they should still be included if they're in the parent's groupFieldHistory
-								const isNestedGroup = field.type === "group" &&
+								const isNestedGroup =
+									field.type === "group" &&
 									!belongsToGroup &&
 									completedFields.has(field.id);
 
@@ -1298,11 +1409,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 								// NESTED_GROUP_FIX: Ensure nested groups are rendered properly in completed state
 								if (field.type === "group") {
-									console.log("🎯 Rendering nested group in completed parent group", {
-										nestedGroupId: field.id,
-										nestedGroupLabel: field.label,
-										parentGroupId: groupId
-									});
+									console.log(
+										"🎯 Rendering nested group in completed parent group",
+										{
+											nestedGroupId: field.id,
+											nestedGroupLabel: field.label,
+											parentGroupId: groupId,
+										}
+									);
 								}
 
 								return renderFieldComponent(field, {
@@ -1355,7 +1469,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		);
 
 		if (PluginComponent) {
-			const isInteractive = globalRegistry.isInteractive(effectivePrompt.type);
+			const isInteractive = globalRegistry.isInteractive(
+				effectivePrompt.type
+			);
 			const isSequentialGroup = !!(
 				effectivePrompt.groupName &&
 				!phaseGroups.has(effectivePrompt.groupName)
@@ -1363,10 +1479,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			const hasCompletedFields =
 				isSequentialGroup && completedFields.size > 0;
 			const allowBack =
-				effectivePrompt.allowBack !== false && (
-					effectivePrompt.id !== firstFieldIdRef.current ||
-					hasCompletedFields
-				);
+				effectivePrompt.allowBack !== false &&
+				(effectivePrompt.id !== firstFieldIdRef.current ||
+					hasCompletedFields);
 
 			// Get initial value based on prompt type
 			const getInitialValue = () => {
@@ -1408,14 +1523,20 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				effectivePrompt.id === firstFieldIdRef.current;
 
 			// Check if this is the first field in its group
-			const isFirstInGroup = effectivePrompt.groupName ?
-				// For grouped fields, check if this is the first field in the group's history
-				(() => {
-					const groupHistory = groupFieldHistory.get(effectivePrompt.groupName);
-					return !groupHistory || groupHistory.length === 0 || groupHistory[0].id === effectivePrompt.id;
-				})() :
-				// For root-level fields, they are not in a group, so always false
-				false;
+			const isFirstInGroup = effectivePrompt.groupName
+				? // For grouped fields, check if this is the first field in the group's history
+				  (() => {
+						const groupHistory = groupFieldHistory.get(
+							effectivePrompt.groupName
+						);
+						return (
+							!groupHistory ||
+							groupHistory.length === 0 ||
+							groupHistory[0].id === effectivePrompt.id
+						);
+				  })()
+				: // For root-level fields, they are not in a group, so always false
+				  false;
 
 			// Determine flow type based on current group
 			const flowType =

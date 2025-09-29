@@ -442,13 +442,6 @@ export function createRuntime(ui: UI) {
 		const groupDeclarationIndex = interactivePrompts.length;
 		const parentGroupId = groupStack.length > 0 ? groupStack[groupStack.length - 1] : null;
 
-		console.log("🎯 GROUP_DECLARATION", {
-			groupLabel: combinedOpts.label,
-			declarationIndex: groupDeclarationIndex,
-			parentGroupId,
-			currentGroupStack: [...groupStack],
-			currentInteractivePrompts: interactivePrompts.length
-		});
 
 		// For static groups, we need to run discovery to find fields
 		if (opts?.flow === "static") {
@@ -479,13 +472,6 @@ export function createRuntime(ui: UI) {
 			const completedGroupId = groupStack[groupStack.length - 1];
 			const currentParentGroupId = groupStack.length > 1 ? groupStack[groupStack.length - 2] : null;
 
-			console.log("✅ GROUP_COMPLETION", {
-				completedGroupId,
-				groupLabel: combinedOpts.label,
-				parentGroupId: currentParentGroupId,
-				declarationIndex: groupDeclarationIndex,
-				groupStackBeforePop: [...groupStack]
-			});
 
 			// If this group has a parent, add it to the parent's history
 			if (currentParentGroupId) {
