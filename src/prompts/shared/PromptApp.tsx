@@ -9,8 +9,8 @@ import { addToSet, setInMap, updateInMap } from "../../utils/immutable.js";
 import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../../registry.js";
-import { updateAppState } from "../../plugins/completed-fields/CompletedFields.js";
 import { initializeTasksInApp } from "../../plugins/tasks/index.js";
+import { notifyStateUpdate } from "../../plugins/state-registry/StateRegistry.js";
 
 // Generic prompt request that works for all plugins
 type PromptRequest = {
@@ -265,23 +265,43 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		new Map()
 	);
 
-	// Update completed fields plugin state whenever relevant data changes
+	// Notify all registered plugins of state changes
 	useEffect(() => {
-		updateAppState({
-			completedFields,
-			fieldValues,
-			groupNames: fieldGroupNames,
-			groupIds: fieldGroupIds,
-			fieldMessages,
-			fieldProperties,
+		notifyStateUpdate({
+			fieldState: {
+				values: fieldValues,
+				visited: visitedPrompts,
+				completed: completedFields,
+				properties: fieldProperties,
+				messages: fieldMessages,
+				groupNames: fieldGroupNames,
+				groupIds: fieldGroupIds
+			},
+			groupState: {
+				progressive: progressiveGroups,
+				phased: phaseGroups,
+				static: staticGroups,
+				completed: completedGroups,
+				order: groupOrder,
+				arrowNavigation: arrowNavigationGroups
+			},
+			currentGroup
 		});
 	}, [
-		completedFields,
 		fieldValues,
+		visitedPrompts,
+		completedFields,
+		fieldProperties,
+		fieldMessages,
 		fieldGroupNames,
 		fieldGroupIds,
-		fieldMessages,
-		fieldProperties,
+		progressiveGroups,
+		phaseGroups,
+		staticGroups,
+		completedGroups,
+		groupOrder,
+		arrowNavigationGroups,
+		currentGroup,
 	]);
 
 	const firstFieldIdRef = useRef<string | null>(null);

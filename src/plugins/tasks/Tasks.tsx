@@ -45,14 +45,12 @@ import {
 	getDynamicTasksForList,
 	getTaskStatesForList,
 	getAllTaskStatesForList,
-	hasAnyTaskLists
-} from "../task-store/TaskStore.js";
+	hasAnyTaskLists,
+} from "./TaskStore.js";
 
 // Track active task lists for tasks.add() functionality
 let activeTaskLists: Set<string> = new Set();
 let mostRecentTaskListId: string | null = null;
-
-
 
 // Function to end a task list
 function endTaskList(taskListId: string) {
@@ -60,10 +58,10 @@ function endTaskList(taskListId: string) {
 	if (mostRecentTaskListId === taskListId) {
 		// Find the most recent active task list, or set to null if none
 		const activeLists = [...activeTaskLists];
-		mostRecentTaskListId = activeLists.length > 0 ? activeLists[activeLists.length - 1] : null;
+		mostRecentTaskListId =
+			activeLists.length > 0 ? activeLists[activeLists.length - 1] : null;
 	}
 }
-
 
 // Export functions for accessing global state
 export function getGlobalTaskStates(): Map<string, TaskState> {
@@ -99,7 +97,9 @@ export function addDynamicTask(task: Task): Promise<void> {
 		// Execute the task after a short delay to show in UI
 		setTimeout(async () => {
 			try {
-				updateTaskStateInStore(taskListId, taskId, { status: "running" });
+				updateTaskStateInStore(taskListId, taskId, {
+					status: "running",
+				});
 
 				if (task.action) {
 					await task.action();
@@ -145,16 +145,23 @@ export function TasksDisplay(props: TasksOptions) {
 	// Use a stable taskListId based on task content to enable state persistence
 	const [taskListId] = useState(() => {
 		// Create a deterministic ID based on task structure
-		const taskHash = JSON.stringify(props.tasks.map(t => ({ label: t.label, concurrent: t.concurrent })));
-		const hash = taskHash.split('').reduce((a, b) => {
-			a = ((a << 5) - a) + b.charCodeAt(0);
+		const taskHash = JSON.stringify(
+			props.tasks.map((t) => ({
+				label: t.label,
+				concurrent: t.concurrent,
+			}))
+		);
+		const hash = taskHash.split("").reduce((a, b) => {
+			a = (a << 5) - a + b.charCodeAt(0);
 			return a & a;
 		}, 0);
 		return `tasklist_${Math.abs(hash)}`;
 	});
 
 	// Use the existing local task state system for regular tasks
-	const [taskStates, setTaskStates] = useState<Map<string, TaskState>>(new Map());
+	const [taskStates, setTaskStates] = useState<Map<string, TaskState>>(
+		new Map()
+	);
 
 	// Get dynamic tasks for this specific task list only
 	const [dynamicTasks, setDynamicTasks] = useState<Array<any>>([]);
@@ -191,15 +198,18 @@ export function TasksDisplay(props: TasksOptions) {
 			let hasChanges = false;
 
 			// Only update if there are actual changes
-			setDynamicTasks(prevTasks => {
-				if (JSON.stringify(prevTasks) !== JSON.stringify(newDynamicTasks)) {
+			setDynamicTasks((prevTasks) => {
+				if (
+					JSON.stringify(prevTasks) !==
+					JSON.stringify(newDynamicTasks)
+				) {
 					hasChanges = true;
 					return newDynamicTasks;
 				}
 				return prevTasks;
 			});
 
-			setTaskStates(prevStates => {
+			setTaskStates((prevStates) => {
 				const latestStatesMap = new Map(latestStates);
 				// Compare state maps to avoid unnecessary updates
 				if (prevStates.size !== latestStatesMap.size) {
@@ -208,7 +218,10 @@ export function TasksDisplay(props: TasksOptions) {
 				}
 				for (const [key, value] of prevStates) {
 					const latestValue = latestStatesMap.get(key);
-					if (!latestValue || JSON.stringify(value) !== JSON.stringify(latestValue)) {
+					if (
+						!latestValue ||
+						JSON.stringify(value) !== JSON.stringify(latestValue)
+					) {
 						hasChanges = true;
 						return latestStatesMap;
 					}
@@ -252,7 +265,10 @@ export function TasksDisplay(props: TasksOptions) {
 	// Animate spinner only when tasks are running
 	useEffect(() => {
 		// Check if any tasks are currently running
-		const hasRunningTasks = [...taskStates.values()].some(state => state.status === "running") ||
+		const hasRunningTasks =
+			[...taskStates.values()].some(
+				(state) => state.status === "running"
+			) ||
 			getDynamicTasksForList(taskListId).some((_, index) => {
 				const currentListStates = getTaskStatesForList(taskListId);
 				const taskIds = [...currentListStates.keys()];
@@ -324,7 +340,7 @@ export function TasksDisplay(props: TasksOptions) {
 
 	const updateTaskState = (taskId: string, state: Partial<TaskState>) => {
 		// Update both local state (for immediate UI updates) and centralized store (for persistence)
-		setTaskStates(prev => {
+		setTaskStates((prev) => {
 			const newMap = new Map(prev);
 			const currentState = newMap.get(taskId) || { status: "idle" };
 			newMap.set(taskId, { ...currentState, ...state });
@@ -580,11 +596,7 @@ export function TasksDisplay(props: TasksOptions) {
 
 	// Initialize all tasks as idle, then start execution after a brief delay
 	useEffect(() => {
-		if (
-			!props.completed &&
-			!props.disabled &&
-			!isExecuting
-		) {
+		if (!props.completed && !props.disabled && !isExecuting) {
 			// Initialize all tasks as idle for this task list
 			initializeTasksAsIdle(props.tasks);
 
@@ -631,9 +643,7 @@ export function TasksDisplay(props: TasksOptions) {
 						</Box>
 						{state.warning && (
 							<Box marginLeft={2}>
-								<Text color="yellow">
-									⚠ {state.warning}
-								</Text>
+								<Text color="yellow">⚠ {state.warning}</Text>
 							</Box>
 						)}
 						{state.error && (

@@ -1,6 +1,9 @@
 import { createRuntime } from "./core.js";
 import { ui } from "./ui.js";
 
+// Import plugins to ensure they register themselves
+import "./plugins/completed-fields/CompletedFields.js";
+
 // Type definitions for better IDE support
 export type GroupMeta = { label?: string; id?: string };
 export type GroupOpts =
@@ -91,6 +94,7 @@ export {
 	type RadioOption,
 } from "./plugins/radio/index.js";
 export { tasks, TaskWarning, type Task, type TaskLabel } from "./plugins/tasks/index.js";
+export { completedFields, type CompletedFieldsOptions } from "./plugins/completed-fields/index.js";
 
 // Export markdown utilities
 export {

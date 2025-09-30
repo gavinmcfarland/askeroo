@@ -6,8 +6,9 @@ import {
 	initializeCompletedFieldsStore,
 	updateCompletedFieldsState,
 	CompletedField,
-	CompletedFieldsStoreState
-} from "../completed-fields-store/CompletedFieldsStore.js";
+	CompletedFieldsStoreState,
+} from "./CompletedFieldsStore.js";
+import { registerForStateUpdates, PromptAppState } from "../state-registry/StateRegistry.js";
 
 export interface CompletedFieldsOptions {
 	filter?: string[];
@@ -24,7 +25,7 @@ export interface CompletedFieldsOptions {
 }
 
 // CompletedField interface moved to CompletedFieldsStore
-export type { CompletedField } from "../completed-fields-store/CompletedFieldsStore.js";
+export type { CompletedField } from "./CompletedFieldsStore.js";
 
 // Helper functions moved to CompletedFieldsStore
 
@@ -32,25 +33,48 @@ export type { CompletedField } from "../completed-fields-store/CompletedFieldsSt
 let globalUpdateListeners: Set<() => void> = new Set();
 let storeInitialized = false;
 
-// Function for PromptApp to update the global state
-export function updateAppState(state: CompletedFieldsStoreState) {
-	// Initialize store connection on first call
-	if (!storeInitialized) {
-		initializeCompletedFieldsStore((newState) => {
-			// Notify all listeners when store updates
-			globalUpdateListeners.forEach((listener) => listener());
-		});
-		storeInitialized = true;
-	}
+// Register this plugin to receive state updates from PromptApp
+let unregisterStateUpdates: (() => void) | null = null;
 
-	// Update the centralized store
-	updateCompletedFieldsState(state);
-	globalUpdateListeners.forEach((listener) => listener());
+// Initialize plugin when first imported
+if (!storeInitialized) {
+	// Register for state updates from PromptApp
+	unregisterStateUpdates = registerForStateUpdates((state: PromptAppState) => {
+		// Convert PromptApp state to CompletedFieldsStoreState format
+		const completedFieldsState: CompletedFieldsStoreState = {
+			completedFields: state.fieldState.completed,
+			fieldValues: state.fieldState.values,
+			groupNames: state.fieldState.groupNames,
+			groupIds: state.fieldState.groupIds,
+			fieldMessages: state.fieldState.messages,
+			fieldProperties: state.fieldState.properties
+		};
+
+		// Update the centralized store
+		updateCompletedFieldsState(completedFieldsState);
+		globalUpdateListeners.forEach((listener) => listener());
+	});
+
+	// Initialize store connection
+	initializeCompletedFieldsStore((newState) => {
+		// Notify all listeners when store updates
+		globalUpdateListeners.forEach((listener) => listener());
+	});
+
+	storeInitialized = true;
+}
+
+// Legacy function kept for backwards compatibility (now a no-op)
+export function updateAppState(state: CompletedFieldsStoreState) {
+	// This function is now deprecated - state updates come through the registry
+	console.warn('updateAppState is deprecated - completed fields plugin now receives state updates automatically');
 }
 
 // Main component for the plugin
 export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
-	const [appState, setAppState] = useState<CompletedFieldsStoreState>(() => getCompletedFieldsState());
+	const [appState, setAppState] = useState<CompletedFieldsStoreState>(() =>
+		getCompletedFieldsState()
+	);
 
 	useEffect(() => {
 		const updateListener = () => {

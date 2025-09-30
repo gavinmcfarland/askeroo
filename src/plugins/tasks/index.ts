@@ -1,15 +1,15 @@
-import { createPlugin } from '../../registry.js';
-import { TasksDisplay, TasksOptions, Task } from './Tasks.js';
-import { initializeTaskStore, initializeAllTaskStates } from '../task-store/TaskStore.js';
+import { createPlugin } from "../../registry.js";
+import { TasksDisplay, TasksOptions, Task } from "./Tasks.js";
+import { initializeTaskStore, initializeAllTaskStates } from "./TaskStore.js";
 
 // Re-export types
-export type { Task, TaskLabel, CompleteOn } from './Tasks.js';
+export type { Task, TaskLabel, CompleteOn } from "./Tasks.js";
 
 // Result types for task execution
 export interface TaskResult {
 	id: string;
 	label: string;
-	status: 'done' | 'error' | 'warning';
+	status: "done" | "error" | "warning";
 	error?: string;
 	warning?: string;
 	duration?: number;
@@ -29,14 +29,14 @@ export interface TasksResult {
 export class TaskWarning extends Error {
 	constructor(message: string) {
 		super(message);
-		this.name = 'TaskWarning';
+		this.name = "TaskWarning";
 	}
 }
 
 // Function to get results from global task state
 async function getTaskResults(): Promise<TasksResult> {
 	// Import the global state from Tasks.tsx
-	const { getGlobalTaskStates, getTaskLabel } = await import('./Tasks.js');
+	const { getGlobalTaskStates, getTaskLabel } = await import("./Tasks.js");
 	const globalTaskStates = getGlobalTaskStates();
 
 	const results: TaskResult[] = [];
@@ -48,21 +48,24 @@ async function getTaskResults(): Promise<TasksResult> {
 	// Convert global task states to results
 	for (const [taskId, taskState] of globalTaskStates) {
 		// Include completed tasks (not idle/running) and top-level tasks, plus dynamic tasks
-		if ((!taskId.includes('.') || taskId.startsWith('dynamic.')) && ['done', 'error', 'warning'].includes(taskState.status)) {
+		if (
+			(!taskId.includes(".") || taskId.startsWith("dynamic.")) &&
+			["done", "error", "warning"].includes(taskState.status)
+		) {
 			totalTasks++;
 
 			const result: TaskResult = {
 				id: taskId,
 				label: getTaskLabel(taskId) || `Task ${taskId}`,
-				status: taskState.status as 'done' | 'error' | 'warning',
+				status: taskState.status as "done" | "error" | "warning",
 				error: taskState.error,
 				warning: taskState.warning,
 			};
 
 			// Count task outcomes
-			if (taskState.status === 'done') completedTasks++;
-			else if (taskState.status === 'error') failedTasks++;
-			else if (taskState.status === 'warning') warningTasks++;
+			if (taskState.status === "done") completedTasks++;
+			else if (taskState.status === "error") failedTasks++;
+			else if (taskState.status === "warning") warningTasks++;
 
 			results.push(result);
 		}
@@ -80,7 +83,7 @@ async function getTaskResults(): Promise<TasksResult> {
 
 // Internal plugin implementation
 const tasksInternal = createPlugin<TasksOptions, TasksResult>({
-	type: 'tasks',
+	type: "tasks",
 	component: TasksDisplay,
 	interactive: false, // Tasks don't require user interaction
 
@@ -91,32 +94,39 @@ const tasksInternal = createPlugin<TasksOptions, TasksResult>({
 });
 
 // Public API function with add method and execution mode options
-export async function tasks(taskList: TasksOptions['tasks'], options?: { concurrent?: boolean }): Promise<TasksResult> {
+export async function tasks(
+	taskList: TasksOptions["tasks"],
+	options?: { concurrent?: boolean }
+): Promise<TasksResult> {
 	await tasksInternal({
 		tasks: taskList,
-		concurrent: options?.concurrent
+		concurrent: options?.concurrent,
 	});
 
 	// Wait for any pending tasks that were added dynamically
-	const { waitForPendingTasks } = await import('./Tasks.js');
+	const { waitForPendingTasks } = await import("./Tasks.js");
 	await waitForPendingTasks();
 
 	return await getTaskResults();
 }
 
 // Sequential execution method
-tasks.sequential = async function(taskList: TasksOptions['tasks']): Promise<TasksResult> {
+tasks.sequential = async function (
+	taskList: TasksOptions["tasks"]
+): Promise<TasksResult> {
 	return tasks(taskList, { concurrent: false });
 };
 
 // Parallel execution method (explicit, though this is default behavior)
-tasks.parallel = async function(taskList: TasksOptions['tasks']): Promise<TasksResult> {
+tasks.parallel = async function (
+	taskList: TasksOptions["tasks"]
+): Promise<TasksResult> {
 	return tasks(taskList, { concurrent: true });
 };
 
 // Standalone function for adding dynamic tasks
 export async function addTask(task: Task): Promise<void> {
-	const { addDynamicTask, hasExistingTasks } = await import('./Tasks.js');
+	const { addDynamicTask, hasExistingTasks } = await import("./Tasks.js");
 
 	// Only add task if some already exist, otherwise silently fail
 	if (!hasExistingTasks()) {
@@ -127,8 +137,11 @@ export async function addTask(task: Task): Promise<void> {
 }
 
 // Function for adding multiple dynamic tasks
-export async function addTasks(taskList: Task[], options?: { concurrent?: boolean }): Promise<void> {
-	const { addDynamicTask, hasExistingTasks } = await import('./Tasks.js');
+export async function addTasks(
+	taskList: Task[],
+	options?: { concurrent?: boolean }
+): Promise<void> {
+	const { addDynamicTask, hasExistingTasks } = await import("./Tasks.js");
 
 	// Only add tasks if some already exist, otherwise silently fail
 	if (!hasExistingTasks()) {
@@ -142,7 +155,7 @@ export async function addTasks(taskList: Task[], options?: { concurrent?: boolea
 		}
 	} else {
 		// Parallel execution (default)
-		await Promise.allSettled(taskList.map(task => addDynamicTask(task)));
+		await Promise.allSettled(taskList.map((task) => addDynamicTask(task)));
 	}
 }
 
