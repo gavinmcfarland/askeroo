@@ -8,7 +8,7 @@ import {
 	CompletedField,
 	CompletedFieldsStoreState,
 } from "./CompletedFieldsStore.js";
-import { registerForStateUpdates, PromptAppState } from "../state-registry/StateRegistry.js";
+import { registerForStateUpdates, PromptAppState } from "../../core/StateRegistry.js";
 
 export interface CompletedFieldsOptions {
 	filter?: string[];

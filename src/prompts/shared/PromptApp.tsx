@@ -10,7 +10,7 @@ import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../../registry.js";
 import { initializeTasksInApp } from "../../plugins/tasks/index.js";
-import { notifyStateUpdate } from "../../plugins/state-registry/StateRegistry.js";
+import { notifyStateUpdate } from "../../core/StateRegistry.js";
 
 // Generic prompt request that works for all plugins
 type PromptRequest = {
