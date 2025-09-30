@@ -968,6 +968,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			// Set flag to indicate we're navigating back
 			isNavigatingBack.current = true;
 
+			// Clear hint immediately when going back to prevent flicker
+			setCurrentHintText(null);
+
 			const r = resolverRef.current;
 			resolverRef.current = null;
 
