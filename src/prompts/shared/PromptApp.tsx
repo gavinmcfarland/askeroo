@@ -264,6 +264,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const groupIdToMessageRef = useRef<Map<string, string | undefined>>(
 		new Map()
 	);
+	const pendingCompletionCleanup = useRef<boolean>(false);
 
 	// Notify all registered plugins of state changes
 	useEffect(() => {
@@ -275,7 +276,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				properties: fieldProperties,
 				messages: fieldMessages,
 				groupNames: fieldGroupNames,
-				groupIds: fieldGroupIds
+				groupIds: fieldGroupIds,
 			},
 			groupState: {
 				progressive: progressiveGroups,
@@ -283,9 +284,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				static: staticGroups,
 				completed: completedGroups,
 				order: groupOrder,
-				arrowNavigation: arrowNavigationGroups
+				arrowNavigation: arrowNavigationGroups,
 			},
-			currentGroup
+			currentGroup,
 		});
 	}, [
 		fieldValues,
@@ -388,7 +389,30 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				) {
 					firstFieldIdRef.current = request.id;
 				}
+				// Clean up completion state BEFORE setting new prompt to avoid flicker
+				if (pendingCompletionCleanup.current) {
+					pendingCompletionCleanup.current = false;
+
+					// Remove the prompt we're navigating back to from completed state
+					setCompletedFields((prev) => {
+						if (!prev.has(request.id)) return prev;
+						const next = new Set(prev);
+						next.delete(request.id);
+						return next;
+					});
+
+					// Also remove from completion history
+					const index = completionHistoryRef.current.indexOf(
+						request.id
+					);
+					if (index > -1) {
+						completionHistoryRef.current.splice(index, 1);
+					}
+				}
+
+				// Set the new prompt after cleanup
 				setCurrentPrompt(request);
+
 				// ⬇️ assign without rendering
 				resolverRef.current = resolve;
 
@@ -785,12 +809,22 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						new Set(prev).add(currentPrompt.id)
 					);
 
+					// Clear any pending completion cleanup since we're going forward
+					pendingCompletionCleanup.current = false;
+
 					// Mark field as completed and track history
 					if (!currentPrompt.excludeFromCompleted) {
 						setCompletedFields((prev) =>
 							new Set(prev).add(currentPrompt.id)
 						);
-						completionHistoryRef.current.push(currentPrompt.id);
+						// Only add to history if not already the last item (avoid duplicates)
+						const lastInHistory =
+							completionHistoryRef.current[
+								completionHistoryRef.current.length - 1
+							];
+						if (lastInHistory !== currentPrompt.id) {
+							completionHistoryRef.current.push(currentPrompt.id);
+						}
 					}
 
 					if (currentPrompt.groupName) {
@@ -921,79 +955,17 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	const handleBack = useCallback(() => {
 		if (resolverRef.current && currentPrompt) {
-			// Capture the current field ID to clean up
-			const currentFieldId = currentPrompt.id;
-
-			// Cleanup visited prompts and field values for the current field
-			setVisitedPrompts((prev) => {
-				if (!prev.has(currentFieldId)) return prev;
-				const next = new Set(prev);
-				next.delete(currentFieldId);
-				return next;
-			});
-
-			// Clear the current field value to reset it to initial state
-			setFieldValues((prev) => {
-				if (!(currentFieldId in prev)) return prev;
-				const next = { ...prev };
-				delete next[currentFieldId];
-				return next;
-			});
-
-			// Remove the most recently completed field from completed status when going back
-			const lastCompletedField =
-				completionHistoryRef.current[
-					completionHistoryRef.current.length - 1
-				];
-			if (lastCompletedField) {
-				setCompletedFields((prev) => {
-					if (!prev.has(lastCompletedField)) return prev;
-					const next = new Set(prev);
-					next.delete(lastCompletedField);
-					return next;
-				});
-				// Remove from completion history
-				completionHistoryRef.current.pop();
-			}
+			// Set flag to indicate we're navigating back
+			// The next prompt that arrives will be removed from completed state
+			pendingCompletionCleanup.current = true;
 
 			const r = resolverRef.current;
 			resolverRef.current = null;
 
-			// Resolve navigation
+			// Resolve - cleanup will happen when new prompt arrives
 			r({ __back: true });
-
-			// When navigating back, unmark any groups that should no longer be considered completed
-			const currentPromptGroup =
-				currentPrompt.type === "group"
-					? currentPrompt.id // Use the stable group ID, not the label
-					: currentPrompt.groupName;
-
-			// Consolidate group completion cleanup in a single state update
-			if (currentPromptGroup) {
-				const currentGroupIndex =
-					groupOrder.indexOf(currentPromptGroup);
-				setCompletedGroups((prev) => {
-					const next = new Set(prev);
-
-					// Remove the current group if it was marked as completed
-					if (next.has(currentPromptGroup)) {
-						next.delete(currentPromptGroup);
-					}
-
-					// Remove any groups that come after the current group in the sequence
-					if (currentGroupIndex >= 0) {
-						groupOrder.forEach((groupName, index) => {
-							if (index > currentGroupIndex) {
-								next.delete(groupName);
-							}
-						});
-					}
-
-					return next;
-				});
-			}
 		}
-	}, [currentPrompt, completionHistoryRef, groupOrder]);
+	}, [currentPrompt]);
 
 	// Track previous group to detect group completion
 	const previousGroupRef = useRef<string | null>(null);
