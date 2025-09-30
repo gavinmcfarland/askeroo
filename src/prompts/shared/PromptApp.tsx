@@ -25,6 +25,7 @@ type PromptRequest = {
 	excludeFromCompleted?: boolean; // If true, this field won't be added to completedFields
 	hideAfterSubmit?: boolean; // If true, this field won't be rendered after completion
 	allowBack?: boolean; // If false, prevents user from going back with escape key
+	depth?: number; // Group nesting depth
 	[key: string]: any; // Allow any additional properties for plugin-specific options
 };
 
@@ -57,6 +58,7 @@ interface GroupState {
 	completed: Set<string>;
 	order: string[];
 	arrowNavigation: Set<string>;
+	depths: Map<string, number>; // Track depth of each group
 }
 
 interface PromptOrderState {
@@ -91,6 +93,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		completed: new Set(),
 		order: [],
 		arrowNavigation: new Set(),
+		depths: new Map(),
 	});
 
 	const [promptOrderState, setPromptOrderState] = useState<PromptOrderState>({
@@ -115,6 +118,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const completedGroups = groupState.completed;
 	const groupOrder = groupState.order;
 	const arrowNavigationGroups = groupState.arrowNavigation;
+	const groupDepths = groupState.depths;
 
 	const rootPromptOrder = promptOrderState.root;
 	const rootFieldHistory = promptOrderState.rootFieldHistory;
@@ -216,6 +220,15 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		}));
 	};
 
+	const setGroupDepths = (
+		updater: (prev: Map<string, number>) => Map<string, number>
+	) => {
+		setGroupState((prev) => ({
+			...prev,
+			depths: updater(prev.depths),
+		}));
+	};
+
 	const setRootPromptOrder = (
 		updater: (
 			prev: Array<{
@@ -286,6 +299,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				completed: completedGroups,
 				order: groupOrder,
 				arrowNavigation: arrowNavigationGroups,
+				depths: groupDepths,
 			},
 			currentGroup,
 		});
@@ -303,6 +317,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		completedGroups,
 		groupOrder,
 		arrowNavigationGroups,
+		groupDepths,
 		currentGroup,
 	]);
 
@@ -543,6 +558,15 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						}
 						return prev;
 					});
+
+					// Track group depth
+					if (request.depth !== undefined) {
+						setGroupDepths((prev) => {
+							const newMap = new Map(prev);
+							newMap.set(request.id, request.depth!);
+							return newMap;
+						});
+					}
 				}
 
 				// Update currentGroup based on the request
@@ -1296,6 +1320,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					if (phaseGroups.has(groupId)) {
 						// For phase groups, show a simple completion indicator
 						// Only show if group has a label, otherwise show fields without group header
+						const groupDepth = groupDepths.get(groupId) || 0;
 						if (groupDisplayName) {
 							return (
 								<GroupContainer
@@ -1303,6 +1328,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 									groupName={groupDisplayName}
 									completed={true}
 									completedFields={null}
+									depth={groupDepth}
 								/>
 							);
 						} else {
@@ -1313,6 +1339,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 									groupName={null}
 									completed={true}
 									completedFields={null}
+									depth={groupDepth}
 								/>
 							);
 						}
@@ -1347,12 +1374,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								});
 							});
 
+						const groupDepth = groupDepths.get(groupId) || 0;
 						return (
 							<GroupContainer
 								key={`completed-group-${groupId}`}
 								groupName={groupDisplayName} // Only show if there's actually a label
 								completed={true}
 								completedFields={completedGroupFieldComponents}
+								depth={groupDepth}
 							/>
 						);
 					}
@@ -1370,14 +1399,21 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		groupFieldHistory,
 		fieldValues,
 		rootFieldHistory,
+		groupDepths,
 	]);
 
 	if (!effectivePrompt) {
 		// Keep a stable shell so layout doesn't jump, but show completed groups and fields
+		const currentGroupDepth = currentGroup
+			? groupDepths.get(currentGroup) || 0
+			: 0;
 		return (
 			<RootContainer>
 				{renderCompletedItemsInOrder}
-				<GroupContainer groupName={getGroupDisplayName(currentGroup)}>
+				<GroupContainer
+					groupName={getGroupDisplayName(currentGroup)}
+					depth={currentGroupDepth}
+				>
 					{renderCompletedFields}
 				</GroupContainer>
 			</RootContainer>
@@ -1494,6 +1530,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		}
 	}
 
+	const currentGroupDepth = currentGroup
+		? groupDepths.get(currentGroup) || 0
+		: 0;
 	return (
 		<RootContainer>
 			{renderCompletedItemsInOrder}
@@ -1501,6 +1540,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				key="group-container"
 				groupName={getGroupDisplayName(currentGroup)}
 				hintText={currentHintText}
+				depth={currentGroupDepth}
 			>
 				{renderCompletedFields}
 				{field}

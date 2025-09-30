@@ -18,7 +18,8 @@ type UI = {
 		flow?: "progressive" | "phased" | "static",
 		id?: string,
 		discoveredFields?: Array<{ id: string; label: string; type: string }>,
-		enableArrowNavigation?: boolean
+		enableArrowNavigation?: boolean,
+		depth?: number
 	): Promise<void> | void;
 	clearGroup?(): void;
 	cleanup?(): void;
@@ -150,6 +151,7 @@ export function createRuntime(ui: UI) {
 	}> = [];
 
 	let groupStack: string[] = []; // Track current group nesting
+	let groupDepths: Map<string, number> = new Map(); // Track depth of each group
 	let lastProcessedGroups: Set<string> = new Set(); // Track which groups were already processed
 	let progressiveGroups: Map<string, "progressive"> = new Map(); // Track groups with progressive flow
 	let phaseGroups: Map<string, "phased"> = new Map(); // Track groups with phased flow
@@ -230,12 +232,14 @@ export function createRuntime(ui: UI) {
 						groupOpts.flow === "static"
 							? discoveredFields.get(groupId)
 							: undefined;
+					const groupDepth = groupStack.length;
 					await extendedUI.showGroup?.(
 						groupOpts.label,
 						groupOpts.flow || "progressive",
 						groupId,
 						fields,
-						groupOpts.enableArrowNavigation
+						groupOpts.enableArrowNavigation,
+						groupDepth
 					);
 					lastProcessedGroups.add(groupId);
 					// Call askFn to create the interactive prompt
@@ -251,6 +255,8 @@ export function createRuntime(ui: UI) {
 					});
 				}
 
+				// Track group depth before pushing to stack
+				groupDepths.set(groupId, groupStack.length);
 				groupStack.push(groupId);
 				return undefined as T;
 			}

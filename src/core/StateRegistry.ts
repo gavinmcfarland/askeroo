@@ -18,6 +18,7 @@ export interface GroupState {
 	completed: Set<string>;
 	order: string[];
 	arrowNavigation: Set<string>;
+	depths: Map<string, number>;
 }
 
 export interface PromptAppState {
@@ -44,11 +45,11 @@ export function registerForStateUpdates(callback: StateUpdateCallback) {
 
 // Function for PromptApp to notify all registered plugins of state changes
 export function notifyStateUpdate(state: PromptAppState) {
-	stateUpdateCallbacks.forEach(callback => {
+	stateUpdateCallbacks.forEach((callback) => {
 		try {
 			callback(state);
 		} catch (error) {
-			console.error('Error in plugin state update callback:', error);
+			console.error("Error in plugin state update callback:", error);
 		}
 	});
 }

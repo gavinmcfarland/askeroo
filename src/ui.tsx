@@ -21,11 +21,7 @@ type PromptRequest = {
 };
 
 // Generate stable IDs for prompts based on content and context
-const generatePromptId = (
-	type: string,
-	label: string,
-	groupName?: string
-) => {
+const generatePromptId = (type: string, label: string, groupName?: string) => {
 	const parts = [type, label];
 	if (groupName) parts.push(`group:${groupName}`);
 	return parts.join("|");
@@ -71,7 +67,8 @@ function createUI() {
 				label: string;
 				type: string;
 			}>,
-			enableArrowNavigation?: boolean
+			enableArrowNavigation?: boolean,
+			depth?: number
 		): Promise<void> {
 			const groupId = id || generatePromptId("group", label || "group");
 			appInstance.currentGroup = groupId;
@@ -83,6 +80,7 @@ function createUI() {
 				flow,
 				discoveredFields,
 				enableArrowNavigation,
+				depth,
 			});
 		},
 
