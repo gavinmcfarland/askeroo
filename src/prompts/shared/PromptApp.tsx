@@ -5,6 +5,7 @@ import React, {
 	useCallback,
 	useMemo,
 } from "react";
+import { flushSync } from "react-dom";
 import { addToSet, setInMap, updateInMap } from "../../utils/immutable.js";
 import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
@@ -264,7 +265,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const groupIdToMessageRef = useRef<Map<string, string | undefined>>(
 		new Map()
 	);
-	const pendingCompletionCleanup = useRef<boolean>(false);
+	const isNavigatingBack = useRef(false);
 
 	// Notify all registered plugins of state changes
 	useEffect(() => {
@@ -389,29 +390,38 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				) {
 					firstFieldIdRef.current = request.id;
 				}
-				// Clean up completion state BEFORE setting new prompt to avoid flicker
-				if (pendingCompletionCleanup.current) {
-					pendingCompletionCleanup.current = false;
+				// Use flushSync to ensure both updates happen atomically in a single render
+				flushSync(() => {
+					setCurrentPrompt(request);
 
-					// Remove the prompt we're navigating back to from completed state
-					setCompletedFields((prev) => {
-						if (!prev.has(request.id)) return prev;
-						const next = new Set(prev);
-						next.delete(request.id);
-						return next;
-					});
+					// Only process completion cleanup if:
+					// 1. We're navigating back (flag is set)
+					// 2. This is an interactive field (not a group)
+					// 3. The field is in completed state
+					if (isNavigatingBack.current && request.type !== "group") {
+						isNavigatingBack.current = false; // Clear flag after processing
 
-					// Also remove from completion history
-					const index = completionHistoryRef.current.indexOf(
-						request.id
-					);
-					if (index > -1) {
-						completionHistoryRef.current.splice(index, 1);
+						setCompletedFields((prev) => {
+							if (!prev.has(request.id)) {
+								// Field not in completed state, nothing to clean up
+								return prev;
+							}
+							// Field was completed, remove it since it's active again
+							const next = new Set(prev);
+							next.delete(request.id);
+
+							// Also remove from completion history
+							const index = completionHistoryRef.current.indexOf(
+								request.id
+							);
+							if (index > -1) {
+								completionHistoryRef.current.splice(index, 1);
+							}
+
+							return next;
+						});
 					}
-				}
-
-				// Set the new prompt after cleanup
-				setCurrentPrompt(request);
+				});
 
 				// ⬇️ assign without rendering
 				resolverRef.current = resolve;
@@ -809,20 +819,20 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						new Set(prev).add(currentPrompt.id)
 					);
 
-					// Clear any pending completion cleanup since we're going forward
-					pendingCompletionCleanup.current = false;
+					// Clear back navigation flag since we're going forward
+					isNavigatingBack.current = false;
 
 					// Mark field as completed and track history
 					if (!currentPrompt.excludeFromCompleted) {
 						setCompletedFields((prev) =>
 							new Set(prev).add(currentPrompt.id)
 						);
-						// Only add to history if not already the last item (avoid duplicates)
-						const lastInHistory =
-							completionHistoryRef.current[
-								completionHistoryRef.current.length - 1
-							];
-						if (lastInHistory !== currentPrompt.id) {
+						// Only add to history if not already present anywhere (avoid duplicates)
+						const alreadyInHistory =
+							completionHistoryRef.current.includes(
+								currentPrompt.id
+							);
+						if (!alreadyInHistory) {
 							completionHistoryRef.current.push(currentPrompt.id);
 						}
 					}
@@ -956,13 +966,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const handleBack = useCallback(() => {
 		if (resolverRef.current && currentPrompt) {
 			// Set flag to indicate we're navigating back
-			// The next prompt that arrives will be removed from completed state
-			pendingCompletionCleanup.current = true;
+			isNavigatingBack.current = true;
 
 			const r = resolverRef.current;
 			resolverRef.current = null;
 
-			// Resolve - cleanup will happen when new prompt arrives
+			// Resolve - cleanup happens when next interactive prompt arrives
 			r({ __back: true });
 		}
 	}, [currentPrompt]);
