@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { ask, group, text, confirm } from "../src/index.js";
 import { multi } from "../src/plugins/multi/index.js";
+import { logResult } from "../src/utils/logging.js";
 
 const flow = async () => {
 	return {
@@ -15,7 +16,7 @@ const flow = async () => {
 	try {
 		const result = await ask(flow);
 
-		console.log("\nResult:", JSON.stringify(result, null, 2));
+		logResult(result);
 	} catch (error) {
 		console.error("Error:", error);
 		process.exit(1);

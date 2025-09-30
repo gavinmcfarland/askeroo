@@ -60,9 +60,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const [fieldGroupNames, setFieldGroupNames] = useState<Record<string, string>>({});
 	const [fieldGroupIds, setFieldGroupIds] = useState<Record<string, string>>({});
 	const [groupOrder, setGroupOrder] = useState<string[]>([]);
-	const [groupIdToMessage, setGroupIdToMessage] = useState<
-		Map<string, string | undefined>
-	>(new Map());
 	const groupIdToMessageRef = useRef<Map<string, string | undefined>>(new Map());
 	const [rootPromptOrder, setRootPromptOrder] = useState<
 		Array<{ id: string; type: "field" | "group"; groupName?: string }>
@@ -75,17 +72,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		new Map()
 	);
 
-	// Task storage similar to field storage
-	const [taskListDynamicTasks, setTaskListDynamicTasks] = useState<Map<string, Array<any>>>(
-		new Map()
-	);
-	const [taskListStates, setTaskListStates] = useState<Map<string, Map<string, any>>>(
-		new Map()
-	);
-	// Store all task states (including regular tasks, not just dynamic)
-	const [allTaskStates, setAllTaskStates] = useState<Map<string, Map<string, any>>>(
-		new Map()
-	);
 
 	// Update completed fields plugin state whenever relevant data changes
 	useEffect(() => {
@@ -99,21 +85,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		});
 	}, [completedFields, fieldValues, fieldGroupNames, fieldGroupIds, fieldMessages, fieldProperties]);
 
-	// Initialize task store
-	useEffect(() => {
-		initializeTasksInApp(
-			setTaskListDynamicTasks,
-			setTaskListStates,
-			setAllTaskStates
-		);
-	}, []);
 
 	const firstFieldIdRef = useRef<string | null>(null);
 	const staticGroupsRef = useRef<Set<string>>(new Set());
-	// Static group navigation state
-	const [staticGroupFocusIndex, setStaticGroupFocusIndex] = useState<
-		Map<string, number>
-	>(new Map());
 	// Track groups with arrow navigation enabled
 	const [arrowNavigationGroups, setArrowNavigationGroups] = useState<
 		Set<string>
@@ -299,11 +273,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					// Track group ID to label mapping
 					groupIdToMessageRef.current.set(request.id, request.label);
-					setGroupIdToMessage((prev) => {
-						const newMap = new Map(prev);
-						newMap.set(request.id, request.label);
-						return newMap;
-					});
 
 					// Track group order using IDs
 					setGroupOrder((prev) => {
@@ -795,12 +764,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	useEffect(() => {
 		const prevGroup = previousGroupRef.current;
 
-		// console.log('Group transition check:', {
-		// 	prevGroup,
-		// 	currentGroup,
-		// 	groupOrder,
-		// 	phaseGroups: Array.from(phaseGroups)
-		// });
 
 		// Only mark a group as completed when moving to a LATER group in the sequence
 		// This prevents marking groups as completed when navigating backwards
@@ -811,7 +774,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			// If current group is not in groupOrder yet, calculate what its index would be
 			let effectiveCurrentGroupIndex = currentGroupIndex;
 			if (currentGroupIndex === -1) {
-				// console.log('Missing group detected, will add to order:', currentGroup);
 				// Calculate what the index would be after adding
 				effectiveCurrentGroupIndex = groupOrder.length;
 
@@ -824,14 +786,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				});
 			}
 
-			// console.log('Forward transition check:', {
-			// 	prevGroup,
-			// 	currentGroup,
-			// 	prevGroupIndex,
-			// 	currentGroupIndex,
-			// 	effectiveCurrentGroupIndex,
-			// 	willMarkComplete: prevGroupIndex >= 0 && effectiveCurrentGroupIndex >= 0 && effectiveCurrentGroupIndex > prevGroupIndex
-			// });
 
 			// Only mark as completed if we're moving forward in the sequence
 			if (
@@ -839,7 +793,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				effectiveCurrentGroupIndex >= 0 &&
 				effectiveCurrentGroupIndex > prevGroupIndex
 			) {
-				// console.log('Marking group as completed:', prevGroup);
 				setCompletedGroups((prev) => new Set(prev).add(prevGroup));
 			}
 		}
@@ -847,7 +800,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		// Also handle the case where we complete a group and move to a non-group prompt
 		// This catches cases where the last group isn't followed by another group
 		if (prevGroup && !currentGroup) {
-			// console.log('Group to root transition - marking complete:', prevGroup);
 			// When moving from a group to no group (root-level), mark the group as completed
 			// Use a simpler check to avoid dependency issues
 			setCompletedGroups((prev) => new Set(prev).add(prevGroup));
@@ -910,7 +862,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				allFields.set(field.label + "|" + field.type, field);
 			});
 
-			const allFieldsArray = Array.from(allFields.values()).filter(field => !field.hideAfterSubmit);
+			const allFieldsArray = [...allFields.values()].filter(field => !field.hideAfterSubmit);
 
 			return allFieldsArray.map((field, index) => {
 				// For static groups, find the stored value by matching label and type

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useFieldReset } from "../../hooks/useFieldReset.js";
 import { Text, Box, useInput } from "ink";
 import { isMarkdownString, parseMarkdown } from "../../utils/markdown.js";
 import { ValidatorFunction } from "../../types/validation.js";
@@ -116,11 +117,7 @@ export function ConfirmField({
 	const [validationError, setValidationError] = useState<string | null>(null);
 
 	// Reset submitted state when field becomes active again (not disabled)
-	useEffect(() => {
-		if (!disabled && submitted) {
-			setSubmitted(false);
-		}
-	}, [disabled, submitted]);
+	useFieldReset(disabled, submitted, setSubmitted);
 
 	// Update selected index when initialValue changes
 	useEffect(() => {

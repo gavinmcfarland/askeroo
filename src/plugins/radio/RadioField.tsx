@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useFieldReset } from "../../hooks/useFieldReset.js";
 import { Text, Box, useInput } from "ink";
 import { ValidatorFunction } from "../../types/validation.js";
 
@@ -110,11 +111,7 @@ export function RadioField({
 	}, [filteredOptions.length, maxVisible]);
 
 	// Reset submitted state when field becomes active again (not disabled)
-	useEffect(() => {
-		if (!disabled && submitted) {
-			setSubmitted(false);
-		}
-	}, [disabled, submitted]);
+	useFieldReset(disabled, submitted, setSubmitted);
 
 	// Calculate visible window for scrolling
 	const getVisibleOptions = () => {

@@ -59,7 +59,7 @@ function endTaskList(taskListId: string) {
 	activeTaskLists.delete(taskListId);
 	if (mostRecentTaskListId === taskListId) {
 		// Find the most recent active task list, or set to null if none
-		const activeLists = Array.from(activeTaskLists);
+		const activeLists = [...activeTaskLists];
 		mostRecentTaskListId = activeLists.length > 0 ? activeLists[activeLists.length - 1] : null;
 	}
 }
@@ -239,9 +239,6 @@ export function TasksDisplay(props: TasksOptions) {
 	}, [taskListId]);
 
 	// Animated spinner frames
-	// const spinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-	// const spinnerFrames = ["⢄", "⢂", "⢁", "⡁", "⡈", "⡐", "⡠"];
-	// const spinnerFrames = ["-", "\\", "|", "/"];
 	const spinnerFrames = ["⠂", "-", "–", "—", "–", "-"];
 
 	// Block all input during task execution to prevent escape sequences from showing
@@ -255,10 +252,10 @@ export function TasksDisplay(props: TasksOptions) {
 	// Animate spinner only when tasks are running
 	useEffect(() => {
 		// Check if any tasks are currently running
-		const hasRunningTasks = Array.from(taskStates.values()).some(state => state.status === "running") ||
+		const hasRunningTasks = [...taskStates.values()].some(state => state.status === "running") ||
 			getDynamicTasksForList(taskListId).some((_, index) => {
 				const currentListStates = getTaskStatesForList(taskListId);
-				const taskIds = Array.from(currentListStates.keys());
+				const taskIds = [...currentListStates.keys()];
 				const taskId = taskIds[index];
 				const state = taskId ? currentListStates.get(taskId) : null;
 				return state?.status === "running";
@@ -605,7 +602,7 @@ export function TasksDisplay(props: TasksOptions) {
 		const currentListStates = getTaskStatesForList(taskListId);
 		dynamicTasks.forEach((task, index) => {
 			// Find the corresponding task state
-			const taskIds = Array.from(currentListStates.keys());
+			const taskIds = [...currentListStates.keys()];
 			const taskId = taskIds[index];
 			const state = taskId ? currentListStates.get(taskId) : null;
 
