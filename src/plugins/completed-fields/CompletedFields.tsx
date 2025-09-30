@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Text, Box } from "ink";
+import {
+	getCompletedFields,
+	getCompletedFieldsState,
+	initializeCompletedFieldsStore,
+	updateCompletedFieldsState,
+	CompletedField,
+	CompletedFieldsStoreState
+} from "../completed-fields-store/CompletedFieldsStore.js";
 
 export interface CompletedFieldsOptions {
 	filter?: string[];
@@ -15,119 +23,42 @@ export interface CompletedFieldsOptions {
 	meta?: Record<string, any>; // User-defined metadata for this field
 }
 
-export interface CompletedField {
-	id: string;
-	groupName?: string;
-	groupId?: string;
-	label: string;
-	shortLabel?: string;
-	value: string;
-	formattedValue?: string; // The formatted/display value with labels
-	timestamp: number;
-	meta?: Record<string, any>; // User-defined metadata for this field
-}
+// CompletedField interface moved to CompletedFieldsStore
+export type { CompletedField } from "../completed-fields-store/CompletedFieldsStore.js";
 
-// Helper functions for formatting values and extracting field messages
-function formatValue(value: any, fieldProperties: any): string {
-	// Handle empty arrays
-	if (Array.isArray(value)) {
-		if (value.length === 0) {
-			return "None";
-		}
+// Helper functions moved to CompletedFieldsStore
 
-		// For multi-select fields, get the labels from the options
-		if (
-			fieldProperties &&
-			fieldProperties.options &&
-			Array.isArray(fieldProperties.options)
-		) {
-			const selectedLabels = value
-				.map((val) => {
-					const option = fieldProperties.options.find(
-						(opt: any) => opt.value === val
-					);
-					return option ? option.label : val;
-				})
-				.filter(Boolean);
-			return selectedLabels.join(", ");
-		}
-		return value.join(", ");
-	}
-
-	if (typeof value === "boolean") {
-		// For confirm fields, try to get the label from options
-		if (
-			fieldProperties &&
-			fieldProperties.options &&
-			Array.isArray(fieldProperties.options)
-		) {
-			const option = fieldProperties.options.find(
-				(opt: any) => opt.value === value
-			);
-			return option ? option.label : value.toString();
-		}
-		return value ? "Yes" : "No";
-	}
-
-	// Handle falsey values (null, undefined, empty string, 0, false)
-	if (!value && value !== 0 && value !== false) {
-		if (value === null) return "None";
-		if (value === undefined) return "Not set";
-		if (value === "") return "Empty";
-		return "None";
-	}
-
-	// For radio fields, get the label from options
-	if (
-		fieldProperties &&
-		fieldProperties.options &&
-		Array.isArray(fieldProperties.options)
-	) {
-		const option = fieldProperties.options.find(
-			(opt: any) => opt.value === value
-		);
-		if (option) {
-			return option.label;
-		}
-	}
-
-	return String(value);
-}
-
-// Global state for tracking completed fields from the app
-let globalAppState: {
-	completedFields: Set<string>;
-	fieldValues: Record<string, any>;
-	groupNames: Record<string, string>;
-	groupIds: Record<string, string>;
-	fieldMessages: Record<string, string>;
-	fieldProperties: Map<string, any>;
-} = {
-	completedFields: new Set(),
-	fieldValues: {},
-	groupNames: {},
-	groupIds: {},
-	fieldMessages: {},
-	fieldProperties: new Map(),
-};
-
+// Store management now handled by CompletedFieldsStore
 let globalUpdateListeners: Set<() => void> = new Set();
+let storeInitialized = false;
 
 // Function for PromptApp to update the global state
-export function updateAppState(state: typeof globalAppState) {
-	globalAppState = { ...state };
+export function updateAppState(state: CompletedFieldsStoreState) {
+	// Initialize store connection on first call
+	if (!storeInitialized) {
+		initializeCompletedFieldsStore((newState) => {
+			// Notify all listeners when store updates
+			globalUpdateListeners.forEach((listener) => listener());
+		});
+		storeInitialized = true;
+	}
+
+	// Update the centralized store
+	updateCompletedFieldsState(state);
 	globalUpdateListeners.forEach((listener) => listener());
 }
 
 // Main component for the plugin
 export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
-	const [appState, setAppState] = useState(globalAppState);
+	const [appState, setAppState] = useState<CompletedFieldsStoreState>(() => getCompletedFieldsState());
 
 	useEffect(() => {
 		const updateListener = () => {
-			setAppState({ ...globalAppState });
+			setAppState(getCompletedFieldsState());
 		};
 
+		// Initialize store connection
+		initializeCompletedFieldsStore(setAppState);
 		globalUpdateListeners.add(updateListener);
 
 		return () => {
@@ -147,46 +78,9 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 		}
 	}, [props.onSubmit, props.completed, props.disabled]);
 
-	// Convert app state to CompletedField objects
+	// Get completed fields from store
 	const completedFieldsFromApp = React.useMemo(() => {
-		const fields: CompletedField[] = [];
-
-		for (const fieldId of appState.completedFields) {
-			if (appState.fieldValues[fieldId] !== undefined) {
-				const value = appState.fieldValues[fieldId];
-				const groupName = appState.groupNames[fieldId];
-				const groupId = appState.groupIds[fieldId];
-
-				// Get the original field properties
-				const originalProperties =
-					appState.fieldProperties.get(fieldId) || {};
-
-				// Use the original field's label and shortLabel properties
-				const label =
-					originalProperties.label ||
-					originalProperties.message ||
-					appState.fieldMessages[fieldId] ||
-					fieldId;
-				const shortLabel = originalProperties.shortLabel;
-
-				// Format the value using the original field properties
-				const formattedValue = formatValue(value, originalProperties);
-
-				fields.push({
-					id: fieldId,
-					groupName,
-					groupId,
-					label,
-					shortLabel,
-					value: String(value),
-					formattedValue,
-					timestamp: Date.now(), // We don't have timestamps from the app state
-					meta: originalProperties.meta, // Include meta from original field properties
-				});
-			}
-		}
-
-		return fields;
+		return getCompletedFields();
 	}, [appState]);
 
 	// Filter fields by groups if specified
@@ -326,48 +220,11 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 	);
 }
 
-// Utility functions for debugging (these are now handled automatically by the app)
+// Utility functions for debugging (these are now handled automatically by the store)
 export const completedFieldsUtils = {
 	// Get current state for debugging
-	getAppState: () => ({ ...globalAppState }),
+	getAppState: () => getCompletedFieldsState(),
 
 	// Get completed fields as objects for debugging
-	getCompletedFields: () => {
-		const fields: CompletedField[] = [];
-		for (const fieldId of globalAppState.completedFields) {
-			if (globalAppState.fieldValues[fieldId] !== undefined) {
-				const value = globalAppState.fieldValues[fieldId];
-				const groupName = globalAppState.groupNames[fieldId];
-				const groupId = globalAppState.groupIds[fieldId];
-
-				// Get the original field properties
-				const originalProperties =
-					globalAppState.fieldProperties.get(fieldId) || {};
-
-				// Use the original field's label and shortLabel properties
-				const label =
-					originalProperties.label ||
-					originalProperties.message ||
-					globalAppState.fieldMessages[fieldId] ||
-					fieldId;
-				const shortLabel = originalProperties.shortLabel;
-
-				// Format the value using the original field properties
-				const formattedValue = formatValue(value, originalProperties);
-
-				fields.push({
-					id: fieldId,
-					groupName,
-					groupId,
-					label,
-					shortLabel,
-					value: String(value),
-					formattedValue,
-					timestamp: Date.now(),
-					meta: originalProperties.meta, // Include meta from original field properties
-				});
-			}
-		}
-		return fields;
-	},
+	getCompletedFields: () => getCompletedFields(),
 };

@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, {
+	useState,
+	useEffect,
+	useRef,
+	useCallback,
+	useMemo,
+} from "react";
 import { addToSet, setInMap, updateInMap } from "../../utils/immutable.js";
 import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
@@ -26,7 +32,12 @@ interface PromptAppProps {
 }
 
 // Type definitions for grouped state
-type FieldInfo = { id: string; label: string; type: string; hideAfterSubmit?: boolean };
+type FieldInfo = {
+	id: string;
+	label: string;
+	type: string;
+	hideAfterSubmit?: boolean;
+};
 
 interface FieldState {
 	values: Record<string, any>;
@@ -69,7 +80,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		properties: new Map(),
 		messages: {},
 		groupNames: {},
-		groupIds: {}
+		groupIds: {},
 	});
 
 	const [groupState, setGroupState] = useState<GroupState>({
@@ -78,14 +89,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		static: new Set(),
 		completed: new Set(),
 		order: [],
-		arrowNavigation: new Set()
+		arrowNavigation: new Set(),
 	});
 
 	const [promptOrderState, setPromptOrderState] = useState<PromptOrderState>({
 		root: [],
 		rootFieldHistory: [],
 		staticGroupFields: new Map(),
-		groupFieldHistory: new Map()
+		groupFieldHistory: new Map(),
 	});
 
 	// Computed getters for backward compatibility (these maintain the original interface)
@@ -110,79 +121,149 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const groupFieldHistory = promptOrderState.groupFieldHistory;
 
 	// Helper setters that update the grouped state
-	const setFieldValues = (updater: (prev: Record<string, any>) => Record<string, any>) => {
-		setFieldState(prev => ({ ...prev, values: updater(prev.values) }));
+	const setFieldValues = (
+		updater: (prev: Record<string, any>) => Record<string, any>
+	) => {
+		setFieldState((prev) => ({ ...prev, values: updater(prev.values) }));
 	};
 
 	const setVisitedPrompts = (updater: (prev: Set<string>) => Set<string>) => {
-		setFieldState(prev => ({ ...prev, visited: updater(prev.visited) }));
+		setFieldState((prev) => ({ ...prev, visited: updater(prev.visited) }));
 	};
 
-	const setCompletedFields = (updater: (prev: Set<string>) => Set<string>) => {
-		setFieldState(prev => ({ ...prev, completed: updater(prev.completed) }));
+	const setCompletedFields = (
+		updater: (prev: Set<string>) => Set<string>
+	) => {
+		setFieldState((prev) => ({
+			...prev,
+			completed: updater(prev.completed),
+		}));
 	};
 
-	const setFieldProperties = (updater: (prev: Map<string, any>) => Map<string, any>) => {
-		setFieldState(prev => ({ ...prev, properties: updater(prev.properties) }));
+	const setFieldProperties = (
+		updater: (prev: Map<string, any>) => Map<string, any>
+	) => {
+		setFieldState((prev) => ({
+			...prev,
+			properties: updater(prev.properties),
+		}));
 	};
 
-	const setFieldMessages = (updater: (prev: Record<string, string>) => Record<string, string>) => {
-		setFieldState(prev => ({ ...prev, messages: updater(prev.messages) }));
+	const setFieldMessages = (
+		updater: (prev: Record<string, string>) => Record<string, string>
+	) => {
+		setFieldState((prev) => ({
+			...prev,
+			messages: updater(prev.messages),
+		}));
 	};
 
-	const setFieldGroupNames = (updater: (prev: Record<string, string>) => Record<string, string>) => {
-		setFieldState(prev => ({ ...prev, groupNames: updater(prev.groupNames) }));
+	const setFieldGroupNames = (
+		updater: (prev: Record<string, string>) => Record<string, string>
+	) => {
+		setFieldState((prev) => ({
+			...prev,
+			groupNames: updater(prev.groupNames),
+		}));
 	};
 
-	const setFieldGroupIds = (updater: (prev: Record<string, string>) => Record<string, string>) => {
-		setFieldState(prev => ({ ...prev, groupIds: updater(prev.groupIds) }));
+	const setFieldGroupIds = (
+		updater: (prev: Record<string, string>) => Record<string, string>
+	) => {
+		setFieldState((prev) => ({
+			...prev,
+			groupIds: updater(prev.groupIds),
+		}));
 	};
 
-	const setProgressiveGroups = (updater: (prev: Set<string>) => Set<string>) => {
-		setGroupState(prev => ({ ...prev, progressive: updater(prev.progressive) }));
+	const setProgressiveGroups = (
+		updater: (prev: Set<string>) => Set<string>
+	) => {
+		setGroupState((prev) => ({
+			...prev,
+			progressive: updater(prev.progressive),
+		}));
 	};
 
 	const setPhaseGroups = (updater: (prev: Set<string>) => Set<string>) => {
-		setGroupState(prev => ({ ...prev, phased: updater(prev.phased) }));
+		setGroupState((prev) => ({ ...prev, phased: updater(prev.phased) }));
 	};
 
 	const setStaticGroups = (updater: (prev: Set<string>) => Set<string>) => {
-		setGroupState(prev => ({ ...prev, static: updater(prev.static) }));
+		setGroupState((prev) => ({ ...prev, static: updater(prev.static) }));
 	};
 
-	const setCompletedGroups = (updater: (prev: Set<string>) => Set<string>) => {
-		setGroupState(prev => ({ ...prev, completed: updater(prev.completed) }));
+	const setCompletedGroups = (
+		updater: (prev: Set<string>) => Set<string>
+	) => {
+		setGroupState((prev) => ({
+			...prev,
+			completed: updater(prev.completed),
+		}));
 	};
 
 	const setGroupOrder = (updater: (prev: string[]) => string[]) => {
-		setGroupState(prev => ({ ...prev, order: updater(prev.order) }));
+		setGroupState((prev) => ({ ...prev, order: updater(prev.order) }));
 	};
 
-	const setArrowNavigationGroups = (updater: (prev: Set<string>) => Set<string>) => {
-		setGroupState(prev => ({ ...prev, arrowNavigation: updater(prev.arrowNavigation) }));
+	const setArrowNavigationGroups = (
+		updater: (prev: Set<string>) => Set<string>
+	) => {
+		setGroupState((prev) => ({
+			...prev,
+			arrowNavigation: updater(prev.arrowNavigation),
+		}));
 	};
 
-	const setRootPromptOrder = (updater: (prev: Array<{ id: string; type: "field" | "group"; groupName?: string }>) => Array<{ id: string; type: "field" | "group"; groupName?: string }>) => {
-		setPromptOrderState(prev => ({ ...prev, root: updater(prev.root) }));
+	const setRootPromptOrder = (
+		updater: (
+			prev: Array<{
+				id: string;
+				type: "field" | "group";
+				groupName?: string;
+			}>
+		) => Array<{ id: string; type: "field" | "group"; groupName?: string }>
+	) => {
+		setPromptOrderState((prev) => ({ ...prev, root: updater(prev.root) }));
 	};
 
-	const setRootFieldHistory = (updater: (prev: Array<FieldInfo>) => Array<FieldInfo>) => {
-		setPromptOrderState(prev => ({ ...prev, rootFieldHistory: updater(prev.rootFieldHistory) }));
+	const setRootFieldHistory = (
+		updater: (prev: Array<FieldInfo>) => Array<FieldInfo>
+	) => {
+		setPromptOrderState((prev) => ({
+			...prev,
+			rootFieldHistory: updater(prev.rootFieldHistory),
+		}));
 	};
 
-	const setStaticGroupFields = (updater: (prev: Map<string, Array<FieldInfo>>) => Map<string, Array<FieldInfo>>) => {
-		setPromptOrderState(prev => ({ ...prev, staticGroupFields: updater(prev.staticGroupFields) }));
+	const setStaticGroupFields = (
+		updater: (
+			prev: Map<string, Array<FieldInfo>>
+		) => Map<string, Array<FieldInfo>>
+	) => {
+		setPromptOrderState((prev) => ({
+			...prev,
+			staticGroupFields: updater(prev.staticGroupFields),
+		}));
 	};
 
-	const setGroupFieldHistory = (updater: (prev: Map<string, Array<FieldInfo>>) => Map<string, Array<FieldInfo>>) => {
-		setPromptOrderState(prev => ({ ...prev, groupFieldHistory: updater(prev.groupFieldHistory) }));
+	const setGroupFieldHistory = (
+		updater: (
+			prev: Map<string, Array<FieldInfo>>
+		) => Map<string, Array<FieldInfo>>
+	) => {
+		setPromptOrderState((prev) => ({
+			...prev,
+			groupFieldHistory: updater(prev.groupFieldHistory),
+		}));
 	};
 
 	// Other non-grouped state
 	const [currentGroup, setCurrentGroup] = useState<string | null>(null);
 	const completionHistoryRef = useRef<string[]>([]);
-	const groupIdToMessageRef = useRef<Map<string, string | undefined>>(new Map());
-
+	const groupIdToMessageRef = useRef<Map<string, string | undefined>>(
+		new Map()
+	);
 
 	// Update completed fields plugin state whenever relevant data changes
 	useEffect(() => {
@@ -192,10 +273,16 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			groupNames: fieldGroupNames,
 			groupIds: fieldGroupIds,
 			fieldMessages,
-			fieldProperties
+			fieldProperties,
 		});
-	}, [completedFields, fieldValues, fieldGroupNames, fieldGroupIds, fieldMessages, fieldProperties]);
-
+	}, [
+		completedFields,
+		fieldValues,
+		fieldGroupNames,
+		fieldGroupIds,
+		fieldMessages,
+		fieldProperties,
+	]);
 
 	const firstFieldIdRef = useRef<string | null>(null);
 	const staticGroupsRef = useRef<Set<string>>(new Set());
@@ -259,7 +346,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					setCompletedFields((prev) => {
 						const newCompleted = new Set(prev);
 						// Add all field values as completed
-						Object.keys(fieldValues).forEach(fieldId => {
+						Object.keys(fieldValues).forEach((fieldId) => {
 							newCompleted.add(fieldId);
 							completionHistoryRef.current.push(fieldId);
 						});
@@ -295,24 +382,28 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					// Track field metadata for completed fields plugin
 					// Try to get the field label from various possible properties
-					const fieldLabel = request.label || request.message || `${request.type} field`;
-					setFieldMessages(prev => ({
+					const fieldLabel =
+						request.label ||
+						request.message ||
+						`${request.type} field`;
+					setFieldMessages((prev) => ({
 						...prev,
-						[request.id]: fieldLabel
+						[request.id]: fieldLabel,
 					}));
 					if (request.groupName) {
 						// Store the group ID (for filtering)
-						setFieldGroupIds(prev => ({
+						setFieldGroupIds((prev) => ({
 							...prev,
-							[request.id]: request.groupName!
+							[request.id]: request.groupName!,
 						}));
 
 						// Store the group display name (for UI display) - only if there's actually a label
-						const groupDisplayName = groupIdToMessageRef.current.get(request.groupName);
+						const groupDisplayName =
+							groupIdToMessageRef.current.get(request.groupName);
 						if (groupDisplayName) {
-							setFieldGroupNames(prev => ({
+							setFieldGroupNames((prev) => ({
 								...prev,
-								[request.id]: groupDisplayName
+								[request.id]: groupDisplayName,
 							}));
 						}
 					}
@@ -343,8 +434,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								newMap.get(request.groupName!) || [];
 							const fieldInfo = {
 								id: request.id,
-								label:
-									request.label || `${request.type} field`,
+								label: request.label || `${request.type} field`,
 								type: request.type,
 								hideAfterSubmit: request.hideAfterSubmit,
 							};
@@ -446,122 +536,256 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		onReady(promptFn);
 	}, [onReady]);
 
-	const handleSubmit = useCallback((value: any) => {
-		if (resolverRef.current && currentPrompt) {
-			if (currentPrompt.type !== "group") {
-				// Handle special navigation value that clears entire group and goes back
-				if (typeof value === "object" && value?.__clearGroupAndBack) {
-					// Clear all fields in the current group
-					if (currentPrompt.groupName) {
-						// Find all fields that belong to this group and clear them
-						setFieldValues((prev) => {
-							const newFieldValues = { ...prev };
+	const handleSubmit = useCallback(
+		(value: any) => {
+			if (resolverRef.current && currentPrompt) {
+				if (currentPrompt.type !== "group") {
+					// Handle special navigation value that clears entire group and goes back
+					if (
+						typeof value === "object" &&
+						value?.__clearGroupAndBack
+					) {
+						// Clear all fields in the current group
+						if (currentPrompt.groupName) {
+							// Find all fields that belong to this group and clear them
+							setFieldValues((prev) => {
+								const newFieldValues = { ...prev };
 
-							// Remove all field values for fields in this group
-							const groupName = currentPrompt.groupName;
-							for (const [fieldId, _] of Object.entries(
-								newFieldValues
-							)) {
-								// Check if this field belongs to the current group
-								const fieldEntry = rootPromptOrder.find(
-									(entry) =>
-										entry.id === fieldId &&
-										entry.groupName === groupName
-								);
-								if (fieldEntry) {
-									delete newFieldValues[fieldId];
+								// Remove all field values for fields in this group
+								const groupName = currentPrompt.groupName;
+								for (const [fieldId, _] of Object.entries(
+									newFieldValues
+								)) {
+									// Check if this field belongs to the current group
+									const fieldEntry = rootPromptOrder.find(
+										(entry) =>
+											entry.id === fieldId &&
+											entry.groupName === groupName
+									);
+									if (fieldEntry) {
+										delete newFieldValues[fieldId];
+									}
 								}
-							}
 
-							return newFieldValues;
-						});
+								return newFieldValues;
+							});
 
-						// Also clear completion tracking for group fields
-						setCompletedFields((prev) => {
-							const newCompleted = new Set(prev);
-							const groupName = currentPrompt.groupName;
+							// Also clear completion tracking for group fields
+							setCompletedFields((prev) => {
+								const newCompleted = new Set(prev);
+								const groupName = currentPrompt.groupName;
 
-							// Remove completion status for all fields in this group
-							for (const fieldId of newCompleted) {
-								const fieldEntry = rootPromptOrder.find(
-									(entry) =>
-										entry.id === fieldId &&
-										entry.groupName === groupName
-								);
-								if (fieldEntry) {
-									newCompleted.delete(fieldId);
+								// Remove completion status for all fields in this group
+								for (const fieldId of newCompleted) {
+									const fieldEntry = rootPromptOrder.find(
+										(entry) =>
+											entry.id === fieldId &&
+											entry.groupName === groupName
+									);
+									if (fieldEntry) {
+										newCompleted.delete(fieldId);
+									}
 								}
-							}
 
-							return newCompleted;
-						});
+								return newCompleted;
+							});
 
-						// Clear visited prompts for group fields
-						setVisitedPrompts((prev) => {
-							const newVisited = new Set(prev);
-							const groupName = currentPrompt.groupName;
+							// Clear visited prompts for group fields
+							setVisitedPrompts((prev) => {
+								const newVisited = new Set(prev);
+								const groupName = currentPrompt.groupName;
 
-							for (const fieldId of newVisited) {
-								const fieldEntry = rootPromptOrder.find(
-									(entry) =>
-										entry.id === fieldId &&
-										entry.groupName === groupName
-								);
-								if (fieldEntry) {
-									newVisited.delete(fieldId);
+								for (const fieldId of newVisited) {
+									const fieldEntry = rootPromptOrder.find(
+										(entry) =>
+											entry.id === fieldId &&
+											entry.groupName === groupName
+									);
+									if (fieldEntry) {
+										newVisited.delete(fieldId);
+									}
 								}
-							}
 
-							return newVisited;
-						});
+								return newVisited;
+							});
+						}
+
+						// Trigger back navigation
+						const r = resolverRef.current;
+						resolverRef.current = null;
+						r({ __back: true });
+						return;
 					}
 
-					// Trigger back navigation
-					const r = resolverRef.current;
-					resolverRef.current = null;
-					r({ __back: true });
-					return;
-				}
+					// Handle special navigation value that preserves field content but goes back
+					if (typeof value === "object" && value?.__preserveAndBack) {
+						// Store the actual value, not the navigation object
+						const actualValue = value.value;
+						setFieldValues((prev) => ({
+							...prev,
+							[currentPrompt.id]: actualValue,
+						}));
 
-				// Handle special navigation value that preserves field content but goes back
-				if (typeof value === "object" && value?.__preserveAndBack) {
-					// Store the actual value, not the navigation object
-					const actualValue = value.value;
+						// Mark as visited
+						setVisitedPrompts((prev) =>
+							new Set(prev).add(currentPrompt.id)
+						);
+
+						// Mark field as completed (if it meets completion criteria)
+						const shouldMarkCompleted =
+							currentPrompt.type !== "text" &&
+							currentPrompt.type !== "custom-text" &&
+							currentPrompt.type !== "validated-text"
+								? actualValue !== undefined
+								: typeof actualValue === "string"
+								? actualValue.trim() !== ""
+								: actualValue !== undefined;
+
+						if (
+							shouldMarkCompleted &&
+							!currentPrompt.excludeFromCompleted
+						) {
+							setCompletedFields((prev) =>
+								new Set(prev).add(currentPrompt.id)
+							);
+							completionHistoryRef.current.push(currentPrompt.id);
+						}
+
+						// Handle group tracking for static groups
+						if (currentPrompt.groupName) {
+							const isStaticGroup = staticGroups.has(
+								currentPrompt.groupName
+							);
+
+							if (isStaticGroup) {
+								// Add current field to static group fields
+								setStaticGroupFields((prev) => {
+									const newMap = new Map(prev);
+									const groupFields =
+										newMap.get(currentPrompt.groupName!) ||
+										[];
+									const fieldInfo = {
+										id: currentPrompt.id,
+										label:
+											currentPrompt.label ||
+											`${currentPrompt.type} field`,
+										type: currentPrompt.type,
+										hideAfterSubmit:
+											currentPrompt.hideAfterSubmit,
+									};
+
+									// Only add if not already present
+									if (
+										!groupFields.some(
+											(f) =>
+												f.label === fieldInfo.label &&
+												f.type === fieldInfo.type
+										)
+									) {
+										newMap.set(currentPrompt.groupName!, [
+											...groupFields,
+											fieldInfo,
+										]);
+									}
+									return newMap;
+								});
+
+								// Trigger conditional field re-evaluation with revision counter
+								setStaticGroupRevision((prev) => prev + 1);
+							}
+
+							// Track in group history for non-phase groups
+							const isPhaseGroup = phaseGroups.has(
+								currentPrompt.groupName
+							);
+							if (!isPhaseGroup) {
+								setGroupFieldHistory((prev) => {
+									const newMap = new Map(prev);
+									const groupFields =
+										newMap.get(currentPrompt.groupName!) ||
+										[];
+									const fieldInfo = {
+										id: currentPrompt.id,
+										label:
+											currentPrompt.label ||
+											`${currentPrompt.type} field`,
+										type: currentPrompt.type,
+										hideAfterSubmit:
+											currentPrompt.hideAfterSubmit,
+									};
+
+									if (
+										!groupFields.some(
+											(f) => f.id === currentPrompt.id
+										)
+									) {
+										newMap.set(currentPrompt.groupName!, [
+											...groupFields,
+											fieldInfo,
+										]);
+									}
+									return newMap;
+								});
+							}
+						} else {
+							// For root-level fields, track in root history
+							setRootFieldHistory((prev) => {
+								const fieldInfo = {
+									id: currentPrompt.id,
+									label:
+										currentPrompt.label ||
+										`${currentPrompt.type} field`,
+									type: currentPrompt.type,
+									hideAfterSubmit:
+										currentPrompt.hideAfterSubmit,
+								};
+
+								if (
+									!prev.some((f) => f.id === currentPrompt.id)
+								) {
+									return [...prev, fieldInfo];
+								}
+								return prev;
+							});
+						}
+
+						// Trigger back navigation
+						const r = resolverRef.current;
+						resolverRef.current = null;
+						r({ __back: true });
+						return;
+					}
+
+					// Regular submit - store the value
 					setFieldValues((prev) => ({
 						...prev,
-						[currentPrompt.id]: actualValue,
+						[currentPrompt.id]: value,
 					}));
-
-					// Mark as visited
 					setVisitedPrompts((prev) =>
 						new Set(prev).add(currentPrompt.id)
 					);
 
-					// Mark field as completed (if it meets completion criteria)
-					const shouldMarkCompleted =
-						currentPrompt.type !== "text" &&
-						currentPrompt.type !== "custom-text" &&
-						currentPrompt.type !== "validated-text"
-							? actualValue !== undefined
-							: typeof actualValue === "string"
-							? actualValue.trim() !== ""
-							: actualValue !== undefined;
-
-					if (shouldMarkCompleted && !currentPrompt.excludeFromCompleted) {
+					// Mark field as completed and track history
+					if (!currentPrompt.excludeFromCompleted) {
 						setCompletedFields((prev) =>
 							new Set(prev).add(currentPrompt.id)
 						);
 						completionHistoryRef.current.push(currentPrompt.id);
 					}
 
-					// Handle group tracking for static groups
 					if (currentPrompt.groupName) {
+						// For grouped fields, track in group history
+						// Phase groups don't track history, static groups track all fields
+						const isPhaseGroup = phaseGroups.has(
+							currentPrompt.groupName
+						);
 						const isStaticGroup = staticGroups.has(
 							currentPrompt.groupName
 						);
 
+						// For static groups, trigger field revelation when conditions are met
 						if (isStaticGroup) {
-							// Add current field to static group fields
+							// First add the current field
 							setStaticGroupFields((prev) => {
 								const newMap = new Map(prev);
 								const groupFields =
@@ -572,10 +796,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 										currentPrompt.label ||
 										`${currentPrompt.type} field`,
 									type: currentPrompt.type,
-									hideAfterSubmit: currentPrompt.hideAfterSubmit,
+									hideAfterSubmit:
+										currentPrompt.hideAfterSubmit,
 								};
 
-								// Only add if not already present
+								// Only add if not already present (check by label and type)
 								if (
 									!groupFields.some(
 										(f) =>
@@ -592,13 +817,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							});
 
 							// Trigger conditional field re-evaluation with revision counter
-							setStaticGroupRevision(prev => prev + 1);
+							// This allows any field to potentially trigger conditional field visibility
+							setStaticGroupRevision((prev) => prev + 1);
 						}
 
-						// Track in group history for non-phase groups
-						const isPhaseGroup = phaseGroups.has(
-							currentPrompt.groupName
-						);
 						if (!isPhaseGroup) {
 							setGroupFieldHistory((prev) => {
 								const newMap = new Map(prev);
@@ -610,13 +832,34 @@ export function PromptApp({ onReady }: PromptAppProps) {
 										currentPrompt.label ||
 										`${currentPrompt.type} field`,
 									type: currentPrompt.type,
-									hideAfterSubmit: currentPrompt.hideAfterSubmit,
+									hideAfterSubmit:
+										currentPrompt.hideAfterSubmit,
 								};
+
+								// Extra validation: ensure this field ID doesn't already exist in any other group
+								// This prevents cross-contamination between groups with similar conditional logic
+								let fieldExistsInOtherGroup = false;
+								for (const [
+									existingGroupName,
+									existingFields,
+								] of newMap.entries()) {
+									if (
+										existingGroupName !==
+											currentPrompt.groupName &&
+										existingFields.some(
+											(f) => f.id === currentPrompt.id
+										)
+									) {
+										fieldExistsInOtherGroup = true;
+										break;
+									}
+								}
 
 								if (
 									!groupFields.some(
 										(f) => f.id === currentPrompt.id
-									)
+									) &&
+									!fieldExistsInOtherGroup
 								) {
 									newMap.set(currentPrompt.groupName!, [
 										...groupFields,
@@ -638,158 +881,23 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								hideAfterSubmit: currentPrompt.hideAfterSubmit,
 							};
 
+							// Extra validation: ensure this field doesn't get added multiple times
+							// and doesn't conflict with any group fields
 							if (!prev.some((f) => f.id === currentPrompt.id)) {
 								return [...prev, fieldInfo];
 							}
 							return prev;
 						});
 					}
-
-					// Trigger back navigation
-					const r = resolverRef.current;
-					resolverRef.current = null;
-					r({ __back: true });
-					return;
 				}
+				const r = resolverRef.current;
+				resolverRef.current = null;
 
-				// Regular submit - store the value
-				setFieldValues((prev) => ({
-					...prev,
-					[currentPrompt.id]: value,
-				}));
-				setVisitedPrompts((prev) =>
-					new Set(prev).add(currentPrompt.id)
-				);
-
-				// Mark field as completed and track history
-				if (!currentPrompt.excludeFromCompleted) {
-					setCompletedFields((prev) =>
-						new Set(prev).add(currentPrompt.id)
-					);
-					completionHistoryRef.current.push(currentPrompt.id);
-				}
-
-				if (currentPrompt.groupName) {
-					// For grouped fields, track in group history
-					// Phase groups don't track history, static groups track all fields
-					const isPhaseGroup = phaseGroups.has(
-						currentPrompt.groupName
-					);
-					const isStaticGroup = staticGroups.has(
-						currentPrompt.groupName
-					);
-
-					// For static groups, trigger field revelation when conditions are met
-					if (isStaticGroup) {
-						// First add the current field
-						setStaticGroupFields((prev) => {
-							const newMap = new Map(prev);
-							const groupFields =
-								newMap.get(currentPrompt.groupName!) || [];
-							const fieldInfo = {
-								id: currentPrompt.id,
-								label:
-									currentPrompt.label ||
-									`${currentPrompt.type} field`,
-								type: currentPrompt.type,
-								hideAfterSubmit: currentPrompt.hideAfterSubmit,
-							};
-
-							// Only add if not already present (check by label and type)
-							if (
-								!groupFields.some(
-									(f) =>
-										f.label === fieldInfo.label &&
-										f.type === fieldInfo.type
-								)
-							) {
-								newMap.set(currentPrompt.groupName!, [
-									...groupFields,
-									fieldInfo,
-								]);
-							}
-							return newMap;
-						});
-
-						// Trigger conditional field re-evaluation with revision counter
-						// This allows any field to potentially trigger conditional field visibility
-						setStaticGroupRevision(prev => prev + 1);
-					}
-
-					if (!isPhaseGroup) {
-						setGroupFieldHistory((prev) => {
-							const newMap = new Map(prev);
-							const groupFields =
-								newMap.get(currentPrompt.groupName!) || [];
-							const fieldInfo = {
-								id: currentPrompt.id,
-								label:
-									currentPrompt.label ||
-									`${currentPrompt.type} field`,
-								type: currentPrompt.type,
-								hideAfterSubmit: currentPrompt.hideAfterSubmit,
-							};
-
-							// Extra validation: ensure this field ID doesn't already exist in any other group
-							// This prevents cross-contamination between groups with similar conditional logic
-							let fieldExistsInOtherGroup = false;
-							for (const [
-								existingGroupName,
-								existingFields,
-							] of newMap.entries()) {
-								if (
-									existingGroupName !==
-										currentPrompt.groupName &&
-									existingFields.some(
-										(f) => f.id === currentPrompt.id
-									)
-								) {
-									fieldExistsInOtherGroup = true;
-									break;
-								}
-							}
-
-							if (
-								!groupFields.some(
-									(f) => f.id === currentPrompt.id
-								) &&
-								!fieldExistsInOtherGroup
-							) {
-								newMap.set(currentPrompt.groupName!, [
-									...groupFields,
-									fieldInfo,
-								]);
-							}
-							return newMap;
-						});
-					}
-				} else {
-					// For root-level fields, track in root history
-					setRootFieldHistory((prev) => {
-						const fieldInfo = {
-							id: currentPrompt.id,
-							label:
-								currentPrompt.label ||
-								`${currentPrompt.type} field`,
-							type: currentPrompt.type,
-							hideAfterSubmit: currentPrompt.hideAfterSubmit,
-						};
-
-						// Extra validation: ensure this field doesn't get added multiple times
-						// and doesn't conflict with any group fields
-						if (!prev.some((f) => f.id === currentPrompt.id)) {
-							return [...prev, fieldInfo];
-						}
-						return prev;
-					});
-				}
+				r(value);
 			}
-			const r = resolverRef.current;
-			resolverRef.current = null;
-
-			r(value);
-		}
-	}, [currentPrompt, rootPromptOrder, phaseGroups, staticGroups]);
+		},
+		[currentPrompt, rootPromptOrder, phaseGroups, staticGroups]
+	);
 
 	const handleBack = useCallback(() => {
 		if (resolverRef.current && currentPrompt) {
@@ -813,7 +921,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			});
 
 			// Remove the most recently completed field from completed status when going back
-			const lastCompletedField = completionHistoryRef.current[completionHistoryRef.current.length - 1];
+			const lastCompletedField =
+				completionHistoryRef.current[
+					completionHistoryRef.current.length - 1
+				];
 			if (lastCompletedField) {
 				setCompletedFields((prev) => {
 					if (!prev.has(lastCompletedField)) return prev;
@@ -871,7 +982,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	useEffect(() => {
 		const prevGroup = previousGroupRef.current;
 
-
 		// Only mark a group as completed when moving to a LATER group in the sequence
 		// This prevents marking groups as completed when navigating backwards
 		if (prevGroup && currentGroup && prevGroup !== currentGroup) {
@@ -892,7 +1002,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					return prev;
 				});
 			}
-
 
 			// Only mark as completed if we're moving forward in the sequence
 			if (
@@ -928,7 +1037,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// Clear hint text when switching to non-interactive components
 	useEffect(() => {
 		if (currentPrompt && currentPrompt.type !== "group") {
-			const isInteractive = globalRegistry.isInteractive(currentPrompt.type);
+			const isInteractive = globalRegistry.isInteractive(
+				currentPrompt.type
+			);
 			if (!isInteractive) {
 				setCurrentHintText(null);
 			}
@@ -938,7 +1049,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// Completely ignore group prompts in render
 	const effectivePrompt =
 		currentPrompt?.type === "group" ? null : currentPrompt;
-
 
 	// Render completed fields for all groups (sequential by default) - memoized for performance
 	const renderCompletedFields = useMemo(() => {
@@ -969,7 +1079,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				allFields.set(field.label + "|" + field.type, field);
 			});
 
-			const allFieldsArray = [...allFields.values()].filter(field => !field.hideAfterSubmit);
+			const allFieldsArray = [...allFields.values()].filter(
+				(field) => !field.hideAfterSubmit
+			);
 
 			return allFieldsArray.map((field, index) => {
 				// For static groups, find the stored value by matching label and type
@@ -1118,7 +1230,20 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					});
 				});
 		}
-	}, [currentGroup, phaseGroups, staticGroups, staticGroupFields, groupFieldHistory, effectivePrompt, completedFields, fieldValues, rootPromptOrder, arrowNavigationGroups, firstFieldIdRef, staticGroupRevision]);
+	}, [
+		currentGroup,
+		phaseGroups,
+		staticGroups,
+		staticGroupFields,
+		groupFieldHistory,
+		effectivePrompt,
+		completedFields,
+		fieldValues,
+		rootPromptOrder,
+		arrowNavigationGroups,
+		firstFieldIdRef,
+		staticGroupRevision,
+	]);
 
 	// Render completed items in execution order - memoized for performance
 	const renderCompletedItemsInOrder = useMemo(() => {
@@ -1231,7 +1356,17 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				return null;
 			})
 			.filter(Boolean);
-	}, [rootPromptOrder, effectivePrompt, completedFields, completedGroups, currentGroup, phaseGroups, groupFieldHistory, fieldValues, rootFieldHistory]);
+	}, [
+		rootPromptOrder,
+		effectivePrompt,
+		completedFields,
+		completedGroups,
+		currentGroup,
+		phaseGroups,
+		groupFieldHistory,
+		fieldValues,
+		rootFieldHistory,
+	]);
 
 	if (!effectivePrompt) {
 		// Keep a stable shell so layout doesn't jump, but show completed groups and fields
@@ -1256,7 +1391,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		);
 
 		if (PluginComponent) {
-			const isInteractive = globalRegistry.isInteractive(effectivePrompt.type);
+			const isInteractive = globalRegistry.isInteractive(
+				effectivePrompt.type
+			);
 			const isSequentialGroup = !!(
 				effectivePrompt.groupName &&
 				!phaseGroups.has(effectivePrompt.groupName)
@@ -1264,10 +1401,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			const hasCompletedFields =
 				isSequentialGroup && completedFields.size > 0;
 			const allowBack =
-				effectivePrompt.allowBack !== false && (
-					effectivePrompt.id !== firstFieldIdRef.current ||
-					hasCompletedFields
-				);
+				effectivePrompt.allowBack !== false &&
+				(effectivePrompt.id !== firstFieldIdRef.current ||
+					hasCompletedFields);
 
 			// Get initial value based on prompt type
 			const getInitialValue = () => {
@@ -1309,14 +1445,20 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				effectivePrompt.id === firstFieldIdRef.current;
 
 			// Check if this is the first field in its group
-			const isFirstInGroup = effectivePrompt.groupName ?
-				// For grouped fields, check if this is the first field in the group's history
-				(() => {
-					const groupHistory = groupFieldHistory.get(effectivePrompt.groupName);
-					return !groupHistory || groupHistory.length === 0 || groupHistory[0].id === effectivePrompt.id;
-				})() :
-				// For root-level fields, they are not in a group, so always false
-				false;
+			const isFirstInGroup = effectivePrompt.groupName
+				? // For grouped fields, check if this is the first field in the group's history
+				  (() => {
+						const groupHistory = groupFieldHistory.get(
+							effectivePrompt.groupName
+						);
+						return (
+							!groupHistory ||
+							groupHistory.length === 0 ||
+							groupHistory[0].id === effectivePrompt.id
+						);
+				  })()
+				: // For root-level fields, they are not in a group, so always false
+				  false;
 
 			// Determine flow type based on current group
 			const flowType =
