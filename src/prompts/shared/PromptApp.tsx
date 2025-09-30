@@ -308,9 +308,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	const firstFieldIdRef = useRef<string | null>(null);
 	const staticGroupsRef = useRef<Set<string>>(new Set());
-	// Track current field hint text
-	const [currentHintText, setCurrentHintText] =
-		useState<React.ReactNode>(null);
+	// Track hint text per prompt ID - prevents hint flicker during navigation
+	const hintsByPromptId = useRef<Map<string, React.ReactNode>>(new Map());
 
 	// Add revision counter for static group conditional field updates
 	const [staticGroupRevision, setStaticGroupRevision] = useState(0);
@@ -321,10 +320,22 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		return groupIdToMessageRef.current.get(groupId) || null;
 	};
 
-	// Handler for when fields provide hint text
-	const handleHintChange = useCallback((hint: React.ReactNode) => {
-		setCurrentHintText(hint);
-	}, []);
+	// Handler for when fields provide hint text - stores per prompt ID
+	const handleHintChange = useCallback(
+		(hint: React.ReactNode) => {
+			if (currentPrompt?.id) {
+				hintsByPromptId.current.set(currentPrompt.id, hint);
+				// Trigger re-render to show the updated hint
+				setStaticGroupRevision((prev) => prev + 1);
+			}
+		},
+		[currentPrompt?.id]
+	);
+
+	// Get hint for current prompt only
+	const currentHintText = currentPrompt?.id
+		? hintsByPromptId.current.get(currentPrompt.id) || null
+		: null;
 
 	// Helper function to render field components dynamically
 	const renderFieldComponent = (
@@ -968,13 +979,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			// Set flag to indicate we're navigating back
 			isNavigatingBack.current = true;
 
-			// Clear hint immediately when going back to prevent flicker
-			setCurrentHintText(null);
-
 			const r = resolverRef.current;
 			resolverRef.current = null;
 
 			// Resolve - cleanup happens when next interactive prompt arrives
+			// Note: Don't clear hint here - let the new prompt's hint replace the old one
 			r({ __back: true });
 		}
 	}, [currentPrompt]);
@@ -1038,17 +1047,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		}
 	}, [currentPrompt]);
 
-	// Clear hint text when switching to non-interactive components
-	useEffect(() => {
-		if (currentPrompt && currentPrompt.type !== "group") {
-			const isInteractive = globalRegistry.isInteractive(
-				currentPrompt.type
-			);
-			if (!isInteractive) {
-				setCurrentHintText(null);
-			}
-		}
-	}, [currentPrompt]);
+	// Note: Hints are now stored per prompt ID, so they don't leak between prompts
+	// Non-interactive prompts simply won't set a hint, so currentHintText will be null for them
 
 	// Completely ignore group prompts in render
 	const effectivePrompt =
