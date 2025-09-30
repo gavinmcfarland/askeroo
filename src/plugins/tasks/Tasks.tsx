@@ -181,10 +181,31 @@ export function TasksDisplay(props: TasksOptions) {
 
 		// Set up polling for dynamic tasks and state updates
 		const interval = setInterval(() => {
-			updateDynamicTasks();
-			// Also refresh states from centralized store
+			const newDynamicTasks = getDynamicTasksForList(taskListId);
 			const latestStates = getAllTaskStatesForList(taskListId);
-			setTaskStates(new Map(latestStates));
+
+			// Only update if there are actual changes
+			setDynamicTasks(prevTasks => {
+				if (JSON.stringify(prevTasks) !== JSON.stringify(newDynamicTasks)) {
+					return newDynamicTasks;
+				}
+				return prevTasks;
+			});
+
+			setTaskStates(prevStates => {
+				const latestStatesMap = new Map(latestStates);
+				// Compare state maps to avoid unnecessary updates
+				if (prevStates.size !== latestStatesMap.size) {
+					return latestStatesMap;
+				}
+				for (const [key, value] of prevStates) {
+					const latestValue = latestStatesMap.get(key);
+					if (!latestValue || JSON.stringify(value) !== JSON.stringify(latestValue)) {
+						return latestStatesMap;
+					}
+				}
+				return prevStates;
+			});
 		}, 100);
 
 		return () => clearInterval(interval);
@@ -204,14 +225,28 @@ export function TasksDisplay(props: TasksOptions) {
 		}
 	});
 
-	// Animate spinner for running tasks
+	// Animate spinner only when tasks are running
 	useEffect(() => {
+		// Check if any tasks are currently running
+		const hasRunningTasks = Array.from(taskStates.values()).some(state => state.status === "running") ||
+			getDynamicTasksForList(taskListId).some((_, index) => {
+				const currentListStates = getTaskStatesForList(taskListId);
+				const taskIds = Array.from(currentListStates.keys());
+				const taskId = taskIds[index];
+				const state = taskId ? currentListStates.get(taskId) : null;
+				return state?.status === "running";
+			});
+
+		if (!hasRunningTasks) {
+			return; // Don't start animation if no tasks are running
+		}
+
 		const interval = setInterval(() => {
 			setSpinnerFrame((prev) => (prev + 1) % spinnerFrames.length);
 		}, 100); // Update every 100ms
 
 		return () => clearInterval(interval);
-	}, []);
+	}, [taskStates, dynamicTasks, taskListId]);
 
 	// Cleanup task list when component unmounts
 	useEffect(() => {
