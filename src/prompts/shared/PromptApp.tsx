@@ -403,21 +403,19 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				}
 				// Use flushSync to ensure both updates happen atomically in a single render
 				flushSync(() => {
-					setCurrentPrompt(request);
+					// Update both currentPrompt and completedFields in a single batched state update
+					const shouldCleanup =
+						isNavigatingBack.current && request.type !== "group";
 
-					// Only process completion cleanup if:
-					// 1. We're navigating back (flag is set)
-					// 2. This is an interactive field (not a group)
-					// 3. The field is in completed state
-					if (isNavigatingBack.current && request.type !== "group") {
-						isNavigatingBack.current = false; // Clear flag after processing
+					if (shouldCleanup) {
+						isNavigatingBack.current = false;
 
+						// Update both states together for true atomicity
+						setCurrentPrompt(request);
 						setCompletedFields((prev) => {
 							if (!prev.has(request.id)) {
-								// Field not in completed state, nothing to clean up
 								return prev;
 							}
-							// Field was completed, remove it since it's active again
 							const next = new Set(prev);
 							next.delete(request.id);
 
@@ -431,6 +429,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 							return next;
 						});
+					} else {
+						setCurrentPrompt(request);
 					}
 				});
 

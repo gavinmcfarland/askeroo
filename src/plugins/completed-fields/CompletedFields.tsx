@@ -8,7 +8,10 @@ import {
 	CompletedField,
 	CompletedFieldsStoreState,
 } from "./CompletedFieldsStore.js";
-import { registerForStateUpdates, PromptAppState } from "../../core/StateRegistry.js";
+import {
+	registerForStateUpdates,
+	PromptAppState,
+} from "../../core/StateRegistry.js";
 
 export interface CompletedFieldsOptions {
 	filter?: string[];
@@ -39,21 +42,23 @@ let unregisterStateUpdates: (() => void) | null = null;
 // Initialize plugin when first imported
 if (!storeInitialized) {
 	// Register for state updates from PromptApp
-	unregisterStateUpdates = registerForStateUpdates((state: PromptAppState) => {
-		// Convert PromptApp state to CompletedFieldsStoreState format
-		const completedFieldsState: CompletedFieldsStoreState = {
-			completedFields: state.fieldState.completed,
-			fieldValues: state.fieldState.values,
-			groupNames: state.fieldState.groupNames,
-			groupIds: state.fieldState.groupIds,
-			fieldMessages: state.fieldState.messages,
-			fieldProperties: state.fieldState.properties
-		};
+	unregisterStateUpdates = registerForStateUpdates(
+		(state: PromptAppState) => {
+			// Convert PromptApp state to CompletedFieldsStoreState format
+			const completedFieldsState: CompletedFieldsStoreState = {
+				completedFields: state.fieldState.completed,
+				fieldValues: state.fieldState.values,
+				groupNames: state.fieldState.groupNames,
+				groupIds: state.fieldState.groupIds,
+				fieldMessages: state.fieldState.messages,
+				fieldProperties: state.fieldState.properties,
+			};
 
-		// Update the centralized store
-		updateCompletedFieldsState(completedFieldsState);
-		globalUpdateListeners.forEach((listener) => listener());
-	});
+			// Update the centralized store
+			updateCompletedFieldsState(completedFieldsState);
+			globalUpdateListeners.forEach((listener) => listener());
+		}
+	);
 
 	// Initialize store connection
 	initializeCompletedFieldsStore((newState) => {
@@ -67,7 +72,9 @@ if (!storeInitialized) {
 // Legacy function kept for backwards compatibility (now a no-op)
 export function updateAppState(state: CompletedFieldsStoreState) {
 	// This function is now deprecated - state updates come through the registry
-	console.warn('updateAppState is deprecated - completed fields plugin now receives state updates automatically');
+	console.warn(
+		"updateAppState is deprecated - completed fields plugin now receives state updates automatically"
+	);
 }
 
 // Main component for the plugin
