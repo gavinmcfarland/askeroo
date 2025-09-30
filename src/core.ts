@@ -95,14 +95,37 @@ function getGroupIdentifier(
 }
 
 // Simple hash function for generating short, stable hashes
+// Optimized with caching for repeated strings
+const hashCache = new Map<string, string>();
 function simpleHash(str: string): string {
-	let hash = 0;
-	for (let i = 0; i < str.length; i++) {
-		const char = str.charCodeAt(i);
-		hash = (hash << 5) - hash + char;
-		hash = hash & hash; // Convert to 32-bit integer
+	// Check cache first for repeated strings
+	if (hashCache.has(str)) {
+		return hashCache.get(str)!;
 	}
-	return Math.abs(hash).toString(36);
+
+	let hash = 0;
+	// Optimize for short strings (most field labels/messages are short)
+	const len = str.length;
+	if (len < 16) {
+		// Fast path for short strings
+		for (let i = 0; i < len; i++) {
+			hash = ((hash << 5) - hash + str.charCodeAt(i)) & 0x7fffffff;
+		}
+	} else {
+		// For longer strings, sample every 2nd character for speed
+		for (let i = 0; i < len; i += 2) {
+			hash = ((hash << 5) - hash + str.charCodeAt(i)) & 0x7fffffff;
+		}
+	}
+
+	const result = hash.toString(36);
+
+	// Cache result but limit cache size to prevent memory leak
+	if (hashCache.size < 1000) {
+		hashCache.set(str, result);
+	}
+
+	return result;
 }
 
 export function createRuntime(ui: UI) {
@@ -612,7 +635,9 @@ export function createRuntime(ui: UI) {
 						if (!canOptimize) {
 							// Remove answers from prompts that are no longer reachable
 							const currentPrompts = new Set(interactivePrompts);
-							for (const key of Object.keys(answers)) {
+							// Cache Object.keys() result to avoid repeated calls
+							const answerKeys = Object.keys(answers);
+							for (const key of answerKeys) {
 								if (!currentPrompts.has(key)) {
 									delete answers[key];
 								}
@@ -630,7 +655,9 @@ export function createRuntime(ui: UI) {
 			// Clean up answers for prompts that were not reached in this replay
 			if (!canOptimize) {
 				const reachablePrompts = new Set(interactivePrompts);
-				for (const key of Object.keys(answers)) {
+				// Cache Object.keys() result to avoid repeated calls
+				const answerKeys = Object.keys(answers);
+				for (const key of answerKeys) {
 					if (!reachablePrompts.has(key)) {
 						delete answers[key];
 					}

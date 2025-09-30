@@ -179,14 +179,21 @@ export function TasksDisplay(props: TasksOptions) {
 		// Initial load of dynamic tasks
 		updateDynamicTasks();
 
-		// Set up polling for dynamic tasks and state updates
-		const interval = setInterval(() => {
+		// Set up optimized polling with dynamic intervals based on activity
+		let pollInterval = 100; // Start with fast polling
+		const maxInterval = 1000; // Cap at 1 second
+		let consecutiveNoChanges = 0;
+		let timeoutId: NodeJS.Timeout;
+
+		const poll = () => {
 			const newDynamicTasks = getDynamicTasksForList(taskListId);
 			const latestStates = getAllTaskStatesForList(taskListId);
+			let hasChanges = false;
 
 			// Only update if there are actual changes
 			setDynamicTasks(prevTasks => {
 				if (JSON.stringify(prevTasks) !== JSON.stringify(newDynamicTasks)) {
+					hasChanges = true;
 					return newDynamicTasks;
 				}
 				return prevTasks;
@@ -196,19 +203,39 @@ export function TasksDisplay(props: TasksOptions) {
 				const latestStatesMap = new Map(latestStates);
 				// Compare state maps to avoid unnecessary updates
 				if (prevStates.size !== latestStatesMap.size) {
+					hasChanges = true;
 					return latestStatesMap;
 				}
 				for (const [key, value] of prevStates) {
 					const latestValue = latestStatesMap.get(key);
 					if (!latestValue || JSON.stringify(value) !== JSON.stringify(latestValue)) {
+						hasChanges = true;
 						return latestStatesMap;
 					}
 				}
 				return prevStates;
 			});
-		}, 100);
 
-		return () => clearInterval(interval);
+			// Adjust polling interval based on activity
+			if (hasChanges) {
+				consecutiveNoChanges = 0;
+				pollInterval = 100; // Reset to fast polling on activity
+			} else {
+				consecutiveNoChanges++;
+				// Gradually increase interval if no changes (exponential backoff)
+				if (consecutiveNoChanges > 3) {
+					pollInterval = Math.min(pollInterval * 1.5, maxInterval);
+				}
+			}
+
+			// Schedule next poll
+			timeoutId = setTimeout(poll, pollInterval);
+		};
+
+		// Start initial poll
+		timeoutId = setTimeout(poll, pollInterval);
+
+		return () => clearTimeout(timeoutId);
 	}, [taskListId]);
 
 	// Animated spinner frames
@@ -243,7 +270,7 @@ export function TasksDisplay(props: TasksOptions) {
 
 		const interval = setInterval(() => {
 			setSpinnerFrame((prev) => (prev + 1) % spinnerFrames.length);
-		}, 100); // Update every 100ms
+		}, 150); // Reduced frequency from 100ms to 150ms for better performance
 
 		return () => clearInterval(interval);
 	}, [taskStates, dynamicTasks, taskListId]);

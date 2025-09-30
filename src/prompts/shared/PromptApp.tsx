@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useInput, Box, Text } from "ink";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../../registry.js";
@@ -122,6 +121,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// Track current field hint text
 	const [currentHintText, setCurrentHintText] =
 		useState<React.ReactNode>(null);
+
+	// Add revision counter for static group conditional field updates
+	const [staticGroupRevision, setStaticGroupRevision] = useState(0);
 
 	// Helper function to get display name for a group
 	const getGroupDisplayName = (groupId: string | null): string | null => {
@@ -368,7 +370,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		onReady(promptFn);
 	}, [onReady]);
 
-	const handleSubmit = (value: any) => {
+	const handleSubmit = useCallback((value: any) => {
 		if (resolverRef.current && currentPrompt) {
 			if (currentPrompt.type !== "group") {
 				// Handle special navigation value that clears entire group and goes back
@@ -513,8 +515,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								return newMap;
 							});
 
-							// Force re-render for conditional fields
-							setStaticGroupFields((prev) => new Map(prev));
+							// Trigger conditional field re-evaluation with revision counter
+							setStaticGroupRevision(prev => prev + 1);
 						}
 
 						// Track in group history for non-phase groups
@@ -633,11 +635,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							return newMap;
 						});
 
-						// Force re-render when any field changes to reveal conditional fields
+						// Trigger conditional field re-evaluation with revision counter
 						// This allows any field to potentially trigger conditional field visibility
-						// Force a re-render to trigger conditional field visibility checks
-						// This will cause shouldDisplayField to re-evaluate with the new field value
-						setStaticGroupFields((prev) => new Map(prev));
+						setStaticGroupRevision(prev => prev + 1);
 					}
 
 					if (!isPhaseGroup) {
@@ -713,9 +713,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 			r(value);
 		}
-	};
+	}, [currentPrompt, rootPromptOrder, phaseGroups, staticGroups]);
 
-	const handleBack = () => {
+	const handleBack = useCallback(() => {
 		if (resolverRef.current && currentPrompt) {
 			// Capture the current field ID to clean up
 			const currentFieldId = currentPrompt.id;
@@ -786,7 +786,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				});
 			}
 		}
-	};
+	}, [currentPrompt, completionHistoryRef, groupOrder]);
 
 	// Track previous group to detect group completion
 	const previousGroupRef = useRef<string | null>(null);
@@ -881,8 +881,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		currentPrompt?.type === "group" ? null : currentPrompt;
 
 
-	// Render completed fields for all groups (sequential by default)
-	const renderCompletedFields = () => {
+	// Render completed fields for all groups (sequential by default) - memoized for performance
+	const renderCompletedFields = useMemo(() => {
 		if (!currentGroup || phaseGroups.has(currentGroup)) {
 			return null;
 		}
@@ -1059,10 +1059,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					});
 				});
 		}
-	};
+	}, [currentGroup, phaseGroups, staticGroups, staticGroupFields, groupFieldHistory, effectivePrompt, completedFields, fieldValues, rootPromptOrder, arrowNavigationGroups, firstFieldIdRef, staticGroupRevision]);
 
-	// Render completed items in execution order
-	const renderCompletedItemsInOrder = () => {
+	// Render completed items in execution order - memoized for performance
+	const renderCompletedItemsInOrder = useMemo(() => {
 		// Only show items that come before the current prompt in the root order
 		const currentPromptIndex = rootPromptOrder.findIndex(
 			(p) => p.id === effectivePrompt?.id
@@ -1172,15 +1172,15 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				return null;
 			})
 			.filter(Boolean);
-	};
+	}, [rootPromptOrder, effectivePrompt, completedFields, completedGroups, currentGroup, phaseGroups, groupFieldHistory, fieldValues, rootFieldHistory]);
 
 	if (!effectivePrompt) {
 		// Keep a stable shell so layout doesn't jump, but show completed groups and fields
 		return (
 			<RootContainer>
-				{renderCompletedItemsInOrder()}
+				{renderCompletedItemsInOrder}
 				<GroupContainer groupName={getGroupDisplayName(currentGroup)}>
-					{renderCompletedFields()}
+					{renderCompletedFields}
 				</GroupContainer>
 			</RootContainer>
 		);
@@ -1291,13 +1291,13 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	return (
 		<RootContainer>
-			{renderCompletedItemsInOrder()}
+			{renderCompletedItemsInOrder}
 			<GroupContainer
 				key="group-container"
 				groupName={getGroupDisplayName(currentGroup)}
 				hintText={currentHintText}
 			>
-				{renderCompletedFields()}
+				{renderCompletedFields}
 				{field}
 			</GroupContainer>
 		</RootContainer>
