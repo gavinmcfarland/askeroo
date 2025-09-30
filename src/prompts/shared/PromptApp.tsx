@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { addToSet, setInMap, updateInMap } from "../../utils/immutable.js";
 import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../../registry.js";
@@ -24,6 +25,35 @@ interface PromptAppProps {
 	onReady: (promptFn: (request: PromptRequest) => Promise<any>) => void;
 }
 
+// Type definitions for grouped state
+type FieldInfo = { id: string; label: string; type: string; hideAfterSubmit?: boolean };
+
+interface FieldState {
+	values: Record<string, any>;
+	visited: Set<string>;
+	completed: Set<string>;
+	properties: Map<string, any>;
+	messages: Record<string, string>;
+	groupNames: Record<string, string>;
+	groupIds: Record<string, string>;
+}
+
+interface GroupState {
+	progressive: Set<string>;
+	phased: Set<string>;
+	static: Set<string>;
+	completed: Set<string>;
+	order: string[];
+	arrowNavigation: Set<string>;
+}
+
+interface PromptOrderState {
+	root: Array<{ id: string; type: "field" | "group"; groupName?: string }>;
+	rootFieldHistory: Array<FieldInfo>;
+	staticGroupFields: Map<string, Array<FieldInfo>>;
+	groupFieldHistory: Map<string, Array<FieldInfo>>;
+}
+
 export function PromptApp({ onReady }: PromptAppProps) {
 	const [currentPrompt, setCurrentPrompt] = useState<PromptRequest | null>(
 		null
@@ -31,46 +61,127 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// ⬇️ resolver kept in a ref to avoid re-renders
 	const resolverRef = useRef<((value: any) => void) | null>(null);
 
-	const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
-	const [visitedPrompts, setVisitedPrompts] = useState<Set<string>>(
-		new Set()
-	);
-	const [currentGroup, setCurrentGroup] = useState<string | null>(null);
-	const [completedFields, setCompletedFields] = useState<Set<string>>(
-		new Set()
-	);
-	const completionHistoryRef = useRef<string[]>([]);
-	const [progressiveGroups, setProgressiveGroups] = useState<Set<string>>(
-		new Set()
-	);
-	const [phaseGroups, setPhaseGroups] = useState<Set<string>>(new Set());
-	const [staticGroups, setStaticGroups] = useState<Set<string>>(new Set());
-	const [staticGroupFields, setStaticGroupFields] = useState<
-		Map<string, Array<{ id: string; label: string; type: string; hideAfterSubmit?: boolean }>>
-	>(new Map());
-	const [groupFieldHistory, setGroupFieldHistory] = useState<
-		Map<string, Array<{ id: string; label: string; type: string; hideAfterSubmit?: boolean }>>
-	>(new Map());
-	const [completedGroups, setCompletedGroups] = useState<Set<string>>(
-		new Set()
-	);
+	// Grouped state - this is the new source of truth
+	const [fieldState, setFieldState] = useState<FieldState>({
+		values: {},
+		visited: new Set(),
+		completed: new Set(),
+		properties: new Map(),
+		messages: {},
+		groupNames: {},
+		groupIds: {}
+	});
 
-	// Track field metadata for the completed fields plugin
-	const [fieldMessages, setFieldMessages] = useState<Record<string, string>>({});
-	const [fieldGroupNames, setFieldGroupNames] = useState<Record<string, string>>({});
-	const [fieldGroupIds, setFieldGroupIds] = useState<Record<string, string>>({});
-	const [groupOrder, setGroupOrder] = useState<string[]>([]);
+	const [groupState, setGroupState] = useState<GroupState>({
+		progressive: new Set(),
+		phased: new Set(),
+		static: new Set(),
+		completed: new Set(),
+		order: [],
+		arrowNavigation: new Set()
+	});
+
+	const [promptOrderState, setPromptOrderState] = useState<PromptOrderState>({
+		root: [],
+		rootFieldHistory: [],
+		staticGroupFields: new Map(),
+		groupFieldHistory: new Map()
+	});
+
+	// Computed getters for backward compatibility (these maintain the original interface)
+	const fieldValues = fieldState.values;
+	const visitedPrompts = fieldState.visited;
+	const completedFields = fieldState.completed;
+	const fieldProperties = fieldState.properties;
+	const fieldMessages = fieldState.messages;
+	const fieldGroupNames = fieldState.groupNames;
+	const fieldGroupIds = fieldState.groupIds;
+
+	const progressiveGroups = groupState.progressive;
+	const phaseGroups = groupState.phased;
+	const staticGroups = groupState.static;
+	const completedGroups = groupState.completed;
+	const groupOrder = groupState.order;
+	const arrowNavigationGroups = groupState.arrowNavigation;
+
+	const rootPromptOrder = promptOrderState.root;
+	const rootFieldHistory = promptOrderState.rootFieldHistory;
+	const staticGroupFields = promptOrderState.staticGroupFields;
+	const groupFieldHistory = promptOrderState.groupFieldHistory;
+
+	// Helper setters that update the grouped state
+	const setFieldValues = (updater: (prev: Record<string, any>) => Record<string, any>) => {
+		setFieldState(prev => ({ ...prev, values: updater(prev.values) }));
+	};
+
+	const setVisitedPrompts = (updater: (prev: Set<string>) => Set<string>) => {
+		setFieldState(prev => ({ ...prev, visited: updater(prev.visited) }));
+	};
+
+	const setCompletedFields = (updater: (prev: Set<string>) => Set<string>) => {
+		setFieldState(prev => ({ ...prev, completed: updater(prev.completed) }));
+	};
+
+	const setFieldProperties = (updater: (prev: Map<string, any>) => Map<string, any>) => {
+		setFieldState(prev => ({ ...prev, properties: updater(prev.properties) }));
+	};
+
+	const setFieldMessages = (updater: (prev: Record<string, string>) => Record<string, string>) => {
+		setFieldState(prev => ({ ...prev, messages: updater(prev.messages) }));
+	};
+
+	const setFieldGroupNames = (updater: (prev: Record<string, string>) => Record<string, string>) => {
+		setFieldState(prev => ({ ...prev, groupNames: updater(prev.groupNames) }));
+	};
+
+	const setFieldGroupIds = (updater: (prev: Record<string, string>) => Record<string, string>) => {
+		setFieldState(prev => ({ ...prev, groupIds: updater(prev.groupIds) }));
+	};
+
+	const setProgressiveGroups = (updater: (prev: Set<string>) => Set<string>) => {
+		setGroupState(prev => ({ ...prev, progressive: updater(prev.progressive) }));
+	};
+
+	const setPhaseGroups = (updater: (prev: Set<string>) => Set<string>) => {
+		setGroupState(prev => ({ ...prev, phased: updater(prev.phased) }));
+	};
+
+	const setStaticGroups = (updater: (prev: Set<string>) => Set<string>) => {
+		setGroupState(prev => ({ ...prev, static: updater(prev.static) }));
+	};
+
+	const setCompletedGroups = (updater: (prev: Set<string>) => Set<string>) => {
+		setGroupState(prev => ({ ...prev, completed: updater(prev.completed) }));
+	};
+
+	const setGroupOrder = (updater: (prev: string[]) => string[]) => {
+		setGroupState(prev => ({ ...prev, order: updater(prev.order) }));
+	};
+
+	const setArrowNavigationGroups = (updater: (prev: Set<string>) => Set<string>) => {
+		setGroupState(prev => ({ ...prev, arrowNavigation: updater(prev.arrowNavigation) }));
+	};
+
+	const setRootPromptOrder = (updater: (prev: Array<{ id: string; type: "field" | "group"; groupName?: string }>) => Array<{ id: string; type: "field" | "group"; groupName?: string }>) => {
+		setPromptOrderState(prev => ({ ...prev, root: updater(prev.root) }));
+	};
+
+	const setRootFieldHistory = (updater: (prev: Array<FieldInfo>) => Array<FieldInfo>) => {
+		setPromptOrderState(prev => ({ ...prev, rootFieldHistory: updater(prev.rootFieldHistory) }));
+	};
+
+	const setStaticGroupFields = (updater: (prev: Map<string, Array<FieldInfo>>) => Map<string, Array<FieldInfo>>) => {
+		setPromptOrderState(prev => ({ ...prev, staticGroupFields: updater(prev.staticGroupFields) }));
+	};
+
+	const setGroupFieldHistory = (updater: (prev: Map<string, Array<FieldInfo>>) => Map<string, Array<FieldInfo>>) => {
+		setPromptOrderState(prev => ({ ...prev, groupFieldHistory: updater(prev.groupFieldHistory) }));
+	};
+
+	// Other non-grouped state
+	const [currentGroup, setCurrentGroup] = useState<string | null>(null);
+	const completionHistoryRef = useRef<string[]>([]);
 	const groupIdToMessageRef = useRef<Map<string, string | undefined>>(new Map());
-	const [rootPromptOrder, setRootPromptOrder] = useState<
-		Array<{ id: string; type: "field" | "group"; groupName?: string }>
-	>([]);
-	const [rootFieldHistory, setRootFieldHistory] = useState<
-		Array<{ id: string; label: string; type: string; hideAfterSubmit?: boolean }>
-	>([]);
-	// Store complete field properties for proper rendering
-	const [fieldProperties, setFieldProperties] = useState<Map<string, any>>(
-		new Map()
-	);
 
 
 	// Update completed fields plugin state whenever relevant data changes
@@ -88,10 +199,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	const firstFieldIdRef = useRef<string | null>(null);
 	const staticGroupsRef = useRef<Set<string>>(new Set());
-	// Track groups with arrow navigation enabled
-	const [arrowNavigationGroups, setArrowNavigationGroups] = useState<
-		Set<string>
-	>(new Set());
 	// Track current field hint text
 	const [currentHintText, setCurrentHintText] =
 		useState<React.ReactNode>(null);
