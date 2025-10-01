@@ -40,7 +40,7 @@ export function NoteDisplay(props: NoteOptions) {
 				{parseMarkdown(
 					isMarkdownObject
 						? (props.message as MarkdownString).content
-						: props.message as string,
+						: (props.message as string) || "",
 					isMarkdownObject
 						? (props.message as MarkdownString).theme
 						: undefined

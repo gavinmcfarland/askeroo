@@ -115,6 +115,9 @@ const chalkTokenExtension = {
 
 // Utility function to dedent content
 function dedentContent(content: string): string {
+	// Handle undefined or null content
+	if (!content) return "";
+
 	// Split into lines
 	const lines = content.split("\n");
 
@@ -269,7 +272,7 @@ export function parseMarkdown(
 	};
 
 	// Automatically dedent the content
-	const dedentedContent = dedentContent(content);
+	const dedentedContent = dedentContent(content || "");
 
 	// Parse markdown into tokens using custom marked instance
 	const tokens = customMarked.lexer(dedentedContent);

@@ -6,12 +6,26 @@ import React, {
 	useMemo,
 } from "react";
 import { flushSync } from "react-dom";
-import { addToSet, setInMap, updateInMap } from "../../utils/immutable.js";
+// import { addToSet, setInMap, updateInMap } from "../../utils/immutable.js"; // Unused during tree migration
+import { RecursiveGroupContainer } from "../group/RecursiveGroupContainer.js";
+// Legacy GroupContainer available for emergency fallback only
 import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../../registry.js";
-import { initializeTasksInApp } from "../../plugins/tasks/index.js";
+// import { initializeTasksInApp } from "../../plugins/tasks/index.js"; // Unused during tree migration
 import { notifyStateUpdate } from "../../core/StateRegistry.js";
+import { PromptTreeManager, PromptNode } from "../../core/PromptTree.js";
+import { PromptTreeAdapter } from "../../core/PromptTreeAdapter.js";
+
+// Type declaration for debug utilities
+declare global {
+	interface Window {
+		__promptTreeDebug?: any;
+	}
+	var __enableRecursiveRendering: (() => void) | undefined;
+	var __enableLegacyRendering: (() => void) | undefined;
+	var __debugTree: (() => void) | undefined;
+}
 
 // Generic prompt request that works for all plugins
 type PromptRequest = {
@@ -102,6 +116,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		staticGroupFields: new Map(),
 		groupFieldHistory: new Map(),
 	});
+
+	// NEW: Tree-based state management (parallel to existing state during migration)
+	const treeManagerRef = useRef<PromptTreeManager>(new PromptTreeManager());
+	const treeAdapterRef = useRef<PromptTreeAdapter>(new PromptTreeAdapter(treeManagerRef.current));
+	const [treeRevision, setTreeRevision] = useState(0); // For forcing re-renders when tree changes
+	const [useRecursiveRendering, setUseRecursiveRendering] = useState(true); // Recursive rendering enabled by default
 
 	// Computed getters for backward compatibility (these maintain the original interface)
 	const fieldValues = fieldState.values;
@@ -452,6 +472,28 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				// ⬇️ assign without rendering
 				resolverRef.current = resolve;
 
+				// NEW: Add prompt to tree structure and activate it
+				try {
+					const currentGroup = treeAdapterRef.current.getCurrentGroup();
+					treeAdapterRef.current.addPromptRequestToTree(request, currentGroup);
+
+					// Activate the prompt in the tree (crucial for rendering)
+					if (request.type !== "group") {
+						treeManagerRef.current.navigateTo(request.id);
+					}
+
+					// Force re-render to reflect tree changes
+					setTreeRevision(prev => prev + 1);
+
+					// Log tree structure for debugging
+					if (process.env.NODE_ENV === 'development') {
+						console.log('🌳 Tree updated for prompt:', request.id, request.type);
+						console.log('🎯 Active node:', treeManagerRef.current.getActiveNode()?.id);
+					}
+				} catch (error) {
+					console.warn('Tree management error (non-critical during migration):', error);
+				}
+
 				// Store complete field properties for later rendering
 				if (request.type !== "group") {
 					setFieldProperties((prev) => {
@@ -700,6 +742,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						}
 
 						// Trigger back navigation
+						performTreeBackNavigation(); // Ensure tree navigation happens here too
 						const r = resolverRef.current;
 						resolverRef.current = null;
 						r({ __back: true });
@@ -839,6 +882,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						}
 
 						// Trigger back navigation
+						performTreeBackNavigation(); // Ensure tree navigation happens here too
 						const r = resolverRef.current;
 						resolverRef.current = null;
 						r({ __back: true });
@@ -853,6 +897,18 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					setVisitedPrompts((prev) =>
 						new Set(prev).add(currentPrompt.id)
 					);
+
+					// NEW: Update tree with submitted value
+					try {
+						treeManagerRef.current.updateNode(currentPrompt.id, {
+							value: value,
+							visited: true,
+							completed: !currentPrompt.excludeFromCompleted
+						});
+						setTreeRevision(prev => prev + 1);
+					} catch (error) {
+						console.warn('Tree update error (non-critical during migration):', error);
+					}
 
 					// Clear back navigation flag since we're going forward
 					isNavigatingBack.current = false;
@@ -998,8 +1054,49 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		[currentPrompt, rootPromptOrder, phaseGroups, staticGroups]
 	);
 
+	// Extract tree navigation and synchronization logic to be used by all back navigation paths
+	const performTreeBackNavigation = useCallback(() => {
+		try {
+			const canGoBack = treeManagerRef.current.canGoBack();
+			if (canGoBack) {
+				const result = treeManagerRef.current.goBack();
+				if (result.success) {
+					console.log('Tree navigation: went back to', result.node?.id);
+
+					// Synchronize legacy state with tree state
+					// Clear completed status for all nodes that were reset by goBack()
+					const allNodes = treeManagerRef.current.findNodes(() => true);
+
+					// Find all nodes that are no longer completed and remove them from legacy completed state
+					const noLongerCompleted: string[] = [];
+					allNodes.forEach((node: PromptNode) => {
+						if (!node.completed && completedFields.has(node.id)) {
+							noLongerCompleted.push(node.id);
+						}
+					});
+
+					// Clear from legacy completed fields
+					if (noLongerCompleted.length > 0) {
+						setCompletedFields(prev => {
+							const newCompleted = new Set(prev);
+							noLongerCompleted.forEach(id => newCompleted.delete(id));
+							return newCompleted;
+						});
+					}
+
+					setTreeRevision(prev => prev + 1);
+				}
+			}
+		} catch (error) {
+			console.warn('Tree navigation error (non-critical during migration):', error);
+		}
+	}, [completedFields]);
+
 	const handleBack = useCallback(() => {
 		if (resolverRef.current && currentPrompt) {
+			// Perform tree navigation and synchronization
+			performTreeBackNavigation();
+
 			// Set flag to indicate we're navigating back
 			isNavigatingBack.current = true;
 
@@ -1010,7 +1107,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			// Note: Don't clear hint here - let the new prompt's hint replace the old one
 			r({ __back: true });
 		}
-	}, [currentPrompt]);
+	}, [currentPrompt, performTreeBackNavigation]);
 
 	// Track previous group to detect group completion
 	const previousGroupRef = useRef<string | null>(null);
@@ -1071,6 +1168,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		}
 	}, [currentPrompt]);
 
+	// NEW: Effect to log tree changes in development
+	useEffect(() => {
+		if (process.env.NODE_ENV === 'development' && treeRevision > 0) {
+			const stats = treeManagerRef.current.getTreeStats();
+			console.log('🌳 Tree stats:', stats);
+		}
+	}, [treeRevision]);
+
 	// Note: Hints are now stored per prompt ID, so they don't leak between prompts
 	// Non-interactive prompts simply won't set a hint, so currentHintText will be null for them
 
@@ -1078,8 +1183,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const effectivePrompt =
 		currentPrompt?.type === "group" ? null : currentPrompt;
 
-	// Render completed fields for all groups (sequential by default) - memoized for performance
+	// LEGACY: Render completed fields (only for emergency debugging)
 	const renderCompletedFields = useMemo(() => {
+		// Skip compilation if not needed
+		if (useRecursiveRendering) return null;
 		if (!currentGroup || phaseGroups.has(currentGroup)) {
 			return null;
 		}
@@ -1273,8 +1380,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		staticGroupRevision,
 	]);
 
-	// Render completed items in execution order - memoized for performance
+	// LEGACY: Render completed items in order (only for emergency debugging)
 	const renderCompletedItemsInOrder = useMemo(() => {
+		// Skip compilation if not needed
+		if (useRecursiveRendering) return null;
 		// Only show items that come before the current prompt in the root order
 		const currentPromptIndex = rootPromptOrder.findIndex(
 			(p) => p.id === effectivePrompt?.id
@@ -1420,11 +1529,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		);
 	}
 
-	// For static groups, don't render the active field separately - it's part of the static group rendering
-	const isCurrentGroupStatic = currentGroup && staticGroups.has(currentGroup);
+	// LEGACY: Field rendering (only for emergency debugging)
 	let field: React.ReactNode = null;
 
-	if (!isCurrentGroupStatic) {
+	if (!useRecursiveRendering) {
+		// For static groups, don't render the active field separately - it's part of the static group rendering
+		const isCurrentGroupStatic = currentGroup && staticGroups.has(currentGroup);
+
+		if (!isCurrentGroupStatic) {
 		// Check if this is a plugin-provided prompt type
 		const PluginComponent = globalRegistry.getComponent(
 			effectivePrompt.type
@@ -1528,23 +1640,87 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			// Fallback for unknown prompt types
 			field = null;
 		}
+		}
 	}
 
 	const currentGroupDepth = currentGroup
 		? groupDepths.get(currentGroup) || 0
 		: 0;
+
+	// NEW: Debug utilities (for console access during development)
+	// Use: console.log(treeManagerRef.current.printTree()) in your debugging code
+
+	// NEW: Debug utilities for CLI troubleshooting
+	if (typeof globalThis !== 'undefined' && !globalThis.__enableLegacyRendering) {
+		globalThis.__enableLegacyRendering = () => {
+			setUseRecursiveRendering(false);
+			console.log('⚠️ Legacy rendering enabled for debugging. Switch back with __enableRecursiveRendering()');
+		};
+		globalThis.__enableRecursiveRendering = () => {
+			setUseRecursiveRendering(true);
+			console.log('✅ Recursive rendering enabled (default).');
+		};
+		globalThis.__debugTree = () => {
+			const tree = treeManagerRef.current.getTree();
+			const stats = treeManagerRef.current.getTreeStats();
+			console.log('🌳 Tree debug info:');
+			console.log('Stats:', stats);
+			console.log('Tree structure:');
+			console.log(treeManagerRef.current.printTree());
+			console.log('Root children:', tree.root.children.length);
+			tree.root.children.forEach((child, i) => {
+				console.log(`Child ${i}:`, {
+					id: child.id,
+					type: child.type,
+					active: child.active,
+					completed: child.completed,
+					visited: child.visited
+				});
+			});
+		};
+	}
+
+	// Tree-based recursive rendering (default and only method)
+	const tree = treeManagerRef.current.getTree();
+
+	// Legacy fallback available for emergency debugging only
+	if (!useRecursiveRendering) {
+		return (
+			<RootContainer>
+				{renderCompletedItemsInOrder}
+				<GroupContainer
+					key="group-container"
+					groupName={getGroupDisplayName(currentGroup)}
+					hintText={currentHintText}
+					depth={currentGroupDepth}
+				>
+					{renderCompletedFields}
+					{field}
+				</GroupContainer>
+			</RootContainer>
+		);
+	}
+
+	// Primary rendering: Tree-based recursive rendering
+
+	// Debug: Log tree state when in development
+	if (process.env.NODE_ENV === 'development') {
+		const stats = treeManagerRef.current.getTreeStats();
+		if (stats.totalNodes > 1) { // More than just root
+			console.log('🌳 Rendering tree with', stats.totalNodes, 'nodes, active:', stats.activeNodeId);
+		}
+	}
+
 	return (
 		<RootContainer>
-			{renderCompletedItemsInOrder}
-			<GroupContainer
-				key="group-container"
-				groupName={getGroupDisplayName(currentGroup)}
+			<RecursiveGroupContainer
+				item={tree.root}
+				treeManager={treeManagerRef.current}
+				onSubmit={handleSubmit}
+				onBack={handleBack}
+				onHintChange={handleHintChange}
 				hintText={currentHintText}
-				depth={currentGroupDepth}
-			>
-				{renderCompletedFields}
-				{field}
-			</GroupContainer>
+			/>
 		</RootContainer>
 	);
 }
