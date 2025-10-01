@@ -102,23 +102,28 @@ export class PromptTreeManager {
       parent: undefined
     };
 
-    // Add to index
-    this.tree.nodeIndex.set(node.id, newNode);
-
     // Find parent and add as child
     const parent = parentId ? this.tree.nodeIndex.get(parentId) : this.tree.root;
     if (parent) {
       newNode.parent = parent;
-      newNode.depth = parent.depth + 1;
+      // Use provided depth if available, otherwise calculate from parent
+      newNode.depth = node.depth !== undefined ? node.depth : parent.depth + 1;
       parent.children.push(newNode);
     } else {
-      // If no parent specified and not root, add to root
+      // If specified parent doesn't exist, fall back to root
+      if (parentId && parentId !== 'root') {
+        console.warn(`PromptTree: Parent '${parentId}' not found for node '${node.id}', adding to root`);
+      }
+
       if (node.id !== 'root') {
         newNode.parent = this.tree.root;
-        newNode.depth = 1;
+        newNode.depth = node.depth !== undefined ? node.depth : 1;
         this.tree.root.children.push(newNode);
       }
     }
+
+    // Add to index after establishing parent relationship
+    this.tree.nodeIndex.set(node.id, newNode);
 
     return newNode;
   }

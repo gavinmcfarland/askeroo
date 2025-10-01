@@ -64,8 +64,22 @@ export class PromptTreeAdapter {
   }
 
   private addGroupToTree(request: PromptRequest, currentGroup?: string | null): PromptNode {
-    // Use provided currentGroup or find parent group if this is a nested group
-    const parentGroupId = currentGroup || this.findParentGroupId(request);
+    // More robust parent determination - prefer explicit currentGroup over heuristics
+    let parentGroupId: string | undefined;
+
+    if (currentGroup && currentGroup !== 'root') {
+      // Verify the currentGroup actually exists in the tree
+      const parentExists = this.treeManager.getNode(currentGroup);
+      if (parentExists) {
+        parentGroupId = currentGroup;
+      } else {
+        console.warn(`PromptTreeAdapter: Specified parent group '${currentGroup}' not found, falling back to findParentGroupId`);
+        parentGroupId = this.findParentGroupId(request);
+      }
+    } else {
+      // Fall back to finding parent by depth
+      parentGroupId = this.findParentGroupId(request);
+    }
 
     const groupNode = this.treeManager.addNode({
       id: request.id,
@@ -82,12 +96,30 @@ export class PromptTreeAdapter {
       properties: { ...request }
     }, parentGroupId);
 
+    // Store the mapping for this group to help with future nested groups
+    this.groupIdToPromptId.set(request.id, request.id);
+
     return groupNode;
   }
 
   private addFieldToTree(request: PromptRequest, currentGroup?: string | null): PromptNode {
-    // Determine parent - either the current group or root
-    const parentId = currentGroup || 'root';
+    // More robust parent determination for fields
+    let parentId: string = 'root';
+
+    if (currentGroup && currentGroup !== 'root') {
+      // Verify the currentGroup actually exists in the tree
+      const parentExists = this.treeManager.getNode(currentGroup);
+      if (parentExists) {
+        parentId = currentGroup;
+      } else {
+        console.warn(`PromptTreeAdapter: Specified parent group '${currentGroup}' not found for field '${request.id}', using root`);
+        parentId = 'root';
+      }
+    }
+
+    // Calculate depth based on actual parent
+    const parentNode = this.treeManager.getNode(parentId);
+    const calculatedDepth = parentNode ? parentNode.depth + 1 : 1;
 
     const fieldNode = this.treeManager.addNode({
       id: request.id,
@@ -97,7 +129,7 @@ export class PromptTreeAdapter {
       completed: false,
       visited: false,
       active: false,
-      depth: request.depth || (currentGroup ? 1 : 0),
+      depth: calculatedDepth,
       hideAfterSubmit: request.hideAfterSubmit,
       excludeFromCompleted: request.excludeFromCompleted,
       allowBack: request.allowBack,
@@ -109,20 +141,55 @@ export class PromptTreeAdapter {
   }
 
   private findParentGroupId(request: PromptRequest): string | undefined {
-    // For now, assume groups are added in order and nested groups have depth > 0
+    // Enhanced parent finding logic with better reliability
     if (request.depth && request.depth > 0) {
-      // Find the most recent group with depth = current depth - 1
-      const tree = this.treeManager.getTree();
-      const groups = this.treeManager.getNodesByType('group');
-
-      // Find groups with depth one less than current
       const parentDepth = request.depth - 1;
+
+      // First, try to find parent based on current navigation context
+      const activeNode = this.treeManager.getActiveNode();
+      if (activeNode) {
+        // Look up the tree from active node to find a group at the right depth
+        let current: PromptNode | undefined = activeNode;
+        while (current) {
+          if (current.type === 'group' && current.depth === parentDepth) {
+            return current.id;
+          }
+          // Also check parent groups
+          const parentGroup = this.treeManager.findParentGroup(current);
+          if (parentGroup && parentGroup.depth === parentDepth) {
+            return parentGroup.id;
+          }
+          current = current.parent;
+        }
+      }
+
+      // Fall back to finding groups with the right depth
+      const groups = this.treeManager.getNodesByType('group');
       const potentialParents = groups.filter(g => g.depth === parentDepth);
 
-      // Return the most recently added parent at the correct depth
-      return potentialParents.length > 0
-        ? potentialParents[potentialParents.length - 1].id
-        : 'root';
+      if (potentialParents.length === 1) {
+        // Only one potential parent - safe choice
+        return potentialParents[0].id;
+      } else if (potentialParents.length > 1) {
+        // Multiple potential parents - use navigation history to decide
+        const history = this.treeManager.getNavigationPath();
+
+        // Find the most recent group in history at the correct depth
+        for (let i = history.length - 1; i >= 0; i--) {
+          const historyNode = history[i];
+          if (historyNode.type === 'group' && historyNode.depth === parentDepth) {
+            return historyNode.id;
+          }
+          // Also check parent groups of history nodes
+          const parentGroup = this.treeManager.findParentGroup(historyNode);
+          if (parentGroup && parentGroup.depth === parentDepth) {
+            return parentGroup.id;
+          }
+        }
+
+        // If still no match, return the most recently created (last resort)
+        return potentialParents[potentialParents.length - 1].id;
+      }
     }
 
     return 'root';
