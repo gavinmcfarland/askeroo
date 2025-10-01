@@ -17,7 +17,7 @@ import { md } from "../src/utils/markdown.js";
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const flow = async () => {
-	await note("[ Plugma ]{bgMagenta} [v2.1.0]{dim}");
+	// await note("[ Plugma ]{bgMagenta} [v2.1.0]{dim}");
 
 	await completedFields();
 
@@ -250,13 +250,13 @@ const flow = async () => {
 		]);
 	}
 
-	await note(`**Plugged in and ready to go!**
+	// await note(`**Plugged in and ready to go!**
 
-		1. \`cd ./my-plugin\`
-		2. \`npm run dev\`
-		3. Import \`dist/manifest.json\` in Figma
+	// 	1. \`cd ./my-plugin\`
+	// 	2. \`npm run dev\`
+	// 	3. Import \`dist/manifest.json\` in Figma
 
-		Check the docs out at https://plugma.dev.`);
+	// 	Check the docs out at https://plugma.dev.`);
 
 	return { answers, pkgManager };
 };

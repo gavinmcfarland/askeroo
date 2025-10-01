@@ -55,32 +55,7 @@ type FieldInfo = {
 	hideAfterSubmit?: boolean;
 };
 
-interface FieldState {
-	values: Record<string, any>;
-	visited: Set<string>;
-	completed: Set<string>;
-	properties: Map<string, any>;
-	messages: Record<string, string>;
-	groupNames: Record<string, string>;
-	groupIds: Record<string, string>;
-}
-
-interface GroupState {
-	progressive: Set<string>;
-	phased: Set<string>;
-	static: Set<string>;
-	completed: Set<string>;
-	order: string[];
-	arrowNavigation: Set<string>;
-	depths: Map<string, number>; // Track depth of each group
-}
-
-interface PromptOrderState {
-	root: Array<{ id: string; type: "field" | "group"; groupName?: string }>;
-	rootFieldHistory: Array<FieldInfo>;
-	staticGroupFields: Map<string, Array<FieldInfo>>;
-	groupFieldHistory: Map<string, Array<FieldInfo>>;
-}
+// Legacy state interfaces removed - using tree-based state
 
 export function PromptApp({ onReady }: PromptAppProps) {
 	const [currentPrompt, setCurrentPrompt] = useState<PromptRequest | null>(
@@ -89,164 +64,126 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// ⬇️ resolver kept in a ref to avoid re-renders
 	const resolverRef = useRef<((value: any) => void) | null>(null);
 
-	// Grouped state - this is the new source of truth
-	const [fieldState, setFieldState] = useState<FieldState>({
-		values: {},
-		visited: new Set(),
-		completed: new Set(),
-		properties: new Map(),
-		messages: {},
-		groupNames: {},
-		groupIds: {},
-	});
+	// Legacy state removed - now using tree-based state management
 
-	const [groupState, setGroupState] = useState<GroupState>({
-		progressive: new Set(),
-		phased: new Set(),
-		static: new Set(),
-		completed: new Set(),
-		order: [],
-		arrowNavigation: new Set(),
-		depths: new Map(),
-	});
-
-	const [promptOrderState, setPromptOrderState] = useState<PromptOrderState>({
-		root: [],
-		rootFieldHistory: [],
-		staticGroupFields: new Map(),
-		groupFieldHistory: new Map(),
-	});
-
-	// NEW: Tree-based state management (parallel to existing state during migration)
+	// Tree-based state management
 	const treeManagerRef = useRef<PromptTreeManager>(new PromptTreeManager());
 	const treeAdapterRef = useRef<PromptTreeAdapter>(new PromptTreeAdapter(treeManagerRef.current));
 	const [treeRevision, setTreeRevision] = useState(0); // For forcing re-renders when tree changes
 	const [useRecursiveRendering, setUseRecursiveRendering] = useState(true); // Recursive rendering enabled by default
 
-	// Computed getters for backward compatibility (these maintain the original interface)
-	const fieldValues = fieldState.values;
-	const visitedPrompts = fieldState.visited;
-	const completedFields = fieldState.completed;
-	const fieldProperties = fieldState.properties;
-	const fieldMessages = fieldState.messages;
-	const fieldGroupNames = fieldState.groupNames;
-	const fieldGroupIds = fieldState.groupIds;
+	// Computed getters from tree state (tree is the source of truth)
+	const syncedState = treeAdapterRef.current.syncTreeToOldState();
+	const fieldValues = syncedState.fieldState.values;
+	const visitedPrompts = syncedState.fieldState.visited;
+	const completedFields = syncedState.fieldState.completed;
+	const fieldProperties = syncedState.fieldState.properties;
+	const fieldMessages = syncedState.fieldState.messages;
+	const fieldGroupNames = syncedState.fieldState.groupNames;
+	const fieldGroupIds = syncedState.fieldState.groupIds;
 
-	const progressiveGroups = groupState.progressive;
-	const phaseGroups = groupState.phased;
-	const staticGroups = groupState.static;
-	const completedGroups = groupState.completed;
-	const groupOrder = groupState.order;
-	const arrowNavigationGroups = groupState.arrowNavigation;
-	const groupDepths = groupState.depths;
+	const progressiveGroups = syncedState.groupState.progressive;
+	const phaseGroups = syncedState.groupState.phased;
+	const staticGroups = syncedState.groupState.static;
+	const completedGroups = syncedState.groupState.completed;
+	const groupOrder = syncedState.groupState.order;
+	const arrowNavigationGroups = syncedState.groupState.arrowNavigation;
+	const groupDepths = syncedState.groupState.depths;
 
-	const rootPromptOrder = promptOrderState.root;
-	const rootFieldHistory = promptOrderState.rootFieldHistory;
-	const staticGroupFields = promptOrderState.staticGroupFields;
-	const groupFieldHistory = promptOrderState.groupFieldHistory;
+	const rootPromptOrder = syncedState.promptOrderState.root;
+	const rootFieldHistory = syncedState.promptOrderState.rootFieldHistory;
+	const staticGroupFields = syncedState.promptOrderState.staticGroupFields;
+	const groupFieldHistory = syncedState.promptOrderState.groupFieldHistory;
 
-	// Helper setters that update the grouped state
+	// Legacy setter functions (now no-ops since tree is source of truth)
 	const setFieldValues = (
 		updater: (prev: Record<string, any>) => Record<string, any>
 	) => {
-		setFieldState((prev) => ({ ...prev, values: updater(prev.values) }));
+		// No-op: Tree manages state now
+		setTreeRevision(prev => prev + 1); // Force re-render to show tree changes
 	};
 
 	const setVisitedPrompts = (updater: (prev: Set<string>) => Set<string>) => {
-		setFieldState((prev) => ({ ...prev, visited: updater(prev.visited) }));
+		// No-op: Tree manages state now
+		setTreeRevision(prev => prev + 1);
 	};
 
 	const setCompletedFields = (
 		updater: (prev: Set<string>) => Set<string>
 	) => {
-		setFieldState((prev) => ({
-			...prev,
-			completed: updater(prev.completed),
-		}));
+		// No-op: Tree manages state now
+		setTreeRevision(prev => prev + 1);
 	};
 
 	const setFieldProperties = (
 		updater: (prev: Map<string, any>) => Map<string, any>
 	) => {
-		setFieldState((prev) => ({
-			...prev,
-			properties: updater(prev.properties),
-		}));
+		// No-op: Tree manages state now
+		setTreeRevision(prev => prev + 1);
 	};
 
 	const setFieldMessages = (
 		updater: (prev: Record<string, string>) => Record<string, string>
 	) => {
-		setFieldState((prev) => ({
-			...prev,
-			messages: updater(prev.messages),
-		}));
+		// No-op: Tree manages state now
+		setTreeRevision(prev => prev + 1);
 	};
 
 	const setFieldGroupNames = (
 		updater: (prev: Record<string, string>) => Record<string, string>
 	) => {
-		setFieldState((prev) => ({
-			...prev,
-			groupNames: updater(prev.groupNames),
-		}));
+		// No-op: Tree manages state now
+		setTreeRevision(prev => prev + 1);
 	};
 
 	const setFieldGroupIds = (
 		updater: (prev: Record<string, string>) => Record<string, string>
 	) => {
-		setFieldState((prev) => ({
-			...prev,
-			groupIds: updater(prev.groupIds),
-		}));
+		// No-op: Tree manages state now
+		setTreeRevision(prev => prev + 1);
 	};
 
 	const setProgressiveGroups = (
 		updater: (prev: Set<string>) => Set<string>
 	) => {
-		setGroupState((prev) => ({
-			...prev,
-			progressive: updater(prev.progressive),
-		}));
+		// No-op: Tree manages state now
+		setTreeRevision(prev => prev + 1);
 	};
 
 	const setPhaseGroups = (updater: (prev: Set<string>) => Set<string>) => {
-		setGroupState((prev) => ({ ...prev, phased: updater(prev.phased) }));
+		// No-op: Tree manages state now
+		setTreeRevision(prev => prev + 1);
 	};
 
 	const setStaticGroups = (updater: (prev: Set<string>) => Set<string>) => {
-		setGroupState((prev) => ({ ...prev, static: updater(prev.static) }));
+		// No-op: Tree manages state now
+		setTreeRevision(prev => prev + 1);
 	};
 
 	const setCompletedGroups = (
 		updater: (prev: Set<string>) => Set<string>
 	) => {
-		setGroupState((prev) => ({
-			...prev,
-			completed: updater(prev.completed),
-		}));
+		// No-op: Tree manages state now
+		setTreeRevision(prev => prev + 1);
 	};
 
 	const setGroupOrder = (updater: (prev: string[]) => string[]) => {
-		setGroupState((prev) => ({ ...prev, order: updater(prev.order) }));
+		// No-op: Tree manages state now
+		setTreeRevision(prev => prev + 1);
 	};
 
 	const setArrowNavigationGroups = (
 		updater: (prev: Set<string>) => Set<string>
 	) => {
-		setGroupState((prev) => ({
-			...prev,
-			arrowNavigation: updater(prev.arrowNavigation),
-		}));
+		// No-op: Tree manages state now
+		setTreeRevision(prev => prev + 1);
 	};
 
 	const setGroupDepths = (
 		updater: (prev: Map<string, number>) => Map<string, number>
 	) => {
-		setGroupState((prev) => ({
-			...prev,
-			depths: updater(prev.depths),
-		}));
+		// No-op: Tree manages state now
+		setTreeRevision(prev => prev + 1);
 	};
 
 	const setRootPromptOrder = (
@@ -258,16 +195,15 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			}>
 		) => Array<{ id: string; type: "field" | "group"; groupName?: string }>
 	) => {
-		setPromptOrderState((prev) => ({ ...prev, root: updater(prev.root) }));
+		// No-op: Tree manages state now
+		setTreeRevision(prev => prev + 1);
 	};
 
 	const setRootFieldHistory = (
 		updater: (prev: Array<FieldInfo>) => Array<FieldInfo>
 	) => {
-		setPromptOrderState((prev) => ({
-			...prev,
-			rootFieldHistory: updater(prev.rootFieldHistory),
-		}));
+		// No-op: Tree manages state now
+		setTreeRevision(prev => prev + 1);
 	};
 
 	const setStaticGroupFields = (
@@ -275,10 +211,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			prev: Map<string, Array<FieldInfo>>
 		) => Map<string, Array<FieldInfo>>
 	) => {
-		setPromptOrderState((prev) => ({
-			...prev,
-			staticGroupFields: updater(prev.staticGroupFields),
-		}));
+		// No-op: Tree manages state now
+		setTreeRevision(prev => prev + 1);
 	};
 
 	const setGroupFieldHistory = (
@@ -286,10 +220,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			prev: Map<string, Array<FieldInfo>>
 		) => Map<string, Array<FieldInfo>>
 	) => {
-		setPromptOrderState((prev) => ({
-			...prev,
-			groupFieldHistory: updater(prev.groupFieldHistory),
-		}));
+		// No-op: Tree manages state now
+		setTreeRevision(prev => prev + 1);
 	};
 
 	// Other non-grouped state
