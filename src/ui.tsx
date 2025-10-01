@@ -68,7 +68,8 @@ function createUI() {
 				type: string;
 			}>,
 			enableArrowNavigation?: boolean,
-			depth?: number
+			depth?: number,
+			parentGroup?: string
 		): Promise<void> {
 			const groupId = id || generatePromptId("group", label || "group");
 			appInstance.currentGroup = groupId;
@@ -81,6 +82,7 @@ function createUI() {
 				discoveredFields,
 				enableArrowNavigation,
 				depth,
+				groupName: parentGroup, // Pass parent group for proper nesting
 			});
 		},
 

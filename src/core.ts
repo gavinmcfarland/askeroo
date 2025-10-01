@@ -19,7 +19,8 @@ type UI = {
 		id?: string,
 		discoveredFields?: Array<{ id: string; label: string; type: string }>,
 		enableArrowNavigation?: boolean,
-		depth?: number
+		depth?: number,
+		parentGroup?: string
 	): Promise<void> | void;
 	clearGroup?(): void;
 	cleanup?(): void;
@@ -233,13 +234,15 @@ export function createRuntime(ui: UI) {
 							? discoveredFields.get(groupId)
 							: undefined;
 					const groupDepth = groupStack.length;
+					const currentGroup = groupStack[groupStack.length - 1]; // Parent group for nesting
 					await extendedUI.showGroup?.(
 						groupOpts.label,
 						groupOpts.flow || "progressive",
 						groupId,
 						fields,
 						groupOpts.enableArrowNavigation,
-						groupDepth
+						groupDepth,
+						currentGroup
 					);
 					lastProcessedGroups.add(groupId);
 					// Call askFn to create the interactive prompt

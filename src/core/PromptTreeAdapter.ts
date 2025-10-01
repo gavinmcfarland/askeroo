@@ -57,15 +57,15 @@ export class PromptTreeAdapter {
   // Convert PromptRequest to PromptNode and add to tree
   addPromptRequestToTree(request: PromptRequest, currentGroup?: string | null): PromptNode {
     if (request.type === 'group') {
-      return this.addGroupToTree(request);
+      return this.addGroupToTree(request, currentGroup);
     } else {
       return this.addFieldToTree(request, currentGroup);
     }
   }
 
-  private addGroupToTree(request: PromptRequest): PromptNode {
-    // Find parent group if this is a nested group
-    const parentGroupId = this.findParentGroupId(request);
+  private addGroupToTree(request: PromptRequest, currentGroup?: string | null): PromptNode {
+    // Use provided currentGroup or find parent group if this is a nested group
+    const parentGroupId = currentGroup || this.findParentGroupId(request);
 
     const groupNode = this.treeManager.addNode({
       id: request.id,

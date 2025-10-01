@@ -474,7 +474,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 				// NEW: Add prompt to tree structure and activate it
 				try {
-					const currentGroup = treeAdapterRef.current.getCurrentGroup();
+					// Use the groupName from the request (set by the UI layer) or fall back to getCurrentGroup()
+					const currentGroup = request.groupName || treeAdapterRef.current.getCurrentGroup();
 					treeAdapterRef.current.addPromptRequestToTree(request, currentGroup);
 
 					// Activate the prompt in the tree (crucial for rendering)
