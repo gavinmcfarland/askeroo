@@ -183,10 +183,8 @@ export class PromptTreeManager {
       return { success: false, reason: 'Navigation back not allowed from current node' };
     }
 
-    // Reset state of current node and its descendants
-    if (currentNode) {
-      this.resetNodeAndDescendants(currentNode);
-    }
+    // Clear future state: Remove all nodes that were added after the previous node
+    this.clearFutureStateFrom(previousNode);
 
     // Activate previous node and reset its completed state (since user is going back to re-enter it)
     if (this.tree.activeNode) {
@@ -254,8 +252,90 @@ export class PromptTreeManager {
     node.active = false;
     // Note: We keep visited=true to maintain navigation history
 
+    // First, collect all children to reset
+    const childrenToReset = [...node.children];
+
     // Reset children recursively
-    node.children.forEach(child => this.resetNodeAndDescendants(child));
+    childrenToReset.forEach(child => this.resetNodeAndDescendants(child));
+
+    // Remove children from tree structure (clear future state)
+    // This ensures that when going back, future nodes are completely removed
+    node.children.forEach(child => {
+      // Remove from node index
+      this.tree.nodeIndex.delete(child.id);
+      // Clear parent reference
+      child.parent = undefined;
+    });
+
+    // Clear children array
+    node.children = [];
+  }
+
+  private removeNodeFromTree(node: PromptNode): void {
+    // First remove all descendants recursively
+    const childrenToRemove = [...node.children];
+    childrenToRemove.forEach(child => this.removeNodeFromTree(child));
+
+    // Remove from parent's children array
+    if (node.parent) {
+      const siblingIndex = node.parent.children.indexOf(node);
+      if (siblingIndex >= 0) {
+        node.parent.children.splice(siblingIndex, 1);
+      }
+    }
+
+    // Remove from node index
+    this.tree.nodeIndex.delete(node.id);
+
+    // Clear parent reference
+    node.parent = undefined;
+
+    // Clear children array
+    node.children = [];
+
+    // If this was the active node, clear the reference
+    if (this.tree.activeNode === node) {
+      this.tree.activeNode = null;
+    }
+  }
+
+  private clearFutureStateFrom(nodeToKeep: PromptNode): void {
+    // Strategy: Find all nodes that were added "after" the nodeToKeep
+    // We'll traverse the tree and identify nodes that should be removed
+
+    // First, mark the nodeToKeep and all its ancestors as "should keep"
+    const nodesToKeep = new Set<string>();
+    let current: PromptNode | undefined = nodeToKeep;
+    while (current) {
+      nodesToKeep.add(current.id);
+      current = current.parent;
+    }
+
+    // Find all nodes that were visited before nodeToKeep in the history
+    const historyUpToNode = this.tree.history.slice(0, this.tree.history.indexOf(nodeToKeep) + 1);
+    historyUpToNode.forEach(node => {
+      nodesToKeep.add(node.id);
+      // Also keep all ancestors of historical nodes
+      let ancestor = node.parent;
+      while (ancestor) {
+        nodesToKeep.add(ancestor.id);
+        ancestor = ancestor.parent;
+      }
+    });
+
+    // Find all nodes that should be removed (not in nodesToKeep)
+    const nodesToRemove: PromptNode[] = [];
+    this.traverseDepthFirst(node => {
+      if (node.id !== 'root' && !nodesToKeep.has(node.id)) {
+        nodesToRemove.push(node);
+      }
+    });
+
+    // Remove nodes in reverse order (children before parents)
+    // Sort by depth (deepest first) to avoid removing parents before children
+    nodesToRemove
+      .sort((a, b) => b.depth - a.depth)
+      .forEach(node => this.removeNodeFromTree(node));
   }
 
   // Group-specific operations
