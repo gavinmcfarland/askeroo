@@ -177,6 +177,12 @@ const flow = async () => {
 				initialValue: true,
 			});
 
+			const extra = await text({
+				shortLabel: "Extra",
+				label: "Extra",
+				initialValue: "Extra",
+			});
+
 			// Build the final answers object
 			const answers = {
 				path,

@@ -16,6 +16,7 @@ import { globalRegistry } from "../../registry.js";
 import { notifyStateUpdate } from "../../core/StateRegistry.js";
 import { PromptTreeManager, PromptNode } from "../../core/PromptTree.js";
 import { PromptTreeAdapter } from "../../core/PromptTreeAdapter.js";
+import { PluginWrapper } from "./PluginWrapper.js";
 
 // Type declaration for debug utilities
 declare global {
@@ -68,7 +69,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	// Tree-based state management
 	const treeManagerRef = useRef<PromptTreeManager>(new PromptTreeManager());
-	const treeAdapterRef = useRef<PromptTreeAdapter>(new PromptTreeAdapter(treeManagerRef.current));
+	const treeAdapterRef = useRef<PromptTreeAdapter>(
+		new PromptTreeAdapter(treeManagerRef.current)
+	);
 	const [treeRevision, setTreeRevision] = useState(0); // For forcing re-renders when tree changes
 	const [useRecursiveRendering, setUseRecursiveRendering] = useState(true); // Recursive rendering enabled by default
 
@@ -100,90 +103,90 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		updater: (prev: Record<string, any>) => Record<string, any>
 	) => {
 		// No-op: Tree manages state now
-		setTreeRevision(prev => prev + 1); // Force re-render to show tree changes
+		setTreeRevision((prev) => prev + 1); // Force re-render to show tree changes
 	};
 
 	const setVisitedPrompts = (updater: (prev: Set<string>) => Set<string>) => {
 		// No-op: Tree manages state now
-		setTreeRevision(prev => prev + 1);
+		setTreeRevision((prev) => prev + 1);
 	};
 
 	const setCompletedFields = (
 		updater: (prev: Set<string>) => Set<string>
 	) => {
 		// No-op: Tree manages state now
-		setTreeRevision(prev => prev + 1);
+		setTreeRevision((prev) => prev + 1);
 	};
 
 	const setFieldProperties = (
 		updater: (prev: Map<string, any>) => Map<string, any>
 	) => {
 		// No-op: Tree manages state now
-		setTreeRevision(prev => prev + 1);
+		setTreeRevision((prev) => prev + 1);
 	};
 
 	const setFieldMessages = (
 		updater: (prev: Record<string, string>) => Record<string, string>
 	) => {
 		// No-op: Tree manages state now
-		setTreeRevision(prev => prev + 1);
+		setTreeRevision((prev) => prev + 1);
 	};
 
 	const setFieldGroupNames = (
 		updater: (prev: Record<string, string>) => Record<string, string>
 	) => {
 		// No-op: Tree manages state now
-		setTreeRevision(prev => prev + 1);
+		setTreeRevision((prev) => prev + 1);
 	};
 
 	const setFieldGroupIds = (
 		updater: (prev: Record<string, string>) => Record<string, string>
 	) => {
 		// No-op: Tree manages state now
-		setTreeRevision(prev => prev + 1);
+		setTreeRevision((prev) => prev + 1);
 	};
 
 	const setProgressiveGroups = (
 		updater: (prev: Set<string>) => Set<string>
 	) => {
 		// No-op: Tree manages state now
-		setTreeRevision(prev => prev + 1);
+		setTreeRevision((prev) => prev + 1);
 	};
 
 	const setPhaseGroups = (updater: (prev: Set<string>) => Set<string>) => {
 		// No-op: Tree manages state now
-		setTreeRevision(prev => prev + 1);
+		setTreeRevision((prev) => prev + 1);
 	};
 
 	const setStaticGroups = (updater: (prev: Set<string>) => Set<string>) => {
 		// No-op: Tree manages state now
-		setTreeRevision(prev => prev + 1);
+		setTreeRevision((prev) => prev + 1);
 	};
 
 	const setCompletedGroups = (
 		updater: (prev: Set<string>) => Set<string>
 	) => {
 		// No-op: Tree manages state now
-		setTreeRevision(prev => prev + 1);
+		setTreeRevision((prev) => prev + 1);
 	};
 
 	const setGroupOrder = (updater: (prev: string[]) => string[]) => {
 		// No-op: Tree manages state now
-		setTreeRevision(prev => prev + 1);
+		setTreeRevision((prev) => prev + 1);
 	};
 
 	const setArrowNavigationGroups = (
 		updater: (prev: Set<string>) => Set<string>
 	) => {
 		// No-op: Tree manages state now
-		setTreeRevision(prev => prev + 1);
+		setTreeRevision((prev) => prev + 1);
 	};
 
 	const setGroupDepths = (
 		updater: (prev: Map<string, number>) => Map<string, number>
 	) => {
 		// No-op: Tree manages state now
-		setTreeRevision(prev => prev + 1);
+		setTreeRevision((prev) => prev + 1);
 	};
 
 	const setRootPromptOrder = (
@@ -196,14 +199,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		) => Array<{ id: string; type: "field" | "group"; groupName?: string }>
 	) => {
 		// No-op: Tree manages state now
-		setTreeRevision(prev => prev + 1);
+		setTreeRevision((prev) => prev + 1);
 	};
 
 	const setRootFieldHistory = (
 		updater: (prev: Array<FieldInfo>) => Array<FieldInfo>
 	) => {
 		// No-op: Tree manages state now
-		setTreeRevision(prev => prev + 1);
+		setTreeRevision((prev) => prev + 1);
 	};
 
 	const setStaticGroupFields = (
@@ -212,7 +215,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		) => Map<string, Array<FieldInfo>>
 	) => {
 		// No-op: Tree manages state now
-		setTreeRevision(prev => prev + 1);
+		setTreeRevision((prev) => prev + 1);
 	};
 
 	const setGroupFieldHistory = (
@@ -221,7 +224,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		) => Map<string, Array<FieldInfo>>
 	) => {
 		// No-op: Tree manages state now
-		setTreeRevision(prev => prev + 1);
+		setTreeRevision((prev) => prev + 1);
 	};
 
 	// Other non-grouped state
@@ -254,6 +257,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				depths: groupDepths,
 			},
 			currentGroup,
+			promptOrderState: {
+				rootFieldHistory,
+				groupFieldHistory,
+			},
 		});
 	}, [
 		fieldValues,
@@ -271,6 +278,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		arrowNavigationGroups,
 		groupDepths,
 		currentGroup,
+		rootFieldHistory,
+		groupFieldHistory,
 	]);
 
 	const firstFieldIdRef = useRef<string | null>(null);
@@ -411,41 +420,58 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					if (request.type === "group") {
 						// For group prompts, use the tree's current state to find the correct parent
-						const activeNode = treeManagerRef.current.getActiveNode();
+						const activeNode =
+							treeManagerRef.current.getActiveNode();
 						if (activeNode) {
-							if (activeNode.type === 'group') {
+							if (activeNode.type === "group") {
 								// Current active node is a group - use it as parent
 								currentGroup = activeNode.id;
 							} else {
 								// Current active node is a field - find its parent group
-								const parentGroup = treeManagerRef.current.findParentGroup(activeNode);
+								const parentGroup =
+									treeManagerRef.current.findParentGroup(
+										activeNode
+									);
 								currentGroup = parentGroup?.id || null;
 							}
 						}
 
 						// Fallback: use the provided groupName from the request
-						if (!currentGroup && request.groupName && request.groupName !== 'root') {
-							const parentExists = treeManagerRef.current.getNode(request.groupName);
+						if (
+							!currentGroup &&
+							request.groupName &&
+							request.groupName !== "root"
+						) {
+							const parentExists = treeManagerRef.current.getNode(
+								request.groupName
+							);
 							if (parentExists) {
 								currentGroup = request.groupName;
 							}
 						}
 					} else {
 						// For field prompts, prefer the explicitly provided groupName
-						if (request.groupName && request.groupName !== 'root') {
-							const parentExists = treeManagerRef.current.getNode(request.groupName);
+						if (request.groupName && request.groupName !== "root") {
+							const parentExists = treeManagerRef.current.getNode(
+								request.groupName
+							);
 							if (parentExists) {
 								currentGroup = request.groupName;
 							} else {
 								// Fallback to tree-based detection
-								currentGroup = treeAdapterRef.current.getCurrentGroup();
+								currentGroup =
+									treeAdapterRef.current.getCurrentGroup();
 							}
 						} else {
-							currentGroup = treeAdapterRef.current.getCurrentGroup();
+							currentGroup =
+								treeAdapterRef.current.getCurrentGroup();
 						}
 					}
 
-					treeAdapterRef.current.addPromptRequestToTree(request, currentGroup);
+					treeAdapterRef.current.addPromptRequestToTree(
+						request,
+						currentGroup
+					);
 
 					// Activate the prompt in the tree (crucial for rendering)
 					if (request.type !== "group") {
@@ -453,25 +479,43 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					}
 
 					// Force re-render to reflect tree changes
-					setTreeRevision(prev => prev + 1);
+					setTreeRevision((prev) => prev + 1);
 
 					// Log tree structure for debugging
-					if (process.env.NODE_ENV === 'development') {
-						console.log('🌳 Tree updated for prompt:', request.id, request.type);
-						console.log('📋 Parent group determined as:', currentGroup);
-						console.log('🎯 Active node:', treeManagerRef.current.getActiveNode()?.id);
+					if (process.env.NODE_ENV === "development") {
+						console.log(
+							"🌳 Tree updated for prompt:",
+							request.id,
+							request.type
+						);
+						console.log(
+							"📋 Parent group determined as:",
+							currentGroup
+						);
+						console.log(
+							"🎯 Active node:",
+							treeManagerRef.current.getActiveNode()?.id
+						);
 
 						// Additional logging for group prompts
 						if (request.type === "group") {
-							const addedNode = treeManagerRef.current.getNode(request.id);
+							const addedNode = treeManagerRef.current.getNode(
+								request.id
+							);
 							if (addedNode) {
-								console.log('👨‍👩‍👧‍👦 Group parent:', addedNode.parent?.id);
-								console.log('📊 Group depth:', addedNode.depth);
+								console.log(
+									"👨‍👩‍👧‍👦 Group parent:",
+									addedNode.parent?.id
+								);
+								console.log("📊 Group depth:", addedNode.depth);
 							}
 						}
 					}
 				} catch (error) {
-					console.warn('Tree management error (non-critical during migration):', error);
+					console.warn(
+						"Tree management error (non-critical during migration):",
+						error
+					);
 				}
 
 				// Store complete field properties for later rendering
@@ -883,11 +927,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						treeManagerRef.current.updateNode(currentPrompt.id, {
 							value: value,
 							visited: true,
-							completed: !currentPrompt.excludeFromCompleted
+							completed: !currentPrompt.excludeFromCompleted,
 						});
-						setTreeRevision(prev => prev + 1);
+						setTreeRevision((prev) => prev + 1);
 					} catch (error) {
-						console.warn('Tree update error (non-critical during migration):', error);
+						console.warn(
+							"Tree update error (non-critical during migration):",
+							error
+						);
 					}
 
 					// Clear back navigation flag since we're going forward
@@ -1041,11 +1088,16 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			if (canGoBack) {
 				const result = treeManagerRef.current.goBack();
 				if (result.success) {
-					console.log('Tree navigation: went back to', result.node?.id);
+					console.log(
+						"Tree navigation: went back to",
+						result.node?.id
+					);
 
 					// Synchronize legacy state with tree state
 					// Clear completed status for all nodes that were reset by goBack()
-					const allNodes = treeManagerRef.current.findNodes(() => true);
+					const allNodes = treeManagerRef.current.findNodes(
+						() => true
+					);
 
 					// Find all nodes that are no longer completed and remove them from legacy completed state
 					const noLongerCompleted: string[] = [];
@@ -1057,18 +1109,23 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					// Clear from legacy completed fields
 					if (noLongerCompleted.length > 0) {
-						setCompletedFields(prev => {
+						setCompletedFields((prev) => {
 							const newCompleted = new Set(prev);
-							noLongerCompleted.forEach(id => newCompleted.delete(id));
+							noLongerCompleted.forEach((id) =>
+								newCompleted.delete(id)
+							);
 							return newCompleted;
 						});
 					}
 
-					setTreeRevision(prev => prev + 1);
+					setTreeRevision((prev) => prev + 1);
 				}
 			}
 		} catch (error) {
-			console.warn('Tree navigation error (non-critical during migration):', error);
+			console.warn(
+				"Tree navigation error (non-critical during migration):",
+				error
+			);
 		}
 	}, [completedFields]);
 
@@ -1150,9 +1207,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	// NEW: Effect to log tree changes in development
 	useEffect(() => {
-		if (process.env.NODE_ENV === 'development' && treeRevision > 0) {
+		if (process.env.NODE_ENV === "development" && treeRevision > 0) {
 			const stats = treeManagerRef.current.getTreeStats();
-			console.log('🌳 Tree stats:', stats);
+			console.log("🌳 Tree stats:", stats);
 		}
 	}, [treeRevision]);
 
@@ -1514,37 +1571,55 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	if (!useRecursiveRendering) {
 		// For static groups, don't render the active field separately - it's part of the static group rendering
-		const isCurrentGroupStatic = currentGroup && staticGroups.has(currentGroup);
+		const isCurrentGroupStatic =
+			currentGroup && staticGroups.has(currentGroup);
 
 		if (!isCurrentGroupStatic) {
-		// Check if this is a plugin-provided prompt type
-		const PluginComponent = globalRegistry.getComponent(
-			effectivePrompt.type
-		);
-
-		if (PluginComponent) {
-			const isInteractive = globalRegistry.isInteractive(
+			// Check if this is a plugin-provided prompt type
+			const pluginExists = globalRegistry.getComponent(
 				effectivePrompt.type
 			);
-			const isSequentialGroup = !!(
-				effectivePrompt.groupName &&
-				!phaseGroups.has(effectivePrompt.groupName)
-			);
-			const hasCompletedFields =
-				isSequentialGroup && completedFields.size > 0;
-			const allowBack =
-				effectivePrompt.allowBack !== false &&
-				(effectivePrompt.id !== firstFieldIdRef.current ||
-					hasCompletedFields);
 
-			// Get initial value based on prompt type
-			const getInitialValue = () => {
-				if (!visitedPrompts.has(effectivePrompt.id)) {
-					// Use initialValue from prompt or sensible default based on type
+			if (pluginExists) {
+				const isInteractive = globalRegistry.isInteractive(
+					effectivePrompt.type
+				);
+				const isSequentialGroup = !!(
+					effectivePrompt.groupName &&
+					!phaseGroups.has(effectivePrompt.groupName)
+				);
+				const hasCompletedFields =
+					isSequentialGroup && completedFields.size > 0;
+				const allowBack =
+					effectivePrompt.allowBack !== false &&
+					(effectivePrompt.id !== firstFieldIdRef.current ||
+						hasCompletedFields);
+
+				// Get initial value based on prompt type
+				const getInitialValue = () => {
+					if (!visitedPrompts.has(effectivePrompt.id)) {
+						// Use initialValue from prompt or sensible default based on type
+						if (effectivePrompt.initialValue !== undefined) {
+							return effectivePrompt.initialValue;
+						}
+						// Return appropriate default based on field type
+						if (effectivePrompt.type === "multi") {
+							return [];
+						}
+						if (effectivePrompt.type === "confirm") {
+							return false;
+						}
+						return "";
+					}
+					const storedValue = fieldValues[effectivePrompt.id];
+					// Return stored value or prompt's initialValue with type-specific fallback
+					if (storedValue !== undefined) {
+						return storedValue;
+					}
 					if (effectivePrompt.initialValue !== undefined) {
 						return effectivePrompt.initialValue;
 					}
-					// Return appropriate default based on field type
+					// Type-specific defaults
 					if (effectivePrompt.type === "multi") {
 						return [];
 					}
@@ -1552,74 +1627,60 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						return false;
 					}
 					return "";
-				}
-				const storedValue = fieldValues[effectivePrompt.id];
-				// Return stored value or prompt's initialValue with type-specific fallback
-				if (storedValue !== undefined) {
-					return storedValue;
-				}
-				if (effectivePrompt.initialValue !== undefined) {
-					return effectivePrompt.initialValue;
-				}
-				// Type-specific defaults
-				if (effectivePrompt.type === "multi") {
-					return [];
-				}
-				if (effectivePrompt.type === "confirm") {
-					return false;
-				}
-				return "";
-			};
+				};
 
-			// Check if this is the first prompt in the root flow
-			// This is true if this field is the very first field the user sees, regardless of grouping
-			const isFirstRootPrompt =
-				effectivePrompt.id === firstFieldIdRef.current;
+				// Check if this is the first prompt in the root flow
+				// This is true if this field is the very first field the user sees, regardless of grouping
+				const isFirstRootPrompt =
+					effectivePrompt.id === firstFieldIdRef.current;
 
-			// Check if this is the first field in its group
-			const isFirstInGroup = effectivePrompt.groupName
-				? // For grouped fields, check if this is the first field in the group's history
-				  (() => {
-						const groupHistory = groupFieldHistory.get(
-							effectivePrompt.groupName
-						);
-						return (
-							!groupHistory ||
-							groupHistory.length === 0 ||
-							groupHistory[0].id === effectivePrompt.id
-						);
-				  })()
-				: // For root-level fields, they are not in a group, so always false
-				  false;
+				// Check if this is the first field in its group
+				const isFirstInGroup = effectivePrompt.groupName
+					? // For grouped fields, check if this is the first field in the group's history
+					  (() => {
+							const groupHistory = groupFieldHistory.get(
+								effectivePrompt.groupName
+							);
+							return (
+								!groupHistory ||
+								groupHistory.length === 0 ||
+								groupHistory[0].id === effectivePrompt.id
+							);
+					  })()
+					: // For root-level fields, they are not in a group, so always false
+					  false;
 
-			// Determine flow type based on current group
-			const flowType =
-				currentGroup && progressiveGroups.has(currentGroup)
-					? "progressive"
-					: currentGroup && phaseGroups.has(currentGroup)
-					? "phased"
-					: currentGroup && staticGroups.has(currentGroup)
-					? "static"
-					: "progressive"; // Default to progressive for groups with no flow specified
+				// Determine flow type based on current group
+				const flowType =
+					currentGroup && progressiveGroups.has(currentGroup)
+						? "progressive"
+						: currentGroup && phaseGroups.has(currentGroup)
+						? "phased"
+						: currentGroup && staticGroups.has(currentGroup)
+						? "static"
+						: "progressive"; // Default to progressive for groups with no flow specified
 
-			field = (
-				<PluginComponent
-					key={effectivePrompt.id}
-					{...effectivePrompt} // Spread all prompt properties
-					initialValue={getInitialValue()}
-					allowBack={allowBack}
-					onSubmit={handleSubmit}
-					onBack={handleBack}
-					{...(isInteractive && { onHintChange: handleHintChange })}
-					flow={flowType}
-					isFirstRootPrompt={isFirstRootPrompt}
-					isFirstInGroup={isFirstInGroup}
-				/>
-			);
-		} else {
-			// Fallback for unknown prompt types
-			field = null;
-		}
+				field = (
+					<PluginWrapper
+						pluginType={effectivePrompt.type}
+						key={effectivePrompt.id}
+						{...effectivePrompt} // Spread all prompt properties
+						initialValue={getInitialValue()}
+						allowBack={allowBack}
+						onSubmit={handleSubmit}
+						onBack={handleBack}
+						{...(isInteractive && {
+							onHintChange: handleHintChange,
+						})}
+						flow={flowType}
+						isFirstRootPrompt={isFirstRootPrompt}
+						isFirstInGroup={isFirstInGroup}
+					/>
+				);
+			} else {
+				// Fallback for unknown prompt types
+				field = null;
+			}
 		}
 	}
 
@@ -1631,30 +1692,35 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// Use: console.log(treeManagerRef.current.printTree()) in your debugging code
 
 	// NEW: Debug utilities for CLI troubleshooting
-	if (typeof globalThis !== 'undefined' && !globalThis.__enableLegacyRendering) {
+	if (
+		typeof globalThis !== "undefined" &&
+		!globalThis.__enableLegacyRendering
+	) {
 		globalThis.__enableLegacyRendering = () => {
 			setUseRecursiveRendering(false);
-			console.log('⚠️ Legacy rendering enabled for debugging. Switch back with __enableRecursiveRendering()');
+			console.log(
+				"⚠️ Legacy rendering enabled for debugging. Switch back with __enableRecursiveRendering()"
+			);
 		};
 		globalThis.__enableRecursiveRendering = () => {
 			setUseRecursiveRendering(true);
-			console.log('✅ Recursive rendering enabled (default).');
+			console.log("✅ Recursive rendering enabled (default).");
 		};
 		globalThis.__debugTree = () => {
 			const tree = treeManagerRef.current.getTree();
 			const stats = treeManagerRef.current.getTreeStats();
-			console.log('🌳 Tree debug info:');
-			console.log('Stats:', stats);
-			console.log('Tree structure:');
+			console.log("🌳 Tree debug info:");
+			console.log("Stats:", stats);
+			console.log("Tree structure:");
 			console.log(treeManagerRef.current.printTree());
-			console.log('Root children:', tree.root.children.length);
+			console.log("Root children:", tree.root.children.length);
 			tree.root.children.forEach((child, i) => {
 				console.log(`Child ${i}:`, {
 					id: child.id,
 					type: child.type,
 					active: child.active,
 					completed: child.completed,
-					visited: child.visited
+					visited: child.visited,
 				});
 			});
 		};
@@ -1684,10 +1750,16 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// Primary rendering: Tree-based recursive rendering
 
 	// Debug: Log tree state when in development
-	if (process.env.NODE_ENV === 'development') {
+	if (process.env.NODE_ENV === "development") {
 		const stats = treeManagerRef.current.getTreeStats();
-		if (stats.totalNodes > 1) { // More than just root
-			console.log('🌳 Rendering tree with', stats.totalNodes, 'nodes, active:', stats.activeNodeId);
+		if (stats.totalNodes > 1) {
+			// More than just root
+			console.log(
+				"🌳 Rendering tree with",
+				stats.totalNodes,
+				"nodes, active:",
+				stats.activeNodeId
+			);
 		}
 	}
 

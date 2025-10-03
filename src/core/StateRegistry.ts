@@ -25,6 +25,10 @@ export interface PromptAppState {
 	fieldState: FieldState;
 	groupState: GroupState;
 	currentGroup: string | null;
+	promptOrderState?: {
+		rootFieldHistory: Array<{ id: string; label: string; type: string; hideAfterSubmit?: boolean }>;
+		groupFieldHistory: Map<string, Array<{ id: string; label: string; type: string; hideAfterSubmit?: boolean }>>;
+	};
 	// Add other state as needed
 }
 

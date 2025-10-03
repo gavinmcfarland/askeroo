@@ -3,11 +3,7 @@ import { CompletedFieldsDisplay } from "./CompletedFields.js";
 
 export interface CompletedFieldsOptions {
 	filter?: string[];
-	showGroupHeaders?: boolean;
 	maxFields?: number;
-	title?: string;
-	emptyPlaceholder?: string;
-	meta?: Record<string, any>; // User-defined metadata for this field
 }
 
 // Internal plugin implementation
@@ -19,7 +15,6 @@ const completedFieldsInternal = createPlugin<CompletedFieldsOptions, void>({
 	// The prompt logic - just return the options, runtime handles UI
 	prompt(opts: CompletedFieldsOptions, { currentGroup }, id: string) {
 		return {
-			showGroupHeaders: true,
 			...opts,
 		};
 	},

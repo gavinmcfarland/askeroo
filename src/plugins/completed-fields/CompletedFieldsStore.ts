@@ -1,6 +1,8 @@
 // Completed fields store to manage state at the PromptApp level
 // Following the same pattern as TaskStore
 
+import { FieldState } from "../../core/StateRegistry.js";
+
 export interface CompletedField {
 	id: string;
 	groupName?: string;
@@ -14,28 +16,51 @@ export interface CompletedField {
 }
 
 export interface CompletedFieldsStoreState {
-	completedFields: Set<string>;
-	fieldValues: Record<string, any>;
-	groupNames: Record<string, string>;
-	groupIds: Record<string, string>;
-	fieldMessages: Record<string, string>;
-	fieldProperties: Map<string, any>;
+	fieldState: FieldState;
+	promptOrderState?: {
+		rootFieldHistory: Array<{
+			id: string;
+			label: string;
+			type: string;
+			hideAfterSubmit?: boolean;
+		}>;
+		groupFieldHistory: Map<
+			string,
+			Array<{
+				id: string;
+				label: string;
+				type: string;
+				hideAfterSubmit?: boolean;
+			}>
+		>;
+	};
 }
 
 // Global store for completed fields state
 let globalCompletedFieldsStore: CompletedFieldsStoreState = {
-	completedFields: new Set(),
-	fieldValues: {},
-	groupNames: {},
-	groupIds: {},
-	fieldMessages: {},
-	fieldProperties: new Map(),
+	fieldState: {
+		values: {},
+		visited: new Set(),
+		completed: new Set(),
+		properties: new Map(),
+		messages: {},
+		groupNames: {},
+		groupIds: {},
+	},
+	promptOrderState: {
+		rootFieldHistory: [],
+		groupFieldHistory: new Map(),
+	},
 };
 
-let updateCompletedFieldsStoreCallback: ((state: CompletedFieldsStoreState) => void) | null = null;
+let updateCompletedFieldsStoreCallback:
+	| ((state: CompletedFieldsStoreState) => void)
+	| null = null;
 
 // Initialize the store with PromptApp's state updater
-export function initializeCompletedFieldsStore(updater: (state: CompletedFieldsStoreState) => void) {
+export function initializeCompletedFieldsStore(
+	updater: (state: CompletedFieldsStoreState) => void
+) {
 	updateCompletedFieldsStoreCallback = updater;
 }
 
@@ -122,39 +147,105 @@ function formatValue(value: any, fieldProperties: any): string {
 // Get completed fields as formatted objects
 export function getCompletedFields(): CompletedField[] {
 	const fields: CompletedField[] = [];
-	const state = globalCompletedFieldsStore;
+	const { fieldState, promptOrderState } = globalCompletedFieldsStore;
 
-	for (const fieldId of state.completedFields) {
-		if (state.fieldValues[fieldId] !== undefined) {
-			const value = state.fieldValues[fieldId];
-			const groupName = state.groupNames[fieldId];
-			const groupId = state.groupIds[fieldId];
+	// Helper function to create field object
+	const createField = (
+		fieldId: string,
+		index: number
+	): CompletedField | null => {
+		if (
+			!fieldState.completed.has(fieldId) ||
+			fieldState.values[fieldId] === undefined
+		) {
+			return null;
+		}
 
-			// Get the original field properties
-			const originalProperties = state.fieldProperties.get(fieldId) || {};
+		const value = fieldState.values[fieldId];
+		const groupName = fieldState.groupNames[fieldId];
+		const groupId = fieldState.groupIds[fieldId];
 
-			// Use the original field's label and shortLabel properties
-			const label =
-				originalProperties.label ||
-				originalProperties.message ||
-				state.fieldMessages[fieldId] ||
-				fieldId;
-			const shortLabel = originalProperties.shortLabel;
+		// Get the original field properties
+		const originalProperties = fieldState.properties.get(fieldId) || {};
 
-			// Format the value using the original field properties
-			const formattedValue = formatValue(value, originalProperties);
+		// Use the original field's label and shortLabel properties
+		const label =
+			originalProperties.label ||
+			originalProperties.message ||
+			fieldState.messages[fieldId] ||
+			fieldId;
+		const shortLabel = originalProperties.shortLabel;
 
-			fields.push({
-				id: fieldId,
-				groupName,
-				groupId,
-				label,
-				shortLabel,
-				value: String(value),
-				formattedValue,
-				timestamp: Date.now(), // We don't have timestamps from the app state
-				meta: originalProperties.meta, // Include meta from original field properties
+		// Format the value using the original field properties
+		const formattedValue = formatValue(value, originalProperties);
+
+		return {
+			id: fieldId,
+			groupName,
+			groupId,
+			label,
+			shortLabel,
+			value: String(value),
+			formattedValue,
+			timestamp: index, // Use index as ordering timestamp
+			meta: originalProperties.meta, // Include meta from original field properties
+		};
+	};
+
+	// Use ordering information if available
+	if (
+		promptOrderState?.rootFieldHistory &&
+		promptOrderState?.groupFieldHistory
+	) {
+		// Create a combined chronological list
+		const allFieldsInOrder: Array<{
+			id: string;
+			type: "root" | "group";
+			groupId?: string;
+		}> = [];
+
+		// Add root fields with their position markers
+		promptOrderState.rootFieldHistory.forEach((fieldInfo) => {
+			allFieldsInOrder.push({ id: fieldInfo.id, type: "root" });
+		});
+
+		// Add group fields with their position markers
+		for (const [
+			groupId,
+			groupFields,
+		] of promptOrderState.groupFieldHistory) {
+			groupFields.forEach((fieldInfo) => {
+				allFieldsInOrder.push({
+					id: fieldInfo.id,
+					type: "group",
+					groupId,
+				});
 			});
+		}
+
+		// Sort by completion timestamp (when they were actually completed)
+		allFieldsInOrder.sort((a, b) => {
+			// Get the completion order from the Set iteration order
+			const aCompleted = Array.from(fieldState.completed).indexOf(a.id);
+			const bCompleted = Array.from(fieldState.completed).indexOf(b.id);
+			return aCompleted - bCompleted;
+		});
+
+		// Create fields in the correct chronological order
+		allFieldsInOrder.forEach((fieldInfo, index) => {
+			const field = createField(fieldInfo.id, index);
+			if (field) {
+				fields.push(field);
+			}
+		});
+	} else {
+		// Fallback to old behavior if ordering info is not available
+		let index = 0;
+		for (const fieldId of fieldState.completed) {
+			const field = createField(fieldId, index++);
+			if (field) {
+				fields.push(field);
+			}
 		}
 	}
 
@@ -164,12 +255,19 @@ export function getCompletedFields(): CompletedField[] {
 // Clear all completed fields data (for testing/reset)
 export function clearCompletedFieldsStore() {
 	globalCompletedFieldsStore = {
-		completedFields: new Set(),
-		fieldValues: {},
-		groupNames: {},
-		groupIds: {},
-		fieldMessages: {},
-		fieldProperties: new Map(),
+		fieldState: {
+			values: {},
+			visited: new Set(),
+			completed: new Set(),
+			properties: new Map(),
+			messages: {},
+			groupNames: {},
+			groupIds: {},
+		},
+		promptOrderState: {
+			rootFieldHistory: [],
+			groupFieldHistory: new Map(),
+		},
 	};
 
 	if (updateCompletedFieldsStoreCallback) {

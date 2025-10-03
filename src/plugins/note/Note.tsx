@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Box } from "ink";
 import {
 	parseMarkdown,
@@ -18,18 +18,6 @@ export interface NoteOptions {
 
 // Main component for the plugin
 export function NoteDisplay(props: NoteOptions) {
-	// Auto-resolve the prompt without user input
-	useEffect(() => {
-		if (props.onSubmit && !props.completed && !props.disabled) {
-			// Auto-submit immediately when the component mounts
-			const timer = setTimeout(() => {
-				props.onSubmit!(undefined as any);
-			}, 100); // Small delay to ensure rendering
-
-			return () => clearTimeout(timer);
-		}
-	}, [props.onSubmit, props.completed, props.disabled]);
-
 	// Check if message is a MarkdownString object
 	const isMarkdownObject = isMarkdownString(props.message);
 
