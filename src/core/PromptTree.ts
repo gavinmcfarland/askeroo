@@ -351,7 +351,9 @@ export class PromptTreeManager {
 	// This is specifically for handling conditional groups that depend on field values
 	clearAllNodesAddedAfterField(field: PromptNode): void {
 		// Find when this field was first added to history
-		const firstVisitIndex = this.tree.history.findIndex(n => n.id === field.id);
+		const firstVisitIndex = this.tree.history.findIndex(
+			(n) => n.id === field.id
+		);
 
 		if (firstVisitIndex === -1) {
 			// Field not in history, just clear everything after it structurally
@@ -365,8 +367,11 @@ export class PromptTreeManager {
 		nodesToKeep.add("root");
 
 		// Keep the field itself and all nodes that were in history before or at the time this field was visited
-		const historyUpToField = this.tree.history.slice(0, firstVisitIndex + 1);
-		historyUpToField.forEach(node => {
+		const historyUpToField = this.tree.history.slice(
+			0,
+			firstVisitIndex + 1
+		);
+		historyUpToField.forEach((node) => {
 			nodesToKeep.add(node.id);
 			// Keep ancestors
 			let ancestor = node.parent;
@@ -431,11 +436,13 @@ export class PromptTreeManager {
 		// This allows conditional groups to be properly removed when their conditions are no longer met
 		this.traverseDepthFirst((node) => {
 			if (node.type === "group") {
-				// Only preserve groups that are either:
+				// Preserve groups that are either:
 				// 1. Already marked to keep (in the path to nodeToKeep or in valid history)
 				// 2. Have children that are marked to keep
-				const shouldKeepGroup = nodesToKeep.has(node.id) ||
-					node.children.some(child => nodesToKeep.has(child.id));
+				// 3. Are part of the main flow structure (not conditional groups)
+				const shouldKeepGroup =
+					nodesToKeep.has(node.id) ||
+					node.children.some((child) => nodesToKeep.has(child.id));
 
 				if (shouldKeepGroup) {
 					// Keep the group node itself
@@ -480,7 +487,9 @@ export class PromptTreeManager {
 
 		// For now, this is a placeholder for more targeted conditional group removal
 		// The application layer should handle this by not adding groups when conditions aren't met
-		console.log(`Field ${fieldId} changed to ${newValue}, checking for conditional groups to remove...`);
+		console.log(
+			`Field ${fieldId} changed to ${newValue}, checking for conditional groups to remove...`
+		);
 	}
 
 	// Clear nodes that are no longer reachable from the current flow state

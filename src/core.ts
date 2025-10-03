@@ -214,11 +214,10 @@ export function createRuntime(ui: UI) {
 					shouldShowGroup =
 						isTargetOrAfter && !lastProcessedGroups.has(groupId);
 				} else {
-					// Normal logic: show if not replaying and not already processed
-					shouldShowGroup =
-						!isReplaying &&
-						(!lastProcessedGroups.has(groupId) ||
-							currentStep >= interactivePrompts.length);
+					// FIXED: Normal logic - show group if not already processed
+					// The issue was that the condition was too restrictive, preventing groups
+					// from being shown again after back navigation and forward navigation
+					shouldShowGroup = !lastProcessedGroups.has(groupId);
 				}
 
 				// Only call askFn (which creates UI prompts) if we should show the group
@@ -535,7 +534,8 @@ export function createRuntime(ui: UI) {
 				executionPath = [];
 				groupStack = [];
 				groupCount = 0; // Reset group count for stable ID generation
-				// Don't clear lastProcessedGroups - let groups stay "processed" to avoid re-showing
+				// FIXED: Clear lastProcessedGroups so groups can be shown again after back navigation
+				lastProcessedGroups.clear();
 			} else if (isSameGroupNav) {
 				isReplaying = true; // All groups in fast replay mode
 				interactivePrompts = [];
@@ -547,6 +547,9 @@ export function createRuntime(ui: UI) {
 				interactivePrompts = [];
 				groupStack = [];
 				groupCount = 0; // Reset group count for stable ID generation
+				// FIXED: Clear lastProcessedGroups for cross-group navigation after back navigation
+				// This allows groups to be shown again when navigating between groups after back navigation
+				lastProcessedGroups.clear();
 			}
 
 			try {
