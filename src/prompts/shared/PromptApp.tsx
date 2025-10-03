@@ -25,6 +25,7 @@ type PromptRequest = {
 	excludeFromCompleted?: boolean; // If true, this field won't be added to completedFields
 	hideAfterSubmit?: boolean; // If true, this field won't be rendered after completion
 	allowBack?: boolean; // If false, prevents user from going back with escape key
+	depth?: number; // Nesting depth for groups
 	[key: string]: any; // Allow any additional properties for plugin-specific options
 };
 
@@ -57,6 +58,7 @@ interface GroupState {
 	completed: Set<string>;
 	order: string[];
 	arrowNavigation: Set<string>;
+	depths: Map<string, number>;
 }
 
 interface PromptOrderState {
@@ -91,6 +93,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		completed: new Set(),
 		order: [],
 		arrowNavigation: new Set(),
+		depths: new Map(),
 	});
 
 	const [promptOrderState, setPromptOrderState] = useState<PromptOrderState>({
@@ -115,6 +118,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const completedGroups = groupState.completed;
 	const groupOrder = groupState.order;
 	const arrowNavigationGroups = groupState.arrowNavigation;
+	const groupDepths = groupState.depths;
 
 	const rootPromptOrder = promptOrderState.root;
 	const rootFieldHistory = promptOrderState.rootFieldHistory;
@@ -216,6 +220,15 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		}));
 	};
 
+	const setGroupDepths = (
+		updater: (prev: Map<string, number>) => Map<string, number>
+	) => {
+		setGroupState((prev) => ({
+			...prev,
+			depths: updater(prev.depths),
+		}));
+	};
+
 	const setRootPromptOrder = (
 		updater: (
 			prev: Array<{
@@ -286,6 +299,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				completed: completedGroups,
 				order: groupOrder,
 				arrowNavigation: arrowNavigationGroups,
+				depths: groupDepths,
 			},
 			currentGroup,
 		});
@@ -303,6 +317,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		completedGroups,
 		groupOrder,
 		arrowNavigationGroups,
+		groupDepths,
 		currentGroup,
 	]);
 
@@ -552,6 +567,15 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				} else if (request.type === "group") {
 					// Group prompts update the group (needed for initial display and cross-group nav)
 					setCurrentGroup(request.id); // Use ID as the stable identifier
+
+					// Track group depth
+					if (request.depth !== undefined) {
+						setGroupDepths((prev) => {
+							const newMap = new Map(prev);
+							newMap.set(request.id, request.depth!);
+							return newMap;
+						});
+					}
 
 					// Track progressive groups (default behavior)
 					if (request.flow === "progressive" || !request.flow) {
@@ -1303,6 +1327,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 									groupName={groupDisplayName}
 									completed={true}
 									completedFields={null}
+									depth={groupDepths.get(groupId) || 0}
 								/>
 							);
 						} else {
@@ -1313,6 +1338,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 									groupName={null}
 									completed={true}
 									completedFields={null}
+									depth={groupDepths.get(groupId) || 0}
 								/>
 							);
 						}
@@ -1353,6 +1379,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								groupName={groupDisplayName} // Only show if there's actually a label
 								completed={true}
 								completedFields={completedGroupFieldComponents}
+								depth={groupDepths.get(groupId) || 0}
 							/>
 						);
 					}
@@ -1377,7 +1404,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		return (
 			<RootContainer>
 				{renderCompletedItemsInOrder}
-				<GroupContainer groupName={getGroupDisplayName(currentGroup)}>
+				<GroupContainer
+					groupName={getGroupDisplayName(currentGroup)}
+					depth={currentGroup ? groupDepths.get(currentGroup) || 0 : 0}
+				>
 					{renderCompletedFields}
 				</GroupContainer>
 			</RootContainer>
@@ -1501,6 +1531,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				key="group-container"
 				groupName={getGroupDisplayName(currentGroup)}
 				hintText={currentHintText}
+				depth={currentGroup ? groupDepths.get(currentGroup) || 0 : 0}
 			>
 				{renderCompletedFields}
 				{field}

@@ -18,7 +18,8 @@ type UI = {
 		flow?: "progressive" | "phased" | "static",
 		id?: string,
 		discoveredFields?: Array<{ id: string; label: string; type: string }>,
-		enableArrowNavigation?: boolean
+		enableArrowNavigation?: boolean,
+		depth?: number
 	): Promise<void> | void;
 	clearGroup?(): void;
 	cleanup?(): void;
@@ -235,7 +236,8 @@ export function createRuntime(ui: UI) {
 						groupOpts.flow || "progressive",
 						groupId,
 						fields,
-						groupOpts.enableArrowNavigation
+						groupOpts.enableArrowNavigation,
+						groupStack.length
 					);
 					lastProcessedGroups.add(groupId);
 					// Call askFn to create the interactive prompt

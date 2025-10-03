@@ -17,6 +17,7 @@ type PromptRequest = {
 	excludeFromCompleted?: boolean; // If true, this field won't be added to completedFields
 	hideAfterSubmit?: boolean; // If true, this field won't be rendered after completion
 	allowBack?: boolean; // If false, prevents user from going back with escape key
+	depth?: number; // Nesting depth for groups
 	[key: string]: any; // Allow any plugin-specific properties
 };
 
@@ -71,7 +72,8 @@ function createUI() {
 				label: string;
 				type: string;
 			}>,
-			enableArrowNavigation?: boolean
+			enableArrowNavigation?: boolean,
+			depth?: number
 		): Promise<void> {
 			const groupId = id || generatePromptId("group", label || "group");
 			appInstance.currentGroup = groupId;
@@ -83,6 +85,7 @@ function createUI() {
 				flow,
 				discoveredFields,
 				enableArrowNavigation,
+				depth,
 			});
 		},
 

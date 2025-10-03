@@ -18,6 +18,7 @@ export interface GroupState {
 	completed: Set<string>;
 	order: string[];
 	arrowNavigation: Set<string>;
+	depths: Map<string, number>;
 }
 
 export interface PromptAppState {
