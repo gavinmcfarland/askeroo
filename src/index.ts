@@ -4,29 +4,9 @@ import { ui } from "./ui.js";
 // Import plugins to ensure they register themselves
 import "./plugins/completed-fields/CompletedFields.js";
 
-// Type definitions for better IDE support
-export type GroupMeta = { label?: string; id?: string };
-export type GroupOpts =
-	| { flow?: "progressive"; enableArrowNavigation?: never }
-	| { flow: "phased"; enableArrowNavigation?: never }
-	| { flow: "static"; enableArrowNavigation?: boolean }
-	| { flow?: undefined; enableArrowNavigation?: never };
-export type FlowFunction<T> = (
-	api: {
-		group: {
-			(
-				meta: GroupMeta,
-				body: () => Promise<any>,
-				opts?: GroupOpts
-			): Promise<any>;
-			(
-				body: () => Promise<any>,
-				opts?: GroupOpts & GroupMeta
-			): Promise<any>;
-		};
-		BACK: { __back: true };
-	} & Record<string, any>
-) => Promise<T>;
+// Import and re-export types for better IDE support
+import type { GroupMeta, GroupOpts, FlowFunction } from "./types/index.js";
+export type { GroupMeta, GroupOpts, FlowFunction };
 
 // Create runtime lazily to ensure all plugins are loaded first
 let runtime: any = null;
@@ -77,15 +57,19 @@ export { ui };
 
 // Export plugin system for developers
 export {
-  globalRegistry,
-  registerPlugin,
-  createPlugin,
-  type PromptPlugin
+	globalRegistry,
+	registerPlugin,
+	createPlugin,
+	type PromptPlugin,
 } from "./registry.js";
 
 // Export plugins and their types
 export { text, type TextOptions } from "./plugins/text/index.js";
-export { confirm, type ConfirmOptions, type ConfirmOption } from "./plugins/confirm/index.js";
+export {
+	confirm,
+	type ConfirmOptions,
+	type ConfirmOption,
+} from "./plugins/confirm/index.js";
 export { multi, type MultiOptions } from "./plugins/multi/index.js";
 export { note } from "./plugins/note/index.js";
 export {
@@ -93,8 +77,16 @@ export {
 	type RadioOptions,
 	type RadioOption,
 } from "./plugins/radio/index.js";
-export { tasks, TaskWarning, type Task, type TaskLabel } from "./plugins/tasks/index.js";
-export { completedFields, type CompletedFieldsOptions } from "./plugins/completed-fields/index.js";
+export {
+	tasks,
+	TaskWarning,
+	type Task,
+	type TaskLabel,
+} from "./plugins/tasks/index.js";
+export {
+	completedFields,
+	type CompletedFieldsOptions,
+} from "./plugins/completed-fields/index.js";
 
 // Export markdown utilities
 export {

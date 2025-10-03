@@ -3,22 +3,7 @@ import { render } from "ink";
 import { PromptApp } from "./prompts/shared/PromptApp.js";
 import { debugLogger } from "./debug.js";
 import { globalRegistry } from "./registry.js";
-
-type BackToken = { __back: true };
-
-// Generic prompt request that works with any plugin
-type PromptRequest = {
-	type: string;
-	id: string;
-	label?: string;
-	groupName?: string;
-	flow?: "phased" | "static";
-	discoveredFields?: Array<{ id: string; label: string; type: string }>;
-	excludeFromCompleted?: boolean; // If true, this field won't be added to completedFields
-	hideAfterSubmit?: boolean; // If true, this field won't be rendered after completion
-	allowBack?: boolean; // If false, prevents user from going back with escape key
-	[key: string]: any; // Allow any plugin-specific properties
-};
+import { BackToken, PromptRequest } from "./types/index.js";
 
 // Generate stable IDs for prompts based on content and context
 const generatePromptId = (type: string, label: string, groupName?: string) => {

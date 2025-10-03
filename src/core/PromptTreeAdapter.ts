@@ -2,70 +2,12 @@
 // This enables gradual migration without breaking existing functionality
 
 import { PromptNode, PromptTreeManager } from "./PromptTree.js";
-
-// Local type definitions for state synchronization (no longer duplicated from StateRegistry)
-interface PromptRequest {
-	type: string;
-	id: string;
-	label?: string;
-	groupName?: string;
-	flow?: "progressive" | "phased" | "static";
-	discoveredFields?: Array<{ id: string; label: string; type: string }>;
-	enableArrowNavigation?: boolean;
-	excludeFromCompleted?: boolean;
-	hideAfterSubmit?: boolean;
-	allowBack?: boolean;
-	depth?: number;
-	[key: string]: any;
-}
-
-interface FieldState {
-	values: Record<string, any>;
-	visited: Set<string>;
-	completed: Set<string>;
-	properties: Map<string, any>;
-	messages: Record<string, string>;
-	groupNames: Record<string, string>;
-	groupIds: Record<string, string>;
-}
-
-interface GroupState {
-	progressive: Set<string>;
-	phased: Set<string>;
-	static: Set<string>;
-	completed: Set<string>;
-	order: string[];
-	arrowNavigation: Set<string>;
-	depths: Map<string, number>;
-}
-
-interface PromptOrderState {
-	root: Array<{ id: string; type: "field" | "group"; groupName?: string }>;
-	rootFieldHistory: Array<{
-		id: string;
-		label: string;
-		type: string;
-		hideAfterSubmit?: boolean;
-	}>;
-	staticGroupFields: Map<
-		string,
-		Array<{
-			id: string;
-			label: string;
-			type: string;
-			hideAfterSubmit?: boolean;
-		}>
-	>;
-	groupFieldHistory: Map<
-		string,
-		Array<{
-			id: string;
-			label: string;
-			type: string;
-			hideAfterSubmit?: boolean;
-		}>
-	>;
-}
+import {
+	PromptRequest,
+	FieldState,
+	GroupState,
+	PromptOrderState,
+} from "../types/index.js";
 
 export class PromptTreeAdapter {
 	private treeManager: PromptTreeManager;

@@ -1,44 +1,17 @@
 import { debugLogger } from "./debug.js";
 import { globalRegistry, setCurrentRuntime } from "./registry.js";
+import {
+	Answers,
+	PromptKind,
+	PromptOpts,
+	GroupMeta,
+	GroupOpts,
+	UI,
+	BackToken,
+	Engine,
+} from "./types/index.js";
 
-export type Answers = Record<string, unknown>;
-
-type PromptKind = string; // Generic type that works with any plugin
-type PromptOpts = { message: string; id?: string };
-type GroupMeta = { label?: string; id?: string };
-type GroupOpts =
-	| { flow?: "progressive"; enableArrowNavigation?: never }
-	| { flow: "phased"; enableArrowNavigation?: never }
-	| { flow: "static"; enableArrowNavigation?: boolean }
-	| { flow?: undefined; enableArrowNavigation?: never };
-
-type UI = {
-	showGroup(
-		label: string | undefined,
-		flow?: "progressive" | "phased" | "static",
-		id?: string,
-		discoveredFields?: Array<{ id: string; label: string; type: string }>,
-		enableArrowNavigation?: boolean,
-		depth?: number,
-		parentGroup?: string
-	): Promise<void> | void;
-	clearGroup?(): void;
-	cleanup?(): void;
-	// Dynamic UI handlers from plugins
-	[key: string]: any;
-};
-
-type BackToken = { __back: true };
 const BACK: BackToken = { __back: true };
-
-type Engine = {
-	step<T>(
-		kind: PromptKind,
-		opts: PromptOpts | (GroupMeta & GroupOpts),
-		askFn: (id: string) => Promise<T | BackToken>
-	): Promise<T>;
-	BACK: BackToken;
-};
 
 // Helper function to get text from opts (either message or label)
 function getOptsText(opts: PromptOpts | (GroupMeta & GroupOpts)): string {

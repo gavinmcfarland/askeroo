@@ -16,6 +16,7 @@ import { PromptTreeManager, PromptNode } from "../../core/PromptTree.js";
 import { PromptTreeAdapter } from "../../core/PromptTreeAdapter.js";
 import { PluginWrapper } from "./PluginWrapper.js";
 import { updateCompletedFieldsState } from "../../plugins/completed-fields/CompletedFieldsStore.js";
+import { PromptRequest } from "../../types/index.js";
 
 // Type declaration for debug utilities
 declare global {
@@ -24,22 +25,6 @@ declare global {
 	}
 	var __debugTree: (() => void) | undefined;
 }
-
-// Generic prompt request that works for all plugins
-type PromptRequest = {
-	type: string;
-	id: string;
-	label?: string; // Optional for group prompts
-	groupName?: string; // Only present for field prompts
-	flow?: "progressive" | "phased" | "static"; // Only present for group prompts
-	discoveredFields?: Array<{ id: string; label: string; type: string }>; // Only present for group prompts
-	enableArrowNavigation?: boolean; // Only present for group prompts
-	excludeFromCompleted?: boolean; // If true, this field won't be added to completedFields
-	hideAfterSubmit?: boolean; // If true, this field won't be rendered after completion
-	allowBack?: boolean; // If false, prevents user from going back with escape key
-	depth?: number; // Group nesting depth
-	[key: string]: any; // Allow any additional properties for plugin-specific options
-};
 
 interface PromptAppProps {
 	onReady: (promptFn: (request: PromptRequest) => Promise<any>) => void;

@@ -1,16 +1,7 @@
 // Completed fields store to manage state at the PromptApp level
 // Following the same pattern as TaskStore
 
-// Define FieldState interface locally since StateRegistry is being removed
-interface FieldState {
-	values: Record<string, any>;
-	visited: Set<string>;
-	completed: Set<string>;
-	properties: Map<string, any>;
-	messages: Record<string, string>;
-	groupNames: Record<string, string>;
-	groupIds: Record<string, string>;
-}
+import { FieldState } from "../../types/index.js";
 
 export interface CompletedField {
 	id: string;
