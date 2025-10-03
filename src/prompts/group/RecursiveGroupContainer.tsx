@@ -36,7 +36,8 @@ export function RecursiveGroupContainer({
 	showOnlyActiveAndCompleted = false,
 }: RecursiveGroupContainerProps) {
 	// Calculate indentation based on depth
-	const baseIndent = item.depth * 3;
+	// Depth 0 = root, depth 1 = root children (0 indent), depth 2 = first nesting level (3 spaces), etc.
+	const baseIndent = Math.max(0, (item.depth - 1) * 3);
 
 	// For group nodes, render children recursively
 	if (item.type === "group") {
