@@ -937,11 +937,21 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 						// Force legacy state cleanup after tree changes (in case conditional groups were removed)
 						setTimeout(() => {
-							const allNodes = treeManagerRef.current.findNodes(() => true);
-							const currentNodeIds = new Set(allNodes.map(node => node.id));
+							const allNodes = treeManagerRef.current.findNodes(
+								() => true
+							);
+							const currentNodeIds = new Set(
+								allNodes.map((node) => node.id)
+							);
 
 							// Clean up legacy state for any nodes that no longer exist
-							[fieldValues, fieldProperties, fieldMessages, fieldGroupNames, fieldGroupIds].forEach(stateObj => {
+							[
+								fieldValues,
+								fieldProperties,
+								fieldMessages,
+								fieldGroupNames,
+								fieldGroupIds,
+							].forEach((stateObj) => {
 								if (stateObj instanceof Map) {
 									stateObj.forEach((_, key) => {
 										if (!currentNodeIds.has(key)) {
@@ -949,7 +959,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 										}
 									});
 								} else {
-									Object.keys(stateObj).forEach(key => {
+									Object.keys(stateObj).forEach((key) => {
 										if (!currentNodeIds.has(key)) {
 											delete stateObj[key];
 										}
@@ -1118,17 +1128,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			if (canGoBack) {
 				const result = treeManagerRef.current.goBack();
 				if (result.success) {
-					console.log(
-						"Tree navigation: went back to",
-						result.node?.id
-					);
-
 					// Synchronize legacy state with tree state
 					// Clear completed status for all nodes that were reset by goBack()
 					const allNodes = treeManagerRef.current.findNodes(
 						() => true
 					);
-					const currentNodeIds = new Set(allNodes.map(node => node.id));
+					const currentNodeIds = new Set(
+						allNodes.map((node) => node.id)
+					);
 
 					// Find all nodes that are no longer completed and remove them from legacy completed state
 					const noLongerCompleted: string[] = [];
@@ -1155,7 +1162,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					// Clean up field values for removed nodes
 					setFieldValues((prev) => {
 						const newValues = { ...prev };
-						Object.keys(newValues).forEach(fieldId => {
+						Object.keys(newValues).forEach((fieldId) => {
 							if (!currentNodeIds.has(fieldId)) {
 								delete newValues[fieldId];
 							}
@@ -1166,7 +1173,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					// Clean up visited prompts for removed nodes
 					setVisitedPrompts((prev) => {
 						const newVisited = new Set(prev);
-						prev.forEach(fieldId => {
+						prev.forEach((fieldId) => {
 							if (!currentNodeIds.has(fieldId)) {
 								newVisited.delete(fieldId);
 							}
@@ -1188,7 +1195,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					// Clean up field messages for removed nodes
 					setFieldMessages((prev) => {
 						const newMessages = { ...prev };
-						Object.keys(newMessages).forEach(fieldId => {
+						Object.keys(newMessages).forEach((fieldId) => {
 							if (!currentNodeIds.has(fieldId)) {
 								delete newMessages[fieldId];
 							}
@@ -1199,7 +1206,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					// Clean up field group names for removed nodes
 					setFieldGroupNames((prev) => {
 						const newGroupNames = { ...prev };
-						Object.keys(newGroupNames).forEach(fieldId => {
+						Object.keys(newGroupNames).forEach((fieldId) => {
 							if (!currentNodeIds.has(fieldId)) {
 								delete newGroupNames[fieldId];
 							}
@@ -1210,7 +1217,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					// Clean up field group IDs for removed nodes
 					setFieldGroupIds((prev) => {
 						const newGroupIds = { ...prev };
-						Object.keys(newGroupIds).forEach(fieldId => {
+						Object.keys(newGroupIds).forEach((fieldId) => {
 							if (!currentNodeIds.has(fieldId)) {
 								delete newGroupIds[fieldId];
 							}
@@ -1227,9 +1234,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								newStaticGroupFields.delete(groupId);
 							} else {
 								// For groups that still exist, remove fields that no longer exist
-								const validFields = fields.filter(field => currentNodeIds.has(field.id));
+								const validFields = fields.filter((field) =>
+									currentNodeIds.has(field.id)
+								);
 								if (validFields.length !== fields.length) {
-									newStaticGroupFields.set(groupId, validFields);
+									newStaticGroupFields.set(
+										groupId,
+										validFields
+									);
 								}
 							}
 						});
@@ -1245,9 +1257,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								newGroupFieldHistory.delete(groupId);
 							} else {
 								// For groups that still exist, remove fields that no longer exist
-								const validFields = fields.filter(field => currentNodeIds.has(field.id));
+								const validFields = fields.filter((field) =>
+									currentNodeIds.has(field.id)
+								);
 								if (validFields.length !== fields.length) {
-									newGroupFieldHistory.set(groupId, validFields);
+									newGroupFieldHistory.set(
+										groupId,
+										validFields
+									);
 								}
 							}
 						});
@@ -1256,12 +1273,16 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					// Clean up root field history for removed fields
 					setRootFieldHistory((prev) => {
-						return prev.filter(field => currentNodeIds.has(field.id));
+						return prev.filter((field) =>
+							currentNodeIds.has(field.id)
+						);
 					});
 
 					// Clean up root prompt order for removed items
 					setRootPromptOrder((prev) => {
-						return prev.filter(item => currentNodeIds.has(item.id));
+						return prev.filter((item) =>
+							currentNodeIds.has(item.id)
+						);
 					});
 
 					setTreeRevision((prev) => prev + 1);
