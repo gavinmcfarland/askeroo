@@ -62,9 +62,10 @@ export function RecursiveGroupContainer({
 				return child.active || child.completed || child.visited;
 			}
 
-			// For static groups, show all discovered children
+			// For static groups, show all discovered children BUT only if the group itself should be visible
+			// The group visibility should be controlled at a higher level (when the group is added to the tree)
 			if (item.flow === "static") {
-				return true; // Show all children in static groups
+				return true; // Show all children in static groups (group-level visibility is controlled elsewhere)
 			}
 
 			// For root level (no flow), show first pending field

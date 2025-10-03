@@ -75,6 +75,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const [treeRevision, setTreeRevision] = useState(0); // For forcing re-renders when tree changes
 	const [useRecursiveRendering, setUseRecursiveRendering] = useState(true); // Recursive rendering enabled by default
 
+	// Memoized tree to ensure UI updates when tree structure changes
+	const currentTree = useMemo(() => {
+		return treeManagerRef.current.getTree();
+	}, [treeRevision]);
+
 	// Computed getters from tree state (tree is the source of truth)
 	const syncedState = treeAdapterRef.current.syncTreeToOldState();
 	const fieldValues = syncedState.fieldState.values;
@@ -929,6 +934,32 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							completed: !currentPrompt.excludeFromCompleted,
 						});
 						setTreeRevision((prev) => prev + 1);
+
+						// Force legacy state cleanup after tree changes (in case conditional groups were removed)
+						setTimeout(() => {
+							const allNodes = treeManagerRef.current.findNodes(() => true);
+							const currentNodeIds = new Set(allNodes.map(node => node.id));
+
+							// Clean up legacy state for any nodes that no longer exist
+							[fieldValues, fieldProperties, fieldMessages, fieldGroupNames, fieldGroupIds].forEach(stateObj => {
+								if (stateObj instanceof Map) {
+									stateObj.forEach((_, key) => {
+										if (!currentNodeIds.has(key)) {
+											stateObj.delete(key);
+										}
+									});
+								} else {
+									Object.keys(stateObj).forEach(key => {
+										if (!currentNodeIds.has(key)) {
+											delete stateObj[key];
+										}
+									});
+								}
+							});
+
+							// Trigger another re-render to ensure UI reflects the cleanup
+							setTreeRevision((prev) => prev + 1);
+						}, 0);
 					} catch (error) {
 						console.warn(
 							"Tree update error (non-critical during migration):",
@@ -1097,6 +1128,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					const allNodes = treeManagerRef.current.findNodes(
 						() => true
 					);
+					const currentNodeIds = new Set(allNodes.map(node => node.id));
 
 					// Find all nodes that are no longer completed and remove them from legacy completed state
 					const noLongerCompleted: string[] = [];
@@ -1116,6 +1148,121 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							return newCompleted;
 						});
 					}
+
+					// Clean up legacy state for nodes that no longer exist in the tree
+					// This is crucial for conditional groups that should disappear when conditions change
+
+					// Clean up field values for removed nodes
+					setFieldValues((prev) => {
+						const newValues = { ...prev };
+						Object.keys(newValues).forEach(fieldId => {
+							if (!currentNodeIds.has(fieldId)) {
+								delete newValues[fieldId];
+							}
+						});
+						return newValues;
+					});
+
+					// Clean up visited prompts for removed nodes
+					setVisitedPrompts((prev) => {
+						const newVisited = new Set(prev);
+						prev.forEach(fieldId => {
+							if (!currentNodeIds.has(fieldId)) {
+								newVisited.delete(fieldId);
+							}
+						});
+						return newVisited;
+					});
+
+					// Clean up field properties for removed nodes
+					setFieldProperties((prev) => {
+						const newProperties = new Map(prev);
+						prev.forEach((_, fieldId) => {
+							if (!currentNodeIds.has(fieldId)) {
+								newProperties.delete(fieldId);
+							}
+						});
+						return newProperties;
+					});
+
+					// Clean up field messages for removed nodes
+					setFieldMessages((prev) => {
+						const newMessages = { ...prev };
+						Object.keys(newMessages).forEach(fieldId => {
+							if (!currentNodeIds.has(fieldId)) {
+								delete newMessages[fieldId];
+							}
+						});
+						return newMessages;
+					});
+
+					// Clean up field group names for removed nodes
+					setFieldGroupNames((prev) => {
+						const newGroupNames = { ...prev };
+						Object.keys(newGroupNames).forEach(fieldId => {
+							if (!currentNodeIds.has(fieldId)) {
+								delete newGroupNames[fieldId];
+							}
+						});
+						return newGroupNames;
+					});
+
+					// Clean up field group IDs for removed nodes
+					setFieldGroupIds((prev) => {
+						const newGroupIds = { ...prev };
+						Object.keys(newGroupIds).forEach(fieldId => {
+							if (!currentNodeIds.has(fieldId)) {
+								delete newGroupIds[fieldId];
+							}
+						});
+						return newGroupIds;
+					});
+
+					// Clean up static group fields for removed groups and fields
+					setStaticGroupFields((prev) => {
+						const newStaticGroupFields = new Map(prev);
+						// Remove entire group entries for groups that no longer exist
+						prev.forEach((fields, groupId) => {
+							if (!currentNodeIds.has(groupId)) {
+								newStaticGroupFields.delete(groupId);
+							} else {
+								// For groups that still exist, remove fields that no longer exist
+								const validFields = fields.filter(field => currentNodeIds.has(field.id));
+								if (validFields.length !== fields.length) {
+									newStaticGroupFields.set(groupId, validFields);
+								}
+							}
+						});
+						return newStaticGroupFields;
+					});
+
+					// Clean up group field history for removed groups and fields
+					setGroupFieldHistory((prev) => {
+						const newGroupFieldHistory = new Map(prev);
+						// Remove entire group entries for groups that no longer exist
+						prev.forEach((fields, groupId) => {
+							if (!currentNodeIds.has(groupId)) {
+								newGroupFieldHistory.delete(groupId);
+							} else {
+								// For groups that still exist, remove fields that no longer exist
+								const validFields = fields.filter(field => currentNodeIds.has(field.id));
+								if (validFields.length !== fields.length) {
+									newGroupFieldHistory.set(groupId, validFields);
+								}
+							}
+						});
+						return newGroupFieldHistory;
+					});
+
+					// Clean up root field history for removed fields
+					setRootFieldHistory((prev) => {
+						return prev.filter(field => currentNodeIds.has(field.id));
+					});
+
+					// Clean up root prompt order for removed items
+					setRootPromptOrder((prev) => {
+						return prev.filter(item => currentNodeIds.has(item.id));
+					});
 
 					setTreeRevision((prev) => prev + 1);
 				}
@@ -1712,8 +1859,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			console.log("Stats:", stats);
 			console.log("Tree structure:");
 			console.log(treeManagerRef.current.printTree());
-			console.log("Root children:", tree.root.children.length);
-			tree.root.children.forEach((child, i) => {
+			console.log("Root children:", currentTree.root.children.length);
+			currentTree.root.children.forEach((child, i) => {
 				console.log(`Child ${i}:`, {
 					id: child.id,
 					type: child.type,
@@ -1724,9 +1871,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			});
 		};
 	}
-
-	// Tree-based recursive rendering (default and only method)
-	const tree = treeManagerRef.current.getTree();
 
 	// Legacy fallback available for emergency debugging only
 	if (!useRecursiveRendering) {
@@ -1765,7 +1909,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	return (
 		<RootContainer>
 			<RecursiveGroupContainer
-				item={tree.root}
+				item={currentTree.root}
 				treeManager={treeManagerRef.current}
 				onSubmit={handleSubmit}
 				onBack={handleBack}
