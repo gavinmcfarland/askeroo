@@ -204,33 +204,33 @@ const flow = async () => {
 		initialValue: "Extra",
 	});
 
-	// Example of sequential execution using the new API with completeOn setting
-	const tasksResult = await tasks(
-		[
-			{
-				label: `Creating ${answers.type} from template`,
-				action: async () => {
-					await sleep(1000);
-				},
-			},
-			{
-				label: `Integrating chosen add-ons`,
-				action: async () => {
-					await sleep(1000);
-				},
-				concurrent: true,
-				tasks: answers.addons.map((addon: string) => ({
-					label: `${addon}`,
-					action: async () => {
-						await sleep(Math.random() * 4000 + 1000);
-					},
-				})),
-			},
-		],
-		{
-			concurrent: false,
-		}
-	);
+	// // Example of sequential execution using the new API with completeOn setting
+	// const tasksResult = await tasks(
+	// 	[
+	// 		{
+	// 			label: `Creating ${answers.type} from template`,
+	// 			action: async () => {
+	// 				await sleep(1000);
+	// 			},
+	// 		},
+	// 		{
+	// 			label: `Integrating chosen add-ons`,
+	// 			action: async () => {
+	// 				await sleep(1000);
+	// 			},
+	// 			concurrent: true,
+	// 			tasks: answers.addons.map((addon: string) => ({
+	// 				label: `${addon}`,
+	// 				action: async () => {
+	// 					await sleep(Math.random() * 4000 + 1000);
+	// 				},
+	// 			})),
+	// 		},
+	// 	],
+	// 	{
+	// 		concurrent: false,
+	// 	}
+	// );
 
 	// await group(
 	// 	async () => {
@@ -277,7 +277,7 @@ const flow = async () => {
 	try {
 		const result = await ask(flow);
 
-		// console.log("\nResult:", JSON.stringify(result, null, 2));
+		console.log("\nResult:", JSON.stringify(result, null, 2));
 	} catch (error) {
 		console.error("Error:", error);
 		process.exit(1);
