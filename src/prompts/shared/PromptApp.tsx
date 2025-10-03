@@ -6,7 +6,6 @@ import React, {
 	useMemo,
 } from "react";
 import { flushSync } from "react-dom";
-// import { addToSet, setInMap, updateInMap } from "../../utils/immutable.js"; // Unused during tree migration
 import { RecursiveGroupContainer } from "../group/RecursiveGroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../../registry.js";
@@ -557,225 +556,369 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		onReady(promptFn);
 	}, [onReady]);
 
+	// Extract tree navigation and synchronization logic to be used by all back navigation paths
+	const performTreeBackNavigation = useCallback(() => {
+		try {
+			const canGoBack = treeManagerRef.current.canGoBack();
+			if (canGoBack) {
+				const result = treeManagerRef.current.goBack();
+				if (result.success) {
+					const allNodes = treeManagerRef.current.findNodes(
+						() => true
+					);
+					const currentNodeIds = new Set(
+						allNodes.map((node) => node.id)
+					);
+
+					// Find and clear nodes that are no longer completed
+					const noLongerCompleted: string[] = [];
+					allNodes.forEach((node: PromptNode) => {
+						if (!node.completed && completedFields.has(node.id)) {
+							noLongerCompleted.push(node.id);
+						}
+					});
+
+					if (noLongerCompleted.length > 0) {
+						setCompletedFields((prev) => {
+							const newCompleted = new Set(prev);
+							noLongerCompleted.forEach((id) =>
+								newCompleted.delete(id)
+							);
+							return newCompleted;
+						});
+					}
+
+					// Clean up all state for removed nodes
+					setFieldValues((prev) => {
+						const newValues = { ...prev };
+						Object.keys(newValues).forEach((fieldId) => {
+							if (!currentNodeIds.has(fieldId))
+								delete newValues[fieldId];
+						});
+						return newValues;
+					});
+
+					setVisitedPrompts((prev) => {
+						const newVisited = new Set(prev);
+						prev.forEach((fieldId) => {
+							if (!currentNodeIds.has(fieldId))
+								newVisited.delete(fieldId);
+						});
+						return newVisited;
+					});
+
+					setFieldProperties((prev) => {
+						const newProperties = new Map(prev);
+						prev.forEach((_, fieldId) => {
+							if (!currentNodeIds.has(fieldId))
+								newProperties.delete(fieldId);
+						});
+						return newProperties;
+					});
+
+					setFieldMessages((prev) => {
+						const newMessages = { ...prev };
+						Object.keys(newMessages).forEach((fieldId) => {
+							if (!currentNodeIds.has(fieldId))
+								delete newMessages[fieldId];
+						});
+						return newMessages;
+					});
+
+					setFieldGroupNames((prev) => {
+						const newGroupNames = { ...prev };
+						Object.keys(newGroupNames).forEach((fieldId) => {
+							if (!currentNodeIds.has(fieldId))
+								delete newGroupNames[fieldId];
+						});
+						return newGroupNames;
+					});
+
+					setFieldGroupIds((prev) => {
+						const newGroupIds = { ...prev };
+						Object.keys(newGroupIds).forEach((fieldId) => {
+							if (!currentNodeIds.has(fieldId))
+								delete newGroupIds[fieldId];
+						});
+						return newGroupIds;
+					});
+
+					setStaticGroupFields((prev) => {
+						const newStaticGroupFields = new Map(prev);
+						prev.forEach((fields, groupId) => {
+							if (!currentNodeIds.has(groupId)) {
+								newStaticGroupFields.delete(groupId);
+							} else {
+								const validFields = fields.filter((field) =>
+									currentNodeIds.has(field.id)
+								);
+								if (validFields.length !== fields.length) {
+									newStaticGroupFields.set(
+										groupId,
+										validFields
+									);
+								}
+							}
+						});
+						return newStaticGroupFields;
+					});
+
+					setGroupFieldHistory((prev) => {
+						const newGroupFieldHistory = new Map(prev);
+						prev.forEach((fields, groupId) => {
+							if (!currentNodeIds.has(groupId)) {
+								newGroupFieldHistory.delete(groupId);
+							} else {
+								const validFields = fields.filter((field) =>
+									currentNodeIds.has(field.id)
+								);
+								if (validFields.length !== fields.length) {
+									newGroupFieldHistory.set(
+										groupId,
+										validFields
+									);
+								}
+							}
+						});
+						return newGroupFieldHistory;
+					});
+
+					setRootFieldHistory((prev) =>
+						prev.filter((field) => currentNodeIds.has(field.id))
+					);
+					setRootPromptOrder((prev) =>
+						prev.filter((item) => currentNodeIds.has(item.id))
+					);
+
+					setTreeRevision((prev) => prev + 1);
+				}
+			}
+		} catch (error) {
+			console.warn(
+				"Tree navigation error (non-critical during migration):",
+				error
+			);
+		}
+	}, [
+		completedFields,
+		setCompletedFields,
+		setFieldValues,
+		setVisitedPrompts,
+		setFieldProperties,
+		setFieldMessages,
+		setFieldGroupNames,
+		setFieldGroupIds,
+		setStaticGroupFields,
+		setGroupFieldHistory,
+		setRootFieldHistory,
+		setRootPromptOrder,
+	]);
+
+	// Helper: Create field info object
+	const createFieldInfo = useCallback(
+		(prompt: PromptRequest) => ({
+			id: prompt.id,
+			label: prompt.label || `${prompt.type} field`,
+			type: prompt.type,
+			hideAfterSubmit: prompt.hideAfterSubmit,
+		}),
+		[]
+	);
+
+	// Helper: Add field to appropriate history tracking
+	const addFieldToHistory = useCallback(
+		(prompt: PromptRequest, fieldInfo: FieldInfo) => {
+			if (prompt.groupName) {
+				const isPhaseGroup = phaseGroups.has(prompt.groupName);
+				const isStaticGroup = staticGroups.has(prompt.groupName);
+
+				// Add to static group fields
+				if (isStaticGroup) {
+					setStaticGroupFields((prev) => {
+						const newMap = new Map(prev);
+						const groupFields = newMap.get(prompt.groupName!) || [];
+
+						if (
+							!groupFields.some(
+								(f) =>
+									f.label === fieldInfo.label &&
+									f.type === fieldInfo.type
+							)
+						) {
+							newMap.set(prompt.groupName!, [
+								...groupFields,
+								fieldInfo,
+							]);
+						}
+						return newMap;
+					});
+					setStaticGroupRevision((prev) => prev + 1);
+				}
+
+				// Add to group history (non-phase groups)
+				if (!isPhaseGroup) {
+					setGroupFieldHistory((prev) => {
+						const newMap = new Map(prev);
+						const groupFields = newMap.get(prompt.groupName!) || [];
+
+						// Prevent cross-contamination between groups
+						const fieldExistsInOtherGroup = Array.from(
+							newMap.entries()
+						).some(
+							([existingGroupName, existingFields]) =>
+								existingGroupName !== prompt.groupName &&
+								existingFields.some((f) => f.id === prompt.id)
+						);
+
+						if (
+							!groupFields.some((f) => f.id === prompt.id) &&
+							!fieldExistsInOtherGroup
+						) {
+							newMap.set(prompt.groupName!, [
+								...groupFields,
+								fieldInfo,
+							]);
+						}
+						return newMap;
+					});
+				}
+			} else {
+				// Add to root history
+				setRootFieldHistory((prev) => {
+					if (!prev.some((f) => f.id === prompt.id)) {
+						return [...prev, fieldInfo];
+					}
+					return prev;
+				});
+			}
+		},
+		[
+			phaseGroups,
+			staticGroups,
+			setStaticGroupFields,
+			setStaticGroupRevision,
+			setGroupFieldHistory,
+			setRootFieldHistory,
+		]
+	);
+
+	// Helper: Mark field as completed
+	const markFieldAsCompleted = useCallback(
+		(prompt: PromptRequest, value: any) => {
+			const shouldMarkCompleted =
+				prompt.type !== "text" &&
+				prompt.type !== "custom-text" &&
+				prompt.type !== "validated-text"
+					? value !== undefined
+					: typeof value === "string"
+					? value.trim() !== ""
+					: value !== undefined;
+
+			if (shouldMarkCompleted && !prompt.excludeFromCompleted) {
+				setCompletedFields((prev) => new Set(prev).add(prompt.id));
+				if (!completionHistoryRef.current.includes(prompt.id)) {
+					completionHistoryRef.current.push(prompt.id);
+				}
+			}
+		},
+		[setCompletedFields, completionHistoryRef]
+	);
+
+	// Handler: Clear group and go back
+	const handleClearGroupAndBack = useCallback(() => {
+		if (!currentPrompt?.groupName) return;
+
+		const groupName = currentPrompt.groupName;
+		const clearGroupFields = (entries: any) =>
+			rootPromptOrder.filter(
+				(entry) => entry.id === entries && entry.groupName === groupName
+			);
+
+		// Clear all group field states
+		setFieldValues((prev) => {
+			const newValues = { ...prev };
+			Object.keys(newValues).forEach((fieldId) => {
+				if (clearGroupFields(fieldId).length > 0) {
+					delete newValues[fieldId];
+				}
+			});
+			return newValues;
+		});
+
+		setCompletedFields((prev) => {
+			const newCompleted = new Set(prev);
+			clearGroupFields([...newCompleted]).forEach((entry) =>
+				newCompleted.delete(entry.id)
+			);
+			return newCompleted;
+		});
+
+		setVisitedPrompts((prev) => {
+			const newVisited = new Set(prev);
+			clearGroupFields([...newVisited]).forEach((entry) =>
+				newVisited.delete(entry.id)
+			);
+			return newVisited;
+		});
+
+		performTreeBackNavigation();
+		const r = resolverRef.current;
+		resolverRef.current = null;
+		r?.({ __back: true });
+	}, [
+		currentPrompt,
+		rootPromptOrder,
+		setFieldValues,
+		setCompletedFields,
+		setVisitedPrompts,
+		performTreeBackNavigation,
+	]);
+
+	// Handler: Preserve value and go back
+	const handlePreserveAndBack = useCallback(
+		(actualValue: any) => {
+			if (!currentPrompt) return;
+
+			setFieldValues((prev) => ({
+				...prev,
+				[currentPrompt.id]: actualValue,
+			}));
+			setVisitedPrompts((prev) => new Set(prev).add(currentPrompt.id));
+
+			markFieldAsCompleted(currentPrompt, actualValue);
+			addFieldToHistory(currentPrompt, createFieldInfo(currentPrompt));
+
+			performTreeBackNavigation();
+			const r = resolverRef.current;
+			resolverRef.current = null;
+			r?.({ __back: true });
+		},
+		[
+			currentPrompt,
+			setFieldValues,
+			setVisitedPrompts,
+			markFieldAsCompleted,
+			addFieldToHistory,
+			createFieldInfo,
+			performTreeBackNavigation,
+		]
+	);
+
 	const handleSubmit = useCallback(
 		(value: any) => {
 			if (resolverRef.current && currentPrompt) {
 				if (currentPrompt.type !== "group") {
-					// Handle special navigation value that clears entire group and goes back
+					// Handle special navigation values
 					if (
 						typeof value === "object" &&
 						value?.__clearGroupAndBack
 					) {
-						// Clear all fields in the current group
-						if (currentPrompt.groupName) {
-							// Find all fields that belong to this group and clear them
-							setFieldValues((prev) => {
-								const newFieldValues = { ...prev };
-
-								// Remove all field values for fields in this group
-								const groupName = currentPrompt.groupName;
-								for (const [fieldId, _] of Object.entries(
-									newFieldValues
-								)) {
-									// Check if this field belongs to the current group
-									const fieldEntry = rootPromptOrder.find(
-										(entry) =>
-											entry.id === fieldId &&
-											entry.groupName === groupName
-									);
-									if (fieldEntry) {
-										delete newFieldValues[fieldId];
-									}
-								}
-
-								return newFieldValues;
-							});
-
-							// Also clear completion tracking for group fields
-							setCompletedFields((prev) => {
-								const newCompleted = new Set(prev);
-								const groupName = currentPrompt.groupName;
-
-								// Remove completion status for all fields in this group
-								for (const fieldId of newCompleted) {
-									const fieldEntry = rootPromptOrder.find(
-										(entry) =>
-											entry.id === fieldId &&
-											entry.groupName === groupName
-									);
-									if (fieldEntry) {
-										newCompleted.delete(fieldId);
-									}
-								}
-
-								return newCompleted;
-							});
-
-							// Clear visited prompts for group fields
-							setVisitedPrompts((prev) => {
-								const newVisited = new Set(prev);
-								const groupName = currentPrompt.groupName;
-
-								for (const fieldId of newVisited) {
-									const fieldEntry = rootPromptOrder.find(
-										(entry) =>
-											entry.id === fieldId &&
-											entry.groupName === groupName
-									);
-									if (fieldEntry) {
-										newVisited.delete(fieldId);
-									}
-								}
-
-								return newVisited;
-							});
-						}
-
-						// Trigger back navigation
-						performTreeBackNavigation(); // Ensure tree navigation happens here too
-						const r = resolverRef.current;
-						resolverRef.current = null;
-						r({ __back: true });
+						handleClearGroupAndBack();
 						return;
 					}
 
-					// Handle special navigation value that preserves field content but goes back
 					if (typeof value === "object" && value?.__preserveAndBack) {
-						// Store the actual value, not the navigation object
-						const actualValue = value.value;
-						setFieldValues((prev) => ({
-							...prev,
-							[currentPrompt.id]: actualValue,
-						}));
-
-						// Mark as visited
-						setVisitedPrompts((prev) =>
-							new Set(prev).add(currentPrompt.id)
-						);
-
-						// Mark field as completed (if it meets completion criteria)
-						const shouldMarkCompleted =
-							currentPrompt.type !== "text" &&
-							currentPrompt.type !== "custom-text" &&
-							currentPrompt.type !== "validated-text"
-								? actualValue !== undefined
-								: typeof actualValue === "string"
-								? actualValue.trim() !== ""
-								: actualValue !== undefined;
-
-						if (
-							shouldMarkCompleted &&
-							!currentPrompt.excludeFromCompleted
-						) {
-							setCompletedFields((prev) =>
-								new Set(prev).add(currentPrompt.id)
-							);
-							completionHistoryRef.current.push(currentPrompt.id);
-						}
-
-						// Handle group tracking for static groups
-						if (currentPrompt.groupName) {
-							const isStaticGroup = staticGroups.has(
-								currentPrompt.groupName
-							);
-
-							if (isStaticGroup) {
-								// Add current field to static group fields
-								setStaticGroupFields((prev) => {
-									const newMap = new Map(prev);
-									const groupFields =
-										newMap.get(currentPrompt.groupName!) ||
-										[];
-									const fieldInfo = {
-										id: currentPrompt.id,
-										label:
-											currentPrompt.label ||
-											`${currentPrompt.type} field`,
-										type: currentPrompt.type,
-										hideAfterSubmit:
-											currentPrompt.hideAfterSubmit,
-									};
-
-									// Only add if not already present
-									if (
-										!groupFields.some(
-											(f) =>
-												f.label === fieldInfo.label &&
-												f.type === fieldInfo.type
-										)
-									) {
-										newMap.set(currentPrompt.groupName!, [
-											...groupFields,
-											fieldInfo,
-										]);
-									}
-									return newMap;
-								});
-
-								// Trigger conditional field re-evaluation with revision counter
-								setStaticGroupRevision((prev) => prev + 1);
-							}
-
-							// Track in group history for non-phase groups
-							const isPhaseGroup = phaseGroups.has(
-								currentPrompt.groupName
-							);
-							if (!isPhaseGroup) {
-								setGroupFieldHistory((prev) => {
-									const newMap = new Map(prev);
-									const groupFields =
-										newMap.get(currentPrompt.groupName!) ||
-										[];
-									const fieldInfo = {
-										id: currentPrompt.id,
-										label:
-											currentPrompt.label ||
-											`${currentPrompt.type} field`,
-										type: currentPrompt.type,
-										hideAfterSubmit:
-											currentPrompt.hideAfterSubmit,
-									};
-
-									if (
-										!groupFields.some(
-											(f) => f.id === currentPrompt.id
-										)
-									) {
-										newMap.set(currentPrompt.groupName!, [
-											...groupFields,
-											fieldInfo,
-										]);
-									}
-									return newMap;
-								});
-							}
-						} else {
-							// For root-level fields, track in root history
-							setRootFieldHistory((prev) => {
-								const fieldInfo = {
-									id: currentPrompt.id,
-									label:
-										currentPrompt.label ||
-										`${currentPrompt.type} field`,
-									type: currentPrompt.type,
-									hideAfterSubmit:
-										currentPrompt.hideAfterSubmit,
-								};
-
-								if (
-									!prev.some((f) => f.id === currentPrompt.id)
-								) {
-									return [...prev, fieldInfo];
-								}
-								return prev;
-							});
-						}
-
-						// Trigger back navigation
-						performTreeBackNavigation(); // Ensure tree navigation happens here too
-						const r = resolverRef.current;
-						resolverRef.current = null;
-						r({ __back: true });
+						handlePreserveAndBack(value.value);
 						return;
 					}
 
@@ -788,7 +931,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						new Set(prev).add(currentPrompt.id)
 					);
 
-					// NEW: Update tree with submitted value
+					// Update tree with submitted value
 					try {
 						treeManagerRef.current.updateNode(currentPrompt.id, {
 							value: value,
@@ -816,20 +959,17 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							].forEach((stateObj) => {
 								if (stateObj instanceof Map) {
 									stateObj.forEach((_, key) => {
-										if (!currentNodeIds.has(key)) {
+										if (!currentNodeIds.has(key))
 											stateObj.delete(key);
-										}
 									});
 								} else {
 									Object.keys(stateObj).forEach((key) => {
-										if (!currentNodeIds.has(key)) {
+										if (!currentNodeIds.has(key))
 											delete stateObj[key];
-										}
 									});
 								}
 							});
 
-							// Trigger another re-render to ensure UI reflects the cleanup
 							setTreeRevision((prev) => prev + 1);
 						}, 0);
 					} catch (error) {
@@ -839,140 +979,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						);
 					}
 
-					// Clear back navigation flag since we're going forward
 					isNavigatingBack.current = false;
 
 					// Mark field as completed and track history
-					if (!currentPrompt.excludeFromCompleted) {
-						setCompletedFields((prev) =>
-							new Set(prev).add(currentPrompt.id)
-						);
-						// Only add to history if not already present anywhere (avoid duplicates)
-						const alreadyInHistory =
-							completionHistoryRef.current.includes(
-								currentPrompt.id
-							);
-						if (!alreadyInHistory) {
-							completionHistoryRef.current.push(currentPrompt.id);
-						}
-					}
-
-					if (currentPrompt.groupName) {
-						// For grouped fields, track in group history
-						// Phase groups don't track history, static groups track all fields
-						const isPhaseGroup = phaseGroups.has(
-							currentPrompt.groupName
-						);
-						const isStaticGroup = staticGroups.has(
-							currentPrompt.groupName
-						);
-
-						// For static groups, trigger field revelation when conditions are met
-						if (isStaticGroup) {
-							// First add the current field
-							setStaticGroupFields((prev) => {
-								const newMap = new Map(prev);
-								const groupFields =
-									newMap.get(currentPrompt.groupName!) || [];
-								const fieldInfo = {
-									id: currentPrompt.id,
-									label:
-										currentPrompt.label ||
-										`${currentPrompt.type} field`,
-									type: currentPrompt.type,
-									hideAfterSubmit:
-										currentPrompt.hideAfterSubmit,
-								};
-
-								// Only add if not already present (check by label and type)
-								if (
-									!groupFields.some(
-										(f) =>
-											f.label === fieldInfo.label &&
-											f.type === fieldInfo.type
-									)
-								) {
-									newMap.set(currentPrompt.groupName!, [
-										...groupFields,
-										fieldInfo,
-									]);
-								}
-								return newMap;
-							});
-
-							// Trigger conditional field re-evaluation with revision counter
-							// This allows any field to potentially trigger conditional field visibility
-							setStaticGroupRevision((prev) => prev + 1);
-						}
-
-						if (!isPhaseGroup) {
-							setGroupFieldHistory((prev) => {
-								const newMap = new Map(prev);
-								const groupFields =
-									newMap.get(currentPrompt.groupName!) || [];
-								const fieldInfo = {
-									id: currentPrompt.id,
-									label:
-										currentPrompt.label ||
-										`${currentPrompt.type} field`,
-									type: currentPrompt.type,
-									hideAfterSubmit:
-										currentPrompt.hideAfterSubmit,
-								};
-
-								// Extra validation: ensure this field ID doesn't already exist in any other group
-								// This prevents cross-contamination between groups with similar conditional logic
-								let fieldExistsInOtherGroup = false;
-								for (const [
-									existingGroupName,
-									existingFields,
-								] of newMap.entries()) {
-									if (
-										existingGroupName !==
-											currentPrompt.groupName &&
-										existingFields.some(
-											(f) => f.id === currentPrompt.id
-										)
-									) {
-										fieldExistsInOtherGroup = true;
-										break;
-									}
-								}
-
-								if (
-									!groupFields.some(
-										(f) => f.id === currentPrompt.id
-									) &&
-									!fieldExistsInOtherGroup
-								) {
-									newMap.set(currentPrompt.groupName!, [
-										...groupFields,
-										fieldInfo,
-									]);
-								}
-								return newMap;
-							});
-						}
-					} else {
-						// For root-level fields, track in root history
-						setRootFieldHistory((prev) => {
-							const fieldInfo = {
-								id: currentPrompt.id,
-								label:
-									currentPrompt.label ||
-									`${currentPrompt.type} field`,
-								type: currentPrompt.type,
-								hideAfterSubmit: currentPrompt.hideAfterSubmit,
-							};
-
-							// Extra validation: ensure this field doesn't get added multiple times
-							// and doesn't conflict with any group fields
-							if (!prev.some((f) => f.id === currentPrompt.id)) {
-								return [...prev, fieldInfo];
-							}
-							return prev;
-						});
-					}
+					markFieldAsCompleted(currentPrompt, value);
+					addFieldToHistory(
+						currentPrompt,
+						createFieldInfo(currentPrompt)
+					);
 				}
 				const r = resolverRef.current;
 				resolverRef.current = null;
@@ -980,183 +994,20 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				r(value);
 			}
 		},
-		[currentPrompt, rootPromptOrder, phaseGroups, staticGroups]
+		[
+			currentPrompt,
+			handleClearGroupAndBack,
+			handlePreserveAndBack,
+			markFieldAsCompleted,
+			addFieldToHistory,
+			createFieldInfo,
+			fieldValues,
+			fieldProperties,
+			fieldMessages,
+			fieldGroupNames,
+			fieldGroupIds,
+		]
 	);
-
-	// Extract tree navigation and synchronization logic to be used by all back navigation paths
-	const performTreeBackNavigation = useCallback(() => {
-		try {
-			const canGoBack = treeManagerRef.current.canGoBack();
-			if (canGoBack) {
-				const result = treeManagerRef.current.goBack();
-				if (result.success) {
-					// Synchronize state with tree
-					// Clear completed status for all nodes that were reset by goBack()
-					const allNodes = treeManagerRef.current.findNodes(
-						() => true
-					);
-					const currentNodeIds = new Set(
-						allNodes.map((node) => node.id)
-					);
-
-					// Find all nodes that are no longer completed and remove them from completed state
-					const noLongerCompleted: string[] = [];
-					allNodes.forEach((node: PromptNode) => {
-						if (!node.completed && completedFields.has(node.id)) {
-							noLongerCompleted.push(node.id);
-						}
-					});
-
-					// Clear from completed fields
-					if (noLongerCompleted.length > 0) {
-						setCompletedFields((prev) => {
-							const newCompleted = new Set(prev);
-							noLongerCompleted.forEach((id) =>
-								newCompleted.delete(id)
-							);
-							return newCompleted;
-						});
-					}
-
-					// Clean up state for nodes that no longer exist in the tree
-					// This is crucial for conditional groups that should disappear when conditions change
-
-					// Clean up field values for removed nodes
-					setFieldValues((prev) => {
-						const newValues = { ...prev };
-						Object.keys(newValues).forEach((fieldId) => {
-							if (!currentNodeIds.has(fieldId)) {
-								delete newValues[fieldId];
-							}
-						});
-						return newValues;
-					});
-
-					// Clean up visited prompts for removed nodes
-					setVisitedPrompts((prev) => {
-						const newVisited = new Set(prev);
-						prev.forEach((fieldId) => {
-							if (!currentNodeIds.has(fieldId)) {
-								newVisited.delete(fieldId);
-							}
-						});
-						return newVisited;
-					});
-
-					// Clean up field properties for removed nodes
-					setFieldProperties((prev) => {
-						const newProperties = new Map(prev);
-						prev.forEach((_, fieldId) => {
-							if (!currentNodeIds.has(fieldId)) {
-								newProperties.delete(fieldId);
-							}
-						});
-						return newProperties;
-					});
-
-					// Clean up field messages for removed nodes
-					setFieldMessages((prev) => {
-						const newMessages = { ...prev };
-						Object.keys(newMessages).forEach((fieldId) => {
-							if (!currentNodeIds.has(fieldId)) {
-								delete newMessages[fieldId];
-							}
-						});
-						return newMessages;
-					});
-
-					// Clean up field group names for removed nodes
-					setFieldGroupNames((prev) => {
-						const newGroupNames = { ...prev };
-						Object.keys(newGroupNames).forEach((fieldId) => {
-							if (!currentNodeIds.has(fieldId)) {
-								delete newGroupNames[fieldId];
-							}
-						});
-						return newGroupNames;
-					});
-
-					// Clean up field group IDs for removed nodes
-					setFieldGroupIds((prev) => {
-						const newGroupIds = { ...prev };
-						Object.keys(newGroupIds).forEach((fieldId) => {
-							if (!currentNodeIds.has(fieldId)) {
-								delete newGroupIds[fieldId];
-							}
-						});
-						return newGroupIds;
-					});
-
-					// Clean up static group fields for removed groups and fields
-					setStaticGroupFields((prev) => {
-						const newStaticGroupFields = new Map(prev);
-						// Remove entire group entries for groups that no longer exist
-						prev.forEach((fields, groupId) => {
-							if (!currentNodeIds.has(groupId)) {
-								newStaticGroupFields.delete(groupId);
-							} else {
-								// For groups that still exist, remove fields that no longer exist
-								const validFields = fields.filter((field) =>
-									currentNodeIds.has(field.id)
-								);
-								if (validFields.length !== fields.length) {
-									newStaticGroupFields.set(
-										groupId,
-										validFields
-									);
-								}
-							}
-						});
-						return newStaticGroupFields;
-					});
-
-					// Clean up group field history for removed groups and fields
-					setGroupFieldHistory((prev) => {
-						const newGroupFieldHistory = new Map(prev);
-						// Remove entire group entries for groups that no longer exist
-						prev.forEach((fields, groupId) => {
-							if (!currentNodeIds.has(groupId)) {
-								newGroupFieldHistory.delete(groupId);
-							} else {
-								// For groups that still exist, remove fields that no longer exist
-								const validFields = fields.filter((field) =>
-									currentNodeIds.has(field.id)
-								);
-								if (validFields.length !== fields.length) {
-									newGroupFieldHistory.set(
-										groupId,
-										validFields
-									);
-								}
-							}
-						});
-						return newGroupFieldHistory;
-					});
-
-					// Clean up root field history for removed fields
-					setRootFieldHistory((prev) => {
-						return prev.filter((field) =>
-							currentNodeIds.has(field.id)
-						);
-					});
-
-					// Clean up root prompt order for removed items
-					setRootPromptOrder((prev) => {
-						return prev.filter((item) =>
-							currentNodeIds.has(item.id)
-						);
-					});
-
-					setTreeRevision((prev) => prev + 1);
-				}
-			}
-		} catch (error) {
-			console.warn(
-				"Tree navigation error (non-critical during migration):",
-				error
-			);
-		}
-	}, [completedFields]);
 
 	const handleBack = useCallback(() => {
 		if (resolverRef.current && currentPrompt) {
