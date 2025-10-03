@@ -97,37 +97,12 @@ function getGroupIdentifier(
 }
 
 // Simple hash function for generating short, stable hashes
-// Optimized with caching for repeated strings
-const hashCache = new Map<string, string>();
 function simpleHash(str: string): string {
-	// Check cache first for repeated strings
-	if (hashCache.has(str)) {
-		return hashCache.get(str)!;
-	}
-
 	let hash = 0;
-	// Optimize for short strings (most field labels/messages are short)
-	const len = str.length;
-	if (len < 16) {
-		// Fast path for short strings
-		for (let i = 0; i < len; i++) {
-			hash = ((hash << 5) - hash + str.charCodeAt(i)) & 0x7fffffff;
-		}
-	} else {
-		// For longer strings, sample every 2nd character for speed
-		for (let i = 0; i < len; i += 2) {
-			hash = ((hash << 5) - hash + str.charCodeAt(i)) & 0x7fffffff;
-		}
+	for (let i = 0; i < str.length; i++) {
+		hash = ((hash << 5) - hash + str.charCodeAt(i)) & 0x7fffffff;
 	}
-
-	const result = hash.toString(36);
-
-	// Cache result but limit cache size to prevent memory leak
-	if (hashCache.size < 1000) {
-		hashCache.set(str, result);
-	}
-
-	return result;
+	return hash.toString(36);
 }
 
 export function createRuntime(ui: UI) {
@@ -140,8 +115,7 @@ export function createRuntime(ui: UI) {
 	let interactivePrompts: string[] = [];
 	let currentStep = 0;
 	let asking = false;
-	let isReplaying: boolean | "smart" = false; // Track replay mode: false, true, or "smart"
-	let targetGroup: string | undefined; // For smart replay mode
+	let isReplaying = false; // Simplified replay mode: only true/false
 
 	// Track execution context to avoid unnecessary replays
 	let executionPath: Array<{
@@ -206,19 +180,8 @@ export function createRuntime(ui: UI) {
 					staticGroups.set(groupId, "static");
 				}
 
-				if (isReplaying === "smart") {
-					// Smart replay: show the target group and any groups that come after it
-					const isTargetOrAfter =
-						groupId === targetGroup ||
-						(!!targetGroup && lastProcessedGroups.has(targetGroup));
-					shouldShowGroup =
-						isTargetOrAfter && !lastProcessedGroups.has(groupId);
-				} else {
-					// FIXED: Normal logic - show group if not already processed
-					// The issue was that the condition was too restrictive, preventing groups
-					// from being shown again after back navigation and forward navigation
-					shouldShowGroup = !lastProcessedGroups.has(groupId);
-				}
+				// Simplified logic - show group if not already processed
+				shouldShowGroup = !lastProcessedGroups.has(groupId);
 
 				// Only call askFn (which creates UI prompts) if we should show the group
 				if (shouldShowGroup) {
@@ -426,20 +389,8 @@ export function createRuntime(ui: UI) {
 		groupStack.push(discoveryGroupId);
 
 		try {
-			// Run discovery multiple times with different field value combinations
-			// to discover all possible conditional fields
-			await body(); // Run in discovery mode to find all fields
-
-			// Run additional discovery passes to find conditional fields
-			// This generic approach doesn't rely on specific field names
-			const currentFields = discoveredFields.get(discoveryGroupId) || [];
-
-			// Try to run discovery with different placeholder values for text fields
-			// This helps discover conditional branches without hardcoding field names
-			if (currentFields.length > 0) {
-				// Run additional discovery passes with different scenarios
-				await body(); // Second pass might reveal more fields based on discovered values
-			}
+			// Run discovery once to find all fields
+			await body();
 		} catch (e) {
 			debugLogger.log("DISCOVERY_ERROR", {
 				groupId: discoveryGroupId,
@@ -507,56 +458,18 @@ export function createRuntime(ui: UI) {
 		});
 
 		while (true) {
-			// Check what kind of navigation optimization we can use
-			const targetStepGroup = executionPath[currentStep]?.groupContext;
-			const sourceStepGroup =
-				executionPath[currentStep + 1]?.groupContext;
-
-			const isSameGroupNav =
-				currentStep >= 0 &&
-				targetStepGroup &&
-				sourceStepGroup &&
-				targetStepGroup === sourceStepGroup;
-
-			const isCrossGroupNav =
-				currentStep >= 0 &&
-				targetStepGroup &&
-				sourceStepGroup &&
-				targetStepGroup !== sourceStepGroup;
-
-			const canOptimize = isSameGroupNav || isCrossGroupNav;
-
-			// Choose navigation strategy
-			if (!canOptimize) {
-				isReplaying = false;
-				// Full replay - reset all tracking
-				interactivePrompts = [];
-				executionPath = [];
-				groupStack = [];
-				groupCount = 0; // Reset group count for stable ID generation
-				// FIXED: Clear lastProcessedGroups so groups can be shown again after back navigation
-				lastProcessedGroups.clear();
-			} else if (isSameGroupNav) {
-				isReplaying = true; // All groups in fast replay mode
-				interactivePrompts = [];
-				groupStack = [];
-				groupCount = 0; // Reset group count for stable ID generation
-			} else if (isCrossGroupNav) {
-				isReplaying = "smart"; // Smart mode: fast replay until target group
-				targetGroup = targetStepGroup; // Set the target group for smart replay
-				interactivePrompts = [];
-				groupStack = [];
-				groupCount = 0; // Reset group count for stable ID generation
-				// FIXED: Clear lastProcessedGroups for cross-group navigation after back navigation
-				// This allows groups to be shown again when navigating between groups after back navigation
-				lastProcessedGroups.clear();
-			}
+			// Simplified navigation - always do full replay for consistency
+			isReplaying = currentStep > 0;
+			interactivePrompts = [];
+			executionPath = [];
+			groupStack = [];
+			groupCount = 0;
+			lastProcessedGroups.clear();
 
 			try {
 				asking = true;
 				debugLogger.log("FLOW_START", {
 					isReplaying,
-					targetGroup,
 					currentStep,
 				});
 				const result = await flow({
@@ -566,7 +479,6 @@ export function createRuntime(ui: UI) {
 				});
 				asking = false;
 				isReplaying = false; // Always clear replay mode after flow completes
-				targetGroup = undefined; // Clear target group
 
 				// If we've asked all interactive prompts in this path, we're done
 				if (currentStep >= interactivePrompts.length) {
@@ -619,18 +531,13 @@ export function createRuntime(ui: UI) {
 							});
 						}
 
-						// Only clean up answers if doing full replay
-						if (!canOptimize) {
-							// Remove answers from prompts that are no longer reachable
-							const currentPrompts = new Set(interactivePrompts);
-							// Cache Object.keys() result to avoid repeated calls
-							const answerKeys = Object.keys(answers);
-							for (const key of answerKeys) {
-								if (!currentPrompts.has(key)) {
-									delete answers[key];
-								}
+						// Remove answers from prompts that are no longer reachable
+						const currentPrompts = new Set(interactivePrompts);
+						const answerKeys = Object.keys(answers);
+						for (const key of answerKeys) {
+							if (!currentPrompts.has(key)) {
+								delete answers[key];
 							}
-						} else {
 						}
 					} else {
 						// If we're at the first step, ignore the back operation completely
@@ -641,14 +548,11 @@ export function createRuntime(ui: UI) {
 			}
 
 			// Clean up answers for prompts that were not reached in this replay
-			if (!canOptimize) {
-				const reachablePrompts = new Set(interactivePrompts);
-				// Cache Object.keys() result to avoid repeated calls
-				const answerKeys = Object.keys(answers);
-				for (const key of answerKeys) {
-					if (!reachablePrompts.has(key)) {
-						delete answers[key];
-					}
+			const reachablePrompts = new Set(interactivePrompts);
+			const answerKeys = Object.keys(answers);
+			for (const key of answerKeys) {
+				if (!reachablePrompts.has(key)) {
+					delete answers[key];
 				}
 			}
 		}
