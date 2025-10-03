@@ -134,42 +134,42 @@ const flow = async () => {
 
 			// Conditionally prompt for shadcn config immediately after addons
 			let shadcnConfig;
-			// if (addons.includes("shadcn")) {
-			await group(
-				async () => {
-					shadcnConfig = await radio({
-						label: "Choose a style",
-						shortLabel: "Style",
-						options: [
-							{ value: "default", label: "Default" },
-							{ value: "shadcn-grape", label: "New York" },
-						],
-						meta: {
-							depth: 1,
-							group: "Shadcn",
-						},
-					});
+			if (addons.includes("shadcn")) {
+				await group(
+					async () => {
+						shadcnConfig = await radio({
+							label: "Choose a style",
+							shortLabel: "Style",
+							options: [
+								{ value: "default", label: "Default" },
+								{ value: "shadcn-grape", label: "New York" },
+							],
+							meta: {
+								depth: 1,
+								group: "Shadcn",
+							},
+						});
 
-					shadcnConfig = await radio({
-						label: "Choose a color",
-						shortLabel: "Color",
-						options: [
-							{ value: "default", label: "Slate" },
-							{ value: "shadcn-zinc", label: "Zinc" },
-							{ value: "shadcn-neutral", label: "Neutral" },
-							{ value: "shadcn-gray", label: "Gray" },
-						],
-						meta: {
-							depth: 1,
-							group: "Shadcn",
-						},
-					});
-				},
-				{
-					label: "Group 2",
-				}
-			);
-			// }
+						shadcnConfig = await radio({
+							label: "Choose a color",
+							shortLabel: "Color",
+							options: [
+								{ value: "default", label: "Slate" },
+								{ value: "shadcn-zinc", label: "Zinc" },
+								{ value: "shadcn-neutral", label: "Neutral" },
+								{ value: "shadcn-gray", label: "Gray" },
+							],
+							meta: {
+								depth: 1,
+								group: "Shadcn",
+							},
+						});
+					},
+					{
+						label: "Group 2",
+					}
+				);
+			}
 
 			const typescript = await confirm({
 				shortLabel: "TypeScript",
