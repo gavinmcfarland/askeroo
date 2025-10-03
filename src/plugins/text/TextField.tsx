@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useFieldReset } from "../../hooks/useFieldReset.js";
+import { useFieldReset } from "../../hooks/useAutoSubmit.js";
 import { Text, Box, useInput } from "ink";
 import { ValidatorFunction } from "../../types/validation.js";
 
@@ -289,9 +289,7 @@ export function TextField({
 			</Box>
 			{validationError && (
 				<Box>
-					<Text color="red">
-						{validationError}
-					</Text>
+					<Text color="red">{validationError}</Text>
 				</Box>
 			)}
 		</Box>

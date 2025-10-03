@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useFieldReset } from "../../hooks/useFieldReset.js";
+import { useFieldReset } from "../../hooks/useAutoSubmit.js";
 import { Text, Box, useInput } from "ink";
 import { ValidatorFunction } from "../../types/validation.js";
 
@@ -126,7 +126,10 @@ export function RadioField({
 
 		// Calculate visible window - scroll only when at edges
 		let currentWindowStart = windowStart;
-		let currentWindowEnd = Math.min(currentWindowStart + maxVisible, filteredOptions.length);
+		let currentWindowEnd = Math.min(
+			currentWindowStart + maxVisible,
+			filteredOptions.length
+		);
 
 		// If selected index is at the bottom of current window, scroll down
 		if (selectedIndex >= currentWindowEnd) {
@@ -144,7 +147,10 @@ export function RadioField({
 		currentWindowEnd = Math.min(filteredOptions.length, currentWindowEnd);
 
 		// Adjust windowStart if we hit the end
-		if (currentWindowEnd - currentWindowStart < maxVisible && currentWindowStart > 0) {
+		if (
+			currentWindowEnd - currentWindowStart < maxVisible &&
+			currentWindowStart > 0
+		) {
 			currentWindowStart = Math.max(0, currentWindowEnd - maxVisible);
 		}
 
@@ -153,7 +159,10 @@ export function RadioField({
 			setWindowStart(currentWindowStart);
 		}
 
-		const visibleOptions = filteredOptions.slice(currentWindowStart, currentWindowEnd);
+		const visibleOptions = filteredOptions.slice(
+			currentWindowStart,
+			currentWindowEnd
+		);
 		const showStartEllipsis = currentWindowStart > 0;
 		const showEndEllipsis = currentWindowEnd < filteredOptions.length;
 

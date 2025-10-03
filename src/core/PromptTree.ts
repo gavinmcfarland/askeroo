@@ -843,7 +843,7 @@ export class PromptTreeManager {
 					const groupId = node.parent.id;
 					const existing =
 						promptOrderState.groupFieldHistory.get(groupId) || [];
-					if (!existing.some((f) => f.id === node.id)) {
+					if (!existing.some((f: any) => f.id === node.id)) {
 						promptOrderState.groupFieldHistory.set(groupId, [
 							...existing,
 							fieldInfo,
@@ -854,7 +854,7 @@ export class PromptTreeManager {
 						const staticFields =
 							promptOrderState.staticGroupFields.get(groupId) ||
 							[];
-						if (!staticFields.some((f) => f.id === node.id)) {
+						if (!staticFields.some((f: any) => f.id === node.id)) {
 							promptOrderState.staticGroupFields.set(groupId, [
 								...staticFields,
 								fieldInfo,
@@ -864,7 +864,7 @@ export class PromptTreeManager {
 				} else {
 					if (
 						!promptOrderState.rootFieldHistory.some(
-							(f) => f.id === node.id
+							(f: any) => f.id === node.id
 						)
 					) {
 						promptOrderState.rootFieldHistory.push(fieldInfo);

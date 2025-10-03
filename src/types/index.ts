@@ -1,7 +1,7 @@
 // Centralized type definitions for the Askeroo library
 // This eliminates duplicate type definitions across multiple files
 
-import React from "react";
+import * as React from "react";
 
 // Core runtime types
 export type Answers = Record<string, unknown>;

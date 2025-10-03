@@ -43,19 +43,6 @@ export function md(
 	return createMarkdownString(content);
 }
 
-// Regular function for md(content, theme) syntax
-export function mdString(
-	content: string,
-	theme?: MarkdownString["theme"]
-): MarkdownString {
-	return createMarkdownString(content, theme);
-}
-
-// Support for md.withTheme(theme)(content) syntax
-export const mdWithTheme =
-	(theme: MarkdownString["theme"]) => (content: string) =>
-		createMarkdownString(content, theme);
-
 // Type guard to check if a value is a markdown string
 export function isMarkdownString(value: any): value is MarkdownString {
 	return value && typeof value === "object" && value.__isMarkdown === true;

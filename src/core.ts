@@ -1,4 +1,4 @@
-import { debugLogger } from "./debug.js";
+import { debugLogger } from "./utils/logging.js";
 import { globalRegistry, setCurrentRuntime } from "./registry.js";
 import {
 	Answers,

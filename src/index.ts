@@ -51,17 +51,11 @@ export function group(
 // BACK is just a simple token, doesn't need lazy loading
 export const BACK = { __back: true };
 
-// Export runtime factory and UI
+// Export runtime factory for advanced users
 export { createRuntime } from "./core.js";
-export { ui };
 
 // Export plugin system for developers
-export {
-	globalRegistry,
-	registerPlugin,
-	createPlugin,
-	type PromptPlugin,
-} from "./registry.js";
+export { registerPlugin, createPlugin, type PromptPlugin } from "./registry.js";
 
 // Export plugins and their types
 export { text, type TextOptions } from "./plugins/text/index.js";
@@ -89,9 +83,4 @@ export {
 } from "./plugins/completed-fields/index.js";
 
 // Export markdown utilities
-export {
-	md,
-	mdString,
-	mdWithTheme,
-	type MarkdownString,
-} from "./utils/markdown.js";
+export { md, type MarkdownString } from "./utils/markdown.js";

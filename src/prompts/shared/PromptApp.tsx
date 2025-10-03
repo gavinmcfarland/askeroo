@@ -805,7 +805,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		const groupName = currentPrompt.groupName;
 		const clearGroupFields = (entries: any) =>
 			state.promptOrderState.root.filter(
-				(entry) => entry.id === entries && entry.groupName === groupName
+				(entry: any) =>
+					entry.id === entries && entry.groupName === groupName
 			);
 
 		// Clear all group field states
@@ -821,7 +822,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 		setCompletedFields((prev) => {
 			const newCompleted = new Set(prev);
-			clearGroupFields([...newCompleted]).forEach((entry) =>
+			clearGroupFields([...newCompleted]).forEach((entry: any) =>
 				newCompleted.delete(entry.id)
 			);
 			return newCompleted;
@@ -829,7 +830,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 		setVisitedPrompts((prev) => {
 			const newVisited = new Set(prev);
-			clearGroupFields([...newVisited]).forEach((entry) =>
+			clearGroupFields([...newVisited]).forEach((entry: any) =>
 				newVisited.delete(entry.id)
 			);
 			return newVisited;
