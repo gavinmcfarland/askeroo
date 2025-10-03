@@ -58,28 +58,13 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		return treeManagerRef.current.getTree();
 	}, [treeRevision]);
 
-	// Computed getters from tree state (tree is the source of truth)
-	const syncedState = treeAdapterRef.current.syncTreeToOldState();
-	const fieldValues = syncedState.fieldState.values;
-	const visitedPrompts = syncedState.fieldState.visited;
-	const completedFields = syncedState.fieldState.completed;
-	const fieldProperties = syncedState.fieldState.properties;
-	const fieldMessages = syncedState.fieldState.messages;
-	const fieldGroupNames = syncedState.fieldState.groupNames;
-	const fieldGroupIds = syncedState.fieldState.groupIds;
+	// Get synced state from tree (tree is the single source of truth)
+	const getSyncedState = useCallback(() => {
+		return treeAdapterRef.current.syncTreeToOldState();
+	}, [treeRevision]); // Re-compute when tree changes
 
-	const progressiveGroups = syncedState.groupState.progressive;
-	const phaseGroups = syncedState.groupState.phased;
-	const staticGroups = syncedState.groupState.static;
-	const completedGroups = syncedState.groupState.completed;
-	const groupOrder = syncedState.groupState.order;
-	const arrowNavigationGroups = syncedState.groupState.arrowNavigation;
-	const groupDepths = syncedState.groupState.depths;
-
-	const rootPromptOrder = syncedState.promptOrderState.root;
-	const rootFieldHistory = syncedState.promptOrderState.rootFieldHistory;
-	const staticGroupFields = syncedState.promptOrderState.staticGroupFields;
-	const groupFieldHistory = syncedState.promptOrderState.groupFieldHistory;
+	// Access state through memoized getter
+	const syncedState = useMemo(() => getSyncedState(), [getSyncedState]);
 
 	// Helper function to trigger re-render when tree state changes
 	// Note: Tree manages state directly; these setters only trigger UI updates
@@ -154,32 +139,15 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// State is now managed directly by the tree structure
 	// Update CompletedFields plugin with current state
 	useEffect(() => {
+		const state = getSyncedState();
 		updateCompletedFieldsState({
-			fieldState: {
-				values: fieldValues,
-				visited: visitedPrompts,
-				completed: completedFields,
-				properties: fieldProperties,
-				messages: fieldMessages,
-				groupNames: fieldGroupNames,
-				groupIds: fieldGroupIds,
-			},
+			fieldState: state.fieldState,
 			promptOrderState: {
-				rootFieldHistory,
-				groupFieldHistory,
+				rootFieldHistory: state.promptOrderState.rootFieldHistory,
+				groupFieldHistory: state.promptOrderState.groupFieldHistory,
 			},
 		});
-	}, [
-		fieldValues,
-		visitedPrompts,
-		completedFields,
-		fieldProperties,
-		fieldMessages,
-		fieldGroupNames,
-		fieldGroupIds,
-		rootFieldHistory,
-		groupFieldHistory,
-	]);
+	}, [getSyncedState]);
 
 	const firstFieldIdRef = useRef<string | null>(null);
 	const staticGroupsRef = useRef<Set<string>>(new Set());
@@ -218,13 +186,16 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				// Handle flow completion first
 				if (request.type === "completeFlow") {
 					// Handle flow completion - mark all fields as completed
+					const state = getSyncedState();
 					setCompletedFields((prev) => {
 						const newCompleted = new Set(prev);
 						// Add all field values as completed
-						Object.keys(fieldValues).forEach((fieldId) => {
-							newCompleted.add(fieldId);
-							completionHistoryRef.current.push(fieldId);
-						});
+						Object.keys(state.fieldState.values).forEach(
+							(fieldId) => {
+								newCompleted.add(fieldId);
+								completionHistoryRef.current.push(fieldId);
+							}
+						);
 						return newCompleted;
 					});
 
@@ -571,9 +542,13 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					);
 
 					// Find and clear nodes that are no longer completed
+					const state = getSyncedState();
 					const noLongerCompleted: string[] = [];
 					allNodes.forEach((node: PromptNode) => {
-						if (!node.completed && completedFields.has(node.id)) {
+						if (
+							!node.completed &&
+							state.fieldState.completed.has(node.id)
+						) {
 							noLongerCompleted.push(node.id);
 						}
 					});
@@ -700,7 +675,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			);
 		}
 	}, [
-		completedFields,
+		getSyncedState,
 		setCompletedFields,
 		setFieldValues,
 		setVisitedPrompts,
@@ -729,8 +704,13 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const addFieldToHistory = useCallback(
 		(prompt: PromptRequest, fieldInfo: FieldInfo) => {
 			if (prompt.groupName) {
-				const isPhaseGroup = phaseGroups.has(prompt.groupName);
-				const isStaticGroup = staticGroups.has(prompt.groupName);
+				const state = getSyncedState();
+				const isPhaseGroup = state.groupState.phased.has(
+					prompt.groupName
+				);
+				const isStaticGroup = state.groupState.static.has(
+					prompt.groupName
+				);
 
 				// Add to static group fields
 				if (isStaticGroup) {
@@ -793,8 +773,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			}
 		},
 		[
-			phaseGroups,
-			staticGroups,
+			getSyncedState,
 			setStaticGroupFields,
 			setStaticGroupRevision,
 			setGroupFieldHistory,
@@ -828,9 +807,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const handleClearGroupAndBack = useCallback(() => {
 		if (!currentPrompt?.groupName) return;
 
+		const state = getSyncedState();
 		const groupName = currentPrompt.groupName;
 		const clearGroupFields = (entries: any) =>
-			rootPromptOrder.filter(
+			state.promptOrderState.root.filter(
 				(entry) => entry.id === entries && entry.groupName === groupName
 			);
 
@@ -867,7 +847,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		r?.({ __back: true });
 	}, [
 		currentPrompt,
-		rootPromptOrder,
+		getSyncedState,
 		setFieldValues,
 		setCompletedFields,
 		setVisitedPrompts,
@@ -939,39 +919,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							completed: !currentPrompt.excludeFromCompleted,
 						});
 						setTreeRevision((prev) => prev + 1);
-
-						// Force state cleanup after tree changes (in case conditional groups were removed)
-						setTimeout(() => {
-							const allNodes = treeManagerRef.current.findNodes(
-								() => true
-							);
-							const currentNodeIds = new Set(
-								allNodes.map((node) => node.id)
-							);
-
-							// Clean up state for any nodes that no longer exist
-							[
-								fieldValues,
-								fieldProperties,
-								fieldMessages,
-								fieldGroupNames,
-								fieldGroupIds,
-							].forEach((stateObj) => {
-								if (stateObj instanceof Map) {
-									stateObj.forEach((_, key) => {
-										if (!currentNodeIds.has(key))
-											stateObj.delete(key);
-									});
-								} else {
-									Object.keys(stateObj).forEach((key) => {
-										if (!currentNodeIds.has(key))
-											delete stateObj[key];
-									});
-								}
-							});
-
-							setTreeRevision((prev) => prev + 1);
-						}, 0);
 					} catch (error) {
 						console.warn(
 							"Tree update error (non-critical during migration):",
@@ -1001,11 +948,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			markFieldAsCompleted,
 			addFieldToHistory,
 			createFieldInfo,
-			fieldValues,
-			fieldProperties,
-			fieldMessages,
-			fieldGroupNames,
-			fieldGroupIds,
 		]
 	);
 
@@ -1032,6 +974,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// Detect group completion when transitioning between groups
 	useEffect(() => {
 		const prevGroup = previousGroupRef.current;
+		const state = getSyncedState();
+		const groupOrder = state.groupState.order;
 
 		// Only mark a group as completed when moving to a LATER group in the sequence
 		// This prevents marking groups as completed when navigating backwards
@@ -1073,7 +1017,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		}
 
 		previousGroupRef.current = currentGroup;
-	}, [currentGroup, phaseGroups, groupOrder]);
+	}, [currentGroup, getSyncedState]);
 
 	// ⬇️ Auto-resolve group prompts without touching resolver state
 	useEffect(() => {
