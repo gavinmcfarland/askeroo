@@ -1302,12 +1302,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	}, [currentPrompt]);
 
 	// NEW: Effect to log tree changes in development
-	useEffect(() => {
-		if (process.env.NODE_ENV === "development" && treeRevision > 0) {
-			const stats = treeManagerRef.current.getTreeStats();
-			console.log("🌳 Tree stats:", stats);
-		}
-	}, [treeRevision]);
 
 	// Note: Hints are now stored per prompt ID, so they don't leak between prompts
 	// Non-interactive prompts simply won't set a hint, so currentHintText will be null for them
@@ -1323,20 +1317,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const renderCompletedItemsInOrder = null;
 
 	// Primary rendering: Tree-based recursive rendering
-
-	// Debug: Log tree state when in development
-	if (process.env.NODE_ENV === "development") {
-		const stats = treeManagerRef.current.getTreeStats();
-		if (stats.totalNodes > 1) {
-			// More than just root
-			console.log(
-				"🌳 Rendering tree with",
-				stats.totalNodes,
-				"nodes, active:",
-				stats.activeNodeId
-			);
-		}
-	}
 
 	return (
 		<RootContainer>

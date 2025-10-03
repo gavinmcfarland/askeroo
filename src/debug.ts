@@ -14,6 +14,10 @@ class DebugLogger {
 	private events: DebugEvent[] = [];
 	private hasCleanedUp: boolean = false;
 	private signalHandlersSetup: boolean = false;
+	private signalHandlers: Array<{
+		event: string;
+		handler: (...args: any[]) => void;
+	}> = [];
 
 	constructor() {
 		this.isEnabled = process.argv.includes("--debug");
@@ -41,33 +45,42 @@ class DebugLogger {
 			process.exit(0);
 		};
 
-		process.on("SIGINT", handleExit);
-		process.on("SIGTERM", handleExit);
-
-		// Handle exit event (synchronous)
-		process.on("exit", () => {
+		const handleExitSync = () => {
 			if (!this.hasCleanedUp) {
 				// Force console output on exit
 				process.stdout.write(
 					"\n🐛 Debug log saved to: " + this.logFile + "\n"
 				);
 			}
-		});
+		};
 
-		// Handle uncaught exceptions
-		process.on("uncaughtException", (error) => {
+		const handleUncaughtException = (error: Error) => {
 			this.log("UNCAUGHT_EXCEPTION", {
 				error: error.message,
 				stack: error.stack,
 			});
 			this.cleanup();
 			process.exit(1);
-		});
+		};
 
-		process.on("unhandledRejection", (reason) => {
+		const handleUnhandledRejection = (reason: any) => {
 			this.log("UNHANDLED_REJECTION", { reason });
 			this.cleanup();
 			process.exit(1);
+		};
+
+		// Store handler references for proper cleanup
+		this.signalHandlers = [
+			{ event: "SIGINT", handler: handleExit },
+			{ event: "SIGTERM", handler: handleExit },
+			{ event: "exit", handler: handleExitSync },
+			{ event: "uncaughtException", handler: handleUncaughtException },
+			{ event: "unhandledRejection", handler: handleUnhandledRejection },
+		];
+
+		// Add all handlers
+		this.signalHandlers.forEach(({ event, handler }) => {
+			process.on(event, handler);
 		});
 	}
 
@@ -144,14 +157,19 @@ class DebugLogger {
 	private removeSignalHandlers(): void {
 		if (!this.signalHandlersSetup) return;
 
-		// Remove all listeners for these events
-		process.removeAllListeners("SIGINT");
-		process.removeAllListeners("SIGTERM");
-		process.removeAllListeners("exit");
-		process.removeAllListeners("uncaughtException");
-		process.removeAllListeners("unhandledRejection");
+		// Remove specific listeners using stored references
+		this.signalHandlers.forEach(({ event, handler }) => {
+			process.off(event, handler);
+		});
 
+		// Clear the handlers array
+		this.signalHandlers = [];
 		this.signalHandlersSetup = false;
+
+		// Reset max listeners to default to prevent interference
+		if (process.setMaxListeners) {
+			process.setMaxListeners(10);
+		}
 	}
 }
 
@@ -166,4 +184,9 @@ export function getDebugLogger(): DebugLogger {
 }
 
 // Export the singleton instance for backward compatibility
-export const debugLogger = getDebugLogger();
+// Use a getter function to ensure we always get the same instance
+export const debugLogger = new Proxy({} as DebugLogger, {
+	get(target, prop) {
+		return getDebugLogger()[prop as keyof DebugLogger];
+	},
+});

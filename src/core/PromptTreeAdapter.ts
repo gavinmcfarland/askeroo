@@ -442,13 +442,4 @@ export class PromptTreeAdapter {
 		}
 		return null;
 	}
-
-	// Debug utilities
-	getTreeDebugInfo(): string {
-		return this.treeManager.printTree();
-	}
-
-	getTreeStats() {
-		return this.treeManager.getTreeStats();
-	}
 }
