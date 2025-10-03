@@ -177,12 +177,6 @@ const flow = async () => {
 				initialValue: true,
 			});
 
-			const extra = await text({
-				shortLabel: "Extra",
-				label: "Extra",
-				initialValue: "Extra",
-			});
-
 			// Build the final answers object
 			const answers = {
 				path,
@@ -197,6 +191,18 @@ const flow = async () => {
 		},
 		{ label: "Group 1" }
 	);
+
+	const extra1 = await text({
+		shortLabel: "Extra",
+		label: "Extra",
+		initialValue: "Extra",
+	});
+
+	const extra2 = await text({
+		shortLabel: "Extra",
+		label: "Extra",
+		initialValue: "Extra",
+	});
 
 	// Example of sequential execution using the new API with completeOn setting
 	const tasksResult = await tasks(

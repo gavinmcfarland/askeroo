@@ -140,9 +140,12 @@ function createUI() {
 					currentGroup: string,
 					id: string
 				): Promise<any> {
-					if (typeof currentGroup === "string") {
-						appInstance.currentGroup = currentGroup;
-					}
+					// Always update currentGroup, even if it's undefined
+					// This ensures fields outside groups don't inherit the previous group
+					appInstance.currentGroup =
+						typeof currentGroup === "string"
+							? currentGroup
+							: undefined;
 
 					const promptFn = await ensureApp();
 

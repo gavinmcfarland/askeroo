@@ -458,13 +458,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							if (parentExists) {
 								currentGroup = request.groupName;
 							} else {
-								// Fallback to tree-based detection
-								currentGroup =
-									treeAdapterRef.current.getCurrentGroup();
+								// If groupName doesn't exist, field should go to root
+								currentGroup = null;
 							}
 						} else {
-							currentGroup =
-								treeAdapterRef.current.getCurrentGroup();
+							// No groupName or explicitly "root" - field belongs at root level
+							currentGroup = null;
 						}
 					}
 
