@@ -243,8 +243,11 @@ export function RecursiveGroupContainer({
 		// Determine flow type
 		const flowType = parent?.flow || "progressive";
 
+		// CompletedFields and other display-only plugins should not be indented
+		const shouldIndent = item.fieldType !== "completedFields";
+
 		return (
-			<Box marginLeft={baseIndent}>
+			<Box marginLeft={shouldIndent ? baseIndent : 0}>
 				<PluginWrapper
 					pluginType={item.fieldType}
 					key={`plugin-${item.id}-${item.depth}-${
