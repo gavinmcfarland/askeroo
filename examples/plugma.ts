@@ -21,6 +21,11 @@ const flow = async () => {
 
 	await completedFields();
 
+	const name = await text({
+		label: "Name",
+		initialValue: "My Plugin",
+	});
+
 	const answers = await group(
 		async () => {
 			// Collect prompts individually

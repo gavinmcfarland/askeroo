@@ -1,93 +1,62 @@
 /**
- * Removes common leading indentation from a template literal string.
- * This is useful for markdown content where you want to maintain proper indentation
- * in your code but remove it from the actual content.
+ * Removes common leading indentation from text.
+ * Works with both template literals and regular strings.
  *
- * @param strings - Template literal strings
- * @param values - Interpolated values
- * @returns Dedented string
- *
- * @example
+ * @example Template literal usage:
  * ```typescript
  * const content = dedent`
  *   # Welcome
  *   - This is a list item
- *   - Another item
  * `;
- * // Result: "# Welcome\n- This is a list item\n- Another item"
+ * // Result: "# Welcome\n- This is a list item"
+ * ```
+ *
+ * @example String usage:
+ * ```typescript
+ * const content = dedent("  Hello\n  World");
+ * // Result: "Hello\nWorld"
  * ```
  */
 export function dedent(
-	strings: TemplateStringsArray,
+	strings: TemplateStringsArray | string,
 	...values: any[]
 ): string {
-	// Join the template literal parts
+	// Handle string input
+	if (typeof strings === "string") {
+		return dedentString(strings);
+	}
+
+	// Handle template literal input
 	let result = strings[0];
 	for (let i = 1; i < strings.length; i++) {
 		result += values[i - 1] + strings[i];
 	}
 
-	// Split into lines
-	const lines = result.split("\n");
-
-	// Find the minimum indentation (excluding empty lines)
-	let minIndent = Infinity;
-	for (const line of lines) {
-		if (line.trim() === "") continue; // Skip empty lines
-		const indent = line.match(/^(\s*)/)?.[1].length || 0;
-		minIndent = Math.min(minIndent, indent);
-	}
-
-	// If no indentation found, return as is
-	if (minIndent === Infinity) {
-		return result;
-	}
-
-	// Remove the common indentation from all lines
-	const dedentedLines = lines.map((line) => {
-		if (line.trim() === "") return line; // Keep empty lines as is
-		return line.slice(minIndent);
-	});
-
-	return dedentedLines.join("\n");
+	return dedentString(result);
 }
 
 /**
- * Alternative function that works with regular strings (not template literals)
- *
- * @param text - The text to dedent
- * @returns Dedented string
- *
- * @example
- * ```typescript
- * const content = dedentString(`
- *   # Welcome
- *   - This is a list item
- * `);
- * ```
+ * Internal helper to dedent a string
  */
-export function dedentString(text: string): string {
-	// Split into lines
+function dedentString(text: string): string {
 	const lines = text.split("\n");
 
-	// Find the minimum indentation (excluding empty lines)
+	// Find minimum indentation (excluding empty lines)
 	let minIndent = Infinity;
 	for (const line of lines) {
-		if (line.trim() === "") continue; // Skip empty lines
+		if (line.trim() === "") continue;
 		const indent = line.match(/^(\s*)/)?.[1].length || 0;
 		minIndent = Math.min(minIndent, indent);
 	}
 
-	// If no indentation found, return as is
 	if (minIndent === Infinity) {
 		return text;
 	}
 
-	// Remove the common indentation from all lines
-	const dedentedLines = lines.map((line) => {
-		if (line.trim() === "") return line; // Keep empty lines as is
-		return line.slice(minIndent);
-	});
+	// Remove common indentation
+	const dedentedLines = lines.map((line) =>
+		line.trim() === "" ? line : line.slice(minIndent)
+	);
 
 	return dedentedLines.join("\n");
 }

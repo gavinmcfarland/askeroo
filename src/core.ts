@@ -250,14 +250,6 @@ export function createRuntime(ui: UI) {
 				// Use smart placeholders to discover conditional fields
 				let placeholderValue: any = false;
 
-				// I don't think this is every used
-				// if (id in answers) {
-				// 	placeholderValue = answers[id];
-				// } else {
-				// 	// Use empty string as default to allow all fields to be discovered initially
-				// 	placeholderValue = false;
-				// }
-
 				debugLogger.log("DISCOVERY_PLACEHOLDER", {
 					kind,
 					label: getOptsText(opts),
