@@ -9,10 +9,7 @@ import { flushSync } from "react-dom";
 import { RecursiveGroupContainer } from "../group/RecursiveGroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../../registry.js";
-// import { initializeTasksInApp } from "../../plugins/tasks/index.js"; // Unused during tree migration
-// Removed StateRegistry import - plugins now get state directly from tree
 import { PromptTreeManager, PromptNode } from "../../core/PromptTree.js";
-import { PromptTreeAdapter } from "../../core/PromptTreeAdapter.js";
 import { PluginWrapper } from "./PluginWrapper.js";
 import { updateCompletedFieldsState } from "../../plugins/completed-fields/CompletedFieldsStore.js";
 import { PromptRequest } from "../../types/index.js";
@@ -48,9 +45,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	// Tree-based state management
 	const treeManagerRef = useRef<PromptTreeManager>(new PromptTreeManager());
-	const treeAdapterRef = useRef<PromptTreeAdapter>(
-		new PromptTreeAdapter(treeManagerRef.current)
-	);
 	const [treeRevision, setTreeRevision] = useState(0); // For forcing re-renders when tree changes
 
 	// Memoized tree to ensure UI updates when tree structure changes
@@ -60,7 +54,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	// Get synced state from tree (tree is the single source of truth)
 	const getSyncedState = useCallback(() => {
-		return treeAdapterRef.current.syncTreeToOldState();
+		return treeManagerRef.current.syncToLegacyState();
 	}, [treeRevision]); // Re-compute when tree changes
 
 	// Access state through memoized getter
@@ -304,7 +298,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						}
 					}
 
-					treeAdapterRef.current.addPromptRequestToTree(
+					treeManagerRef.current.addPromptRequest(
 						request,
 						currentGroup
 					);

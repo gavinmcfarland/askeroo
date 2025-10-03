@@ -1,5 +1,12 @@
 // Unified prompt tree structure for managing prompt state and navigation
 
+import {
+	PromptRequest,
+	FieldState,
+	GroupState,
+	PromptOrderState,
+} from "../types/index.js";
+
 export interface PromptNode {
 	id: string;
 	type: "field" | "group";
@@ -599,5 +606,303 @@ export class PromptTreeManager {
 		if (index >= 0) {
 			this.tree.history = this.tree.history.slice(0, index + 1);
 		}
+	}
+
+	// ========== Direct PromptRequest Handling ==========
+	// These methods eliminate the need for PromptTreeAdapter
+
+	addPromptRequest(
+		request: PromptRequest,
+		currentGroupId?: string | null
+	): PromptNode {
+		if (request.type === "group") {
+			return this.addGroupRequest(request, currentGroupId);
+		} else {
+			return this.addFieldRequest(request, currentGroupId);
+		}
+	}
+
+	private addGroupRequest(
+		request: PromptRequest,
+		currentGroupId?: string | null
+	): PromptNode {
+		let parentGroupId: string | undefined;
+
+		if (currentGroupId && currentGroupId !== "root") {
+			const parentExists = this.getNode(currentGroupId);
+			if (parentExists) {
+				parentGroupId = currentGroupId;
+			} else {
+				parentGroupId = this.findParentGroupIdByDepth(
+					request.depth || 0
+				);
+			}
+		} else {
+			parentGroupId = this.findParentGroupIdByDepth(request.depth || 0);
+		}
+
+		const groupNode = this.addNode(
+			{
+				id: request.id,
+				type: "group",
+				label: request.label,
+				completed: false,
+				visited: false,
+				active: false,
+				depth: request.depth || 0,
+				flow: request.flow || "progressive",
+				enableArrowNavigation: request.enableArrowNavigation,
+				discoveredFields: request.discoveredFields,
+				allowBack: request.allowBack,
+				properties: { ...request },
+			},
+			parentGroupId
+		);
+
+		return groupNode;
+	}
+
+	private addFieldRequest(
+		request: PromptRequest,
+		currentGroupId?: string | null
+	): PromptNode {
+		let parentId: string = "root";
+
+		if (currentGroupId && currentGroupId !== "root") {
+			const parentExists = this.getNode(currentGroupId);
+			if (parentExists) {
+				parentId = currentGroupId;
+			}
+		}
+
+		const parentNode = this.getNode(parentId);
+		const calculatedDepth = parentNode ? parentNode.depth + 1 : 1;
+
+		const fieldNode = this.addNode(
+			{
+				id: request.id,
+				type: "field",
+				label: request.label,
+				fieldType: request.type,
+				completed: false,
+				visited: false,
+				active: false,
+				depth: calculatedDepth,
+				hideAfterSubmit: request.hideAfterSubmit,
+				excludeFromCompleted: request.excludeFromCompleted,
+				allowBack: request.allowBack,
+				groupName: request.groupName,
+				properties: { ...request },
+			},
+			parentId
+		);
+
+		return fieldNode;
+	}
+
+	private findParentGroupIdByDepth(requestDepth: number): string | undefined {
+		if (requestDepth <= 0) return undefined;
+
+		const parentDepth = requestDepth - 1;
+		const activeNode = this.getActiveNode();
+
+		if (activeNode) {
+			let current: PromptNode | undefined = activeNode;
+			while (current) {
+				if (current.type === "group" && current.depth === parentDepth) {
+					return current.id;
+				}
+				const parentGroup = this.findParentGroup(current);
+				if (parentGroup && parentGroup.depth === parentDepth) {
+					return parentGroup.id;
+				}
+				current = current.parent;
+			}
+		}
+
+		const groups = this.getNodesByType("group");
+		const potentialParents = groups.filter((g) => g.depth === parentDepth);
+
+		if (potentialParents.length === 1) {
+			return potentialParents[0].id;
+		} else if (potentialParents.length > 1) {
+			const history = this.getNavigationPath();
+			for (let i = history.length - 1; i >= 0; i--) {
+				const historyNode = history[i];
+				if (
+					historyNode.type === "group" &&
+					historyNode.depth === parentDepth
+				) {
+					return historyNode.id;
+				}
+				const parentGroup = this.findParentGroup(historyNode);
+				if (parentGroup && parentGroup.depth === parentDepth) {
+					return parentGroup.id;
+				}
+			}
+			return potentialParents[potentialParents.length - 1].id;
+		}
+
+		return "root";
+	}
+
+	getCurrentGroupId(): string | null {
+		const activeNode = this.getActiveNode();
+		if (!activeNode) return null;
+
+		if (activeNode.type === "group") {
+			return activeNode.id;
+		}
+
+		const parentGroup = this.findParentGroup(activeNode);
+		return parentGroup?.id || null;
+	}
+
+	// ========== State Synchronization ==========
+	// Sync tree to legacy state format (for plugins that still need it)
+
+	syncToLegacyState(): {
+		fieldState: FieldState;
+		groupState: GroupState;
+		promptOrderState: PromptOrderState;
+	} {
+		const fieldState: FieldState = {
+			values: {},
+			visited: new Set(),
+			completed: new Set(),
+			properties: new Map(),
+			messages: {},
+			groupNames: {},
+			groupIds: {},
+		};
+
+		const groupState: GroupState = {
+			progressive: new Set(),
+			phased: new Set(),
+			static: new Set(),
+			completed: new Set(),
+			order: [],
+			arrowNavigation: new Set(),
+			depths: new Map(),
+		};
+
+		const promptOrderState: PromptOrderState = {
+			root: [],
+			rootFieldHistory: [],
+			staticGroupFields: new Map(),
+			groupFieldHistory: new Map(),
+		};
+
+		this.traverseDepthFirst((node) => {
+			if (node.id === "root") return;
+
+			if (node.type === "field") {
+				if (node.value !== undefined) {
+					fieldState.values[node.id] = node.value;
+				}
+
+				if (node.visited) {
+					fieldState.visited.add(node.id);
+				}
+
+				if (node.completed) {
+					fieldState.completed.add(node.id);
+				}
+
+				fieldState.properties.set(node.id, node.properties);
+				fieldState.messages[node.id] =
+					node.label || `${node.fieldType} field`;
+
+				if (node.groupName) {
+					fieldState.groupIds[node.id] = node.groupName;
+					const groupNode = this.getNode(node.groupName);
+					if (groupNode?.label) {
+						fieldState.groupNames[node.id] = groupNode.label;
+					}
+				}
+
+				if (node.parent?.id === "root") {
+					promptOrderState.root.push({
+						id: node.id,
+						type: "field",
+						groupName: node.groupName,
+					});
+				}
+
+				const fieldInfo = {
+					id: node.id,
+					label: node.label || `${node.fieldType} field`,
+					type: node.fieldType || "unknown",
+					hideAfterSubmit: node.hideAfterSubmit,
+				};
+
+				if (
+					node.parent?.type === "group" &&
+					node.parent.id !== "root"
+				) {
+					const groupId = node.parent.id;
+					const existing =
+						promptOrderState.groupFieldHistory.get(groupId) || [];
+					if (!existing.some((f) => f.id === node.id)) {
+						promptOrderState.groupFieldHistory.set(groupId, [
+							...existing,
+							fieldInfo,
+						]);
+					}
+
+					if (node.parent.flow === "static") {
+						const staticFields =
+							promptOrderState.staticGroupFields.get(groupId) ||
+							[];
+						if (!staticFields.some((f) => f.id === node.id)) {
+							promptOrderState.staticGroupFields.set(groupId, [
+								...staticFields,
+								fieldInfo,
+							]);
+						}
+					}
+				} else {
+					if (
+						!promptOrderState.rootFieldHistory.some(
+							(f) => f.id === node.id
+						)
+					) {
+						promptOrderState.rootFieldHistory.push(fieldInfo);
+					}
+				}
+			} else if (node.type === "group") {
+				if (node.flow === "progressive") {
+					groupState.progressive.add(node.id);
+				} else if (node.flow === "phased") {
+					groupState.phased.add(node.id);
+				} else if (node.flow === "static") {
+					groupState.static.add(node.id);
+				}
+
+				if (node.completed) {
+					groupState.completed.add(node.id);
+				}
+
+				if (!groupState.order.includes(node.id)) {
+					groupState.order.push(node.id);
+				}
+
+				if (node.enableArrowNavigation) {
+					groupState.arrowNavigation.add(node.id);
+				}
+
+				groupState.depths.set(node.id, node.depth);
+
+				if (node.parent?.id === "root") {
+					promptOrderState.root.push({
+						id: node.id,
+						type: "group",
+						groupName: node.id,
+					});
+				}
+			}
+		});
+
+		return { fieldState, groupState, promptOrderState };
 	}
 }
