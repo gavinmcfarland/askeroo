@@ -1,1 +1,1 @@
-export { GroupContainer } from './GroupContainer.js';
+export { RecursiveGroupContainer } from "./RecursiveGroupContainer.js";

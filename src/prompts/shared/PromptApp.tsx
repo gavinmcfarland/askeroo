@@ -8,8 +8,6 @@ import React, {
 import { flushSync } from "react-dom";
 // import { addToSet, setInMap, updateInMap } from "../../utils/immutable.js"; // Unused during tree migration
 import { RecursiveGroupContainer } from "../group/RecursiveGroupContainer.js";
-// Legacy GroupContainer available for emergency fallback only
-import { GroupContainer } from "../group/GroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../../registry.js";
 // import { initializeTasksInApp } from "../../plugins/tasks/index.js"; // Unused during tree migration
@@ -23,8 +21,6 @@ declare global {
 	interface Window {
 		__promptTreeDebug?: any;
 	}
-	var __enableRecursiveRendering: (() => void) | undefined;
-	var __enableLegacyRendering: (() => void) | undefined;
 	var __debugTree: (() => void) | undefined;
 }
 
@@ -56,7 +52,7 @@ type FieldInfo = {
 	hideAfterSubmit?: boolean;
 };
 
-// Legacy state interfaces removed - using tree-based state
+// Tree-based state management
 
 export function PromptApp({ onReady }: PromptAppProps) {
 	const [currentPrompt, setCurrentPrompt] = useState<PromptRequest | null>(
@@ -65,15 +61,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// ⬇️ resolver kept in a ref to avoid re-renders
 	const resolverRef = useRef<((value: any) => void) | null>(null);
 
-	// Legacy state removed - now using tree-based state management
-
 	// Tree-based state management
 	const treeManagerRef = useRef<PromptTreeManager>(new PromptTreeManager());
 	const treeAdapterRef = useRef<PromptTreeAdapter>(
 		new PromptTreeAdapter(treeManagerRef.current)
 	);
 	const [treeRevision, setTreeRevision] = useState(0); // For forcing re-renders when tree changes
-	const [useRecursiveRendering, setUseRecursiveRendering] = useState(true); // Recursive rendering enabled by default
 
 	// Memoized tree to ensure UI updates when tree structure changes
 	const currentTree = useMemo(() => {
@@ -103,7 +96,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const staticGroupFields = syncedState.promptOrderState.staticGroupFields;
 	const groupFieldHistory = syncedState.promptOrderState.groupFieldHistory;
 
-	// Legacy setter functions (now no-ops since tree is source of truth)
+	// State synchronization with tree
 	const setFieldValues = (
 		updater: (prev: Record<string, any>) => Record<string, any>
 	) => {
@@ -317,39 +310,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const currentHintText = currentPrompt?.id
 		? hintsByPromptId.current.get(currentPrompt.id) || null
 		: null;
-
-	// Helper function to render field components dynamically
-	const renderFieldComponent = (
-		fieldInfo: { id: string; label: string; type: string },
-		props: any,
-		includeHintHandler = false
-	) => {
-		// Extract key from props to avoid React warning about spreading key
-		const { key: propsKey, ...restProps } = props;
-		const key = propsKey || `field-${fieldInfo.id}`;
-
-		// Get the original field properties if available
-		const originalProperties = fieldProperties.get(fieldInfo.id) || {};
-
-		// Check for plugin components first
-		const PluginComponent = globalRegistry.getComponent(fieldInfo.type);
-		if (PluginComponent) {
-			return (
-				<PluginComponent
-					key={key}
-					message={fieldInfo.label}
-					{...originalProperties} // Spread original properties like shortMessage
-					{...restProps} // Spread rendering props (these take precedence)
-					{...(includeHintHandler && {
-						onHintChange: handleHintChange,
-					})} // Only add hint handler for active fields
-				/>
-			);
-		}
-
-		// Fallback - return null if no plugin component found
-		return null;
-	};
 
 	useEffect(() => {
 		const promptFn = (request: PromptRequest): Promise<any> => {
@@ -935,7 +895,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						});
 						setTreeRevision((prev) => prev + 1);
 
-						// Force legacy state cleanup after tree changes (in case conditional groups were removed)
+						// Force state cleanup after tree changes (in case conditional groups were removed)
 						setTimeout(() => {
 							const allNodes = treeManagerRef.current.findNodes(
 								() => true
@@ -944,7 +904,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 								allNodes.map((node) => node.id)
 							);
 
-							// Clean up legacy state for any nodes that no longer exist
+							// Clean up state for any nodes that no longer exist
 							[
 								fieldValues,
 								fieldProperties,
@@ -1128,7 +1088,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			if (canGoBack) {
 				const result = treeManagerRef.current.goBack();
 				if (result.success) {
-					// Synchronize legacy state with tree state
+					// Synchronize state with tree
 					// Clear completed status for all nodes that were reset by goBack()
 					const allNodes = treeManagerRef.current.findNodes(
 						() => true
@@ -1137,7 +1097,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						allNodes.map((node) => node.id)
 					);
 
-					// Find all nodes that are no longer completed and remove them from legacy completed state
+					// Find all nodes that are no longer completed and remove them from completed state
 					const noLongerCompleted: string[] = [];
 					allNodes.forEach((node: PromptNode) => {
 						if (!node.completed && completedFields.has(node.id)) {
@@ -1145,7 +1105,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						}
 					});
 
-					// Clear from legacy completed fields
+					// Clear from completed fields
 					if (noLongerCompleted.length > 0) {
 						setCompletedFields((prev) => {
 							const newCompleted = new Set(prev);
@@ -1156,7 +1116,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						});
 					}
 
-					// Clean up legacy state for nodes that no longer exist in the tree
+					// Clean up state for nodes that no longer exist in the tree
 					// This is crucial for conditional groups that should disappear when conditions change
 
 					// Clean up field values for removed nodes
@@ -1387,529 +1347,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const effectivePrompt =
 		currentPrompt?.type === "group" ? null : currentPrompt;
 
-	// LEGACY: Render completed fields (only for emergency debugging)
-	const renderCompletedFields = useMemo(() => {
-		// Skip compilation if not needed
-		if (useRecursiveRendering) return null;
-		if (!currentGroup || phaseGroups.has(currentGroup)) {
-			return null;
-		}
+	// LEGACY: Render completed fields - REMOVED
+	const renderCompletedFields = null;
 
-		const isStaticGroup = staticGroups.has(currentGroup);
-		const groupFields = isStaticGroup
-			? staticGroupFields.get(currentGroup) || []
-			: groupFieldHistory.get(currentGroup) || [];
-
-		if (isStaticGroup) {
-			// For static groups, render fields based on conditional visibility
-			const executedFields = groupFieldHistory.get(currentGroup) || [];
-			const discoveredFields = groupFields;
-
-			// Create a unified list of fields, preferring executed fields over discovered ones
-			const allFields = new Map();
-
-			// Add discovered fields first
-			discoveredFields.forEach((field) => {
-				allFields.set(field.label + "|" + field.type, field);
-			});
-
-			// Add executed fields (they take precedence)
-			executedFields.forEach((field) => {
-				allFields.set(field.label + "|" + field.type, field);
-			});
-
-			const allFieldsArray = [...allFields.values()].filter(
-				(field) => !field.hideAfterSubmit
-			);
-
-			return allFieldsArray.map((field, index) => {
-				// For static groups, find the stored value by matching label and type
-				// since field IDs might differ between discovery and execution
-				let fieldValue = fieldValues[field.id];
-				let isCompleted =
-					fieldValue !== undefined &&
-					(field.type !== "text" &&
-					field.type !== "custom-text" &&
-					field.type !== "validated-text"
-						? true
-						: typeof fieldValue === "string"
-						? fieldValue.trim() !== ""
-						: fieldValue);
-
-				// If not found by direct ID match, search by label and type
-				if (fieldValue === undefined) {
-					for (const [storedId, storedValue] of Object.entries(
-						fieldValues
-					)) {
-						// Check if this stored value belongs to a field with matching label and type in our group
-						const matchingEntry = rootPromptOrder.find(
-							(entry) =>
-								entry.id === storedId &&
-								entry.groupName === currentGroup
-						);
-						if (matchingEntry) {
-							// Find the field info in group history to check label/type
-							const allGroupFields =
-								groupFieldHistory.get(currentGroup) || [];
-							const matchingField = allGroupFields.find(
-								(f) =>
-									f.id === storedId &&
-									f.label === field.label &&
-									f.type === field.type
-							);
-							if (matchingField) {
-								fieldValue = storedValue;
-								// Apply same completion logic for consistency
-								isCompleted =
-									storedValue !== undefined &&
-									(field.type !== "text" &&
-									field.type !== "custom-text" &&
-									field.type !== "validated-text"
-										? true
-										: typeof storedValue === "string"
-										? storedValue.trim() !== ""
-										: storedValue);
-								break;
-							}
-						}
-					}
-				}
-
-				// For static groups, match fields based on label and type since IDs might differ between discovery and execution
-				const isActive = effectivePrompt
-					? field.id === effectivePrompt.id ||
-					  (field.label === effectivePrompt.label &&
-							field.type === effectivePrompt.type)
-					: false;
-
-				// Get initial value based on field type
-				const getInitialValue = () => {
-					// Always return the stored value if it exists, regardless of completion status
-					// This ensures that partially entered values are preserved during navigation
-					if (fieldValue !== undefined) {
-						return fieldValue;
-					}
-					// Type-specific defaults for truly new fields
-					if (field.type === "multi") {
-						return [];
-					}
-					if (field.type === "confirm") {
-						return false;
-					}
-					return "";
-				};
-
-				// Get all properties from effectivePrompt when this field is active
-				const typeSpecificProps: any = {};
-				if (
-					isActive &&
-					effectivePrompt &&
-					field.type === effectivePrompt.type
-				) {
-					// Pass all properties from the effective prompt except the base ones
-					const { type, id, label, groupName, ...additionalProps } =
-						effectivePrompt;
-					Object.assign(typeSpecificProps, additionalProps);
-				}
-
-				// Determine position in group for navigation
-				const isFirstInGroup = index === 0; // First field within this group
-				const isLastInGroup = index === allFieldsArray.length - 1;
-				const hasArrowNavigation =
-					arrowNavigationGroups.has(currentGroup);
-
-				// Check if this is the first prompt in the root flow (for static group fields)
-				// This is true if this field is the very first field the user sees, regardless of grouping
-				const isFirstRootPromptInStaticGroup =
-					field.id === firstFieldIdRef.current;
-
-				return renderFieldComponent(
-					field,
-					{
-						key: `static-${field.label}-${field.type}`,
-						initialValue: getInitialValue(),
-						completed: isCompleted && !isActive,
-						completedValue: isCompleted ? fieldValue : undefined,
-						disabled: !isActive && !isCompleted,
-						onSubmit: isActive ? handleSubmit : () => {},
-						onBack: isActive ? handleBack : undefined,
-						allowBack: isActive,
-						flow: "static",
-						isFirstInGroup,
-						isLastInGroup,
-						enableArrowNavigation: hasArrowNavigation,
-						isFirstRootPrompt: isFirstRootPromptInStaticGroup,
-						...typeSpecificProps,
-					},
-					isActive
-				); // Pass hint handler only for active fields
-			});
-		} else {
-			// For sequential groups, only show completed fields
-			return groupFields
-				.filter(
-					(field) =>
-						completedFields.has(field.id) &&
-						field.id !== effectivePrompt?.id &&
-						!field.hideAfterSubmit
-				)
-				.map((field) => {
-					const fieldValue = fieldValues[field.id];
-
-					return renderFieldComponent(field, {
-						key: `completed-${field.id}`,
-						completed: true,
-						completedValue: fieldValue,
-						onSubmit: () => {},
-						allowBack: false,
-						flow: phaseGroups.has(currentGroup!)
-							? "phased"
-							: undefined,
-						// Allow plugins to handle their own defaults
-					});
-				});
-		}
-	}, [
-		currentGroup,
-		phaseGroups,
-		staticGroups,
-		staticGroupFields,
-		groupFieldHistory,
-		effectivePrompt,
-		completedFields,
-		fieldValues,
-		rootPromptOrder,
-		arrowNavigationGroups,
-		firstFieldIdRef,
-		staticGroupRevision,
-	]);
-
-	// LEGACY: Render completed items in order (only for emergency debugging)
-	const renderCompletedItemsInOrder = useMemo(() => {
-		// Skip compilation if not needed
-		if (useRecursiveRendering) return null;
-		// Only show items that come before the current prompt in the root order
-		const currentPromptIndex = rootPromptOrder.findIndex(
-			(p) => p.id === effectivePrompt?.id
-		);
-		const itemsToShow =
-			currentPromptIndex >= 0
-				? rootPromptOrder.slice(0, currentPromptIndex)
-				: rootPromptOrder;
-
-		return itemsToShow
-			.map((entry) => {
-				if (
-					entry.type === "field" &&
-					!entry.groupName &&
-					completedFields.has(entry.id)
-				) {
-					// Render completed root-level field
-					const fieldInfo = rootFieldHistory.find(
-						(f) => f.id === entry.id
-					);
-					if (!fieldInfo || fieldInfo.hideAfterSubmit) return null;
-
-					const fieldValue = fieldValues[entry.id];
-
-					return renderFieldComponent(fieldInfo, {
-						key: `completed-root-${entry.id}`,
-						completed: true,
-						completedValue: fieldValue,
-						onSubmit: () => {},
-						allowBack: false,
-						flow: undefined, // Root fields have no flow type
-						// Allow plugins to handle their own defaults
-					});
-				} else if (
-					entry.type === "group" &&
-					completedGroups.has(entry.id) &&
-					entry.id !== currentGroup
-				) {
-					// Render completed group (but not if it's the current group being edited)
-					const groupId = entry.id;
-					const groupDisplayName = getGroupDisplayName(groupId);
-
-					if (phaseGroups.has(groupId)) {
-						// For phase groups, show a simple completion indicator
-						// Only show if group has a label, otherwise show fields without group header
-						const groupDepth = groupDepths.get(groupId) || 0;
-						if (groupDisplayName) {
-							return (
-								<GroupContainer
-									key={`completed-group-${groupId}`}
-									groupName={groupDisplayName}
-									completed={true}
-									completedFields={null}
-									depth={groupDepth}
-								/>
-							);
-						} else {
-							// Phase group without label - just show completion indicator without group header
-							return (
-								<GroupContainer
-									key={`completed-group-${groupId}`}
-									groupName={null}
-									completed={true}
-									completedFields={null}
-									depth={groupDepth}
-								/>
-							);
-						}
-					} else {
-						// For sequential groups, show detailed field completion using actual field components
-						const groupFields =
-							groupFieldHistory.get(groupId) || [];
-						const completedGroupFieldComponents = groupFields
-							.filter((field) => {
-								// Only include fields that are actually completed AND belong to this group
-								// Additional safety check to prevent root-level fields from appearing in groups
-								const belongsToGroup =
-									rootPromptOrder.find(
-										(p) => p.id === field.id
-									)?.groupName === groupId;
-								return (
-									completedFields.has(field.id) &&
-									belongsToGroup
-								);
-							})
-							.map((field) => {
-								const fieldValue = fieldValues[field.id];
-								return renderFieldComponent(field, {
-									key: `completed-group-field-${field.id}`,
-									completed: true,
-									completedValue: fieldValue,
-									onSubmit: () => {},
-									allowBack: false,
-									flow: phaseGroups.has(groupId)
-										? "phased"
-										: "static",
-								});
-							});
-
-						const groupDepth = groupDepths.get(groupId) || 0;
-						return (
-							<GroupContainer
-								key={`completed-group-${groupId}`}
-								groupName={groupDisplayName} // Only show if there's actually a label
-								completed={true}
-								completedFields={completedGroupFieldComponents}
-								depth={groupDepth}
-							/>
-						);
-					}
-				}
-				return null;
-			})
-			.filter(Boolean);
-	}, [
-		rootPromptOrder,
-		effectivePrompt,
-		completedFields,
-		completedGroups,
-		currentGroup,
-		phaseGroups,
-		groupFieldHistory,
-		fieldValues,
-		rootFieldHistory,
-		groupDepths,
-	]);
-
-	if (!effectivePrompt) {
-		// Keep a stable shell so layout doesn't jump, but show completed groups and fields
-		const currentGroupDepth = currentGroup
-			? groupDepths.get(currentGroup) || 0
-			: 0;
-		return (
-			<RootContainer>
-				{renderCompletedItemsInOrder}
-				<GroupContainer
-					groupName={getGroupDisplayName(currentGroup)}
-					depth={currentGroupDepth}
-				>
-					{renderCompletedFields}
-				</GroupContainer>
-			</RootContainer>
-		);
-	}
-
-	// LEGACY: Field rendering (only for emergency debugging)
-	let field: React.ReactNode = null;
-
-	if (!useRecursiveRendering) {
-		// For static groups, don't render the active field separately - it's part of the static group rendering
-		const isCurrentGroupStatic =
-			currentGroup && staticGroups.has(currentGroup);
-
-		if (!isCurrentGroupStatic) {
-			// Check if this is a plugin-provided prompt type
-			const pluginExists = globalRegistry.getComponent(
-				effectivePrompt.type
-			);
-
-			if (pluginExists) {
-				const isInteractive = globalRegistry.isInteractive(
-					effectivePrompt.type
-				);
-				const isSequentialGroup = !!(
-					effectivePrompt.groupName &&
-					!phaseGroups.has(effectivePrompt.groupName)
-				);
-				const hasCompletedFields =
-					isSequentialGroup && completedFields.size > 0;
-				const allowBack =
-					effectivePrompt.allowBack !== false &&
-					(effectivePrompt.id !== firstFieldIdRef.current ||
-						hasCompletedFields);
-
-				// Get initial value based on prompt type
-				const getInitialValue = () => {
-					if (!visitedPrompts.has(effectivePrompt.id)) {
-						// Use initialValue from prompt or sensible default based on type
-						if (effectivePrompt.initialValue !== undefined) {
-							return effectivePrompt.initialValue;
-						}
-						// Return appropriate default based on field type
-						if (effectivePrompt.type === "multi") {
-							return [];
-						}
-						if (effectivePrompt.type === "confirm") {
-							return false;
-						}
-						return "";
-					}
-					const storedValue = fieldValues[effectivePrompt.id];
-					// Return stored value or prompt's initialValue with type-specific fallback
-					if (storedValue !== undefined) {
-						return storedValue;
-					}
-					if (effectivePrompt.initialValue !== undefined) {
-						return effectivePrompt.initialValue;
-					}
-					// Type-specific defaults
-					if (effectivePrompt.type === "multi") {
-						return [];
-					}
-					if (effectivePrompt.type === "confirm") {
-						return false;
-					}
-					return "";
-				};
-
-				// Check if this is the first prompt in the root flow
-				// This is true if this field is the very first field the user sees, regardless of grouping
-				const isFirstRootPrompt =
-					effectivePrompt.id === firstFieldIdRef.current;
-
-				// Check if this is the first field in its group
-				const isFirstInGroup = effectivePrompt.groupName
-					? // For grouped fields, check if this is the first field in the group's history
-					  (() => {
-							const groupHistory = groupFieldHistory.get(
-								effectivePrompt.groupName
-							);
-							return (
-								!groupHistory ||
-								groupHistory.length === 0 ||
-								groupHistory[0].id === effectivePrompt.id
-							);
-					  })()
-					: // For root-level fields, they are not in a group, so always false
-					  false;
-
-				// Determine flow type based on current group
-				const flowType =
-					currentGroup && progressiveGroups.has(currentGroup)
-						? "progressive"
-						: currentGroup && phaseGroups.has(currentGroup)
-						? "phased"
-						: currentGroup && staticGroups.has(currentGroup)
-						? "static"
-						: "progressive"; // Default to progressive for groups with no flow specified
-
-				field = (
-					<PluginWrapper
-						pluginType={effectivePrompt.type}
-						key={effectivePrompt.id}
-						{...effectivePrompt} // Spread all prompt properties
-						initialValue={getInitialValue()}
-						allowBack={allowBack}
-						onSubmit={handleSubmit}
-						onBack={handleBack}
-						{...(isInteractive && {
-							onHintChange: handleHintChange,
-						})}
-						flow={flowType}
-						isFirstRootPrompt={isFirstRootPrompt}
-						isFirstInGroup={isFirstInGroup}
-					/>
-				);
-			} else {
-				// Fallback for unknown prompt types
-				field = null;
-			}
-		}
-	}
-
-	const currentGroupDepth = currentGroup
-		? groupDepths.get(currentGroup) || 0
-		: 0;
-
-	// NEW: Debug utilities (for console access during development)
-	// Use: console.log(treeManagerRef.current.printTree()) in your debugging code
-
-	// NEW: Debug utilities for CLI troubleshooting
-	if (
-		typeof globalThis !== "undefined" &&
-		!globalThis.__enableLegacyRendering
-	) {
-		globalThis.__enableLegacyRendering = () => {
-			setUseRecursiveRendering(false);
-			console.log(
-				"⚠️ Legacy rendering enabled for debugging. Switch back with __enableRecursiveRendering()"
-			);
-		};
-		globalThis.__enableRecursiveRendering = () => {
-			setUseRecursiveRendering(true);
-			console.log("✅ Recursive rendering enabled (default).");
-		};
-		globalThis.__debugTree = () => {
-			const tree = treeManagerRef.current.getTree();
-			const stats = treeManagerRef.current.getTreeStats();
-			console.log("🌳 Tree debug info:");
-			console.log("Stats:", stats);
-			console.log("Tree structure:");
-			console.log(treeManagerRef.current.printTree());
-			console.log("Root children:", currentTree.root.children.length);
-			currentTree.root.children.forEach((child, i) => {
-				console.log(`Child ${i}:`, {
-					id: child.id,
-					type: child.type,
-					active: child.active,
-					completed: child.completed,
-					visited: child.visited,
-				});
-			});
-		};
-	}
-
-	// Legacy fallback available for emergency debugging only
-	if (!useRecursiveRendering) {
-		return (
-			<RootContainer>
-				{renderCompletedItemsInOrder}
-				<GroupContainer
-					key="group-container"
-					groupName={getGroupDisplayName(currentGroup)}
-					hintText={currentHintText}
-					depth={currentGroupDepth}
-				>
-					{renderCompletedFields}
-					{field}
-				</GroupContainer>
-			</RootContainer>
-		);
-	}
+	// LEGACY: Render completed items in order - REMOVED
+	const renderCompletedItemsInOrder = null;
 
 	// Primary rendering: Tree-based recursive rendering
 
