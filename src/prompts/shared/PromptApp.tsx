@@ -11,10 +11,11 @@ import { RecursiveGroupContainer } from "../group/RecursiveGroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../../registry.js";
 // import { initializeTasksInApp } from "../../plugins/tasks/index.js"; // Unused during tree migration
-import { notifyStateUpdate } from "../../core/StateRegistry.js";
+// Removed StateRegistry import - plugins now get state directly from tree
 import { PromptTreeManager, PromptNode } from "../../core/PromptTree.js";
 import { PromptTreeAdapter } from "../../core/PromptTreeAdapter.js";
 import { PluginWrapper } from "./PluginWrapper.js";
+import { updateCompletedFieldsState } from "../../plugins/completed-fields/CompletedFieldsStore.js";
 
 // Type declaration for debug utilities
 declare global {
@@ -233,9 +234,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	);
 	const isNavigatingBack = useRef(false);
 
-	// Notify all registered plugins of state changes
+	// State is now managed directly by the tree structure
+	// Update CompletedFields plugin with current state
 	useEffect(() => {
-		notifyStateUpdate({
+		updateCompletedFieldsState({
 			fieldState: {
 				values: fieldValues,
 				visited: visitedPrompts,
@@ -245,16 +247,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				groupNames: fieldGroupNames,
 				groupIds: fieldGroupIds,
 			},
-			groupState: {
-				progressive: progressiveGroups,
-				phased: phaseGroups,
-				static: staticGroups,
-				completed: completedGroups,
-				order: groupOrder,
-				arrowNavigation: arrowNavigationGroups,
-				depths: groupDepths,
-			},
-			currentGroup,
 			promptOrderState: {
 				rootFieldHistory,
 				groupFieldHistory,
@@ -268,14 +260,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		fieldMessages,
 		fieldGroupNames,
 		fieldGroupIds,
-		progressiveGroups,
-		phaseGroups,
-		staticGroups,
-		completedGroups,
-		groupOrder,
-		arrowNavigationGroups,
-		groupDepths,
-		currentGroup,
 		rootFieldHistory,
 		groupFieldHistory,
 	]);

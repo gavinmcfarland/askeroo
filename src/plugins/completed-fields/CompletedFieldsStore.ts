@@ -1,7 +1,16 @@
 // Completed fields store to manage state at the PromptApp level
 // Following the same pattern as TaskStore
 
-import { FieldState } from "../../core/StateRegistry.js";
+// Define FieldState interface locally since StateRegistry is being removed
+interface FieldState {
+	values: Record<string, any>;
+	visited: Set<string>;
+	completed: Set<string>;
+	properties: Map<string, any>;
+	messages: Record<string, string>;
+	groupNames: Record<string, string>;
+	groupIds: Record<string, string>;
+}
 
 export interface CompletedField {
 	id: string;
@@ -57,14 +66,14 @@ let updateCompletedFieldsStoreCallback:
 	| ((state: CompletedFieldsStoreState) => void)
 	| null = null;
 
-// Initialize the store with PromptApp's state updater
+// Initialize the store with PromptApp's state updater (legacy support)
 export function initializeCompletedFieldsStore(
 	updater: (state: CompletedFieldsStoreState) => void
 ) {
 	updateCompletedFieldsStoreCallback = updater;
 }
 
-// Update the completed fields state (called from PromptApp)
+// Update the completed fields state (called from tree-based state management)
 export function updateCompletedFieldsState(state: CompletedFieldsStoreState) {
 	globalCompletedFieldsStore = { ...state };
 	if (updateCompletedFieldsStoreCallback) {

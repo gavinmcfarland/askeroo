@@ -6,10 +6,7 @@ import {
 	initializeCompletedFieldsStore,
 	updateCompletedFieldsState,
 } from "./CompletedFieldsStore.js";
-import {
-	registerForStateUpdates,
-	PromptAppState,
-} from "../../core/StateRegistry.js";
+// Removed StateRegistry dependency - plugin now gets state directly from tree
 
 export interface CompletedFieldsOptions {
 	maxFields?: number;
@@ -20,13 +17,7 @@ export interface CompletedFieldsOptions {
 
 export type { CompletedField } from "./CompletedFieldsStore.js";
 
-// Initialize plugin - register for state updates from PromptApp
-registerForStateUpdates((state: PromptAppState) => {
-	updateCompletedFieldsState({
-		fieldState: state.fieldState,
-		promptOrderState: state.promptOrderState,
-	});
-});
+// Plugin initialization - state is now managed directly by the tree structure
 
 export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 	const [appState, setAppState] = useState(getCompletedFieldsState);
