@@ -221,7 +221,10 @@ export function MultiField({
 		// Calculate visible window - scroll only when at edges
 		// The window operates on the combined list (none option + filtered options)
 		let currentWindowStart = windowStart;
-		let currentWindowEnd = Math.min(currentWindowStart + maxVisible, totalOptions);
+		let currentWindowEnd = Math.min(
+			currentWindowStart + maxVisible,
+			totalOptions
+		);
 
 		// If selected index is at or beyond the bottom of current window, scroll down
 		if (selectedIndex >= currentWindowEnd) {
@@ -239,7 +242,10 @@ export function MultiField({
 		currentWindowEnd = Math.min(totalOptions, currentWindowEnd);
 
 		// Adjust windowStart if we hit the end and have room to show more
-		if (currentWindowEnd - currentWindowStart < maxVisible && currentWindowStart > 0) {
+		if (
+			currentWindowEnd - currentWindowStart < maxVisible &&
+			currentWindowStart > 0
+		) {
 			currentWindowStart = Math.max(0, currentWindowEnd - maxVisible);
 		}
 
@@ -497,13 +503,16 @@ export function MultiField({
 	});
 
 	if (completed) {
+		const displayValue =
+			(completedValue || []).length === 0 && noneOption
+				? noneOption.label
+				: (completedValue || []).join(", ");
+
 		return (
 			<Box flexDirection="column">
 				<Text>{label}</Text>
 				<Text>
-					<Text color="blue">
-						{(completedValue || []).join(", ")}
-					</Text>
+					<Text color="blue">{displayValue}</Text>
 				</Text>
 			</Box>
 		);
