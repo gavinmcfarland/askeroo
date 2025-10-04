@@ -5,6 +5,15 @@ import { debugLogger } from "./utils/logging.js";
 import { globalRegistry } from "./registry.js";
 import { BackToken, PromptRequest } from "./types/index.js";
 
+// Import plugins to ensure they register before UI is created
+import "./plugins/text/index.js";
+import "./plugins/confirm/index.js";
+import "./plugins/radio/index.js";
+import "./plugins/multi/index.js";
+import "./plugins/note/index.js";
+import "./plugins/tasks/index.js";
+import "./plugins/completed-fields/index.js";
+
 // Generate stable IDs for prompts based on content and context
 const generatePromptId = (type: string, label: string, groupName?: string) => {
 	const parts = [type, label];
@@ -42,7 +51,7 @@ let currentRuntime: any = null;
 
 // Create a dynamic UI object that includes plugin handlers
 function createUI() {
-	const baseUI = {
+	const ui: any = {
 		async showGroup(
 			label: string | undefined,
 			flow?: "phased" | "static",
@@ -108,54 +117,39 @@ function createUI() {
 		},
 	};
 
-	// Create a Proxy to dynamically handle plugin methods
-	return new Proxy(baseUI, {
-		get(target: any, prop: string) {
-			// If the property exists on baseUI, return it
-			if (prop in target) {
-				return target[prop];
-			}
+	// Create plugin handlers upfront (no Proxy)
+	for (const plugin of globalRegistry.getAll()) {
+		ui[plugin.type] = async function (
+			opts: any,
+			currentGroup: string,
+			id: string
+		): Promise<any> {
+			// Always update currentGroup, even if it's undefined
+			// This ensures fields outside groups don't inherit the previous group
+			appInstance.currentGroup =
+				typeof currentGroup === "string" ? currentGroup : undefined;
 
-			// Check if this is a registered plugin type
-			const plugin = globalRegistry.get(prop);
-			if (plugin) {
-				// Create and cache the handler
-				target[prop] = async function (
-					opts: any,
-					currentGroup: string,
-					id: string
-				): Promise<any> {
-					// Always update currentGroup, even if it's undefined
-					// This ensures fields outside groups don't inherit the previous group
-					appInstance.currentGroup =
-						typeof currentGroup === "string"
-							? currentGroup
-							: undefined;
+			const promptFn = await ensureApp();
 
-					const promptFn = await ensureApp();
+			// Create the request object with all options spread in
+			const request: PromptRequest = {
+				type: plugin.type,
+				id:
+					id ||
+					generatePromptId(
+						plugin.type,
+						opts.label || `${plugin.type} field`
+					),
+				groupName: appInstance.currentGroup,
+				...opts, // Spread all options from the plugin
+			};
 
-					// Create the request object with all options spread in
-					const request: PromptRequest = {
-						type: plugin.type,
-						id:
-							id ||
-							generatePromptId(
-								plugin.type,
-								opts.label || `${plugin.type} field`
-							),
-						groupName: appInstance.currentGroup,
-						...opts, // Spread all options from the plugin
-					};
+			return promptFn(request);
+		};
+	}
 
-					return promptFn(request);
-				};
-				return target[prop];
-			}
-
-			// Return undefined for unknown properties
-			return undefined;
-		},
-	});
+	return ui;
 }
 
+// Create UI after plugins are registered (via imports above)
 export const ui = createUI();
