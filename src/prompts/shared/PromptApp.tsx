@@ -56,8 +56,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		setTreeManager(treeManagerRef.current);
 	}, []);
 
-	// Other non-grouped state
-	const [currentGroup, setCurrentGroup] = useState<string | null>(null);
+	// Other state
 	const isNavigatingBack = useRef(false);
 
 	const firstFieldIdRef = useRef<string | null>(null);
@@ -253,15 +252,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 				// Group order is tracked in tree structure - no need for separate tracking
 				// staticGroupsRef removed - use node.flow === "static" from tree instead
-
-				// Update currentGroup based on the request
-				if (request.type !== "group") {
-					// Field prompts always update the group (most accurate)
-					setCurrentGroup(request.groupName || null);
-				} else if (request.type === "group") {
-					// Group prompts update the group
-					setCurrentGroup(request.id);
-				}
+				// currentGroup removed - use treeManager.getCurrentGroupId() if needed
 			});
 		};
 
