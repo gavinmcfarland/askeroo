@@ -772,33 +772,49 @@ export class PromptTreeManager {
 	// ========== Direct PromptRequest Handling ==========
 	// These methods eliminate the need for PromptTreeAdapter
 
+	/**
+	 * Add a prompt request (field or group) to the tree
+	 * @param request - The prompt request
+	 * @param explicitParentId - Explicit parent group ID from runtime (preferred)
+	 */
 	addPromptRequest(
 		request: PromptRequest,
-		currentGroupId?: string | null
+		explicitParentId?: string | null
 	): PromptNode {
 		if (request.type === "group") {
-			return this.addGroupRequest(request, currentGroupId);
+			return this.addGroupRequest(request, explicitParentId);
 		} else {
-			return this.addFieldRequest(request, currentGroupId);
+			return this.addFieldRequest(request, explicitParentId);
 		}
 	}
 
+	/**
+	 * Add a group to the tree
+	 * @param request - Group request
+	 * @param explicitParentId - Explicit parent from runtime (which knows groupStack)
+	 */
 	private addGroupRequest(
 		request: PromptRequest,
-		currentGroupId?: string | null
+		explicitParentId?: string | null
 	): PromptNode {
+		// Use explicit parent ID if provided (preferred path)
 		let parentGroupId: string | undefined;
 
-		if (currentGroupId && currentGroupId !== "root") {
-			const parentExists = this.getNode(currentGroupId);
+		if (explicitParentId && explicitParentId !== "root") {
+			// Trust the explicit parent from runtime
+			const parentExists = this.getNode(explicitParentId);
 			if (parentExists) {
-				parentGroupId = currentGroupId;
+				parentGroupId = explicitParentId;
 			} else {
+				console.warn(
+					`Explicit parent "${explicitParentId}" not found, falling back to depth inference`
+				);
 				parentGroupId = this.findParentGroupIdByDepth(
 					request.depth || 0
 				);
 			}
 		} else {
+			// Fallback: infer from depth (legacy path for backward compatibility)
 			parentGroupId = this.findParentGroupIdByDepth(request.depth || 0);
 		}
 
@@ -828,17 +844,31 @@ export class PromptTreeManager {
 		return groupNode;
 	}
 
+	/**
+	 * Add a field to the tree
+	 * @param request - Field request
+	 * @param explicitParentId - Explicit parent from runtime (which knows groupStack)
+	 */
 	private addFieldRequest(
 		request: PromptRequest,
-		currentGroupId?: string | null
+		explicitParentId?: string | null
 	): PromptNode {
-		let parentId: string = "root";
-
-		if (currentGroupId && currentGroupId !== "root") {
-			const parentExists = this.getNode(currentGroupId);
+		// Determine parent - prefer explicit parent from runtime, fallback to depth inference
+		let parentId: string | undefined;
+		if (explicitParentId && explicitParentId !== "root") {
+			// Trust explicit parent from runtime (preferred path)
+			const parentExists = this.getNode(explicitParentId);
 			if (parentExists) {
-				parentId = currentGroupId;
+				parentId = explicitParentId;
+			} else {
+				console.warn(
+					`Explicit parent "${explicitParentId}" not found for field, using root`
+				);
+				parentId = "root";
 			}
+		} else {
+			// Use root if no explicit parent provided
+			parentId = "root";
 		}
 
 		const parentNode = this.getNode(parentId);
@@ -867,9 +897,13 @@ export class PromptTreeManager {
 	}
 
 	/**
-	 * Find parent group by depth (legacy method - needed for depth-based API)
-	 * NOTE: This is complex because it infers parent from depth rather than explicit context.
-	 * Future improvement: Pass explicit parent ID from runtime (which knows groupStack).
+	 * Find parent group by depth (LEGACY FALLBACK - prefer explicit parent)
+	 *
+	 * This method infers parent from depth, which is complex and error-prone.
+	 * It's kept for backward compatibility when explicit parent is not provided.
+	 *
+	 * PREFERRED: Pass explicit parent ID from runtime (which knows groupStack).
+	 * The runtime has groupStack and knows the exact parent context.
 	 */
 	private findParentGroupIdByDepth(requestDepth: number): string | undefined {
 		if (requestDepth <= 0) return undefined;

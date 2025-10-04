@@ -145,61 +145,13 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 				// NEW: Add prompt to tree structure and activate it
 				try {
-					// More robust parent group determination to avoid race conditions
-					let currentGroup: string | null = null;
-
-					if (request.type === "group") {
-						// For group prompts, use the tree's current state to find the correct parent
-						const activeNode =
-							treeManagerRef.current.getActiveNode();
-						if (activeNode) {
-							if (activeNode.type === "group") {
-								// Current active node is a group - use it as parent
-								currentGroup = activeNode.id;
-							} else {
-								// Current active node is a field - find its parent group
-								const parentGroup =
-									treeManagerRef.current.findParentGroup(
-										activeNode
-									);
-								currentGroup = parentGroup?.id || null;
-							}
-						}
-
-						// Fallback: use the provided groupName from the request
-						if (
-							!currentGroup &&
-							request.groupName &&
-							request.groupName !== "root"
-						) {
-							const parentExists = treeManagerRef.current.getNode(
-								request.groupName
-							);
-							if (parentExists) {
-								currentGroup = request.groupName;
-							}
-						}
-					} else {
-						// For field prompts, prefer the explicitly provided groupName
-						if (request.groupName && request.groupName !== "root") {
-							const parentExists = treeManagerRef.current.getNode(
-								request.groupName
-							);
-							if (parentExists) {
-								currentGroup = request.groupName;
-							} else {
-								// If groupName doesn't exist, field should go to root
-								currentGroup = null;
-							}
-						} else {
-							// No groupName or explicitly "root" - field belongs at root level
-							currentGroup = null;
-						}
-					}
+					// SIMPLIFIED: Runtime provides explicit parent via request.groupName
+					// This is the groupStack context from the runtime (which knows the exact parent)
+					const explicitParent = request.groupName || null;
 
 					treeManagerRef.current.addPromptRequest(
 						request,
-						currentGroup
+						explicitParent
 					);
 
 					// Activate the prompt in the tree (crucial for rendering)
@@ -215,30 +167,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						console.log(
 							"🌳 Tree updated for prompt:",
 							request.id,
-							request.type
+							request.type,
+							"parent:",
+							explicitParent
 						);
-						console.log(
-							"📋 Parent group determined as:",
-							currentGroup
-						);
-						console.log(
-							"🎯 Active node:",
-							treeManagerRef.current.getActiveNode()?.id
-						);
-
-						// Additional logging for group prompts
-						if (request.type === "group") {
-							const addedNode = treeManagerRef.current.getNode(
-								request.id
-							);
-							if (addedNode) {
-								console.log(
-									"👨‍👩‍👧‍👦 Group parent:",
-									addedNode.parent?.id
-								);
-								console.log("📊 Group depth:", addedNode.depth);
-							}
-						}
 					}
 				} catch (error) {
 					console.warn(
