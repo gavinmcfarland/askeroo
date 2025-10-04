@@ -99,12 +99,10 @@ export function createRuntime(ui: UI) {
 	}> = [];
 
 	let groupStack: string[] = []; // Track current group nesting
-	let groupDepths: Map<string, number> = new Map(); // Track depth of each group
 	let lastProcessedGroups: Set<string> = new Set(); // Track which groups were already processed
-	let progressiveGroups: Map<string, "progressive"> = new Map(); // Track groups with progressive flow
-	let phaseGroups: Map<string, "phased"> = new Map(); // Track groups with phased flow
-	let staticGroups: Map<string, "static"> = new Map(); // Track groups with static flow
 	let groupCount = 0; // Track total number of groups encountered for stable ID generation
+	// progressiveGroups, phaseGroups, staticGroups removed - tree stores flow type
+	// groupDepths removed - tree stores depth in node.depth
 	let isDiscoveryMode = false; // Track if we're in discovery mode for static groups
 	let discoveredFields: Map<
 		string,
@@ -138,20 +136,8 @@ export function createRuntime(ui: UI) {
 				});
 				let shouldShowGroup: boolean;
 
-				// Track progressive groups (default behavior)
-				if (groupOpts.flow === "progressive" || !groupOpts.flow) {
-					progressiveGroups.set(groupId, "progressive");
-				}
-
-				// Track phased groups
-				if (groupOpts.flow === "phased") {
-					phaseGroups.set(groupId, "phased");
-				}
-
-				// Track static groups (non-default behavior)
-				if (groupOpts.flow === "static") {
-					staticGroups.set(groupId, "static");
-				}
+				// Group flow type is stored in tree when group is added to UI
+				// No need to track separately - tree already has this info
 
 				// Simplified logic - show group if not already processed
 				shouldShowGroup = !lastProcessedGroups.has(groupId);
@@ -193,8 +179,7 @@ export function createRuntime(ui: UI) {
 					});
 				}
 
-				// Track group depth before pushing to stack
-				groupDepths.set(groupId, groupStack.length);
+				// Group depth is stored in tree - no need to track separately
 				groupStack.push(groupId);
 				return undefined as T;
 			}

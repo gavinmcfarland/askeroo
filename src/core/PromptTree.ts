@@ -714,6 +714,18 @@ export class PromptTreeManager {
 		return [...this.tree.history];
 	}
 
+	// Get the flow type of a group (for runtime queries)
+	getGroupFlow(
+		groupId: string
+	): "progressive" | "phased" | "static" | undefined {
+		return this.getNode(groupId)?.flow;
+	}
+
+	// Get the depth of a group (for runtime queries)
+	getGroupDepth(groupId: string): number | undefined {
+		return this.getNode(groupId)?.depth;
+	}
+
 	clearHistoryAfter(nodeId: string): void {
 		const index = this.tree.history.findIndex((node) => node.id === nodeId);
 		if (index >= 0) {

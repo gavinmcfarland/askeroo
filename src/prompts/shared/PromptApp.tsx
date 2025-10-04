@@ -53,9 +53,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const [currentGroup, setCurrentGroup] = useState<string | null>(null);
 	const isNavigatingBack = useRef(false);
 
-	// CompletedFields now reads directly from tree via setTreeManager()
-	// The updateCompletedFieldsState effect is no longer needed
-
 	const firstFieldIdRef = useRef<string | null>(null);
 	// Track hint text per prompt ID - prevents hint flicker during navigation
 	const hintsByPromptId = useRef<Map<string, React.ReactNode>>(new Map());
@@ -286,9 +283,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		}
 	}, []);
 
-	// Helper: Create field info object
-	// createFieldInfo and addFieldToHistory removed - tree tracks everything automatically
-
 	// Helper: Mark field as completed
 	const markFieldAsCompleted = useCallback(
 		(prompt: PromptRequest, value: any) => {
@@ -339,9 +333,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			}
 
 			markFieldAsCompleted(currentPrompt, actualValue);
-			// addFieldToHistory - removed: tree tracks all history automatically
-			// addFieldToHistory(currentPrompt, createFieldInfo(currentPrompt));
-
 			performTreeBackNavigation();
 			const r = resolverRef.current;
 			resolverRef.current = null;
@@ -387,11 +378,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					// Mark field as completed
 					markFieldAsCompleted(currentPrompt, value);
-					// addFieldToHistory - removed: tree tracks all history automatically
-					// addFieldToHistory(
-					// 	currentPrompt,
-					// 	createFieldInfo(currentPrompt)
-					// );
 				}
 				const r = resolverRef.current;
 				resolverRef.current = null;
@@ -485,12 +471,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// Completely ignore group prompts in render
 	const effectivePrompt =
 		currentPrompt?.type === "group" ? null : currentPrompt;
-
-	// LEGACY: Render completed fields - REMOVED
-	const renderCompletedFields = null;
-
-	// LEGACY: Render completed items in order - REMOVED
-	const renderCompletedItemsInOrder = null;
 
 	// Primary rendering: Tree-based recursive rendering
 
