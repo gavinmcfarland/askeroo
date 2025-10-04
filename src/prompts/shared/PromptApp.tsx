@@ -633,13 +633,17 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					: value !== undefined;
 
 			if (shouldMarkCompleted && !prompt.excludeFromCompleted) {
-				setCompletedFields((prev) => new Set(prev).add(prompt.id));
+				// Update tree directly instead of using fake setter
+				const node = treeManagerRef.current.getNode(prompt.id);
+				if (node) {
+					node.completed = true;
+				}
 				if (!completionHistoryRef.current.includes(prompt.id)) {
 					completionHistoryRef.current.push(prompt.id);
 				}
 			}
 		},
-		[setCompletedFields, completionHistoryRef]
+		[completionHistoryRef]
 	);
 
 	// Handler: Clear group and go back
