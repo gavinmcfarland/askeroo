@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Text, Box } from "ink";
 import {
 	getCompletedFields,
+	getCompletedFieldsData,
 	getCompletedFieldsState,
 	initializeCompletedFieldsStore,
 	updateCompletedFieldsState,
@@ -27,7 +28,7 @@ export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
 	}, []);
 
 	const completedFields = React.useMemo(() => {
-		const fields = getCompletedFields();
+		const fields = getCompletedFieldsData();
 		return props.maxFields ? fields.slice(0, props.maxFields) : fields;
 	}, [appState, props.maxFields]);
 

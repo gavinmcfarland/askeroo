@@ -2,6 +2,7 @@
 // Following the same pattern as TaskStore
 
 import { FieldState } from "../../types/index.js";
+import { PromptTreeManager, PromptNode } from "../../core/PromptTree.js";
 
 export interface CompletedField {
 	id: string;
@@ -56,6 +57,14 @@ let globalCompletedFieldsStore: CompletedFieldsStoreState = {
 let updateCompletedFieldsStoreCallback:
 	| ((state: CompletedFieldsStoreState) => void)
 	| null = null;
+
+// Tree manager reference (new tree-based approach)
+let treeManager: PromptTreeManager | null = null;
+
+// Set the tree manager (called from PromptApp)
+export function setTreeManager(manager: PromptTreeManager) {
+	treeManager = manager;
+}
 
 // Initialize the store with PromptApp's state updater (legacy support)
 export function initializeCompletedFieldsStore(
@@ -250,6 +259,57 @@ export function getCompletedFields(): CompletedField[] {
 	}
 
 	return fields;
+}
+
+// NEW TREE-BASED APPROACH: Get completed fields directly from tree
+export function getCompletedFieldsData(): Array<{
+	id: string;
+	label: string;
+	value: any;
+	formattedValue?: string;
+	groupLabel?: string;
+	shortLabel?: string;
+	meta?: Record<string, any>;
+}> {
+	if (!treeManager) {
+		// Fallback to legacy approach if tree manager not set yet
+		return getCompletedFields();
+	}
+
+	const completedFields: Array<any> = [];
+
+	treeManager.traverseDepthFirst((node) => {
+		if (
+			node.type === "field" &&
+			node.completed &&
+			!node.excludeFromCompleted &&
+			!node.hideAfterSubmit &&
+			node.value !== undefined
+		) {
+			const fieldProperties = node.properties || {};
+			const label =
+				fieldProperties.label ||
+				fieldProperties.message ||
+				node.label ||
+				`${node.fieldType} field`;
+			const shortLabel = fieldProperties.shortLabel;
+
+			completedFields.push({
+				id: node.id,
+				label,
+				shortLabel,
+				value: node.value,
+				formattedValue: formatValue(node.value, fieldProperties),
+				groupLabel:
+					node.parent?.type === "group"
+						? node.parent.label
+						: undefined,
+				meta: fieldProperties.meta,
+			});
+		}
+	});
+
+	return completedFields;
 }
 
 // Clear all completed fields data (for testing/reset)

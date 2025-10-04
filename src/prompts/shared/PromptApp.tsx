@@ -11,7 +11,10 @@ import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../../registry.js";
 import { PromptTreeManager, PromptNode } from "../../core/PromptTree.js";
 import { PluginWrapper } from "./PluginWrapper.js";
-import { updateCompletedFieldsState } from "../../plugins/completed-fields/CompletedFieldsStore.js";
+import {
+	updateCompletedFieldsState,
+	setTreeManager,
+} from "../../plugins/completed-fields/CompletedFieldsStore.js";
 import { PromptRequest } from "../../types/index.js";
 
 // Type declaration for debug utilities
@@ -51,6 +54,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const currentTree = useMemo(() => {
 		return treeManagerRef.current.getTree();
 	}, [treeRevision]);
+
+	// Set tree manager for CompletedFields plugin (once on mount)
+	useEffect(() => {
+		setTreeManager(treeManagerRef.current);
+	}, []);
 
 	// Get synced state from tree (tree is the single source of truth)
 	const getSyncedState = useCallback(() => {
