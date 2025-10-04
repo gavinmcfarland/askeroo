@@ -374,31 +374,6 @@ export class PromptTreeManager {
 		return null;
 	}
 
-	private resetNodeAndDescendants(node: PromptNode): void {
-		// Reset completion status but preserve visited status
-		node.completed = false;
-		node.active = false;
-		// Note: We keep visited=true to maintain navigation history
-
-		// First, collect all children to reset
-		const childrenToReset = [...node.children];
-
-		// Reset children recursively
-		childrenToReset.forEach((child) => this.resetNodeAndDescendants(child));
-
-		// Remove children from tree structure (clear future state)
-		// This ensures that when going back, future nodes are completely removed
-		node.children.forEach((child) => {
-			// Remove from node index
-			this.tree.nodeIndex.delete(child.id);
-			// Clear parent reference
-			child.parent = undefined;
-		});
-
-		// Clear children array
-		node.children = [];
-	}
-
 	private removeNodeFromTree(node: PromptNode): void {
 		// First remove all descendants recursively
 		const childrenToRemove = [...node.children];
@@ -428,215 +403,30 @@ export class PromptTreeManager {
 		}
 	}
 
-	// ========== UNIFIED NODE CLEANUP SYSTEM ==========
-	// Consolidated from 3 separate functions into a single, clear strategy-based approach
+	// ========== SIMPLIFIED NODE CLEANUP SYSTEM ==========
 
 	/**
-	 * Unified node cleanup with different strategies
-	 * @param strategy - What to clean up:
-	 *   - 'from-node': Remove nodes after a specific node (for back navigation)
-	 *   - 'after-first-visit': Remove nodes added after field's first visit (for value changes)
-	 *   - 'unreachable': Remove nodes not in active path (aggressive cleanup)
-	 * @param options - Context for cleanup
+	 * Clear future state from a node - keeps the node and everything before it in history
+	 * Used for back navigation and field value changes
 	 */
-	private cleanupNodes(
-		strategy: "from-node" | "after-first-visit" | "unreachable",
-		options: {
-			node?: PromptNode;
-			cleanupHistory?: boolean;
-			setActive?: boolean;
-		} = {}
-	): void {
-		const { node, cleanupHistory = false, setActive = false } = options;
-
+	private clearFutureStateFrom(nodeToKeep: PromptNode): void {
 		const nodesToKeep = new Set<string>(["root"]);
 
-		// Build keep set based on strategy
-		switch (strategy) {
-			case "from-node": {
-				if (!node)
-					throw new Error("Node required for 'from-node' strategy");
-				// Keep the node, its ancestors, and everything in history up to it
-				this.markPathToRoot(node, nodesToKeep);
-				this.markHistoryUpToNode(node, nodesToKeep);
-				this.markRootLevelNodesInHistory(node, nodesToKeep);
-				this.markGroupsWithValidChildren(node, nodesToKeep);
-				break;
-			}
+		// Keep the node and its ancestor path
+		this.addPathToRoot(nodeToKeep, nodesToKeep);
 
-			case "after-first-visit": {
-				if (!node)
-					throw new Error(
-						"Node required for 'after-first-visit' strategy"
-					);
-				// Similar to from-node, but uses first visit index
-				const firstVisitIndex = this.tree.history.findIndex(
-					(n) => n.id === node.id
-				);
-				if (firstVisitIndex === -1) {
-					// Fall back to from-node strategy
-					this.markPathToRoot(node, nodesToKeep);
-					this.markHistoryUpToNode(node, nodesToKeep);
-					this.markRootLevelNodesInHistory(node, nodesToKeep);
-					break;
-				}
-
-				// Keep everything up to first visit
-				const historyUpToFirstVisit = this.tree.history.slice(
-					0,
-					firstVisitIndex + 1
-				);
-				historyUpToFirstVisit.forEach((n) => {
-					this.markPathToRoot(n, nodesToKeep);
-				});
-				this.markRootLevelNodesBeforeIndex(
-					firstVisitIndex,
-					nodesToKeep
-				);
-				break;
-			}
-
-			case "unreachable": {
-				// Only keep path to active node
-				const activeNode = this.getActiveNode();
-				if (activeNode) {
-					this.markPathToRoot(activeNode, nodesToKeep);
-				}
-				break;
+		// Keep all nodes in history up to this node (and their paths)
+		const keepIndex = this.tree.history.indexOf(nodeToKeep);
+		if (keepIndex !== -1) {
+			for (let i = 0; i <= keepIndex; i++) {
+				this.addPathToRoot(this.tree.history[i], nodesToKeep);
 			}
 		}
 
-		// Remove nodes not in keep set
-		this.removeNodesExcept(nodesToKeep);
-
-		// Optional: cleanup history array
-		if (cleanupHistory && node) {
-			const keepIndex = this.tree.history.indexOf(node);
-			if (keepIndex !== -1) {
-				this.tree.history = this.tree.history.slice(0, keepIndex + 1);
-			}
-		}
-
-		// Optional: set node as active
-		if (setActive && node) {
-			const currentActive = this.getActiveNode();
-			if (currentActive) {
-				currentActive.active = false;
-			}
-			node.active = true;
-			// Add to history to make it active
-			const lastInHistory =
-				this.tree.history[this.tree.history.length - 1];
-			if (!lastInHistory || lastInHistory.id !== node.id) {
-				this.tree.history.push(node);
-			}
-		}
-	}
-
-	// ========== HELPER METHODS FOR CLEANUP ==========
-
-	/** Mark a node and all its ancestors as "should keep" */
-	private markPathToRoot(node: PromptNode, keepSet: Set<string>): void {
-		let current: PromptNode | undefined = node;
-		while (current) {
-			keepSet.add(current.id);
-			current = current.parent;
-		}
-	}
-
-	/** Mark all nodes in history up to (and including) a specific node */
-	private markHistoryUpToNode(node: PromptNode, keepSet: Set<string>): void {
-		const nodeIndex = this.tree.history.indexOf(node);
-		if (nodeIndex === -1) return;
-
-		const historySlice = this.tree.history.slice(0, nodeIndex + 1);
-		historySlice.forEach((n) => {
-			this.markPathToRoot(n, keepSet);
-		});
-	}
-
-	/** Mark root-level nodes that appear in history before the given node */
-	private markRootLevelNodesInHistory(
-		node: PromptNode,
-		keepSet: Set<string>
-	): void {
-		const nodeIndex = this.tree.history.indexOf(node);
-		if (nodeIndex === -1) return;
-
-		this.tree.root.children.forEach((rootChild) => {
-			const childIndex = this.tree.history.indexOf(rootChild);
-			if (childIndex !== -1 && childIndex <= nodeIndex) {
-				keepSet.add(rootChild.id);
-				// Keep descendants that were in history before node
-				this.traverseDepthFirst((descendant) => {
-					const descIndex = this.tree.history.indexOf(descendant);
-					if (descIndex !== -1 && descIndex <= nodeIndex) {
-						keepSet.add(descendant.id);
-					}
-				}, rootChild);
-			}
-		});
-	}
-
-	/** Mark root-level nodes that appear in history before a specific index */
-	private markRootLevelNodesBeforeIndex(
-		historyIndex: number,
-		keepSet: Set<string>
-	): void {
-		this.tree.root.children.forEach((rootChild) => {
-			const childIndex = this.tree.history.indexOf(rootChild);
-			if (childIndex !== -1 && childIndex <= historyIndex) {
-				keepSet.add(rootChild.id);
-				// Keep all descendants
-				this.traverseDepthFirst((descendant) => {
-					keepSet.add(descendant.id);
-				}, rootChild);
-			}
-		});
-	}
-
-	/** Mark group nodes that have children we're keeping */
-	private markGroupsWithValidChildren(
-		node: PromptNode,
-		keepSet: Set<string>
-	): void {
-		const nodeIndex = this.tree.history.indexOf(node);
-		if (nodeIndex === -1) return;
-
-		this.traverseDepthFirst((n) => {
-			if (n.type === "group") {
-				const shouldKeep =
-					keepSet.has(n.id) ||
-					n.children.some((child) => keepSet.has(child.id));
-
-				if (shouldKeep) {
-					keepSet.add(n.id);
-					// Keep valid children and their descendants
-					n.children.forEach((child) => {
-						if (keepSet.has(child.id)) {
-							this.traverseDepthFirst((desc) => {
-								const descIndex =
-									this.tree.history.indexOf(desc);
-								if (
-									descIndex !== -1 &&
-									descIndex <= nodeIndex
-								) {
-									keepSet.add(desc.id);
-								}
-							}, child);
-						}
-					});
-				}
-			}
-		});
-	}
-
-	/** Remove all nodes except those in the keep set */
-	private removeNodesExcept(keepSet: Set<string>): void {
+		// Remove all nodes not in the keep set
 		const nodesToRemove: PromptNode[] = [];
-
 		this.traverseDepthFirst((node) => {
-			if (node.id !== "root" && !keepSet.has(node.id)) {
+			if (node.id !== "root" && !nodesToKeep.has(node.id)) {
 				nodesToRemove.push(node);
 			}
 		});
@@ -647,37 +437,41 @@ export class PromptTreeManager {
 			.forEach((node) => this.removeNodeFromTree(node));
 	}
 
-	// ========== PUBLIC CLEANUP METHODS ==========
-
-	/** Public method to clear future state from a specific node (for back navigation) */
-	clearFutureStateFromNode(node: PromptNode): void {
-		this.cleanupNodes("from-node", { node });
-	}
-
-	/** Remove ALL nodes added after a field's first visit (for value changes) */
+	/**
+	 * Clear all nodes added after a field's first visit (for value changes)
+	 */
 	clearAllNodesAddedAfterField(field: PromptNode): void {
-		this.cleanupNodes("after-first-visit", {
-			node: field,
-			cleanupHistory: true,
-			setActive: true,
-		});
-	}
-
-	/** Clear nodes that are no longer reachable from the current flow */
-	clearUnreachableNodes(): void {
-		this.cleanupNodes("unreachable");
-	}
-
-	/** Legacy wrapper - calls the unified cleanup */
-	private clearFutureStateFrom(nodeToKeep: PromptNode): void {
-		this.cleanupNodes("from-node", { node: nodeToKeep });
-	}
-
-	/** Remove conditional groups (placeholder for future enhancement) */
-	removeInvalidConditionalGroups(fieldId: string, newValue: any): void {
-		console.log(
-			`Field ${fieldId} changed to ${newValue}, checking for conditional groups to remove...`
+		const firstVisitIndex = this.tree.history.findIndex(
+			(n) => n.id === field.id
 		);
+
+		if (firstVisitIndex === -1) {
+			// Node not in history, just clear from current state
+			this.clearFutureStateFrom(field);
+			return;
+		}
+
+		// Clear nodes and trim history to first visit
+		this.clearFutureStateFrom(field);
+		this.tree.history = this.tree.history.slice(0, firstVisitIndex + 1);
+
+		// Reactivate the field
+		const currentActive = this.getActiveNode();
+		if (currentActive && currentActive.id !== field.id) {
+			currentActive.active = false;
+		}
+		field.active = true;
+	}
+
+	// ========== HELPER METHODS FOR CLEANUP ==========
+
+	/** Add a node and all its ancestors to the keep set */
+	private addPathToRoot(node: PromptNode, keepSet: Set<string>): void {
+		let current: PromptNode | undefined = node;
+		while (current) {
+			keepSet.add(current.id);
+			current = current.parent;
+		}
 	}
 
 	// Group-specific operations
