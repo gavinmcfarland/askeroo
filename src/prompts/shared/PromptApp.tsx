@@ -11,10 +11,7 @@ import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../../registry.js";
 import { PromptTreeManager, PromptNode } from "../../core/PromptTree.js";
 import { PluginWrapper } from "./PluginWrapper.js";
-import {
-	updateCompletedFieldsState,
-	setTreeManager,
-} from "../../plugins/completed-fields/CompletedFieldsStore.js";
+import { setTreeManager } from "../../plugins/completed-fields/CompletedFieldsStore.js";
 import { PromptRequest } from "../../types/index.js";
 
 // Type declaration for debug utilities
@@ -59,14 +56,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	useEffect(() => {
 		setTreeManager(treeManagerRef.current);
 	}, []);
-
-	// Get synced state from tree (tree is the single source of truth)
-	const getSyncedState = useCallback(() => {
-		return treeManagerRef.current.syncToLegacyState();
-	}, [treeRevision]); // Re-compute when tree changes
-
-	// Access state through memoized getter
-	const syncedState = useMemo(() => getSyncedState(), [getSyncedState]);
 
 	// Helper function to trigger re-render when tree state changes
 	// Note: Tree manages state directly; these setters only trigger UI updates
@@ -138,18 +127,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	);
 	const isNavigatingBack = useRef(false);
 
-	// State is now managed directly by the tree structure
-	// Update CompletedFields plugin with current state
-	useEffect(() => {
-		const state = getSyncedState();
-		updateCompletedFieldsState({
-			fieldState: state.fieldState,
-			promptOrderState: {
-				rootFieldHistory: state.promptOrderState.rootFieldHistory,
-				groupFieldHistory: state.promptOrderState.groupFieldHistory,
-			},
-		});
-	}, [getSyncedState]);
+	// CompletedFields now reads directly from tree via setTreeManager()
+	// The updateCompletedFieldsState effect is no longer needed
 
 	const firstFieldIdRef = useRef<string | null>(null);
 	const staticGroupsRef = useRef<Set<string>>(new Set());
@@ -188,18 +167,19 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				// Handle flow completion first
 				if (request.type === "completeFlow") {
 					// Handle flow completion - mark all fields as completed
-					const state = getSyncedState();
-					setCompletedFields((prev) => {
-						const newCompleted = new Set(prev);
-						// Add all field values as completed
-						Object.keys(state.fieldState.values).forEach(
-							(fieldId) => {
-								newCompleted.add(fieldId);
-								completionHistoryRef.current.push(fieldId);
-							}
-						);
-						return newCompleted;
+					treeManagerRef.current.traverseDepthFirst((node) => {
+						if (
+							node.type === "field" &&
+							node.value !== undefined &&
+							!node.excludeFromCompleted
+						) {
+							node.completed = true;
+							completionHistoryRef.current.push(node.id);
+						}
 					});
+
+					// Trigger re-render
+					setTreeRevision((prev) => prev + 1);
 
 					// Clear the current prompt so the active field transitions to completed state
 					setCurrentPrompt(null);
@@ -566,13 +546,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const addFieldToHistory = useCallback(
 		(prompt: PromptRequest, fieldInfo: FieldInfo) => {
 			if (prompt.groupName) {
-				const state = getSyncedState();
-				const isPhaseGroup = state.groupState.phased.has(
+				const groupNode = treeManagerRef.current.getNode(
 					prompt.groupName
 				);
-				const isStaticGroup = state.groupState.static.has(
-					prompt.groupName
-				);
+				const isPhaseGroup = groupNode?.flow === "phased";
+				const isStaticGroup = groupNode?.flow === "static";
 
 				// Add to static group fields
 				if (isStaticGroup) {
@@ -635,7 +613,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			}
 		},
 		[
-			getSyncedState,
 			setStaticGroupFields,
 			setStaticGroupRevision,
 			setGroupFieldHistory,
@@ -669,53 +646,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const handleClearGroupAndBack = useCallback(() => {
 		if (!currentPrompt?.groupName) return;
 
-		const state = getSyncedState();
-		const groupName = currentPrompt.groupName;
-		const clearGroupFields = (entries: any) =>
-			state.promptOrderState.root.filter(
-				(entry: any) =>
-					entry.id === entries && entry.groupName === groupName
-			);
+		// Clear group and navigate back through tree manager
+		treeManagerRef.current.clearGroupAndGoBack(currentPrompt.id);
+		setTreeRevision((prev) => prev + 1);
 
-		// Clear all group field states
-		setFieldValues((prev) => {
-			const newValues = { ...prev };
-			Object.keys(newValues).forEach((fieldId) => {
-				if (clearGroupFields(fieldId).length > 0) {
-					delete newValues[fieldId];
-				}
-			});
-			return newValues;
-		});
-
-		setCompletedFields((prev) => {
-			const newCompleted = new Set(prev);
-			clearGroupFields([...newCompleted]).forEach((entry: any) =>
-				newCompleted.delete(entry.id)
-			);
-			return newCompleted;
-		});
-
-		setVisitedPrompts((prev) => {
-			const newVisited = new Set(prev);
-			clearGroupFields([...newVisited]).forEach((entry: any) =>
-				newVisited.delete(entry.id)
-			);
-			return newVisited;
-		});
-
-		performTreeBackNavigation();
 		const r = resolverRef.current;
 		resolverRef.current = null;
 		r?.({ __back: true });
-	}, [
-		currentPrompt,
-		getSyncedState,
-		setFieldValues,
-		setCompletedFields,
-		setVisitedPrompts,
-		performTreeBackNavigation,
-	]);
+	}, [currentPrompt]);
 
 	// Handler: Preserve value and go back
 	const handlePreserveAndBack = useCallback(
@@ -837,8 +775,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// Detect group completion when transitioning between groups
 	useEffect(() => {
 		const prevGroup = previousGroupRef.current;
-		const state = getSyncedState();
-		const groupOrder = state.groupState.order;
+		const groupNodes = treeManagerRef.current.getNodesByType("group");
+		const groupOrder = groupNodes.map((g) => g.id);
 
 		// Only mark a group as completed when moving to a LATER group in the sequence
 		// This prevents marking groups as completed when navigating backwards
@@ -880,7 +818,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		}
 
 		previousGroupRef.current = currentGroup;
-	}, [currentGroup, getSyncedState]);
+	}, [currentGroup]);
 
 	// ⬇️ Auto-resolve group prompts without touching resolver state
 	useEffect(() => {

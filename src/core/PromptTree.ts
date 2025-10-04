@@ -1,11 +1,6 @@
 // Unified prompt tree structure for managing prompt state and navigation
 
-import {
-	PromptRequest,
-	FieldState,
-	GroupState,
-	PromptOrderState,
-} from "../types/index.js";
+import { PromptRequest } from "../types/index.js";
 
 export interface PromptNode {
 	id: string;
@@ -289,6 +284,35 @@ export class PromptTreeManager {
 		// For now, rely on the application logic to not add conditional groups when conditions aren't met
 
 		return { success: true, node: previousNode };
+	}
+
+	/**
+	 * Clear all fields in a group and go back
+	 * Used when user wants to clear a group and navigate back
+	 */
+	clearGroupAndGoBack(fieldId: string): NavigationResult {
+		const fieldNode = this.getNode(fieldId);
+		if (!fieldNode || fieldNode.type !== "field") {
+			return { success: false, reason: "Field not found" };
+		}
+
+		const groupNode = fieldNode.parent;
+		if (
+			!groupNode ||
+			groupNode.type !== "group" ||
+			groupNode.id === "root"
+		) {
+			return { success: false, reason: "Field is not in a group" };
+		}
+
+		// Remove all children from the group
+		const childrenToRemove = [...groupNode.children];
+		childrenToRemove.forEach((child) => {
+			this.removeNodeFromTree(child);
+		});
+
+		// Navigate back
+		return this.goBack();
 	}
 
 	canGoBack(): boolean {
@@ -843,148 +867,6 @@ export class PromptTreeManager {
 	// ========== State Synchronization ==========
 	// Sync tree to legacy state format (for plugins that still need it)
 
-	syncToLegacyState(): {
-		fieldState: FieldState;
-		groupState: GroupState;
-		promptOrderState: PromptOrderState;
-	} {
-		const fieldState: FieldState = {
-			values: {},
-			visited: new Set(),
-			completed: new Set(),
-			properties: new Map(),
-			messages: {},
-			groupNames: {},
-			groupIds: {},
-		};
-
-		const groupState: GroupState = {
-			progressive: new Set(),
-			phased: new Set(),
-			static: new Set(),
-			completed: new Set(),
-			order: [],
-			arrowNavigation: new Set(),
-			depths: new Map(),
-		};
-
-		const promptOrderState: PromptOrderState = {
-			root: [],
-			rootFieldHistory: [],
-			staticGroupFields: new Map(),
-			groupFieldHistory: new Map(),
-		};
-
-		this.traverseDepthFirst((node) => {
-			if (node.id === "root") return;
-
-			if (node.type === "field") {
-				if (node.value !== undefined) {
-					fieldState.values[node.id] = node.value;
-				}
-
-				if (node.visited) {
-					fieldState.visited.add(node.id);
-				}
-
-				if (node.completed) {
-					fieldState.completed.add(node.id);
-				}
-
-				fieldState.properties.set(node.id, node.properties);
-				fieldState.messages[node.id] =
-					node.label || `${node.fieldType} field`;
-
-				if (node.groupName) {
-					fieldState.groupIds[node.id] = node.groupName;
-					const groupNode = this.getNode(node.groupName);
-					if (groupNode?.label) {
-						fieldState.groupNames[node.id] = groupNode.label;
-					}
-				}
-
-				if (node.parent?.id === "root") {
-					promptOrderState.root.push({
-						id: node.id,
-						type: "field",
-						groupName: node.groupName,
-					});
-				}
-
-				const fieldInfo = {
-					id: node.id,
-					label: node.label || `${node.fieldType} field`,
-					type: node.fieldType || "unknown",
-					hideAfterSubmit: node.hideAfterSubmit,
-				};
-
-				if (
-					node.parent?.type === "group" &&
-					node.parent.id !== "root"
-				) {
-					const groupId = node.parent.id;
-					const existing =
-						promptOrderState.groupFieldHistory.get(groupId) || [];
-					if (!existing.some((f: any) => f.id === node.id)) {
-						promptOrderState.groupFieldHistory.set(groupId, [
-							...existing,
-							fieldInfo,
-						]);
-					}
-
-					if (node.parent.flow === "static") {
-						const staticFields =
-							promptOrderState.staticGroupFields.get(groupId) ||
-							[];
-						if (!staticFields.some((f: any) => f.id === node.id)) {
-							promptOrderState.staticGroupFields.set(groupId, [
-								...staticFields,
-								fieldInfo,
-							]);
-						}
-					}
-				} else {
-					if (
-						!promptOrderState.rootFieldHistory.some(
-							(f: any) => f.id === node.id
-						)
-					) {
-						promptOrderState.rootFieldHistory.push(fieldInfo);
-					}
-				}
-			} else if (node.type === "group") {
-				if (node.flow === "progressive") {
-					groupState.progressive.add(node.id);
-				} else if (node.flow === "phased") {
-					groupState.phased.add(node.id);
-				} else if (node.flow === "static") {
-					groupState.static.add(node.id);
-				}
-
-				if (node.completed) {
-					groupState.completed.add(node.id);
-				}
-
-				if (!groupState.order.includes(node.id)) {
-					groupState.order.push(node.id);
-				}
-
-				if (node.enableArrowNavigation) {
-					groupState.arrowNavigation.add(node.id);
-				}
-
-				groupState.depths.set(node.id, node.depth);
-
-				if (node.parent?.id === "root") {
-					promptOrderState.root.push({
-						id: node.id,
-						type: "group",
-						groupName: node.id,
-					});
-				}
-			}
-		});
-
-		return { fieldState, groupState, promptOrderState };
-	}
+	// syncToLegacyState() has been removed - use direct tree access instead
+	// Use treeManager.traverseDepthFirst() and node properties to access state
 }

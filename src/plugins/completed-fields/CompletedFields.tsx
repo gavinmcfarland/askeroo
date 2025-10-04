@@ -1,13 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Text, Box } from "ink";
-import {
-	getCompletedFields,
-	getCompletedFieldsData,
-	getCompletedFieldsState,
-	initializeCompletedFieldsStore,
-	updateCompletedFieldsState,
-} from "./CompletedFieldsStore.js";
-// Removed StateRegistry dependency - plugin now gets state directly from tree
+import { getCompletedFieldsData } from "./CompletedFieldsStore.js";
 
 export interface CompletedFieldsOptions {
 	maxFields?: number;
@@ -18,19 +11,16 @@ export interface CompletedFieldsOptions {
 
 export type { CompletedField } from "./CompletedFieldsStore.js";
 
-// Plugin initialization - state is now managed directly by the tree structure
+// Plugin reads directly from tree via getCompletedFieldsData()
+// Component re-renders when parent (PromptApp) re-renders due to treeRevision changes
 
 export function CompletedFieldsDisplay(props: CompletedFieldsOptions = {}) {
-	const [appState, setAppState] = useState(getCompletedFieldsState);
-
-	useEffect(() => {
-		initializeCompletedFieldsStore(setAppState);
-	}, []);
-
-	const completedFields = React.useMemo(() => {
-		const fields = getCompletedFieldsData();
-		return props.maxFields ? fields.slice(0, props.maxFields) : fields;
-	}, [appState, props.maxFields]);
+	// Read directly from tree on each render - simple and reactive
+	// Gets fresh data from tree each time component renders (when treeRevision changes in parent)
+	const allFields = getCompletedFieldsData();
+	const completedFields = props.maxFields
+		? allFields.slice(0, props.maxFields)
+		: allFields;
 
 	return (
 		<Box flexDirection="column">
