@@ -1,7 +1,6 @@
 import { debugLogger } from "./utils/logging.js";
 import { globalRegistry, setCurrentRuntime } from "./registry.js";
 import {
-	Answers,
 	PromptKind,
 	PromptOpts,
 	GroupMeta,
@@ -11,6 +10,7 @@ import {
 	Engine,
 } from "./types/index.js";
 import { IdGenerator } from "./core/IdGenerator.js";
+import { RuntimeState } from "./core/RuntimeState.js";
 
 const BACK: BackToken = { __back: true };
 
@@ -23,17 +23,8 @@ export function createRuntime(ui: UI) {
 	// ID generator for stable, deterministic IDs
 	const idGenerator = new IdGenerator();
 
-	// Core runtime state
-	const answers: Answers = {}; // User answers for each prompt
-	let interactivePrompts: string[] = []; // List of interactive prompt IDs in current flow
-	let currentStep = 0; // Current step in the flow
-	let asking = false; // Whether we're currently in an ask() call
-	let isReplaying = false; // Whether we're replaying previous steps
-
-	// Runtime UI interaction tracking (minimal state)
-	// Note: groupStack is necessary during flow execution, before nodes are added to tree
-	let groupStack: string[] = []; // Track current group nesting during flow execution
-	let lastProcessedGroups: Set<string> = new Set(); // Track which groups were already processed
+	// Runtime state manager
+	const state = new RuntimeState();
 
 	// Discovery mode for static groups (pre-scans fields before rendering)
 	let isDiscoveryMode = false; // Track if we're in discovery mode for static groups
@@ -53,9 +44,9 @@ export function createRuntime(ui: UI) {
 			debugLogger.log("ENGINE_STEP", {
 				kind,
 				opts,
-				currentStep,
-				groupStack: [...groupStack],
-				isReplaying,
+				currentStep: state.getCurrentStep(),
+				groupStack: state.getGroupStack(),
+				isReplaying: state.isReplaying(),
 			});
 
 			if (kind === "group") {
@@ -65,7 +56,7 @@ export function createRuntime(ui: UI) {
 				const groupCount = idGenerator.incrementGroupCount();
 
 				const groupId = idGenerator.generateGroupId({
-					groupStack,
+					groupStack: state.getGroupStack(),
 					groupCount,
 					flowType: groupOpts.flow,
 					customId: groupOpts.id,
@@ -76,7 +67,7 @@ export function createRuntime(ui: UI) {
 				// No need to track separately - tree already has this info
 
 				// Simplified logic - show group if not already processed
-				shouldShowGroup = !lastProcessedGroups.has(groupId);
+				shouldShowGroup = !state.isGroupProcessed(groupId);
 
 				// Only call askFn (which creates UI prompts) if we should show the group
 				if (shouldShowGroup) {
@@ -90,8 +81,8 @@ export function createRuntime(ui: UI) {
 						groupOpts.flow === "static"
 							? discoveredFields.get(groupId)
 							: undefined;
-					const groupDepth = groupStack.length;
-					const currentGroup = groupStack[groupStack.length - 1]; // Parent group for nesting
+					const groupDepth = state.getGroupDepth();
+					const currentGroup = state.getCurrentGroup(); // Parent group for nesting
 					await extendedUI.showGroup?.(
 						groupOpts.label,
 						groupOpts.flow || "progressive",
@@ -101,7 +92,7 @@ export function createRuntime(ui: UI) {
 						groupDepth,
 						currentGroup
 					);
-					lastProcessedGroups.add(groupId);
+					state.markGroupAsProcessed(groupId);
 					// Call askFn to create the interactive prompt
 					await askFn(groupId);
 				} else {
@@ -109,17 +100,17 @@ export function createRuntime(ui: UI) {
 						groupId,
 						groupLabel: groupOpts.label,
 						shouldShowGroup,
-						isReplaying,
+						isReplaying: state.isReplaying(),
 					});
 				}
 
 				// Group depth is stored in tree - no need to track separately
-				groupStack.push(groupId);
+				state.pushGroup(groupId);
 				return undefined as T;
 			}
 
 			// This is an interactive prompt
-			const stepIndex = interactivePrompts.length;
+			const stepIndex = state.getCurrentPromptIndex();
 
 			// Generate stable, deterministic ID
 			const customId = "id" in opts ? opts.id : undefined;
@@ -131,14 +122,14 @@ export function createRuntime(ui: UI) {
 			const id = idGenerator.generateFieldId({
 				kind,
 				message,
-				groupStack,
+				groupStack: state.getGroupStack(),
 				stepIndex,
 				customId,
 			});
 
 			// In discovery mode, just track the field and return current value or placeholder
 			if (isDiscoveryMode) {
-				const currentGroupId = groupStack[groupStack.length - 1];
+				const currentGroupId = state.getCurrentGroup();
 				debugLogger.log("DISCOVERY_FIELD", {
 					currentGroupId,
 					id,
@@ -162,8 +153,8 @@ export function createRuntime(ui: UI) {
 				}
 
 				// Use current field value if available, otherwise use smart placeholder
-				if (id in answers) {
-					const currentValue = answers[id];
+				if (state.hasAnswer(id)) {
+					const currentValue = state.getAnswer(id);
 					debugLogger.log("DISCOVERY_CURRENT_VALUE", {
 						id,
 						currentValue,
@@ -182,21 +173,21 @@ export function createRuntime(ui: UI) {
 				return placeholderValue as T;
 			}
 
-			interactivePrompts.push(id);
+			state.addPrompt(id);
 
 			// If we already have an answer and we're replaying past this step, use it
-			if (stepIndex < currentStep && id in answers) {
+			if (stepIndex < state.getCurrentStep() && state.hasAnswer(id)) {
 				debugLogger.log("PROMPT_REPLAY", {
 					id,
 					stepIndex,
-					currentStep,
-					answer: answers[id],
+					currentStep: state.getCurrentStep(),
+					answer: state.getAnswer(id),
 				});
-				return answers[id] as T;
+				return state.getAnswer(id) as T;
 			}
 
 			// If this is the current step to ask, prompt the user
-			if (stepIndex === currentStep) {
+			if (stepIndex === state.getCurrentStep()) {
 				debugLogger.log("PROMPT_ASK", {
 					id,
 					stepIndex,
@@ -208,15 +199,15 @@ export function createRuntime(ui: UI) {
 					throw BACK;
 				}
 				debugLogger.log("PROMPT_ANSWER", { id, stepIndex, result });
-				answers[id] = result;
-				currentStep += 1;
+				state.addAnswer(id, result);
+				state.incrementStep();
 
 				// Check if this was the last field and notify UI immediately
-				if (currentStep >= interactivePrompts.length) {
+				if (state.getCurrentStep() >= state.getPromptCount()) {
 					debugLogger.log("LAST_FIELD_COMPLETE", {
 						id,
 						stepIndex,
-						totalSteps: interactivePrompts.length,
+						totalSteps: state.getPromptCount(),
 					});
 					// Notify UI that the flow is complete so the last field can be marked as completed immediately
 					extendedUI.completeFlow?.();
@@ -226,20 +217,20 @@ export function createRuntime(ui: UI) {
 			}
 
 			// If we have an answer for this step, use it
-			if (id in answers) {
+			if (state.hasAnswer(id)) {
 				debugLogger.log("PROMPT_CACHED", {
 					id,
 					stepIndex,
-					answer: answers[id],
+					answer: state.getAnswer(id),
 				});
-				return answers[id] as T;
+				return state.getAnswer(id) as T;
 			}
 
 			// This shouldn't happen in normal flow, but handle it defensively
 			const result = await askFn(id);
 			if (isBack(result)) throw BACK;
-			answers[id] = result;
-			currentStep = stepIndex + 1;
+			state.addAnswer(id, result);
+			state.setStep(stepIndex + 1);
 			return result as T;
 		},
 	};
@@ -257,7 +248,7 @@ export function createRuntime(ui: UI) {
 		// Pre-generate the group ID that engine.step will use
 		const nextGroupCount = idGenerator.getGroupCount() + 1;
 		const discoveryGroupId = idGenerator.generateGroupId({
-			groupStack,
+			groupStack: state.getGroupStack(),
 			groupCount: nextGroupCount,
 			flowType: opts.flow,
 			customId: (opts as any).id,
@@ -266,11 +257,11 @@ export function createRuntime(ui: UI) {
 		isDiscoveryMode = true;
 		debugLogger.log("DISCOVERY_START", {
 			groupId: discoveryGroupId,
-			groupStack: [...groupStack],
+			groupStack: state.getGroupStack(),
 		});
 
 		// Push group to stack temporarily for discovery
-		groupStack.push(discoveryGroupId);
+		state.pushGroup(discoveryGroupId);
 
 		try {
 			// Run discovery once to find all fields
@@ -283,7 +274,7 @@ export function createRuntime(ui: UI) {
 			// Ignore errors in discovery mode
 		} finally {
 			// Remove from stack after discovery
-			groupStack.pop();
+			state.popGroup();
 		}
 
 		isDiscoveryMode = false;
@@ -299,7 +290,8 @@ export function createRuntime(ui: UI) {
 		body: () => Promise<any>,
 		opts?: GroupOpts
 	) {
-		if (!asking) throw new Error("group() must be called inside ask()");
+		if (!state.isAsking())
+			throw new Error("group() must be called inside ask()");
 
 		// Combine meta and opts for the engine step
 		const combinedOpts = { ...meta, ...(opts || {}) };
@@ -308,7 +300,7 @@ export function createRuntime(ui: UI) {
 		if (opts?.flow === "static") {
 			const nextGroupCount = idGenerator.getGroupCount() + 1;
 			const groupId = idGenerator.generateGroupId({
-				groupStack,
+				groupStack: state.getGroupStack(),
 				groupCount: nextGroupCount,
 				flowType: combinedOpts.flow,
 				customId: combinedOpts.id,
@@ -326,7 +318,7 @@ export function createRuntime(ui: UI) {
 			return await body();
 		} finally {
 			// Pop the group from the stack when the group body completes
-			groupStack.pop();
+			state.popGroup();
 			extendedUI.clearGroup?.();
 		}
 	}
@@ -340,37 +332,33 @@ export function createRuntime(ui: UI) {
 		) => Promise<T>
 	): Promise<T> {
 		debugLogger.log("ASK_START", {
-			currentStep,
-			answersCount: Object.keys(answers).length,
+			currentStep: state.getCurrentStep(),
+			answersCount: state.getAnswerCount(),
 		});
 
 		while (true) {
 			// Simplified navigation - always do full replay for consistency
-			isReplaying = currentStep > 0;
-			interactivePrompts = [];
-			groupStack = [];
+			state.resetForReplay();
 			idGenerator.reset();
-			lastProcessedGroups.clear();
 
 			try {
-				asking = true;
+				state.setAsking(true);
 				debugLogger.log("FLOW_START", {
-					isReplaying,
-					currentStep,
+					isReplaying: state.isReplaying(),
+					currentStep: state.getCurrentStep(),
 				});
 				const result = await flow({
 					group,
 					BACK,
 					...pluginPrompts,
 				});
-				asking = false;
-				isReplaying = false; // Always clear replay mode after flow completes
+				state.setAsking(false);
 
 				// If we've asked all interactive prompts in this path, we're done
-				if (currentStep >= interactivePrompts.length) {
+				if (state.getCurrentStep() >= state.getPromptCount()) {
 					debugLogger.log("FLOW_COMPLETE", {
 						result,
-						totalSteps: interactivePrompts.length,
+						totalSteps: state.getPromptCount(),
 					});
 
 					// Notify UI that the flow is complete so all fields can be marked as completed
@@ -383,31 +371,23 @@ export function createRuntime(ui: UI) {
 					return result;
 				}
 			} catch (e) {
-				asking = false;
+				state.setAsking(false);
 				if (e === BACK) {
 					debugLogger.log("NAVIGATION_BACK", {
-						currentStep,
-						totalSteps: interactivePrompts.length,
+						currentStep: state.getCurrentStep(),
+						totalSteps: state.getPromptCount(),
 					});
 					// Go back one step
-					if (currentStep > 0) {
-						currentStep -= 1;
+					if (state.getCurrentStep() > 0) {
+						state.decrementStep();
 
-						// Simplified: Remove answers from prompts after the current step
-						// The next replay will rebuild the correct state
-						const currentPrompts = new Set(
-							interactivePrompts.slice(0, currentStep)
-						);
-						const answerKeys = Object.keys(answers);
-						for (const key of answerKeys) {
-							if (!currentPrompts.has(key)) {
-								delete answers[key];
-								debugLogger.log("ANSWER_REMOVED", {
-									promptId: key,
-									reason: "back_navigation",
-								});
-							}
-						}
+						// Clear future answers - will be rebuilt on next replay
+						state.clearFutureAnswers();
+
+						debugLogger.log("BACK_NAVIGATION_STATE", {
+							newStep: state.getCurrentStep(),
+							remainingAnswers: state.getAnswerCount(),
+						});
 
 						// Note: Group state will be rebuilt on next replay
 						// lastProcessedGroups is cleared at the start of each replay cycle
@@ -420,13 +400,7 @@ export function createRuntime(ui: UI) {
 			}
 
 			// Clean up answers for prompts that were not reached in this replay
-			const reachablePrompts = new Set(interactivePrompts);
-			const answerKeys = Object.keys(answers);
-			for (const key of answerKeys) {
-				if (!reachablePrompts.has(key)) {
-					delete answers[key];
-				}
-			}
+			state.clearUnreachableAnswers();
 		}
 	}
 
@@ -434,10 +408,10 @@ export function createRuntime(ui: UI) {
 	const pluginPrompts: Record<string, any> = {};
 	for (const plugin of globalRegistry.getAll()) {
 		pluginPrompts[plugin.type] = async function (opts: any): Promise<any> {
-			if (!asking)
+			if (!state.isAsking())
 				throw new Error(`${plugin.type}() must be called inside ask()`);
 			return engine.step(plugin.type, opts, async (id) => {
-				const currentGroup = groupStack[groupStack.length - 1];
+				const currentGroup = state.getCurrentGroup();
 				// Get the processed options from the plugin
 				const processedOpts = plugin.prompt(opts, { currentGroup }, id);
 				// Call the appropriate UI method based on plugin type
@@ -457,14 +431,14 @@ export function createRuntime(ui: UI) {
 			discoveredFields.delete(groupId);
 
 			isDiscoveryMode = true;
-			groupStack.push(groupId);
+			state.pushGroup(groupId);
 
 			try {
 				await body();
 			} catch (e) {
 				debugLogger.log("REDISCOVERY_ERROR", { groupId, error: e });
 			} finally {
-				groupStack.pop();
+				state.popGroup();
 				isDiscoveryMode = false;
 			}
 
