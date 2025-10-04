@@ -40,9 +40,8 @@ export interface PromptNode {
 
 export interface PromptTree {
 	root: PromptNode;
-	activeNode: PromptNode | null;
 	nodeIndex: Map<string, PromptNode>; // For O(1) lookups
-	history: PromptNode[]; // Navigation history stack
+	history: PromptNode[]; // Navigation history stack (last item = active node)
 }
 
 export type NavigationDirection = "back" | "forward" | "next";
@@ -71,7 +70,6 @@ export class PromptTreeManager {
 
 		this.tree = {
 			root: rootNode,
-			activeNode: null,
 			nodeIndex: new Map([["root", rootNode]]),
 			history: [],
 		};
@@ -83,7 +81,11 @@ export class PromptTreeManager {
 	}
 
 	getActiveNode(): PromptNode | null {
-		return this.tree.activeNode;
+		// Active node is always the last item in history
+		// This eliminates the need for a separate activeNode pointer
+		return this.tree.history.length > 0
+			? this.tree.history[this.tree.history.length - 1]
+			: null;
 	}
 
 	getNode(id: string): PromptNode | undefined {
@@ -206,13 +208,14 @@ export class PromptTreeManager {
 		}
 
 		// Activate previous node first so cleanup methods know which node to preserve
-		if (this.tree.activeNode) {
-			this.tree.activeNode.active = false;
+		const currentActive = this.getActiveNode();
+		if (currentActive) {
+			currentActive.active = false;
 		}
 
 		previousNode.active = true;
 		previousNode.completed = false; // Reset completed state when going back to this node
-		this.tree.activeNode = previousNode;
+		// Note: previousNode is already the last item in history after pop()
 
 		// Clear future state: Remove all nodes that were added after the previous node
 		this.clearFutureStateFrom(previousNode);
@@ -239,7 +242,7 @@ export class PromptTreeManager {
 
 	/** Check if navigating to this node is forward navigation */
 	private isForwardNavigation(node: PromptNode): boolean {
-		const active = this.tree.activeNode;
+		const active = this.getActiveNode();
 		if (!active) return true; // No active node = treat as forward
 
 		// Same parent, check sibling order
@@ -274,20 +277,21 @@ export class PromptTreeManager {
 	/** Activate a node (handles deactivation and history tracking) */
 	private activateNode(node: PromptNode): void {
 		// Deactivate current active node
-		if (this.tree.activeNode) {
-			this.tree.activeNode.active = false;
+		const currentActive = this.getActiveNode();
+		if (currentActive) {
+			currentActive.active = false;
 		}
 
 		// Activate new node
 		node.active = true;
 		node.visited = true;
-		this.tree.activeNode = node;
 
 		// Add to history if not already the last item
 		const lastInHistory = this.tree.history[this.tree.history.length - 1];
 		if (!lastInHistory || lastInHistory.id !== node.id) {
 			this.tree.history.push(node);
 		}
+		// Note: activeNode is now implicitly the last item in history
 	}
 
 	/**
@@ -322,13 +326,13 @@ export class PromptTreeManager {
 	canGoBack(): boolean {
 		if (this.tree.history.length <= 1) return false;
 
-		const currentNode = this.tree.activeNode;
+		const currentNode = this.getActiveNode();
 		return currentNode?.allowBack !== false;
 	}
 
 	// Find next active node in tree traversal order
 	findNextActiveNode(fromNode?: PromptNode): PromptNode | null {
-		const startNode = fromNode || this.tree.activeNode;
+		const startNode = fromNode || this.getActiveNode();
 		if (!startNode) return null;
 
 		// For group nodes, go to first child
@@ -417,9 +421,10 @@ export class PromptTreeManager {
 		// Clear children array
 		node.children = [];
 
-		// If this was the active node, clear the reference
-		if (this.tree.activeNode === node) {
-			this.tree.activeNode = null;
+		// If this was the active node, remove from history
+		const activeNode = this.getActiveNode();
+		if (activeNode === node) {
+			this.tree.history.pop();
 		}
 	}
 
@@ -493,8 +498,9 @@ export class PromptTreeManager {
 
 			case "unreachable": {
 				// Only keep path to active node
-				if (this.tree.activeNode) {
-					this.markPathToRoot(this.tree.activeNode, nodesToKeep);
+				const activeNode = this.getActiveNode();
+				if (activeNode) {
+					this.markPathToRoot(activeNode, nodesToKeep);
 				}
 				break;
 			}
@@ -513,11 +519,17 @@ export class PromptTreeManager {
 
 		// Optional: set node as active
 		if (setActive && node) {
-			if (this.tree.activeNode) {
-				this.tree.activeNode.active = false;
+			const currentActive = this.getActiveNode();
+			if (currentActive) {
+				currentActive.active = false;
 			}
 			node.active = true;
-			this.tree.activeNode = node;
+			// Add to history to make it active
+			const lastInHistory =
+				this.tree.history[this.tree.history.length - 1];
+			if (!lastInHistory || lastInHistory.id !== node.id) {
+				this.tree.history.push(node);
+			}
 		}
 	}
 
@@ -854,50 +866,65 @@ export class PromptTreeManager {
 		return fieldNode;
 	}
 
+	/**
+	 * Find parent group by depth (legacy method - needed for depth-based API)
+	 * NOTE: This is complex because it infers parent from depth rather than explicit context.
+	 * Future improvement: Pass explicit parent ID from runtime (which knows groupStack).
+	 */
 	private findParentGroupIdByDepth(requestDepth: number): string | undefined {
 		if (requestDepth <= 0) return undefined;
 
 		const parentDepth = requestDepth - 1;
-		const activeNode = this.getActiveNode();
 
+		// Strategy 1: Search from active node upwards for group at parent depth
+		const activeNode = this.getActiveNode();
 		if (activeNode) {
-			let current: PromptNode | undefined = activeNode;
-			while (current) {
-				if (current.type === "group" && current.depth === parentDepth) {
-					return current.id;
-				}
-				const parentGroup = this.findParentGroup(current);
-				if (parentGroup && parentGroup.depth === parentDepth) {
-					return parentGroup.id;
-				}
-				current = current.parent;
-			}
+			const groupFromActive = this.findGroupAtDepth(
+				activeNode,
+				parentDepth
+			);
+			if (groupFromActive) return groupFromActive.id;
 		}
 
+		// Strategy 2: Find all groups at parent depth
 		const groups = this.getNodesByType("group");
 		const potentialParents = groups.filter((g) => g.depth === parentDepth);
 
-		if (potentialParents.length === 1) {
-			return potentialParents[0].id;
-		} else if (potentialParents.length > 1) {
-			const history = this.getNavigationPath();
-			for (let i = history.length - 1; i >= 0; i--) {
-				const historyNode = history[i];
-				if (
-					historyNode.type === "group" &&
-					historyNode.depth === parentDepth
-				) {
-					return historyNode.id;
-				}
-				const parentGroup = this.findParentGroup(historyNode);
-				if (parentGroup && parentGroup.depth === parentDepth) {
-					return parentGroup.id;
-				}
+		if (potentialParents.length === 0) return "root";
+		if (potentialParents.length === 1) return potentialParents[0].id;
+
+		// Strategy 3: If multiple candidates, use most recent from history
+		const history = this.getNavigationPath();
+		for (let i = history.length - 1; i >= 0; i--) {
+			const groupFromHistory = this.findGroupAtDepth(
+				history[i],
+				parentDepth
+			);
+			if (
+				groupFromHistory &&
+				potentialParents.includes(groupFromHistory)
+			) {
+				return groupFromHistory.id;
 			}
-			return potentialParents[potentialParents.length - 1].id;
 		}
 
-		return "root";
+		// Fallback: use last potential parent
+		return potentialParents[potentialParents.length - 1].id;
+	}
+
+	/** Helper: Find a group at a specific depth by traversing upwards from a node */
+	private findGroupAtDepth(
+		fromNode: PromptNode,
+		targetDepth: number
+	): PromptNode | null {
+		let current: PromptNode | undefined = fromNode;
+		while (current) {
+			if (current.type === "group" && current.depth === targetDepth) {
+				return current;
+			}
+			current = current.parent;
+		}
+		return null;
 	}
 
 	getCurrentGroupId(): string | null {
