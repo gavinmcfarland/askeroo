@@ -64,7 +64,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// The updateCompletedFieldsState effect is no longer needed
 
 	const firstFieldIdRef = useRef<string | null>(null);
-	const staticGroupsRef = useRef<Set<string>>(new Set());
 	// Track hint text per prompt ID - prevents hint flicker during navigation
 	const hintsByPromptId = useRef<Map<string, React.ReactNode>>(new Map());
 
@@ -264,10 +263,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						return prev;
 					});
 
-					// Track static groups ref (for some conditional logic)
-					if (request.flow === "static") {
-						staticGroupsRef.current.add(request.id);
-					}
+					// staticGroupsRef removed - use node.flow === "static" from tree instead
 				}
 
 				// Update currentGroup based on the request
