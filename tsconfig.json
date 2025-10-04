@@ -17,7 +17,7 @@
         "jsx": "react-jsx",
         "lib": ["ES2022"]
     },
-    "include": ["src/**/*", "examples/**/*.ts", "archive/tests"],
+    "include": ["src/**/*", "examples/**/*.ts"],
     "exclude": [
         "node_modules",
         "dist",
