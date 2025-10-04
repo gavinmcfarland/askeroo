@@ -255,12 +255,19 @@ export function TasksDisplay(props: TasksOptions) {
 	const spinnerFrames = ["⠂", "-", "–", "—", "–", "-"];
 
 	// Block all input during task execution to prevent escape sequences from showing
-	useInput((_input, _key) => {
-		// Consume and discard all input during execution to prevent it from appearing on screen
-		if (isExecuting) {
-			return; // Silently consume all input
+	useInput(
+		(_input, _key) => {
+			// Consume and discard all input during execution to prevent it from appearing on screen
+			if (isExecuting) {
+				return; // Silently consume all input
+			}
+		},
+		{
+			// Only register input listener when tasks are executing
+			// This prevents memory leaks from accumulating event listeners
+			isActive: isExecuting,
 		}
-	});
+	);
 
 	// Animate spinner only when tasks are running
 	useEffect(() => {

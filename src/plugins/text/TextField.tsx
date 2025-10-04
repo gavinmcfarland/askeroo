@@ -106,134 +106,144 @@ export function TextField({
 		}
 	}, [disabled, completed, flow, isFirstRootPrompt]); // Removed onHintChange from dependencies
 
-	useInput(async (input, key) => {
-		if (submitted || completed || disabled) return;
+	useInput(
+		async (input, key) => {
+			// Early return as safety check (though isActive should prevent this)
+			if (submitted || completed || disabled) return;
 
-		// Handle Ctrl+U or Cmd+K to clear entire input (common terminal shortcuts)
-		if ((key.ctrl && input === "u") || (key.meta && input === "k")) {
-			setValue("");
-			setCursorPosition(0);
-			return;
-		}
-
-		// Handle Ctrl+A to move cursor to beginning
-		if (key.ctrl && input === "a") {
-			setCursorPosition(0);
-			return;
-		}
-
-		// Handle Ctrl+E to move cursor to end
-		if (key.ctrl && input === "e") {
-			setCursorPosition(value.length);
-			return;
-		}
-
-		// Handle cursor movement with arrow keys (when not in arrow navigation mode for groups)
-		if (!(flow === "static" && enableArrowNavigation)) {
-			if (key.leftArrow) {
-				setCursorPosition(Math.max(0, cursorPosition - 1));
+			// Handle Ctrl+U or Cmd+K to clear entire input (common terminal shortcuts)
+			if ((key.ctrl && input === "u") || (key.meta && input === "k")) {
+				setValue("");
+				setCursorPosition(0);
 				return;
 			}
 
-			if (key.rightArrow) {
-				setCursorPosition(Math.min(value.length, cursorPosition + 1));
+			// Handle Ctrl+A to move cursor to beginning
+			if (key.ctrl && input === "a") {
+				setCursorPosition(0);
 				return;
 			}
-		}
 
-		// Handle static group navigation with arrow keys (only if enabled)
-		if (flow === "static" && enableArrowNavigation) {
-			if (key.downArrow) {
-				if (!isLastInGroup) {
-					// Check validation before moving to next field
-					const isValid = await runValidation(value);
-					if (!isValid) {
-						// Don't move to next field if there's a validation error
-						return;
-					}
-					// Always submit current value (even if empty) and move to next field
-					// The completion logic will determine if empty fields are considered "completed"
-					setSubmitted(true);
-					onSubmit(value);
+			// Handle Ctrl+E to move cursor to end
+			if (key.ctrl && input === "e") {
+				setCursorPosition(value.length);
+				return;
+			}
+
+			// Handle cursor movement with arrow keys (when not in arrow navigation mode for groups)
+			if (!(flow === "static" && enableArrowNavigation)) {
+				if (key.leftArrow) {
+					setCursorPosition(Math.max(0, cursorPosition - 1));
 					return;
 				}
-				// On last field, down arrow does nothing (doesn't submit)
-				return;
-			} else if (key.upArrow) {
-				// For up navigation in static groups with arrow navigation enabled
-				if (!isFirstInGroup) {
-					// Check validation before navigating up
+
+				if (key.rightArrow) {
+					setCursorPosition(
+						Math.min(value.length, cursorPosition + 1)
+					);
+					return;
+				}
+			}
+
+			// Handle static group navigation with arrow keys (only if enabled)
+			if (flow === "static" && enableArrowNavigation) {
+				if (key.downArrow) {
+					if (!isLastInGroup) {
+						// Check validation before moving to next field
+						const isValid = await runValidation(value);
+						if (!isValid) {
+							// Don't move to next field if there's a validation error
+							return;
+						}
+						// Always submit current value (even if empty) and move to next field
+						// The completion logic will determine if empty fields are considered "completed"
+						setSubmitted(true);
+						onSubmit(value);
+						return;
+					}
+					// On last field, down arrow does nothing (doesn't submit)
+					return;
+				} else if (key.upArrow) {
+					// For up navigation in static groups with arrow navigation enabled
+					if (!isFirstInGroup) {
+						// Check validation before navigating up
+						const isValid = await runValidation(value);
+						if (!isValid) {
+							// Don't navigate if there's a validation error
+							return;
+						}
+						// Only navigate up if not on the first field (stay within group bounds)
+						setSubmitted(true);
+						onSubmit({ __preserveAndBack: true, value: value });
+					}
+					// If on first field, do nothing (don't exit the group)
+					return;
+				}
+			}
+
+			// Handle escape key for static groups (always enabled regardless of arrow navigation)
+			if (flow === "static" && key.escape) {
+				if (enableArrowNavigation && !isFirstInGroup) {
+					// Check validation before navigating up with escape
 					const isValid = await runValidation(value);
 					if (!isValid) {
 						// Don't navigate if there's a validation error
 						return;
 					}
-					// Only navigate up if not on the first field (stay within group bounds)
+					// If arrow navigation is enabled and not on first field, escape moves up within group (preserve value)
 					setSubmitted(true);
 					onSubmit({ __preserveAndBack: true, value: value });
+				} else if (enableArrowNavigation && isFirstInGroup) {
+					// Escape on first field with arrow navigation: clear entire group and exit
+					setSubmitted(true);
+					onSubmit({ __clearGroupAndBack: true });
+				} else {
+					// Escape when arrow navigation is disabled: regular back behavior
+					if (allowBack && onBack) {
+						onBack();
+					}
 				}
-				// If on first field, do nothing (don't exit the group)
 				return;
 			}
-		}
 
-		// Handle escape key for static groups (always enabled regardless of arrow navigation)
-		if (flow === "static" && key.escape) {
-			if (enableArrowNavigation && !isFirstInGroup) {
-				// Check validation before navigating up with escape
+			if (key.return) {
+				// Check validation before submitting
 				const isValid = await runValidation(value);
 				if (!isValid) {
-					// Don't navigate if there's a validation error
+					// Don't submit if there's a validation error
 					return;
 				}
-				// If arrow navigation is enabled and not on first field, escape moves up within group (preserve value)
+				// Enter submits the current value
 				setSubmitted(true);
-				onSubmit({ __preserveAndBack: true, value: value });
-			} else if (enableArrowNavigation && isFirstInGroup) {
-				// Escape on first field with arrow navigation: clear entire group and exit
-				setSubmitted(true);
-				onSubmit({ __clearGroupAndBack: true });
-			} else {
-				// Escape when arrow navigation is disabled: regular back behavior
+				onSubmit(value);
+			} else if (key.backspace || key.delete) {
+				if (cursorPosition > 0) {
+					const newValue =
+						value.slice(0, cursorPosition - 1) +
+						value.slice(cursorPosition);
+					setValue(newValue);
+					setCursorPosition(cursorPosition - 1);
+				}
+			} else if (key.escape && flow !== "static") {
+				// Regular escape behavior for non-static groups
 				if (allowBack && onBack) {
 					onBack();
 				}
-			}
-			return;
-		}
-
-		if (key.return) {
-			// Check validation before submitting
-			const isValid = await runValidation(value);
-			if (!isValid) {
-				// Don't submit if there's a validation error
-				return;
-			}
-			// Enter submits the current value
-			setSubmitted(true);
-			onSubmit(value);
-		} else if (key.backspace || key.delete) {
-			if (cursorPosition > 0) {
+			} else if (!key.ctrl && !key.meta && input) {
 				const newValue =
-					value.slice(0, cursorPosition - 1) +
+					value.slice(0, cursorPosition) +
+					input +
 					value.slice(cursorPosition);
 				setValue(newValue);
-				setCursorPosition(cursorPosition - 1);
+				setCursorPosition(cursorPosition + 1);
 			}
-		} else if (key.escape && flow !== "static") {
-			// Regular escape behavior for non-static groups
-			if (allowBack && onBack) {
-				onBack();
-			}
-		} else if (!key.ctrl && !key.meta && input) {
-			const newValue =
-				value.slice(0, cursorPosition) +
-				input +
-				value.slice(cursorPosition);
-			setValue(newValue);
-			setCursorPosition(cursorPosition + 1);
+		},
+		{
+			// Only register input listener when field is active (not disabled/completed)
+			// This prevents memory leaks from accumulating event listeners
+			isActive: !disabled && !completed && !submitted,
 		}
-	});
+	);
 
 	if (completed) {
 		return (

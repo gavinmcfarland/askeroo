@@ -238,141 +238,148 @@ export function RadioField({
 		filteredOptions.length,
 	]); // Removed onHintChange from dependencies
 
-	useInput(async (input, key) => {
-		if (disabled || submitted) return;
+	useInput(
+		async (input, key) => {
+			if (disabled || submitted) return;
 
-		// Handle back navigation (Escape)
-		if (key.escape) {
-			// If searching, clear the search query first
-			if (searchable && currentSearchQuery.trim()) {
-				setInternalSearchQuery("");
-				return;
-			}
-
-			// Only go back if allowed
-			if (allowBack && onBack) {
-				onBack();
-				return;
-			}
-		}
-
-		// Handle arrow navigation for groups
-		if (enableArrowNavigation && onNavigate) {
-			if (key.upArrow && !isFirstInGroup) {
-				onNavigate("up");
-				return;
-			}
-			if (key.downArrow && !isLastInGroup) {
-				onNavigate("down");
-				return;
-			}
-		}
-
-		if (key.return) {
-			if (filteredOptions.length > 0) {
-				const selectedValue = filteredOptions[selectedIndex].value;
-				// Check validation before submitting
-				const isValid = await runValidation(selectedValue);
-				if (!isValid) {
-					// Don't submit if there's a validation error
+			// Handle back navigation (Escape)
+			if (key.escape) {
+				// If searching, clear the search query first
+				if (searchable && currentSearchQuery.trim()) {
+					setInternalSearchQuery("");
 					return;
 				}
-				setSubmitted(true);
-				onSubmit(selectedValue);
-			}
-			return;
-		}
 
-		// Handle search input if searchable is enabled
-		if (searchable && input && input !== " ") {
-			// Check if it's a printable character (not a special key)
-			if (
-				input.length === 1 &&
-				!key.ctrl &&
-				!key.meta &&
-				!key.return &&
-				!key.escape &&
-				!key.upArrow &&
-				!key.downArrow &&
-				!key.leftArrow &&
-				!key.rightArrow
-			) {
-				const newQuery = currentSearchQuery + input;
+				// Only go back if allowed
+				if (allowBack && onBack) {
+					onBack();
+					return;
+				}
+			}
+
+			// Handle arrow navigation for groups
+			if (enableArrowNavigation && onNavigate) {
+				if (key.upArrow && !isFirstInGroup) {
+					onNavigate("up");
+					return;
+				}
+				if (key.downArrow && !isLastInGroup) {
+					onNavigate("down");
+					return;
+				}
+			}
+
+			if (key.return) {
+				if (filteredOptions.length > 0) {
+					const selectedValue = filteredOptions[selectedIndex].value;
+					// Check validation before submitting
+					const isValid = await runValidation(selectedValue);
+					if (!isValid) {
+						// Don't submit if there's a validation error
+						return;
+					}
+					setSubmitted(true);
+					onSubmit(selectedValue);
+				}
+				return;
+			}
+
+			// Handle search input if searchable is enabled
+			if (searchable && input && input !== " ") {
+				// Check if it's a printable character (not a special key)
+				if (
+					input.length === 1 &&
+					!key.ctrl &&
+					!key.meta &&
+					!key.return &&
+					!key.escape &&
+					!key.upArrow &&
+					!key.downArrow &&
+					!key.leftArrow &&
+					!key.rightArrow
+				) {
+					const newQuery = currentSearchQuery + input;
+					setInternalSearchQuery(newQuery);
+					return;
+				}
+			}
+
+			// Handle backspace for search
+			if (searchable && (key.backspace || key.delete || input === "\b")) {
+				const newQuery = currentSearchQuery.slice(0, -1);
 				setInternalSearchQuery(newQuery);
 				return;
 			}
-		}
 
-		// Handle backspace for search
-		if (searchable && (key.backspace || key.delete || input === "\b")) {
-			const newQuery = currentSearchQuery.slice(0, -1);
-			setInternalSearchQuery(newQuery);
-			return;
-		}
-
-		// Handle left/right arrow navigation in options
-		if (key.leftArrow && !enableArrowNavigation) {
-			const newIndex =
-				selectedIndex > 0
-					? selectedIndex - 1
-					: allowLoop
-					? filteredOptions.length - 1
-					: selectedIndex;
-			setSelectedIndex(newIndex);
-			return;
-		}
-
-		if (key.rightArrow && !enableArrowNavigation) {
-			const newIndex =
-				selectedIndex < filteredOptions.length - 1
-					? selectedIndex + 1
-					: allowLoop
-					? 0
-					: selectedIndex;
-			setSelectedIndex(newIndex);
-			return;
-		}
-
-		// Handle up/down arrow navigation in options (if not used for group navigation)
-		if (key.upArrow && !enableArrowNavigation) {
-			const newIndex = allowLoop
-				? selectedIndex > 0
-					? selectedIndex - 1
-					: filteredOptions.length - 1
-				: Math.max(0, selectedIndex - 1);
-			setSelectedIndex(newIndex);
-			return;
-		}
-
-		if (key.downArrow && !enableArrowNavigation) {
-			const newIndex = allowLoop
-				? selectedIndex < filteredOptions.length - 1
-					? selectedIndex + 1
-					: 0
-				: Math.min(filteredOptions.length - 1, selectedIndex + 1);
-			setSelectedIndex(newIndex);
-			return;
-		}
-
-		// Handle number keys for direct selection (only if showNumbers is enabled)
-		if (showNumbers === true) {
-			const num = parseInt(input);
-			if (!isNaN(num) && num >= 1 && num <= filteredOptions.length) {
-				const newIndex = num - 1;
+			// Handle left/right arrow navigation in options
+			if (key.leftArrow && !enableArrowNavigation) {
+				const newIndex =
+					selectedIndex > 0
+						? selectedIndex - 1
+						: allowLoop
+						? filteredOptions.length - 1
+						: selectedIndex;
 				setSelectedIndex(newIndex);
-				const selectedValue = filteredOptions[newIndex].value;
-				// Check validation before submitting
-				const isValid = await runValidation(selectedValue);
-				if (!isValid) {
-					// Don't submit if there's a validation error
-					return;
-				}
-				setSubmitted(true);
-				onSubmit(selectedValue);
 				return;
 			}
+
+			if (key.rightArrow && !enableArrowNavigation) {
+				const newIndex =
+					selectedIndex < filteredOptions.length - 1
+						? selectedIndex + 1
+						: allowLoop
+						? 0
+						: selectedIndex;
+				setSelectedIndex(newIndex);
+				return;
+			}
+
+			// Handle up/down arrow navigation in options (if not used for group navigation)
+			if (key.upArrow && !enableArrowNavigation) {
+				const newIndex = allowLoop
+					? selectedIndex > 0
+						? selectedIndex - 1
+						: filteredOptions.length - 1
+					: Math.max(0, selectedIndex - 1);
+				setSelectedIndex(newIndex);
+				return;
+			}
+
+			if (key.downArrow && !enableArrowNavigation) {
+				const newIndex = allowLoop
+					? selectedIndex < filteredOptions.length - 1
+						? selectedIndex + 1
+						: 0
+					: Math.min(filteredOptions.length - 1, selectedIndex + 1);
+				setSelectedIndex(newIndex);
+				return;
+			}
+
+			// Handle number keys for direct selection (only if showNumbers is enabled)
+			if (showNumbers === true) {
+				const num = parseInt(input);
+				if (!isNaN(num) && num >= 1 && num <= filteredOptions.length) {
+					const newIndex = num - 1;
+					setSelectedIndex(newIndex);
+					const selectedValue = filteredOptions[newIndex].value;
+					// Check validation before submitting
+					const isValid = await runValidation(selectedValue);
+					if (!isValid) {
+						// Don't submit if there's a validation error
+						return;
+					}
+					setSubmitted(true);
+					onSubmit(selectedValue);
+					return;
+				}
+			}
+		},
+		{
+			// Only register input listener when field is active (not disabled/completed)
+			// This prevents memory leaks from accumulating event listeners
+			isActive: !disabled && !completed && !submitted,
 		}
-	});
+	);
 
 	// Show completed state
 	if (completed && completedValue !== undefined) {

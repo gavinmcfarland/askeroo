@@ -11,6 +11,7 @@ import {
 } from "./types/index.js";
 import { IdGenerator } from "./core/IdGenerator.js";
 import { RuntimeState } from "./core/RuntimeState.js";
+import { DiscoveryService } from "./core/DiscoveryService.js";
 
 const BACK: BackToken = { __back: true };
 
@@ -26,13 +27,8 @@ export function createRuntime(ui: UI) {
 	// Runtime state manager
 	const state = new RuntimeState();
 
-	// Discovery mode for static groups (pre-scans fields before rendering)
-	let isDiscoveryMode = false; // Track if we're in discovery mode for static groups
-	let discoveredFields: Map<
-		string,
-		Array<{ id: string; label: string; type: string }>
-	> = new Map(); // Track discovered fields for static groups
-	let staticGroupBodies: Map<string, () => Promise<any>> = new Map(); // Store group body functions for re-discovery
+	// Discovery service for static groups (pre-scans fields before rendering)
+	const discovery = new DiscoveryService(state);
 
 	const engine: Engine = {
 		BACK,
@@ -79,7 +75,7 @@ export function createRuntime(ui: UI) {
 					});
 					const fields =
 						groupOpts.flow === "static"
-							? discoveredFields.get(groupId)
+							? discovery.getDiscoveredFields(groupId)
 							: undefined;
 					const groupDepth = state.getGroupDepth();
 					const currentGroup = state.getCurrentGroup(); // Parent group for nesting
@@ -128,7 +124,7 @@ export function createRuntime(ui: UI) {
 			});
 
 			// In discovery mode, just track the field and return current value or placeholder
-			if (isDiscoveryMode) {
+			if (discovery.inDiscoveryMode()) {
 				const currentGroupId = state.getCurrentGroup();
 				debugLogger.log("DISCOVERY_FIELD", {
 					currentGroupId,
@@ -137,19 +133,11 @@ export function createRuntime(ui: UI) {
 					kind,
 				});
 				if (currentGroupId) {
-					const fields = discoveredFields.get(currentGroupId) || [];
-					if (!fields.some((f) => f.id === id)) {
-						fields.push({
-							id,
-							label: message || `${kind} field`,
-							type: kind,
-						});
-						discoveredFields.set(currentGroupId, fields);
-						debugLogger.log("DISCOVERY_FIELD_ADDED", {
-							currentGroupId,
-							fieldCount: fields.length,
-						});
-					}
+					discovery.addDiscoveredField(currentGroupId, {
+						id,
+						label: message || `${kind} field`,
+						type: kind,
+					});
 				}
 
 				// Use current field value if available, otherwise use smart placeholder
@@ -241,50 +229,6 @@ export function createRuntime(ui: UI) {
 		);
 	}
 
-	async function runStaticGroupDiscovery(
-		opts: GroupOpts,
-		body: () => Promise<any>
-	) {
-		// Pre-generate the group ID that engine.step will use
-		const nextGroupCount = idGenerator.getGroupCount() + 1;
-		const discoveryGroupId = idGenerator.generateGroupId({
-			groupStack: state.getGroupStack(),
-			groupCount: nextGroupCount,
-			flowType: opts.flow,
-			customId: (opts as any).id,
-		});
-
-		isDiscoveryMode = true;
-		debugLogger.log("DISCOVERY_START", {
-			groupId: discoveryGroupId,
-			groupStack: state.getGroupStack(),
-		});
-
-		// Push group to stack temporarily for discovery
-		state.pushGroup(discoveryGroupId);
-
-		try {
-			// Run discovery once to find all fields
-			await body();
-		} catch (e) {
-			debugLogger.log("DISCOVERY_ERROR", {
-				groupId: discoveryGroupId,
-				error: e,
-			});
-			// Ignore errors in discovery mode
-		} finally {
-			// Remove from stack after discovery
-			state.popGroup();
-		}
-
-		isDiscoveryMode = false;
-		const discoveredFieldsForGroup = discoveredFields.get(discoveryGroupId);
-		debugLogger.log("DISCOVERY_END", {
-			groupId: discoveryGroupId,
-			fields: discoveredFieldsForGroup,
-		});
-	}
-
 	async function group(
 		meta: GroupMeta,
 		body: () => Promise<any>,
@@ -307,9 +251,10 @@ export function createRuntime(ui: UI) {
 			});
 
 			// Store the body function for re-discovery
-			staticGroupBodies.set(groupId, body);
+			discovery.storeGroupBody(groupId, body);
 
-			await runStaticGroupDiscovery(combinedOpts, body);
+			// Run discovery to find all fields
+			await discovery.discover(groupId, body);
 		}
 
 		await engine.step("group", combinedOpts, async () => undefined);
@@ -422,34 +367,7 @@ export function createRuntime(ui: UI) {
 
 	// Re-discovery function for static groups
 	async function rediscoverStaticGroupFields(groupId: string) {
-		if (!isDiscoveryMode && staticGroupBodies.has(groupId)) {
-			debugLogger.log("REDISCOVERY_START", { groupId });
-
-			const body = staticGroupBodies.get(groupId)!;
-
-			// Clear existing discovered fields for this group
-			discoveredFields.delete(groupId);
-
-			isDiscoveryMode = true;
-			state.pushGroup(groupId);
-
-			try {
-				await body();
-			} catch (e) {
-				debugLogger.log("REDISCOVERY_ERROR", { groupId, error: e });
-			} finally {
-				state.popGroup();
-				isDiscoveryMode = false;
-			}
-
-			const rediscoveredFields = discoveredFields.get(groupId);
-			debugLogger.log("REDISCOVERY_END", {
-				groupId,
-				fields: rediscoveredFields,
-			});
-			return rediscoveredFields;
-		}
-		return discoveredFields.get(groupId);
+		return discovery.rediscover(groupId);
 	}
 
 	const runtime = {

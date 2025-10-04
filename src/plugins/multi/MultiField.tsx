@@ -373,134 +373,141 @@ export function MultiField({
 		}
 	}, [stableInitial, normalizedOptions, submitted, disabled, noneOption]);
 
-	useInput(async (input, key) => {
-		if (submitted || completed || disabled) return;
+	useInput(
+		async (input, key) => {
+			if (submitted || completed || disabled) return;
 
-		// Handle search input FIRST if searchable is enabled
-		if (searchable && input && input !== " ") {
-			// Debug log
-			// Check if it's a printable character (not a special key)
-			if (
-				input.length === 1 &&
-				!key.ctrl &&
-				!key.meta &&
-				!key.return &&
-				!key.escape &&
-				!key.upArrow &&
-				!key.downArrow &&
-				!key.leftArrow &&
-				!key.rightArrow
-			) {
-				const newQuery = currentSearchQuery + input;
-				setInternalSearchQuery(newQuery);
+			// Handle search input FIRST if searchable is enabled
+			if (searchable && input && input !== " ") {
+				// Debug log
+				// Check if it's a printable character (not a special key)
+				if (
+					input.length === 1 &&
+					!key.ctrl &&
+					!key.meta &&
+					!key.return &&
+					!key.escape &&
+					!key.upArrow &&
+					!key.downArrow &&
+					!key.leftArrow &&
+					!key.rightArrow
+				) {
+					const newQuery = currentSearchQuery + input;
+					setInternalSearchQuery(newQuery);
+					return;
+				}
+			}
+
+			// Handle back navigation (Escape)
+			if (key.escape) {
+				// If searching, clear the search query first
+				if (searchable && currentSearchQuery.trim()) {
+					setInternalSearchQuery("");
+					return;
+				}
+
+				// If there's a noneOption and regular options are selected, clear selections and select none first
+				if (
+					noneOption &&
+					selectedValues.some((val) => val !== NONE_VALUE)
+				) {
+					setSelectedValues([NONE_VALUE]);
+					setError(null);
+					return;
+				}
+
+				// Only go back if no regular options are selected (or no noneOption)
+				if (allowBack && onBack) {
+					onBack();
+					return;
+				}
+			}
+
+			if (key.return) {
+				// Filter out NONE_VALUE from the final result for validation
+				const finalValues = selectedValues.filter(
+					(val) => val !== NONE_VALUE
+				);
+				// Check validation before submitting
+				const isValid = await runValidation(finalValues);
+				if (!isValid) {
+					// Don't submit if there's a validation error
+					return;
+				}
+				setSubmitted(true);
+				onSubmit(finalValues);
 				return;
 			}
-		}
 
-		// Handle back navigation (Escape)
-		if (key.escape) {
-			// If searching, clear the search query first
-			if (searchable && currentSearchQuery.trim()) {
-				setInternalSearchQuery("");
-				return;
-			}
-
-			// If there's a noneOption and regular options are selected, clear selections and select none first
-			if (
-				noneOption &&
-				selectedValues.some((val) => val !== NONE_VALUE)
-			) {
-				setSelectedValues([NONE_VALUE]);
-				setError(null);
-				return;
-			}
-
-			// Only go back if no regular options are selected (or no noneOption)
-			if (allowBack && onBack) {
-				onBack();
-				return;
-			}
-		}
-
-		if (key.return) {
-			// Filter out NONE_VALUE from the final result for validation
-			const finalValues = selectedValues.filter(
-				(val) => val !== NONE_VALUE
-			);
-			// Check validation before submitting
-			const isValid = await runValidation(finalValues);
-			if (!isValid) {
-				// Don't submit if there's a validation error
-				return;
-			}
-			setSubmitted(true);
-			onSubmit(finalValues);
-			return;
-		}
-
-		// Handle spacebar for toggling selection
-		if (input === " ") {
-			const isNoneOption = noneOption && selectedIndex === 0;
-			const currentOption = isNoneOption
-				? { value: NONE_VALUE, label: noneOption!.label }
-				: filteredOptions[selectedIndex - (noneOption ? 1 : 0)];
-
-			if (currentOption) {
-				toggleSelection(currentOption.value);
-			}
-			return;
-		}
-
-		// Handle backspace for search
-		if (searchable && (key.backspace || key.delete || input === "\b")) {
-			const newQuery = currentSearchQuery.slice(0, -1);
-			setInternalSearchQuery(newQuery);
-			return;
-		}
-
-		if (key.leftArrow) {
-			const newIndex =
-				selectedIndex > 0 ? selectedIndex - 1 : totalOptions - 1;
-			setSelectedIndex(newIndex);
-			return;
-		}
-
-		if (key.rightArrow) {
-			const newIndex =
-				selectedIndex < totalOptions - 1 ? selectedIndex + 1 : 0;
-			setSelectedIndex(newIndex);
-			return;
-		}
-
-		if (key.upArrow) {
-			navigateUp();
-			return;
-		}
-
-		if (key.downArrow) {
-			navigateDown();
-			return;
-		}
-
-		// Handle number keys for direct selection toggle (only if showNumbers is enabled)
-		if (showNumbers) {
-			const num = parseInt(input);
-			if (!isNaN(num) && num >= 1 && num <= totalOptions) {
-				const newIndex = num - 1;
-				setSelectedIndex(newIndex);
-
-				const isNoneOption = noneOption && newIndex === 0;
+			// Handle spacebar for toggling selection
+			if (input === " ") {
+				const isNoneOption = noneOption && selectedIndex === 0;
 				const currentOption = isNoneOption
 					? { value: NONE_VALUE, label: noneOption!.label }
-					: filteredOptions[newIndex - (noneOption ? 1 : 0)];
+					: filteredOptions[selectedIndex - (noneOption ? 1 : 0)];
 
 				if (currentOption) {
 					toggleSelection(currentOption.value);
 				}
 				return;
 			}
+
+			// Handle backspace for search
+			if (searchable && (key.backspace || key.delete || input === "\b")) {
+				const newQuery = currentSearchQuery.slice(0, -1);
+				setInternalSearchQuery(newQuery);
+				return;
+			}
+
+			if (key.leftArrow) {
+				const newIndex =
+					selectedIndex > 0 ? selectedIndex - 1 : totalOptions - 1;
+				setSelectedIndex(newIndex);
+				return;
+			}
+
+			if (key.rightArrow) {
+				const newIndex =
+					selectedIndex < totalOptions - 1 ? selectedIndex + 1 : 0;
+				setSelectedIndex(newIndex);
+				return;
+			}
+
+			if (key.upArrow) {
+				navigateUp();
+				return;
+			}
+
+			if (key.downArrow) {
+				navigateDown();
+				return;
+			}
+
+			// Handle number keys for direct selection toggle (only if showNumbers is enabled)
+			if (showNumbers) {
+				const num = parseInt(input);
+				if (!isNaN(num) && num >= 1 && num <= totalOptions) {
+					const newIndex = num - 1;
+					setSelectedIndex(newIndex);
+
+					const isNoneOption = noneOption && newIndex === 0;
+					const currentOption = isNoneOption
+						? { value: NONE_VALUE, label: noneOption!.label }
+						: filteredOptions[newIndex - (noneOption ? 1 : 0)];
+
+					if (currentOption) {
+						toggleSelection(currentOption.value);
+					}
+					return;
+				}
+			}
+		},
+		{
+			// Only register input listener when field is active (not disabled/completed)
+			// This prevents memory leaks from accumulating event listeners
+			isActive: !disabled && !completed && !submitted,
 		}
-	});
+	);
 
 	if (completed) {
 		const displayValue =

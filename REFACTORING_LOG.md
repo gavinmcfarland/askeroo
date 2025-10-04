@@ -123,13 +123,94 @@ After (single state object):
 ✅ Generated types are correct  
 ✅ ~100 lines removed from core.ts
 
+## Phase 3: Extract DiscoveryService Class ✅
+
+**Date:** October 4, 2025  
+**Status:** Complete
+
+### Changes Made
+
+1. **Created `src/core/DiscoveryService.ts`**
+
+    - Extracted all static group field discovery logic into a dedicated service
+    - Manages discovery mode state, discovered fields, and group body storage
+    - Provides clean API for discovery and re-discovery operations
+    - Includes debugging capabilities via `getSnapshot()`
+
+2. **Updated `src/core.ts`**
+    - Replaced 3 discovery-related variables with a single `DiscoveryService` instance
+    - Removed 38-line `runStaticGroupDiscovery()` function
+    - Simplified `rediscoverStaticGroupFields()` to 3 lines (was 29 lines)
+    - Updated all discovery mode checks and field tracking to use service methods
+
+### Variables & Functions Extracted
+
+Before (closure variables & functions):
+
+-   `isDiscoveryMode = false`
+-   `discoveredFields: Map<...> = new Map()`
+-   `staticGroupBodies: Map<...> = new Map()`
+-   `runStaticGroupDiscovery()` (38 lines)
+-   `rediscoverStaticGroupFields()` (29 lines)
+
+After (single service):
+
+-   `discovery = new DiscoveryService(state)`
+
+### Key Methods
+
+**Discovery Management:**
+
+-   `inDiscoveryMode()` - Check if in discovery mode
+-   `discover(groupId, body)` - Run discovery for a static group
+-   `rediscover(groupId)` - Re-discover fields after changes
+
+**Field Tracking:**
+
+-   `getDiscoveredFields(groupId)` - Get fields for a group
+-   `addDiscoveredField(groupId, field)` - Track a discovered field
+
+**Body Storage:**
+
+-   `storeGroupBody(groupId, body)` - Store body for re-discovery
+-   `hasGroupBody(groupId)` - Check if body is stored
+
+**Utilities:**
+
+-   `clear()` - Clear all discovery state
+-   `getSnapshot()` - Get debug snapshot
+
+### Benefits
+
+-   **Separation of Concerns**: Discovery logic isolated from core runtime
+-   **Cleaner API**: Self-documenting method names
+-   **Testability**: Service can be tested independently
+-   **Maintainability**: All discovery logic in one place
+-   **Debuggability**: `getSnapshot()` for inspecting discovery state
+
+### Build Status
+
+✅ TypeScript compilation successful  
+✅ No linter errors  
+✅ Generated types are correct  
+✅ 80 lines removed from core.ts
+
+### Line Count Summary
+
+-   **Before Phase 3**: core.ts = 471 lines
+-   **After Phase 3**: core.ts = 391 lines
+-   **Reduction**: 80 lines (17% smaller)
+-   **New file**: DiscoveryService.ts = 187 lines
+
+**Total Reduction from Phase 1-3**: 156 lines removed from core.ts (28.5% reduction)
+
 ## Next Steps
 
 Following the original refactoring plan:
 
 1. ✅ **Extract `IdGenerator`** (Complete)
 2. ✅ **Create `RuntimeState` class** (Complete)
-3. ⏳ **Create `DiscoveryService`** - Extract discovery mode logic
+3. ✅ **Create `DiscoveryService`** (Complete)
 4. ⏳ **Convert main runtime to class** - Final architectural improvement
 
 Each phase maintains backwards compatibility while improving code structure.

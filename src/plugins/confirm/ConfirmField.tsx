@@ -177,129 +177,138 @@ export function ConfirmField({
 		}
 	}, [disabled, completed, isFirstRootPrompt, options]); // Removed confirmOptions and defaultOptions
 
-	useInput(async (input, key) => {
-		if (submitted || completed || disabled) return;
+	useInput(
+		async (input, key) => {
+			if (submitted || completed || disabled) return;
 
-		// Handle static group navigation with arrow keys (only if enabled)
-		if (flow === "static" && enableArrowNavigation) {
-			if (key.downArrow) {
-				if (!isLastInGroup) {
-					const selectedValue = confirmOptions[selectedIndex].value;
-					// Check validation before moving to next field
-					const isValid = await runValidation(selectedValue);
-					if (!isValid) {
-						// Don't move if there's a validation error
+			// Handle static group navigation with arrow keys (only if enabled)
+			if (flow === "static" && enableArrowNavigation) {
+				if (key.downArrow) {
+					if (!isLastInGroup) {
+						const selectedValue =
+							confirmOptions[selectedIndex].value;
+						// Check validation before moving to next field
+						const isValid = await runValidation(selectedValue);
+						if (!isValid) {
+							// Don't move if there's a validation error
+							return;
+						}
+						setSubmitted(true);
+						onSubmit(selectedValue);
 						return;
 					}
-					setSubmitted(true);
-					onSubmit(selectedValue);
+					return;
+				} else if (key.upArrow) {
+					if (!isFirstInGroup) {
+						const selectedValue =
+							confirmOptions[selectedIndex].value;
+						// Check validation before navigating up
+						const isValid = await runValidation(selectedValue);
+						if (!isValid) {
+							// Don't navigate if there's a validation error
+							return;
+						}
+						setSubmitted(true);
+						onSubmit({
+							__preserveAndBack: true,
+							value: selectedValue,
+						});
+					}
 					return;
 				}
-				return;
-			} else if (key.upArrow) {
-				if (!isFirstInGroup) {
+			}
+
+			// Handle escape key for static groups
+			if (flow === "static" && key.escape) {
+				if (enableArrowNavigation && !isFirstInGroup) {
 					const selectedValue = confirmOptions[selectedIndex].value;
-					// Check validation before navigating up
+					// Check validation before navigating up with escape
 					const isValid = await runValidation(selectedValue);
 					if (!isValid) {
 						// Don't navigate if there's a validation error
 						return;
 					}
 					setSubmitted(true);
-					onSubmit({
-						__preserveAndBack: true,
-						value: selectedValue,
-					});
+					onSubmit({ __preserveAndBack: true, value: selectedValue });
+				} else if (enableArrowNavigation && isFirstInGroup) {
+					setSubmitted(true);
+					onSubmit({ __clearGroupAndBack: true });
+				} else {
+					if (allowBack && onBack) {
+						onBack();
+					}
 				}
 				return;
 			}
-		}
 
-		// Handle escape key for static groups
-		if (flow === "static" && key.escape) {
-			if (enableArrowNavigation && !isFirstInGroup) {
+			if (key.return) {
 				const selectedValue = confirmOptions[selectedIndex].value;
-				// Check validation before navigating up with escape
+				// Check validation before submitting
 				const isValid = await runValidation(selectedValue);
 				if (!isValid) {
-					// Don't navigate if there's a validation error
+					// Don't submit if there's a validation error
 					return;
 				}
 				setSubmitted(true);
-				onSubmit({ __preserveAndBack: true, value: selectedValue });
-			} else if (enableArrowNavigation && isFirstInGroup) {
-				setSubmitted(true);
-				onSubmit({ __clearGroupAndBack: true });
-			} else {
+				onSubmit(selectedValue);
+				return;
+			}
+
+			if (key.escape && flow !== "static") {
 				if (allowBack && onBack) {
 					onBack();
 				}
-			}
-			return;
-		}
-
-		if (key.return) {
-			const selectedValue = confirmOptions[selectedIndex].value;
-			// Check validation before submitting
-			const isValid = await runValidation(selectedValue);
-			if (!isValid) {
-				// Don't submit if there's a validation error
 				return;
 			}
-			setSubmitted(true);
-			onSubmit(selectedValue);
-			return;
-		}
 
-		if (key.escape && flow !== "static") {
-			if (allowBack && onBack) {
-				onBack();
-			}
-			return;
-		}
-
-		// Handle Y/N keys only for default Yes/No options
-		if (
-			!options && // Using default options
-			(input.toLowerCase() === "y" || input.toLowerCase() === "n")
-		) {
-			const newValue = input.toLowerCase() === "y";
-			const newIndex = confirmOptions.findIndex(
-				(option) => option.value === newValue
-			);
-			setSelectedIndex(newIndex);
-			// Check validation before submitting with Y/N shortcut
-			const isValid = await runValidation(newValue);
-			if (!isValid) {
-				// Don't submit if there's a validation error
+			// Handle Y/N keys only for default Yes/No options
+			if (
+				!options && // Using default options
+				(input.toLowerCase() === "y" || input.toLowerCase() === "n")
+			) {
+				const newValue = input.toLowerCase() === "y";
+				const newIndex = confirmOptions.findIndex(
+					(option) => option.value === newValue
+				);
+				setSelectedIndex(newIndex);
+				// Check validation before submitting with Y/N shortcut
+				const isValid = await runValidation(newValue);
+				if (!isValid) {
+					// Don't submit if there's a validation error
+					return;
+				}
+				setSubmitted(true);
+				onSubmit(newValue);
 				return;
 			}
-			setSubmitted(true);
-			onSubmit(newValue);
-			return;
-		}
 
-		// Arrow key navigation for options
-		if (key.leftArrow || key.upArrow) {
-			const newIndex = allowLoop
-				? selectedIndex > 0
-					? selectedIndex - 1
-					: confirmOptions.length - 1
-				: Math.max(0, selectedIndex - 1);
-			setSelectedIndex(newIndex);
-			return;
-		}
+			// Arrow key navigation for options
+			if (key.leftArrow || key.upArrow) {
+				const newIndex = allowLoop
+					? selectedIndex > 0
+						? selectedIndex - 1
+						: confirmOptions.length - 1
+					: Math.max(0, selectedIndex - 1);
+				setSelectedIndex(newIndex);
+				return;
+			}
 
-		if (key.rightArrow || key.downArrow) {
-			const newIndex = allowLoop
-				? selectedIndex < confirmOptions.length - 1
-					? selectedIndex + 1
-					: 0
-				: Math.min(confirmOptions.length - 1, selectedIndex + 1);
-			setSelectedIndex(newIndex);
-			return;
+			if (key.rightArrow || key.downArrow) {
+				const newIndex = allowLoop
+					? selectedIndex < confirmOptions.length - 1
+						? selectedIndex + 1
+						: 0
+					: Math.min(confirmOptions.length - 1, selectedIndex + 1);
+				setSelectedIndex(newIndex);
+				return;
+			}
+		},
+		{
+			// Only register input listener when field is active (not disabled/completed)
+			// This prevents memory leaks from accumulating event listeners
+			isActive: !disabled && !completed && !submitted,
 		}
-	});
+	);
 
 	// Render message - either as markdown or plain text
 	const renderMessage = () => {
