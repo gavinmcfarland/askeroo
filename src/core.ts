@@ -84,25 +84,20 @@ export function createRuntime(ui: UI) {
 	// Use the UI directly - dynamic handlers are created in ui.tsx
 	const extendedUI = ui;
 
-	const answers: Answers = {};
-	let interactivePrompts: string[] = [];
-	let currentStep = 0;
-	let asking = false;
-	let isReplaying = false; // Simplified replay mode: only true/false
+	// Core runtime state
+	const answers: Answers = {}; // User answers for each prompt
+	let interactivePrompts: string[] = []; // List of interactive prompt IDs in current flow
+	let currentStep = 0; // Current step in the flow
+	let asking = false; // Whether we're currently in an ask() call
+	let isReplaying = false; // Whether we're replaying previous steps
 
-	// Track execution context to avoid unnecessary replays
-	let executionPath: Array<{
-		id: string;
-		kind: PromptKind;
-		groupContext?: string;
-		stepIndex: number;
-	}> = [];
-
-	let groupStack: string[] = []; // Track current group nesting
+	// Runtime UI interaction tracking (minimal state)
+	// Note: groupStack is necessary during flow execution, before nodes are added to tree
+	let groupStack: string[] = []; // Track current group nesting during flow execution
 	let lastProcessedGroups: Set<string> = new Set(); // Track which groups were already processed
 	let groupCount = 0; // Track total number of groups encountered for stable ID generation
-	// progressiveGroups, phaseGroups, staticGroups removed - tree stores flow type
-	// groupDepths removed - tree stores depth in node.depth
+
+	// Discovery mode for static groups (pre-scans fields before rendering)
 	let isDiscoveryMode = false; // Track if we're in discovery mode for static groups
 	let discoveredFields: Map<
 		string,
@@ -244,14 +239,6 @@ export function createRuntime(ui: UI) {
 			}
 
 			interactivePrompts.push(id);
-
-			// Track execution path for smart replay
-			executionPath.push({
-				id,
-				kind,
-				groupContext: groupStack[groupStack.length - 1],
-				stepIndex,
-			});
 
 			// If we already have an answer and we're replaying past this step, use it
 			if (stepIndex < currentStep && id in answers) {
@@ -411,7 +398,6 @@ export function createRuntime(ui: UI) {
 			// Simplified navigation - always do full replay for consistency
 			isReplaying = currentStep > 0;
 			interactivePrompts = [];
-			executionPath = [];
 			groupStack = [];
 			groupCount = 0;
 			lastProcessedGroups.clear();
@@ -457,38 +443,24 @@ export function createRuntime(ui: UI) {
 					if (currentStep > 0) {
 						currentStep -= 1;
 
-						// Clean up group state for steps that are no longer reachable
-						// Find groups associated with steps after the current step
-						const unreachableGroups = new Set<string>();
-						for (
-							let i = currentStep;
-							i < executionPath.length;
-							i++
-						) {
-							const pathItem = executionPath[i];
-							if (pathItem.groupContext) {
-								unreachableGroups.add(pathItem.groupContext);
-							}
-						}
-
-						// Remove unreachable groups from lastProcessedGroups
-						for (const groupName of unreachableGroups) {
-							lastProcessedGroups.delete(groupName);
-							debugLogger.log("GROUP_UNPROCESSED", {
-								groupName,
-								reason: "navigation_back",
-								currentStep,
-							});
-						}
-
-						// Remove answers from prompts that are no longer reachable
-						const currentPrompts = new Set(interactivePrompts);
+						// Simplified: Remove answers from prompts after the current step
+						// The next replay will rebuild the correct state
+						const currentPrompts = new Set(
+							interactivePrompts.slice(0, currentStep)
+						);
 						const answerKeys = Object.keys(answers);
 						for (const key of answerKeys) {
 							if (!currentPrompts.has(key)) {
 								delete answers[key];
+								debugLogger.log("ANSWER_REMOVED", {
+									promptId: key,
+									reason: "back_navigation",
+								});
 							}
 						}
+
+						// Note: Group state will be rebuilt on next replay
+						// lastProcessedGroups is cleared at the start of each replay cycle
 					} else {
 						// If we're at the first step, ignore the back operation completely
 					}
