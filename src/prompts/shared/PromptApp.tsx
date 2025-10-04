@@ -664,11 +664,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		(actualValue: any) => {
 			if (!currentPrompt) return;
 
-			setFieldValues((prev) => ({
-				...prev,
-				[currentPrompt.id]: actualValue,
-			}));
-			setVisitedPrompts((prev) => new Set(prev).add(currentPrompt.id));
+			// Update tree directly instead of using fake setters
+			const node = treeManagerRef.current.getNode(currentPrompt.id);
+			if (node) {
+				node.value = actualValue;
+				node.visited = true;
+			}
 
 			markFieldAsCompleted(currentPrompt, actualValue);
 			addFieldToHistory(currentPrompt, createFieldInfo(currentPrompt));
@@ -680,8 +681,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		},
 		[
 			currentPrompt,
-			setFieldValues,
-			setVisitedPrompts,
 			markFieldAsCompleted,
 			addFieldToHistory,
 			createFieldInfo,
