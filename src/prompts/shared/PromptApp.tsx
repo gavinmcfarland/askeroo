@@ -26,14 +26,6 @@ interface PromptAppProps {
 	onReady: (promptFn: (request: PromptRequest) => Promise<any>) => void;
 }
 
-// Type definitions for grouped state
-type FieldInfo = {
-	id: string;
-	label: string;
-	type: string;
-	hideAfterSubmit?: boolean;
-};
-
 // Tree-based state management
 
 export function PromptApp({ onReady }: PromptAppProps) {
@@ -57,67 +49,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		setTreeManager(treeManagerRef.current);
 	}, []);
 
-	// Helper function to trigger re-render when tree state changes
-	// Note: Tree manages state directly; these setters only trigger UI updates
-	const updateTreeState = () => setTreeRevision((prev) => prev + 1);
-
-	// Simplified setters that only trigger tree re-render (tree manages actual state)
-	const setFieldValues = (
-		_: (prev: Record<string, any>) => Record<string, any>
-	) => updateTreeState();
-	const setVisitedPrompts = (_: (prev: Set<string>) => Set<string>) =>
-		updateTreeState();
-	const setCompletedFields = (_: (prev: Set<string>) => Set<string>) =>
-		updateTreeState();
-	const setFieldProperties = (
-		_: (prev: Map<string, any>) => Map<string, any>
-	) => updateTreeState();
-	const setFieldMessages = (
-		_: (prev: Record<string, string>) => Record<string, string>
-	) => updateTreeState();
-	const setFieldGroupNames = (
-		_: (prev: Record<string, string>) => Record<string, string>
-	) => updateTreeState();
-	const setFieldGroupIds = (
-		_: (prev: Record<string, string>) => Record<string, string>
-	) => updateTreeState();
-	const setProgressiveGroups = (_: (prev: Set<string>) => Set<string>) =>
-		updateTreeState();
-	const setPhaseGroups = (_: (prev: Set<string>) => Set<string>) =>
-		updateTreeState();
-	const setStaticGroups = (_: (prev: Set<string>) => Set<string>) =>
-		updateTreeState();
+	// Remaining fake setters (only the ones still in use)
+	// These will be removed in future refactoring phases
 	const setCompletedGroups = (_: (prev: Set<string>) => Set<string>) =>
-		updateTreeState();
+		setTreeRevision((prev) => prev + 1);
 	const setGroupOrder = (_: (prev: string[]) => string[]) =>
-		updateTreeState();
-	const setArrowNavigationGroups = (_: (prev: Set<string>) => Set<string>) =>
-		updateTreeState();
-	const setGroupDepths = (
-		_: (prev: Map<string, number>) => Map<string, number>
-	) => updateTreeState();
-	const setRootPromptOrder = (
-		_: (
-			prev: Array<{
-				id: string;
-				type: "field" | "group";
-				groupName?: string;
-			}>
-		) => Array<{ id: string; type: "field" | "group"; groupName?: string }>
-	) => updateTreeState();
-	const setRootFieldHistory = (
-		_: (prev: Array<FieldInfo>) => Array<FieldInfo>
-	) => updateTreeState();
-	const setStaticGroupFields = (
-		_: (
-			prev: Map<string, Array<FieldInfo>>
-		) => Map<string, Array<FieldInfo>>
-	) => updateTreeState();
-	const setGroupFieldHistory = (
-		_: (
-			prev: Map<string, Array<FieldInfo>>
-		) => Map<string, Array<FieldInfo>>
-	) => updateTreeState();
+		setTreeRevision((prev) => prev + 1);
 
 	// Other non-grouped state
 	const [currentGroup, setCurrentGroup] = useState<string | null>(null);
@@ -332,106 +269,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					);
 				}
 
-				// Store complete field properties for later rendering
-				if (request.type !== "group") {
-					setFieldProperties((prev) => {
-						const newMap = new Map(prev);
-						newMap.set(request.id, request);
-						return newMap;
-					});
+				// All field properties are now tracked in the tree automatically
+				// Legacy tracking code removed - tree already has all this information
 
-					// Track field metadata for completed fields plugin
-					// Try to get the field label from various possible properties
-					const fieldLabel =
-						request.label ||
-						request.message ||
-						`${request.type} field`;
-					setFieldMessages((prev) => ({
-						...prev,
-						[request.id]: fieldLabel,
-					}));
-					if (request.groupName) {
-						// Store the group ID (for filtering)
-						setFieldGroupIds((prev) => ({
-							...prev,
-							[request.id]: request.groupName!,
-						}));
-
-						// Store the group display name (for UI display) - only if there's actually a label
-						const groupDisplayName =
-							groupIdToMessageRef.current.get(request.groupName);
-						if (groupDisplayName) {
-							setFieldGroupNames((prev) => ({
-								...prev,
-								[request.id]: groupDisplayName,
-							}));
-						}
-					}
-				}
-
-				// Track root-level prompt order
-				if (request.type !== "group") {
-					setRootPromptOrder((prev) => {
-						const entry = {
-							id: request.id,
-							type: "field" as const,
-							groupName: request.groupName,
-						};
-						if (!prev.some((p) => p.id === request.id)) {
-							return [...prev, entry];
-						}
-						return prev;
-					});
-
-					// For fields in static groups, track them immediately in the static fields store
-					if (
-						request.groupName &&
-						staticGroupsRef.current.has(request.groupName)
-					) {
-						setStaticGroupFields((prev) => {
-							const newMap = new Map(prev);
-							const groupFields =
-								newMap.get(request.groupName!) || [];
-							const fieldInfo = {
-								id: request.id,
-								label: request.label || `${request.type} field`,
-								type: request.type,
-								hideAfterSubmit: request.hideAfterSubmit,
-							};
-
-							// Only add if not already present (check by label and type to avoid duplicates from discovery vs execution)
-							if (
-								!groupFields.some(
-									(f) =>
-										f.label === fieldInfo.label &&
-										f.type === fieldInfo.type
-								)
-							) {
-								newMap.set(request.groupName!, [
-									...groupFields,
-									fieldInfo,
-								]);
-							}
-							return newMap;
-						});
-					}
-				} else if (request.type === "group") {
-					setRootPromptOrder((prev) => {
-						const entry = {
-							id: request.id,
-							type: "group" as const,
-							groupName: request.id, // Use ID as the stable identifier
-						};
-						if (!prev.some((p) => p.id === request.id)) {
-							return [...prev, entry];
-						}
-						return prev;
-					});
-
-					// Track group ID to label mapping
+				// Track group ID to label mapping (still needed for some legacy code)
+				if (request.type === "group") {
 					groupIdToMessageRef.current.set(request.id, request.label);
 
-					// Track group order using IDs
+					// Track group order
 					setGroupOrder((prev) => {
 						if (!prev.includes(request.id)) {
 							return [...prev, request.id];
@@ -439,13 +284,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						return prev;
 					});
 
-					// Track group depth
-					if (request.depth !== undefined) {
-						setGroupDepths((prev) => {
-							const newMap = new Map(prev);
-							newMap.set(request.id, request.depth!);
-							return newMap;
-						});
+					// Track static groups ref (for some conditional logic)
+					if (request.flow === "static") {
+						staticGroupsRef.current.add(request.id);
 					}
 				}
 
@@ -454,50 +295,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					// Field prompts always update the group (most accurate)
 					setCurrentGroup(request.groupName || null);
 				} else if (request.type === "group") {
-					// Group prompts update the group (needed for initial display and cross-group nav)
-					setCurrentGroup(request.id); // Use ID as the stable identifier
-
-					// Track progressive groups (default behavior)
-					if (request.flow === "progressive" || !request.flow) {
-						setProgressiveGroups((prev) =>
-							new Set(prev).add(request.id)
-						);
-					}
-
-					// Track phased groups
-					if (request.flow === "phased") {
-						setPhaseGroups((prev) => new Set(prev).add(request.id));
-					}
-
-					// Track static groups (non-default behavior)
-					if (request.flow === "static") {
-						staticGroupsRef.current.add(request.id);
-						setStaticGroups((prev) =>
-							new Set(prev).add(request.id)
-						);
-
-						// Track arrow navigation for this group
-						if (request.enableArrowNavigation) {
-							setArrowNavigationGroups((prev) =>
-								new Set(prev).add(request.id)
-							);
-						}
-
-						// Pre-populate static group fields from discovery
-						if (
-							request.discoveredFields &&
-							request.discoveredFields.length > 0
-						) {
-							setStaticGroupFields((prev) => {
-								const newMap = new Map(prev);
-								newMap.set(
-									request.id,
-									request.discoveredFields!
-								);
-								return newMap;
-							});
-						}
-					}
+					// Group prompts update the group
+					setCurrentGroup(request.id);
 				}
 			});
 		};
