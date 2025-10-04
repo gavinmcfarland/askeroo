@@ -525,17 +525,24 @@ export class PromptTreeManager {
 			}
 		});
 
-		// CRITICAL FIX: Preserve all root-level children that were completed before the nodeToKeep
-		// This ensures that root-level fields don't disappear when navigating back from groups
+		// IMPROVED: Preserve root-level children, but only their descendants that were in history before nodeToKeep
+		// This ensures that root-level fields don't disappear, but also doesn't keep future fields
 		const rootChildren = this.tree.root.children;
 		rootChildren.forEach((rootChild) => {
 			// If this root child was visited before or at the nodeToKeep, keep it
 			const childIndex = this.tree.history.indexOf(rootChild);
 			if (childIndex !== -1 && childIndex <= nodeToKeepIndex) {
 				nodesToKeep.add(rootChild.id);
-				// Keep all descendants of this root child
+				// Only keep descendants that were actually in history before or at nodeToKeep
 				this.traverseDepthFirst((descendant) => {
-					nodesToKeep.add(descendant.id);
+					const descendantIndex =
+						this.tree.history.indexOf(descendant);
+					if (
+						descendantIndex !== -1 &&
+						descendantIndex <= nodeToKeepIndex
+					) {
+						nodesToKeep.add(descendant.id);
+					}
 				}, rootChild);
 			}
 		});
@@ -547,7 +554,6 @@ export class PromptTreeManager {
 				// Preserve groups that are either:
 				// 1. Already marked to keep (in the path to nodeToKeep or in valid history)
 				// 2. Have children that are marked to keep
-				// 3. Are part of the main flow structure (not conditional groups)
 				const shouldKeepGroup =
 					nodesToKeep.has(node.id) ||
 					node.children.some((child) => nodesToKeep.has(child.id));
@@ -556,14 +562,20 @@ export class PromptTreeManager {
 					// Keep the group node itself
 					nodesToKeep.add(node.id);
 
-					// Keep only the children that are in the valid path or history
+					// Keep only the children that are in the valid history
 					node.children.forEach((child) => {
 						// Only keep children that are already marked as "should keep"
-						// This prevents keeping nodes from conditional branches that are no longer valid
 						if (nodesToKeep.has(child.id)) {
-							// Also keep all descendants of valid children
+							// Keep descendants, but only those in valid history
 							this.traverseDepthFirst((descendant) => {
-								nodesToKeep.add(descendant.id);
+								const descendantIndex =
+									this.tree.history.indexOf(descendant);
+								if (
+									descendantIndex !== -1 &&
+									descendantIndex <= nodeToKeepIndex
+								) {
+									nodesToKeep.add(descendant.id);
+								}
 							}, child);
 						}
 					});

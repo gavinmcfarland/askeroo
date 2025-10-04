@@ -192,6 +192,11 @@ const flow = async () => {
 				initialValue: true,
 			});
 
+			const name4 = await text({
+				label: "Name",
+				initialValue: "My Plugin",
+			});
+
 			// Build the final answers object
 			const answers = {
 				path,
