@@ -35,15 +35,22 @@ type FieldAction =
 // Tree-based state management
 
 export function PromptApp({ onReady }: PromptAppProps) {
+	// Core UI state
 	const [currentPrompt, setCurrentPrompt] = useState<PromptRequest | null>(
 		null
 	);
-	// ⬇️ resolver kept in a ref to avoid re-renders
-	const resolverRef = useRef<((value: any) => void) | null>(null);
+	const [treeRevision, setTreeRevision] = useState(0);
 
-	// Tree-based state management
+	// Tree management
 	const treeManagerRef = useRef<PromptTreeManager>(new PromptTreeManager());
-	const [treeRevision, setTreeRevision] = useState(0); // For forcing re-renders when tree changes
+
+	// Consolidated refs - grouped by purpose
+	const internalRefs = useRef({
+		resolver: null as ((value: any) => void) | null,
+		isNavigatingBack: false,
+		firstFieldId: null as string | null,
+		hintsByPromptId: new Map<string, React.ReactNode>(),
+	});
 
 	// Memoized tree to ensure UI updates when tree structure changes
 	const currentTree = useMemo(() => {
@@ -55,23 +62,16 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		setTreeManager(treeManagerRef.current);
 	}, []);
 
-	// Other state
-	const isNavigatingBack = useRef(false);
-
-	const firstFieldIdRef = useRef<string | null>(null);
-	// Track hint text per prompt ID - prevents hint flicker during navigation
-	const hintsByPromptId = useRef<Map<string, React.ReactNode>>(new Map());
-
-	// Add revision counter for static group conditional field updates
-	const [staticGroupRevision, setStaticGroupRevision] = useState(0);
-
 	// Handler for when fields provide hint text - stores per prompt ID
 	const handleHintChange = useCallback(
 		(hint: React.ReactNode) => {
 			if (currentPrompt?.id) {
-				hintsByPromptId.current.set(currentPrompt.id, hint);
+				internalRefs.current.hintsByPromptId.set(
+					currentPrompt.id,
+					hint
+				);
 				// Trigger re-render to show the updated hint
-				setStaticGroupRevision((prev) => prev + 1);
+				setTreeRevision((prev) => prev + 1);
 			}
 		},
 		[currentPrompt?.id]
@@ -79,7 +79,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	// Get hint for current prompt only
 	const currentHintText = currentPrompt?.id
-		? hintsByPromptId.current.get(currentPrompt.id) || null
+		? internalRefs.current.hintsByPromptId.get(currentPrompt.id) || null
 		: null;
 
 	useEffect(() => {
@@ -112,19 +112,20 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 				if (
 					request.type !== "group" &&
-					firstFieldIdRef.current === null &&
+					internalRefs.current.firstFieldId === null &&
 					globalRegistry.isInteractive(request.type)
 				) {
-					firstFieldIdRef.current = request.id;
+					internalRefs.current.firstFieldId = request.id;
 				}
 				// Use flushSync to ensure both updates happen atomically in a single render
 				flushSync(() => {
 					// Update currentPrompt and handle back navigation cleanup
 					const shouldCleanup =
-						isNavigatingBack.current && request.type !== "group";
+						internalRefs.current.isNavigatingBack &&
+						request.type !== "group";
 
 					if (shouldCleanup) {
-						isNavigatingBack.current = false;
+						internalRefs.current.isNavigatingBack = false;
 
 						// Update tree: un-complete the field we're navigating back to
 						const node = treeManagerRef.current.getNode(request.id);
@@ -139,8 +140,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					}
 				});
 
-				// ⬇️ assign without rendering
-				resolverRef.current = resolve;
+				// Assign resolver without rendering
+				internalRefs.current.resolver = resolve;
 
 				// NEW: Add prompt to tree structure and activate it
 				try {
@@ -239,7 +240,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							error
 						);
 					}
-					isNavigatingBack.current = false;
+					internalRefs.current.isNavigatingBack = false;
 					resolveValue = action.value;
 					break;
 				}
@@ -247,7 +248,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				case "back": {
 					// Back navigation
 					performTreeBackNavigation();
-					isNavigatingBack.current = true;
+					internalRefs.current.isNavigatingBack = true;
 					resolveValue = { __back: true };
 					break;
 				}
@@ -277,8 +278,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			setTreeRevision((prev) => prev + 1);
 
 			// Resolve the promise
-			const resolver = resolverRef.current;
-			resolverRef.current = null;
+			const resolver = internalRefs.current.resolver;
+			internalRefs.current.resolver = null;
 			resolver?.(resolveValue);
 		},
 		[currentPrompt, performTreeBackNavigation]
@@ -288,12 +289,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	const handleSubmit = useCallback(
 		(value: any) => {
-			if (!resolverRef.current || !currentPrompt) return;
+			if (!internalRefs.current.resolver || !currentPrompt) return;
 
 			// Groups resolve immediately without going through field action
 			if (currentPrompt.type === "group") {
-				const r = resolverRef.current;
-				resolverRef.current = null;
+				const r = internalRefs.current.resolver;
+				internalRefs.current.resolver = null;
 				r(value);
 				return;
 			}
@@ -322,13 +323,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		handleFieldAction({ type: "back" });
 	}, [handleFieldAction]);
 
-	// ⬇️ Auto-resolve group prompts without touching resolver state
+	// Auto-resolve group prompts
 	useEffect(() => {
-		if (currentPrompt?.type === "group" && resolverRef.current) {
-			const r = resolverRef.current;
-			resolverRef.current = null;
+		if (currentPrompt?.type === "group" && internalRefs.current.resolver) {
+			const r = internalRefs.current.resolver;
+			internalRefs.current.resolver = null;
 			r(undefined);
-			// NOTE: don't null out currentPrompt here; let the next prompt replace it.
 		}
 	}, [currentPrompt]);
 
