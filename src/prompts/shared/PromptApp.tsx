@@ -58,7 +58,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	// Other non-grouped state
 	const [currentGroup, setCurrentGroup] = useState<string | null>(null);
-	const completionHistoryRef = useRef<string[]>([]);
 	const groupIdToMessageRef = useRef<Map<string, string | undefined>>(
 		new Map()
 	);
@@ -111,7 +110,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							!node.excludeFromCompleted
 						) {
 							node.completed = true;
-							completionHistoryRef.current.push(node.id);
+							// completionHistoryRef removed - tree tracks completion
 						}
 					});
 
@@ -146,14 +145,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						const node = treeManagerRef.current.getNode(request.id);
 						if (node && node.completed) {
 							node.completed = false;
-
-							// Also remove from completion history
-							const index = completionHistoryRef.current.indexOf(
-								request.id
-							);
-							if (index > -1) {
-								completionHistoryRef.current.splice(index, 1);
-							}
+							// completionHistoryRef removed - tree tracks completion
 						}
 
 						setCurrentPrompt(request);
@@ -347,12 +339,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				if (node) {
 					node.completed = true;
 				}
-				if (!completionHistoryRef.current.includes(prompt.id)) {
-					completionHistoryRef.current.push(prompt.id);
-				}
+				// completionHistoryRef removed - tree tracks completion automatically
 			}
 		},
-		[completionHistoryRef]
+		[]
 	);
 
 	// Handler: Clear group and go back
