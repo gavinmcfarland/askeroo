@@ -1,6 +1,6 @@
 import { createPlugin } from "../../registry.js";
 import { TextField } from "./TextField.js";
-import { ValidatorFunction } from "../../types/validation.js";
+import { ValidatorFunction } from "../../types/index.js";
 
 export interface TextOptions {
 	label: string;

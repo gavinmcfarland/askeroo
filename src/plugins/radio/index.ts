@@ -1,6 +1,6 @@
 import { createPlugin } from "../../registry.js";
 import { RadioField } from "./RadioField.js";
-import { ValidatorFunction } from "../../types/validation.js";
+import { ValidatorFunction } from "../../types/index.js";
 
 export interface RadioOption {
 	value: string;

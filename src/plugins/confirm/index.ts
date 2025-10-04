@@ -1,6 +1,6 @@
 import { createPlugin } from "../../registry.js";
 import { ConfirmField, ConfirmOption } from "./ConfirmField.js";
-import { ValidatorFunction } from "../../types/validation.js";
+import { ValidatorFunction } from "../../types/index.js";
 
 export interface ConfirmOptions {
 	label?: string;

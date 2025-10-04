@@ -132,3 +132,8 @@ export type FlowFunction<T> = (
 		BACK: BackToken;
 	} & Record<string, any>
 ) => Promise<T>;
+
+// Validation function type - return string for error, null for valid
+export type ValidatorFunction<T = any> = (
+	value: T
+) => string | null | Promise<string | null>;

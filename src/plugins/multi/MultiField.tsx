@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Text, Box, useInput } from "ink";
-import { ValidatorFunction } from "../../types/validation.js";
+import { ValidatorFunction } from "../../types/index.js";
 
 interface MultiFieldOption {
 	value: string;

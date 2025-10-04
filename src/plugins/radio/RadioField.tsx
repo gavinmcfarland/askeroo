@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useFieldReset } from "../../hooks/useAutoSubmit.js";
 import { Text, Box, useInput } from "ink";
-import { ValidatorFunction } from "../../types/validation.js";
+import { ValidatorFunction } from "../../types/index.js";
 
 interface RadioOption {
 	value: string;
