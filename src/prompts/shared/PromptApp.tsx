@@ -706,16 +706,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						return;
 					}
 
-					// Regular submit - store the value
-					setFieldValues((prev) => ({
-						...prev,
-						[currentPrompt.id]: value,
-					}));
-					setVisitedPrompts((prev) =>
-						new Set(prev).add(currentPrompt.id)
-					);
-
-					// Update tree with submitted value
+					// Regular submit - update tree with submitted value
 					try {
 						treeManagerRef.current.updateNode(currentPrompt.id, {
 							value: value,
@@ -725,7 +716,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						setTreeRevision((prev) => prev + 1);
 					} catch (error) {
 						console.warn(
-							"Tree update error (non-critical during migration):",
+							"Tree update error (non-critical):",
 							error
 						);
 					}
