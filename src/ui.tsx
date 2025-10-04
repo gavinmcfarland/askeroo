@@ -5,15 +5,6 @@ import { debugLogger } from "./utils/logging.js";
 import { globalRegistry } from "./registry.js";
 import { BackToken, PromptRequest } from "./types/index.js";
 
-// Import plugins to ensure they register before UI is created
-import "./plugins/text/index.js";
-import "./plugins/confirm/index.js";
-import "./plugins/radio/index.js";
-import "./plugins/multi/index.js";
-import "./plugins/note/index.js";
-import "./plugins/tasks/index.js";
-import "./plugins/completed-fields/index.js";
-
 // Generate stable IDs for prompts based on content and context
 const generatePromptId = (type: string, label: string, groupName?: string) => {
 	const parts = [type, label];
@@ -151,5 +142,20 @@ function createUI() {
 	return ui;
 }
 
-// Create UI after plugins are registered (via imports above)
-export const ui = createUI();
+// Lazy UI creation to support dynamic plugin registration
+let uiInstance: any = null;
+
+function ensureUI() {
+	if (!uiInstance) {
+		uiInstance = createUI();
+	}
+	return uiInstance;
+}
+
+// Export a lightweight Proxy that lazily creates the UI on first access
+// This allows plugins to register before the UI is created
+export const ui = new Proxy({} as any, {
+	get(_target, prop) {
+		return ensureUI()[prop];
+	},
+});
