@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // Test script to verify static flow works with any fields
-import { ask, group, text, confirm } from "./dist/src/index.js";
+import { ask, group, text, confirm } from "../dist/src/index.js";
 
 const testGenericStatic = async () => {
 	const result = await ask(async ({ group, text, confirm }) => {

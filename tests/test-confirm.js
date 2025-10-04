@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { ask, confirm } from "./dist/src/index.js";
+import { ask, confirm } from "../dist/src/index.js";
 
 const flow = async () => {
     console.log("Testing confirm component with initial value behavior\n");
