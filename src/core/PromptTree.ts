@@ -591,29 +591,22 @@ export class PromptTreeManager {
 		request: PromptRequest,
 		explicitParentId?: string | null
 	): PromptNode {
-		// Use explicit parent ID if provided (preferred path)
+		// Determine parent - runtime provides explicit parent via groupStack
 		let parentGroupId: string | undefined;
 
 		if (explicitParentId && explicitParentId !== "root") {
-			// Trust the explicit parent from runtime
 			const parentExists = this.getNode(explicitParentId);
 			if (parentExists) {
 				parentGroupId = explicitParentId;
 			} else {
 				console.warn(
-					`Explicit parent "${explicitParentId}" not found, falling back to depth inference`
+					`Explicit parent "${explicitParentId}" not found, using root`
 				);
-				parentGroupId = this.findParentGroupIdByDepth(
-					request.depth || 0
-				);
+				parentGroupId = undefined; // Will default to root in addNode
 			}
-		} else {
-			// Fallback: infer from depth (legacy path for backward compatibility)
-			parentGroupId = this.findParentGroupIdByDepth(request.depth || 0);
 		}
+		// If no explicit parent, it's a root-level group (parentGroupId = undefined)
 
-		// CRITICAL FIX: Don't pass depth if not explicitly set in request
-		// Let addNode calculate it from parent to ensure correct nesting depths
 		const groupNodeData: any = {
 			id: request.id,
 			type: "group",
@@ -688,71 +681,6 @@ export class PromptTreeManager {
 		);
 
 		return fieldNode;
-	}
-
-	/**
-	 * Find parent group by depth (LEGACY FALLBACK - prefer explicit parent)
-	 *
-	 * This method infers parent from depth, which is complex and error-prone.
-	 * It's kept for backward compatibility when explicit parent is not provided.
-	 *
-	 * PREFERRED: Pass explicit parent ID from runtime (which knows groupStack).
-	 * The runtime has groupStack and knows the exact parent context.
-	 */
-	private findParentGroupIdByDepth(requestDepth: number): string | undefined {
-		if (requestDepth <= 0) return undefined;
-
-		const parentDepth = requestDepth - 1;
-
-		// Strategy 1: Search from active node upwards for group at parent depth
-		const activeNode = this.getActiveNode();
-		if (activeNode) {
-			const groupFromActive = this.findGroupAtDepth(
-				activeNode,
-				parentDepth
-			);
-			if (groupFromActive) return groupFromActive.id;
-		}
-
-		// Strategy 2: Find all groups at parent depth
-		const groups = this.getNodesByType("group");
-		const potentialParents = groups.filter((g) => g.depth === parentDepth);
-
-		if (potentialParents.length === 0) return "root";
-		if (potentialParents.length === 1) return potentialParents[0].id;
-
-		// Strategy 3: If multiple candidates, use most recent from history
-		const history = this.getNavigationPath();
-		for (let i = history.length - 1; i >= 0; i--) {
-			const groupFromHistory = this.findGroupAtDepth(
-				history[i],
-				parentDepth
-			);
-			if (
-				groupFromHistory &&
-				potentialParents.includes(groupFromHistory)
-			) {
-				return groupFromHistory.id;
-			}
-		}
-
-		// Fallback: use last potential parent
-		return potentialParents[potentialParents.length - 1].id;
-	}
-
-	/** Helper: Find a group at a specific depth by traversing upwards from a node */
-	private findGroupAtDepth(
-		fromNode: PromptNode,
-		targetDepth: number
-	): PromptNode | null {
-		let current: PromptNode | undefined = fromNode;
-		while (current) {
-			if (current.type === "group" && current.depth === targetDepth) {
-				return current;
-			}
-			current = current.parent;
-		}
-		return null;
 	}
 
 	getCurrentGroupId(): string | null {
