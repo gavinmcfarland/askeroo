@@ -58,9 +58,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	// Other non-grouped state
 	const [currentGroup, setCurrentGroup] = useState<string | null>(null);
-	const groupIdToMessageRef = useRef<Map<string, string | undefined>>(
-		new Map()
-	);
 	const isNavigatingBack = useRef(false);
 
 	// CompletedFields now reads directly from tree via setTreeManager()
@@ -73,12 +70,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	// Add revision counter for static group conditional field updates
 	const [staticGroupRevision, setStaticGroupRevision] = useState(0);
-
-	// Helper function to get display name for a group
-	const getGroupDisplayName = (groupId: string | null): string | null => {
-		if (!groupId) return null;
-		return groupIdToMessageRef.current.get(groupId) || null;
-	};
 
 	// Handler for when fields provide hint text - stores per prompt ID
 	const handleHintChange = useCallback(
@@ -264,11 +255,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				// All field properties are now tracked in the tree automatically
 				// Legacy tracking code removed - tree already has all this information
 
-				// Track group ID to label mapping (still needed for some legacy code)
+				// Track group order
 				if (request.type === "group") {
-					groupIdToMessageRef.current.set(request.id, request.label);
-
-					// Track group order
 					setGroupOrder((prev) => {
 						if (!prev.includes(request.id)) {
 							return [...prev, request.id];
