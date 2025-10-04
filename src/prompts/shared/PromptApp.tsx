@@ -198,21 +198,17 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				}
 				// Use flushSync to ensure both updates happen atomically in a single render
 				flushSync(() => {
-					// Update both currentPrompt and completedFields in a single batched state update
+					// Update currentPrompt and handle back navigation cleanup
 					const shouldCleanup =
 						isNavigatingBack.current && request.type !== "group";
 
 					if (shouldCleanup) {
 						isNavigatingBack.current = false;
 
-						// Update both states together for true atomicity
-						setCurrentPrompt(request);
-						setCompletedFields((prev) => {
-							if (!prev.has(request.id)) {
-								return prev;
-							}
-							const next = new Set(prev);
-							next.delete(request.id);
+						// Update tree: un-complete the field we're navigating back to
+						const node = treeManagerRef.current.getNode(request.id);
+						if (node && node.completed) {
+							node.completed = false;
 
 							// Also remove from completion history
 							const index = completionHistoryRef.current.indexOf(
@@ -221,9 +217,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							if (index > -1) {
 								completionHistoryRef.current.splice(index, 1);
 							}
+						}
 
-							return next;
-						});
+						setCurrentPrompt(request);
 					} else {
 						setCurrentPrompt(request);
 					}
