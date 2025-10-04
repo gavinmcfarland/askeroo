@@ -204,13 +204,152 @@ After (single service):
 
 **Total Reduction from Phase 1-3**: 156 lines removed from core.ts (28.5% reduction)
 
-## Next Steps
+## Phase 4: Convert Runtime to Class ✅
+
+**Date:** October 4, 2025  
+**Status:** Complete
+
+### Changes Made
+
+1. **Created `src/core/PromptRuntime.ts`**
+
+    - Converted the entire `createRuntime` function to a class-based architecture
+    - Encapsulated all runtime logic into a cohesive `PromptRuntime` class
+    - Uses dependency injection for better testability (IdGenerator, RuntimeState, DiscoveryService)
+    - Provides clean public API with proper encapsulation
+
+2. **Simplified `src/core.ts`**
+    - Reduced from 391 lines to just 29 lines (92.6% reduction!)
+    - Now a simple factory function that creates a PromptRuntime instance
+    - Maintains backwards compatibility by returning the same API structure
+    - Exports PromptRuntime class for advanced users
+
+### Architecture Transformation
+
+**Before (functional/closure-based):**
+
+```typescript
+export function createRuntime(ui: UI) {
+  // 391 lines of closure-based code
+  const idGenerator = ...
+  const state = ...
+  const discovery = ...
+
+  function ask() { ... }
+  function group() { ... }
+  // Many nested functions and closures
+
+  return { ask, group, ... }
+}
+```
+
+**After (class-based):**
+
+```typescript
+export class PromptRuntime {
+  private idGenerator: IdGenerator;
+  private state: RuntimeState;
+  private discovery: DiscoveryService;
+
+  constructor(ui: UI) { ... }
+
+  async ask<T>() { ... }
+  async group() { ... }
+  // Clean class methods
+}
+
+export function createRuntime(ui: UI) {
+  const runtime = new PromptRuntime(ui);
+  return { /* public API */ };
+}
+```
+
+### Key Features
+
+**Encapsulation:**
+
+-   All services properly encapsulated as private properties
+-   Clear separation between public API and internal methods
+-   No more closure variables scattered across 400 lines
+
+**Dependency Injection:**
+
+-   IdGenerator, RuntimeState, DiscoveryService injected in constructor
+-   Easy to test individual components
+-   Clear dependency graph
+
+**Public API:**
+
+-   `ask()` - Execute prompt flows
+-   `group()` - Create prompt groups
+-   `rediscoverStaticGroupFields()` - Re-discover fields
+-   `getPluginPrompts()` - Access plugin functions
+-   `getStateSnapshot()` - Debug runtime state
+
+**Advanced Features:**
+
+-   Export `PromptRuntime` class for direct instantiation
+-   `getStateSnapshot()` for debugging and inspection
+-   Clean lifecycle management
+
+### Benefits
+
+1. **Testability** - Can instantiate and test PromptRuntime independently
+2. **Maintainability** - Clear class structure easier to understand and modify
+3. **Extensibility** - Easy to extend with new methods or override behavior
+4. **Type Safety** - Better TypeScript support with explicit types
+5. **Debugging** - `getStateSnapshot()` provides full runtime inspection
+6. **Backwards Compatibility** - Existing code continues to work unchanged
+
+### Build Status
+
+✅ TypeScript compilation successful  
+✅ No linter errors  
+✅ Generated types are correct  
+✅ All examples still work
+
+### Line Count Summary
+
+-   **Before Phase 4**: core.ts = 391 lines
+-   **After Phase 4**: core.ts = 29 lines (92.6% reduction!)
+-   **New file**: PromptRuntime.ts = 443 lines (well-organized class)
+
+**Total Journey:**
+
+-   **Original core.ts**: 547 lines
+-   **Final core.ts**: 29 lines
+-   **Reduction**: 518 lines (94.7% reduction!)
+-   **New organized structure**: 4 clean classes (IdGenerator, RuntimeState, DiscoveryService, PromptRuntime)
+
+## Summary of All Phases
 
 Following the original refactoring plan:
 
-1. ✅ **Extract `IdGenerator`** (Complete)
-2. ✅ **Create `RuntimeState` class** (Complete)
-3. ✅ **Create `DiscoveryService`** (Complete)
-4. ⏳ **Convert main runtime to class** - Final architectural improvement
+1. ✅ **Extract `IdGenerator`** (Complete) - 107 lines
+2. ✅ **Create `RuntimeState` class** (Complete) - 316 lines
+3. ✅ **Create `DiscoveryService`** (Complete) - 187 lines
+4. ✅ **Convert main runtime to class** (Complete) - 443 lines
 
-Each phase maintains backwards compatibility while improving code structure.
+### Final Architecture
+
+```
+src/core/
+├── IdGenerator.ts       (107 lines) - ID generation logic
+├── RuntimeState.ts      (316 lines) - State management
+├── DiscoveryService.ts  (187 lines) - Field discovery
+└── PromptRuntime.ts     (443 lines) - Main orchestrator
+
+src/core.ts              (29 lines)  - Simple factory
+```
+
+### Achievements
+
+✅ **Fully class-based architecture** - No more closures  
+✅ **Separation of concerns** - Each class has one responsibility  
+✅ **Testable** - All components can be unit tested  
+✅ **Maintainable** - Easy to find and modify code  
+✅ **Type-safe** - Excellent TypeScript support  
+✅ **Backwards compatible** - Existing code unchanged  
+✅ **Well-documented** - Comprehensive JSDoc comments
+
+Each phase maintained backwards compatibility while dramatically improving code structure and maintainability.
