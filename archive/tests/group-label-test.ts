@@ -1,7 +1,7 @@
 // Test to check group label visibility
 // Run with: npx tsx src/tests/group-label-test.ts
 
-import { PromptTreeManager } from "../core/PromptTree.js";
+import { PromptTreeManager } from "../../src/core/PromptTree.js";
 import { PromptTreeAdapter } from "../core/PromptTreeAdapter.js";
 
 console.log("🏷️ Testing Group Label Visibility...\n");

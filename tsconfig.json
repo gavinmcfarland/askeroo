@@ -17,12 +17,12 @@
         "jsx": "react-jsx",
         "lib": ["ES2022"]
     },
-    "include": ["src/**/*", "examples/**/*.ts"],
+    "include": ["src/**/*", "examples/**/*.ts", "archive/tests"],
     "exclude": [
         "node_modules",
         "dist",
         "**/*.test.ts",
         "**/*.spec.ts",
-        "src/tests/**/*"
+        "archive/tests/**/*"
     ]
 }
