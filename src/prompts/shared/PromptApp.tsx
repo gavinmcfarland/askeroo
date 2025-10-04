@@ -49,13 +49,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		setTreeManager(treeManagerRef.current);
 	}, []);
 
-	// Remaining fake setters (only the ones still in use)
-	// These will be removed in future refactoring phases
-	const setCompletedGroups = (_: (prev: Set<string>) => Set<string>) =>
-		setTreeRevision((prev) => prev + 1);
-	const setGroupOrder = (_: (prev: string[]) => string[]) =>
-		setTreeRevision((prev) => prev + 1);
-
 	// Other non-grouped state
 	const [currentGroup, setCurrentGroup] = useState<string | null>(null);
 	const isNavigatingBack = useRef(false);
@@ -254,17 +247,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				// All field properties are now tracked in the tree automatically
 				// Legacy tracking code removed - tree already has all this information
 
-				// Track group order
-				if (request.type === "group") {
-					setGroupOrder((prev) => {
-						if (!prev.includes(request.id)) {
-							return [...prev, request.id];
-						}
-						return prev;
-					});
-
-					// staticGroupsRef removed - use node.flow === "static" from tree instead
-				}
+				// Group order is tracked in tree structure - no need for separate tracking
+				// staticGroupsRef removed - use node.flow === "static" from tree instead
 
 				// Update currentGroup based on the request
 				if (request.type !== "group") {
@@ -460,14 +444,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			if (currentGroupIndex === -1) {
 				// Calculate what the index would be after adding
 				effectiveCurrentGroupIndex = groupOrder.length;
-
-				// Add it to the order asynchronously
-				setGroupOrder((prev) => {
-					if (!prev.includes(currentGroup)) {
-						return [...prev, currentGroup];
-					}
-					return prev;
-				});
+				// Group order is tracked in tree - no separate tracking needed
 			}
 
 			// Only mark as completed if we're moving forward in the sequence
@@ -476,18 +453,15 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				effectiveCurrentGroupIndex >= 0 &&
 				effectiveCurrentGroupIndex > prevGroupIndex
 			) {
-				// Keep using setCompletedGroups for now - group completion tracking
-				// needs more careful refactoring as it affects navigation
-				setCompletedGroups((prev) => new Set(prev).add(prevGroup));
+				// Group completion is tracked in tree - no separate state needed
+				// The fake setter only triggered re-renders which already happen via tree updates
 			}
 		}
 
 		// Also handle the case where we complete a group and move to a non-group prompt
 		// This catches cases where the last group isn't followed by another group
 		if (prevGroup && !currentGroup) {
-			// When moving from a group to no group (root-level), mark the group as completed
-			// Keep using setCompletedGroups for now
-			setCompletedGroups((prev) => new Set(prev).add(prevGroup));
+			// Group completion is tracked in tree - no separate state needed
 		}
 
 		previousGroupRef.current = currentGroup;
