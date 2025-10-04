@@ -169,13 +169,43 @@ export class PromptTreeManager {
 			return { success: false, reason: `Node ${nodeId} not found` };
 		}
 
-		// If we're navigating to a node that was previously visited but is now at a different
-		// position in the flow (due to changed conditions), we need to clean up any future
-		// state that's no longer valid
+		// CRITICAL FIX: Determine if we should clear future state
+		// We should only clear future state when:
+		// 1. The node was visited before (wasVisitedBefore)
+		// 2. The node is NOT in the current history (meaning we're revisiting from a different path)
+		// 3. The node is NOT a forward navigation within the same group/parent context
 		const wasVisitedBefore = node.visited;
-		if (wasVisitedBefore) {
+		const isInCurrentHistory = this.tree.history.some(
+			(n) => n.id === nodeId
+		);
+
+		// Check if this is a forward navigation within the same parent context
+		// (e.g., going from field2 to field3 in the same group)
+		const isForwardInSameContext = (() => {
+			if (!this.tree.activeNode) return false;
+
+			// If both nodes share the same parent, this is a forward navigation within same context
+			if (node.parent?.id === this.tree.activeNode.parent?.id) {
+				// Check if the node comes after the active node in the parent's children
+				const siblings = node.parent?.children || [];
+				const activeIndex = siblings.indexOf(this.tree.activeNode);
+				const nodeIndex = siblings.indexOf(node);
+				return nodeIndex > activeIndex;
+			}
+
+			return false;
+		})();
+
+		// Only clear future state for true re-navigation from different paths
+		// NOT for forward navigation within the same group
+		if (
+			wasVisitedBefore &&
+			!isInCurrentHistory &&
+			!isForwardInSameContext
+		) {
 			// Clear any nodes that might have been added after this node in previous flows
 			// but are no longer part of the current valid flow
+			// This should only happen for conditional branches or when replaying the flow
 			this.clearFutureStateFrom(node);
 		}
 
@@ -388,6 +418,21 @@ export class PromptTreeManager {
 			}
 		});
 
+		// CRITICAL FIX: Also preserve all root-level children that were completed before this field
+		// This is the same fix as in clearFutureStateFrom
+		const rootChildren = this.tree.root.children;
+		rootChildren.forEach((rootChild) => {
+			// If this root child was visited before or at the field, keep it
+			const childIndex = this.tree.history.indexOf(rootChild);
+			if (childIndex !== -1 && childIndex <= firstVisitIndex) {
+				nodesToKeep.add(rootChild.id);
+				// Keep all descendants of this root child
+				this.traverseDepthFirst((descendant) => {
+					nodesToKeep.add(descendant.id);
+				}, rootChild);
+			}
+		});
+
 		// Remove all other nodes
 		const nodesToRemove: PromptNode[] = [];
 		this.traverseDepthFirst((node) => {
@@ -424,11 +469,12 @@ export class PromptTreeManager {
 			current = current.parent;
 		}
 
-		// Find all nodes that were visited before nodeToKeep in the history
-		const historyUpToNode = this.tree.history.slice(
-			0,
-			this.tree.history.indexOf(nodeToKeep) + 1
-		);
+		// Find the index of nodeToKeep in history to determine what came before it
+		const nodeToKeepIndex = this.tree.history.indexOf(nodeToKeep);
+
+		// Keep all nodes that were visited before or at the nodeToKeep in history
+		// This ensures we preserve root-level fields that came before groups
+		const historyUpToNode = this.tree.history.slice(0, nodeToKeepIndex + 1);
 		historyUpToNode.forEach((node) => {
 			nodesToKeep.add(node.id);
 			// Also keep all ancestors of historical nodes
@@ -436,6 +482,21 @@ export class PromptTreeManager {
 			while (ancestor) {
 				nodesToKeep.add(ancestor.id);
 				ancestor = ancestor.parent;
+			}
+		});
+
+		// CRITICAL FIX: Preserve all root-level children that were completed before the nodeToKeep
+		// This ensures that root-level fields don't disappear when navigating back from groups
+		const rootChildren = this.tree.root.children;
+		rootChildren.forEach((rootChild) => {
+			// If this root child was visited before or at the nodeToKeep, keep it
+			const childIndex = this.tree.history.indexOf(rootChild);
+			if (childIndex !== -1 && childIndex <= nodeToKeepIndex) {
+				nodesToKeep.add(rootChild.id);
+				// Keep all descendants of this root child
+				this.traverseDepthFirst((descendant) => {
+					nodesToKeep.add(descendant.id);
+				}, rootChild);
 			}
 		});
 

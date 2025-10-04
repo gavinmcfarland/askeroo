@@ -26,6 +26,16 @@ const flow = async () => {
 		initialValue: "My Plugin",
 	});
 
+	const name2 = await text({
+		label: "Name",
+		initialValue: "My Plugin",
+	});
+
+	const name3 = await text({
+		label: "Name",
+		initialValue: "My Plugin",
+	});
+
 	const answers = await group(
 		async () => {
 			// Collect prompts individually

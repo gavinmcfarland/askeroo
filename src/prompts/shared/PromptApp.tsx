@@ -528,137 +528,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			if (canGoBack) {
 				const result = treeManagerRef.current.goBack();
 				if (result.success) {
-					const allNodes = treeManagerRef.current.findNodes(
-						() => true
-					);
-					const currentNodeIds = new Set(
-						allNodes.map((node) => node.id)
-					);
-
-					// Find and clear nodes that are no longer completed
-					const state = getSyncedState();
-					const noLongerCompleted: string[] = [];
-					allNodes.forEach((node: PromptNode) => {
-						if (
-							!node.completed &&
-							state.fieldState.completed.has(node.id)
-						) {
-							noLongerCompleted.push(node.id);
-						}
-					});
-
-					if (noLongerCompleted.length > 0) {
-						setCompletedFields((prev) => {
-							const newCompleted = new Set(prev);
-							noLongerCompleted.forEach((id) =>
-								newCompleted.delete(id)
-							);
-							return newCompleted;
-						});
-					}
-
-					// Clean up all state for removed nodes
-					setFieldValues((prev) => {
-						const newValues = { ...prev };
-						Object.keys(newValues).forEach((fieldId) => {
-							if (!currentNodeIds.has(fieldId))
-								delete newValues[fieldId];
-						});
-						return newValues;
-					});
-
-					setVisitedPrompts((prev) => {
-						const newVisited = new Set(prev);
-						prev.forEach((fieldId) => {
-							if (!currentNodeIds.has(fieldId))
-								newVisited.delete(fieldId);
-						});
-						return newVisited;
-					});
-
-					setFieldProperties((prev) => {
-						const newProperties = new Map(prev);
-						prev.forEach((_, fieldId) => {
-							if (!currentNodeIds.has(fieldId))
-								newProperties.delete(fieldId);
-						});
-						return newProperties;
-					});
-
-					setFieldMessages((prev) => {
-						const newMessages = { ...prev };
-						Object.keys(newMessages).forEach((fieldId) => {
-							if (!currentNodeIds.has(fieldId))
-								delete newMessages[fieldId];
-						});
-						return newMessages;
-					});
-
-					setFieldGroupNames((prev) => {
-						const newGroupNames = { ...prev };
-						Object.keys(newGroupNames).forEach((fieldId) => {
-							if (!currentNodeIds.has(fieldId))
-								delete newGroupNames[fieldId];
-						});
-						return newGroupNames;
-					});
-
-					setFieldGroupIds((prev) => {
-						const newGroupIds = { ...prev };
-						Object.keys(newGroupIds).forEach((fieldId) => {
-							if (!currentNodeIds.has(fieldId))
-								delete newGroupIds[fieldId];
-						});
-						return newGroupIds;
-					});
-
-					setStaticGroupFields((prev) => {
-						const newStaticGroupFields = new Map(prev);
-						prev.forEach((fields, groupId) => {
-							if (!currentNodeIds.has(groupId)) {
-								newStaticGroupFields.delete(groupId);
-							} else {
-								const validFields = fields.filter((field) =>
-									currentNodeIds.has(field.id)
-								);
-								if (validFields.length !== fields.length) {
-									newStaticGroupFields.set(
-										groupId,
-										validFields
-									);
-								}
-							}
-						});
-						return newStaticGroupFields;
-					});
-
-					setGroupFieldHistory((prev) => {
-						const newGroupFieldHistory = new Map(prev);
-						prev.forEach((fields, groupId) => {
-							if (!currentNodeIds.has(groupId)) {
-								newGroupFieldHistory.delete(groupId);
-							} else {
-								const validFields = fields.filter((field) =>
-									currentNodeIds.has(field.id)
-								);
-								if (validFields.length !== fields.length) {
-									newGroupFieldHistory.set(
-										groupId,
-										validFields
-									);
-								}
-							}
-						});
-						return newGroupFieldHistory;
-					});
-
-					setRootFieldHistory((prev) =>
-						prev.filter((field) => currentNodeIds.has(field.id))
-					);
-					setRootPromptOrder((prev) =>
-						prev.filter((item) => currentNodeIds.has(item.id))
-					);
-
+					// SIMPLIFIED FIX: The tree is the single source of truth
+					// All state is managed by the tree structure itself
+					// We just need to trigger a re-render to sync the UI with the tree state
+					// The syncToLegacyState() method will handle all the state syncing
 					setTreeRevision((prev) => prev + 1);
 				}
 			}
@@ -668,20 +541,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				error
 			);
 		}
-	}, [
-		getSyncedState,
-		setCompletedFields,
-		setFieldValues,
-		setVisitedPrompts,
-		setFieldProperties,
-		setFieldMessages,
-		setFieldGroupNames,
-		setFieldGroupIds,
-		setStaticGroupFields,
-		setGroupFieldHistory,
-		setRootFieldHistory,
-		setRootPromptOrder,
-	]);
+	}, []);
 
 	// Helper: Create field info object
 	const createFieldInfo = useCallback(
