@@ -10,67 +10,18 @@ import {
 	BackToken,
 	Engine,
 } from "./types/index.js";
+import { IdGenerator } from "./core/IdGenerator.js";
 
 const BACK: BackToken = { __back: true };
-
-// Simple hash function for generating short, stable hashes
-function simpleHash(str: string): string {
-	let hash = 0;
-	for (let i = 0; i < str.length; i++) {
-		hash = ((hash << 5) - hash + str.charCodeAt(i)) & 0x7fffffff;
-	}
-	return hash.toString(36);
-}
-
-// Unified ID generation for all prompt types
-function generateId(
-	type: "field" | "group",
-	context: {
-		kind?: string; // For fields: 'text', 'confirm', etc.
-		message?: string; // For fields: the message/label
-		groupStack: string[];
-		stepIndex?: number; // For fields
-		groupCount?: number; // For groups
-		flowType?: string; // For groups
-		customId?: string; // Explicit ID from user
-	}
-): string {
-	// Use custom ID if provided
-	if (context.customId) {
-		return context.customId;
-	}
-
-	if (type === "group") {
-		// Group ID: depth + index + flow
-		const depth = context.groupStack.length;
-		const index = context.groupCount || 0;
-		const flow = context.flowType || "sequential";
-		return `group_${depth}_${index}_${flow}`;
-	} else {
-		// Field ID: kind + group + step + message hash
-		const parts: string[] = [context.kind || "field"];
-
-		if (context.groupStack.length > 0) {
-			parts.push(
-				`g:${context.groupStack[context.groupStack.length - 1]}`
-			);
-		}
-
-		parts.push(`s:${context.stepIndex || 0}`);
-
-		if (context.message) {
-			parts.push(`m:${simpleHash(context.message)}`);
-		}
-
-		return parts.join("|");
-	}
-}
 
 export function createRuntime(ui: UI) {
 	debugLogger.log("RUNTIME_CREATE", { ui: typeof ui });
 
 	// Use the UI directly - dynamic handlers are created in ui.tsx
 	const extendedUI = ui;
+
+	// ID generator for stable, deterministic IDs
+	const idGenerator = new IdGenerator();
 
 	// Core runtime state
 	const answers: Answers = {}; // User answers for each prompt
@@ -83,7 +34,6 @@ export function createRuntime(ui: UI) {
 	// Note: groupStack is necessary during flow execution, before nodes are added to tree
 	let groupStack: string[] = []; // Track current group nesting during flow execution
 	let lastProcessedGroups: Set<string> = new Set(); // Track which groups were already processed
-	let groupCount = 0; // Track total number of groups encountered for stable ID generation
 
 	// Discovery mode for static groups (pre-scans fields before rendering)
 	let isDiscoveryMode = false; // Track if we're in discovery mode for static groups
@@ -112,9 +62,9 @@ export function createRuntime(ui: UI) {
 				const groupOpts = opts as GroupMeta & GroupOpts;
 
 				// Increment group count for stable ID generation
-				groupCount++;
+				const groupCount = idGenerator.incrementGroupCount();
 
-				const groupId = generateId("group", {
+				const groupId = idGenerator.generateGroupId({
 					groupStack,
 					groupCount,
 					flowType: groupOpts.flow,
@@ -178,14 +128,13 @@ export function createRuntime(ui: UI) {
 				("label" in opts ? opts.label : undefined) ||
 				`${kind}-${stepIndex}`;
 
-			const id =
-				customId ??
-				generateId("field", {
-					kind,
-					message,
-					groupStack,
-					stepIndex,
-				});
+			const id = idGenerator.generateFieldId({
+				kind,
+				message,
+				groupStack,
+				stepIndex,
+				customId,
+			});
 
 			// In discovery mode, just track the field and return current value or placeholder
 			if (isDiscoveryMode) {
@@ -306,8 +255,8 @@ export function createRuntime(ui: UI) {
 		body: () => Promise<any>
 	) {
 		// Pre-generate the group ID that engine.step will use
-		const nextGroupCount = groupCount + 1;
-		const discoveryGroupId = generateId("group", {
+		const nextGroupCount = idGenerator.getGroupCount() + 1;
+		const discoveryGroupId = idGenerator.generateGroupId({
 			groupStack,
 			groupCount: nextGroupCount,
 			flowType: opts.flow,
@@ -357,8 +306,8 @@ export function createRuntime(ui: UI) {
 
 		// For static groups, we need to run discovery to find fields
 		if (opts?.flow === "static") {
-			const nextGroupCount = groupCount + 1;
-			const groupId = generateId("group", {
+			const nextGroupCount = idGenerator.getGroupCount() + 1;
+			const groupId = idGenerator.generateGroupId({
 				groupStack,
 				groupCount: nextGroupCount,
 				flowType: combinedOpts.flow,
@@ -400,7 +349,7 @@ export function createRuntime(ui: UI) {
 			isReplaying = currentStep > 0;
 			interactivePrompts = [];
 			groupStack = [];
-			groupCount = 0;
+			idGenerator.reset();
 			lastProcessedGroups.clear();
 
 			try {
