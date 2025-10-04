@@ -26,6 +26,13 @@ interface PromptAppProps {
 	onReady: (promptFn: (request: PromptRequest) => Promise<any>) => void;
 }
 
+// Action types for unified field handler
+type FieldAction =
+	| { type: "submit"; value: any }
+	| { type: "back" }
+	| { type: "preserve-back"; value: any }
+	| { type: "clear-group-back" };
+
 // Tree-based state management
 
 export function PromptApp({ onReady }: PromptAppProps) {
@@ -283,132 +290,130 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		}
 	}, []);
 
-	// Helper: Mark field as completed
-	const markFieldAsCompleted = useCallback(
-		(prompt: PromptRequest, value: any) => {
-			const shouldMarkCompleted =
-				prompt.type !== "text" &&
-				prompt.type !== "custom-text" &&
-				prompt.type !== "validated-text"
-					? value !== undefined
-					: typeof value === "string"
-					? value.trim() !== ""
-					: value !== undefined;
-
-			if (shouldMarkCompleted && !prompt.excludeFromCompleted) {
-				// Update tree directly instead of using fake setter
-				const node = treeManagerRef.current.getNode(prompt.id);
-				if (node) {
-					node.completed = true;
-				}
-				// completionHistoryRef removed - tree tracks completion automatically
-			}
-		},
-		[]
-	);
-
-	// Handler: Clear group and go back
-	const handleClearGroupAndBack = useCallback(() => {
-		if (!currentPrompt?.groupName) return;
-
-		// Clear group and navigate back through tree manager
-		treeManagerRef.current.clearGroupAndGoBack(currentPrompt.id);
-		setTreeRevision((prev) => prev + 1);
-
-		const r = resolverRef.current;
-		resolverRef.current = null;
-		r?.({ __back: true });
-	}, [currentPrompt]);
-
-	// Handler: Preserve value and go back
-	const handlePreserveAndBack = useCallback(
-		(actualValue: any) => {
-			if (!currentPrompt) return;
-
-			// Update tree directly instead of using fake setters
-			const node = treeManagerRef.current.getNode(currentPrompt.id);
-			if (node) {
-				node.value = actualValue;
-				node.visited = true;
+	// ========== NEW UNIFIED HANDLER ==========
+	// Consolidates all field actions (submit, back, preserve-back, clear-group-back)
+	const handleFieldAction = useCallback(
+		(action: FieldAction) => {
+			if (!currentPrompt || currentPrompt.type === "group") {
+				return;
 			}
 
-			markFieldAsCompleted(currentPrompt, actualValue);
-			performTreeBackNavigation();
-			const r = resolverRef.current;
-			resolverRef.current = null;
-			r?.({ __back: true });
-		},
-		[currentPrompt, markFieldAsCompleted, performTreeBackNavigation]
-	);
+			const nodeId = currentPrompt.id;
+			let resolveValue: any;
 
-	const handleSubmit = useCallback(
-		(value: any) => {
-			if (resolverRef.current && currentPrompt) {
-				if (currentPrompt.type !== "group") {
-					// Handle special navigation values
-					if (
-						typeof value === "object" &&
-						value?.__clearGroupAndBack
-					) {
-						handleClearGroupAndBack();
-						return;
-					}
-
-					if (typeof value === "object" && value?.__preserveAndBack) {
-						handlePreserveAndBack(value.value);
-						return;
-					}
-
-					// Regular submit - update tree with submitted value
+			// Update tree based on action type
+			switch (action.type) {
+				case "submit": {
+					// Regular submit - update tree with value
 					try {
-						treeManagerRef.current.updateNode(currentPrompt.id, {
-							value: value,
+						treeManagerRef.current.updateNode(nodeId, {
+							value: action.value,
 							visited: true,
 							completed: !currentPrompt.excludeFromCompleted,
 						});
-						setTreeRevision((prev) => prev + 1);
 					} catch (error) {
 						console.warn(
 							"Tree update error (non-critical):",
 							error
 						);
 					}
-
 					isNavigatingBack.current = false;
-
-					// Mark field as completed
-					markFieldAsCompleted(currentPrompt, value);
+					resolveValue = action.value;
+					break;
 				}
+
+				case "back": {
+					// Back navigation
+					performTreeBackNavigation();
+					isNavigatingBack.current = true;
+					resolveValue = { __back: true };
+					break;
+				}
+
+				case "preserve-back": {
+					// Preserve value and go back
+					const node = treeManagerRef.current.getNode(nodeId);
+					if (node) {
+						node.value = action.value;
+						node.visited = true;
+						node.completed = true; // Mark as completed when preserving
+					}
+					performTreeBackNavigation();
+					resolveValue = { __back: true };
+					break;
+				}
+
+				case "clear-group-back": {
+					// Clear group and go back
+					treeManagerRef.current.clearGroupAndGoBack(nodeId);
+					resolveValue = { __back: true };
+					break;
+				}
+			}
+
+			// Trigger re-render
+			setTreeRevision((prev) => prev + 1);
+
+			// Resolve the promise
+			const resolver = resolverRef.current;
+			resolverRef.current = null;
+			resolver?.(resolveValue);
+		},
+		[currentPrompt, performTreeBackNavigation]
+	);
+
+	// ========== OLD HANDLERS (kept for backward compatibility) ==========
+
+	// Handler: Clear group and go back
+	const handleClearGroupAndBack = useCallback(() => {
+		// Delegate to unified handler
+		handleFieldAction({ type: "clear-group-back" });
+	}, [handleFieldAction]);
+
+	// Handler: Preserve value and go back
+	const handlePreserveAndBack = useCallback(
+		(actualValue: any) => {
+			// Delegate to unified handler
+			handleFieldAction({ type: "preserve-back", value: actualValue });
+		},
+		[handleFieldAction]
+	);
+
+	const handleSubmit = useCallback(
+		(value: any) => {
+			if (!resolverRef.current || !currentPrompt) return;
+			if (currentPrompt.type === "group") {
+				// Groups resolve immediately
 				const r = resolverRef.current;
 				resolverRef.current = null;
-
 				r(value);
+				return;
 			}
+
+			// Handle special navigation values
+			if (typeof value === "object" && value?.__clearGroupAndBack) {
+				handleFieldAction({ type: "clear-group-back" });
+				return;
+			}
+
+			if (typeof value === "object" && value?.__preserveAndBack) {
+				handleFieldAction({
+					type: "preserve-back",
+					value: value.value,
+				});
+				return;
+			}
+
+			// Regular submit - delegate to unified handler
+			handleFieldAction({ type: "submit", value });
 		},
-		[
-			currentPrompt,
-			handleClearGroupAndBack,
-			handlePreserveAndBack,
-			markFieldAsCompleted,
-		]
+		[currentPrompt, handleFieldAction]
 	);
 
 	const handleBack = useCallback(() => {
-		if (resolverRef.current && currentPrompt) {
-			// Perform tree navigation and synchronization
-			performTreeBackNavigation();
-
-			// Set flag to indicate we're navigating back
-			isNavigatingBack.current = true;
-
-			const r = resolverRef.current;
-			resolverRef.current = null;
-
-			// Resolve - cleanup happens when next interactive prompt arrives
-			// Note: Don't clear hint here - let the new prompt's hint replace the old one
-			r({ __back: true });
-		}
-	}, [currentPrompt, performTreeBackNavigation]);
+		// Delegate to unified handler
+		handleFieldAction({ type: "back" });
+	}, [handleFieldAction]);
 
 	// Track previous group to detect group completion
 	const previousGroupRef = useRef<string | null>(null);
