@@ -13,62 +13,6 @@ import {
 
 const BACK: BackToken = { __back: true };
 
-// Helper function to get text from opts (either message or label)
-function getOptsText(opts: PromptOpts | (GroupMeta & GroupOpts)): string {
-	if ("message" in opts) {
-		return opts.message;
-	}
-	if ("label" in opts) {
-		return opts.label || "";
-	}
-	return "";
-}
-
-// Generate stable, deterministic ID based on execution context
-function generateStableId(
-	kind: PromptKind,
-	message: string,
-	groupStack: string[],
-	stepIndex: number
-): string {
-	const parts: string[] = [kind];
-
-	// Add group context if we're in a group
-	if (groupStack.length > 0) {
-		const currentGroup = groupStack[groupStack.length - 1];
-		parts.push(`group:${currentGroup}`);
-	}
-
-	// Add step index to ensure uniqueness within the same group
-	parts.push(`step:${stepIndex}`);
-
-	// Optionally add a hash of the message for additional uniqueness
-	// This helps when fields have similar positions but different messages
-	const messageHash = simpleHash(message);
-	parts.push(`msg:${messageHash}`);
-
-	return parts.join("|");
-}
-
-// Generate stable group identifier for tracking
-function getGroupIdentifier(
-	opts: any,
-	groupStack: string[],
-	executionContext: { groupCount: number }
-): string {
-	// Use custom ID if provided, otherwise generate stable ID based on execution context
-	if (opts.id) {
-		return opts.id;
-	}
-
-	// Generate stable ID based on execution context
-	const depth = groupStack.length;
-	const groupIndex = executionContext.groupCount;
-	const flowType = opts.flow || "sequential";
-
-	return `group_${depth}_${groupIndex}_${flowType}`;
-}
-
 // Simple hash function for generating short, stable hashes
 function simpleHash(str: string): string {
 	let hash = 0;
@@ -76,6 +20,50 @@ function simpleHash(str: string): string {
 		hash = ((hash << 5) - hash + str.charCodeAt(i)) & 0x7fffffff;
 	}
 	return hash.toString(36);
+}
+
+// Unified ID generation for all prompt types
+function generateId(
+	type: "field" | "group",
+	context: {
+		kind?: string; // For fields: 'text', 'confirm', etc.
+		message?: string; // For fields: the message/label
+		groupStack: string[];
+		stepIndex?: number; // For fields
+		groupCount?: number; // For groups
+		flowType?: string; // For groups
+		customId?: string; // Explicit ID from user
+	}
+): string {
+	// Use custom ID if provided
+	if (context.customId) {
+		return context.customId;
+	}
+
+	if (type === "group") {
+		// Group ID: depth + index + flow
+		const depth = context.groupStack.length;
+		const index = context.groupCount || 0;
+		const flow = context.flowType || "sequential";
+		return `group_${depth}_${index}_${flow}`;
+	} else {
+		// Field ID: kind + group + step + message hash
+		const parts: string[] = [context.kind || "field"];
+
+		if (context.groupStack.length > 0) {
+			parts.push(
+				`g:${context.groupStack[context.groupStack.length - 1]}`
+			);
+		}
+
+		parts.push(`s:${context.stepIndex || 0}`);
+
+		if (context.message) {
+			parts.push(`m:${simpleHash(context.message)}`);
+		}
+
+		return parts.join("|");
+	}
 }
 
 export function createRuntime(ui: UI) {
@@ -126,8 +114,11 @@ export function createRuntime(ui: UI) {
 				// Increment group count for stable ID generation
 				groupCount++;
 
-				const groupId = getGroupIdentifier(groupOpts, groupStack, {
+				const groupId = generateId("group", {
+					groupStack,
 					groupCount,
+					flowType: groupOpts.flow,
+					customId: groupOpts.id,
 				});
 				let shouldShowGroup: boolean;
 
@@ -162,9 +153,7 @@ export function createRuntime(ui: UI) {
 					);
 					lastProcessedGroups.add(groupId);
 					// Call askFn to create the interactive prompt
-					await askFn(
-						generateStableId("group", groupId, groupStack, 0)
-					);
+					await askFn(groupId);
 				} else {
 					debugLogger.log("GROUP_SKIP", {
 						groupId,
@@ -183,14 +172,20 @@ export function createRuntime(ui: UI) {
 			const stepIndex = interactivePrompts.length;
 
 			// Generate stable, deterministic ID
+			const customId = "id" in opts ? opts.id : undefined;
+			const message =
+				("message" in opts ? opts.message : undefined) ||
+				("label" in opts ? opts.label : undefined) ||
+				`${kind}-${stepIndex}`;
+
 			const id =
-				("id" in opts ? opts.id : undefined) ??
-				generateStableId(
+				customId ??
+				generateId("field", {
 					kind,
-					getOptsText(opts) || `${kind}-${stepIndex}`,
+					message,
 					groupStack,
-					stepIndex
-				);
+					stepIndex,
+				});
 
 			// In discovery mode, just track the field and return current value or placeholder
 			if (isDiscoveryMode) {
@@ -198,7 +193,7 @@ export function createRuntime(ui: UI) {
 				debugLogger.log("DISCOVERY_FIELD", {
 					currentGroupId,
 					id,
-					label: getOptsText(opts),
+					label: message,
 					kind,
 				});
 				if (currentGroupId) {
@@ -206,7 +201,7 @@ export function createRuntime(ui: UI) {
 					if (!fields.some((f) => f.id === id)) {
 						fields.push({
 							id,
-							label: getOptsText(opts) || `${kind} field`,
+							label: message || `${kind} field`,
 							type: kind,
 						});
 						discoveredFields.set(currentGroupId, fields);
@@ -232,7 +227,7 @@ export function createRuntime(ui: UI) {
 
 				debugLogger.log("DISCOVERY_PLACEHOLDER", {
 					kind,
-					label: getOptsText(opts),
+					label: message,
 					placeholderValue,
 				});
 				return placeholderValue as T;
@@ -256,7 +251,7 @@ export function createRuntime(ui: UI) {
 				debugLogger.log("PROMPT_ASK", {
 					id,
 					stepIndex,
-					label: getOptsText(opts),
+					label: message,
 				});
 				const result = await askFn(id);
 				if (isBack(result)) {
@@ -312,8 +307,11 @@ export function createRuntime(ui: UI) {
 	) {
 		// Pre-generate the group ID that engine.step will use
 		const nextGroupCount = groupCount + 1;
-		const discoveryGroupId = getGroupIdentifier(opts, groupStack, {
+		const discoveryGroupId = generateId("group", {
+			groupStack,
 			groupCount: nextGroupCount,
+			flowType: opts.flow,
+			customId: (opts as any).id,
 		});
 
 		isDiscoveryMode = true;
@@ -360,8 +358,11 @@ export function createRuntime(ui: UI) {
 		// For static groups, we need to run discovery to find fields
 		if (opts?.flow === "static") {
 			const nextGroupCount = groupCount + 1;
-			const groupId = getGroupIdentifier(combinedOpts, groupStack, {
+			const groupId = generateId("group", {
+				groupStack,
 				groupCount: nextGroupCount,
+				flowType: combinedOpts.flow,
+				customId: combinedOpts.id,
 			});
 
 			// Store the body function for re-discovery
