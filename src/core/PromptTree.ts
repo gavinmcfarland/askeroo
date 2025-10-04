@@ -179,29 +179,45 @@ export class PromptTreeManager {
 			(n) => n.id === nodeId
 		);
 
-		// Check if this is a forward navigation within the same parent context
-		// (e.g., going from field2 to field3 in the same group)
-		const isForwardInSameContext = (() => {
+		// Check if this is a valid forward navigation (not a conditional re-visit)
+		// This includes:
+		// - Forward navigation within same parent (field2 → field3 in same group)
+		// - Forward navigation to parent context (field5 in nestedGroup → field6 in parentGroup)
+		const isValidForwardNavigation = (() => {
 			if (!this.tree.activeNode) return false;
 
-			// If both nodes share the same parent, this is a forward navigation within same context
+			// Same parent, moving forward
 			if (node.parent?.id === this.tree.activeNode.parent?.id) {
-				// Check if the node comes after the active node in the parent's children
 				const siblings = node.parent?.children || [];
 				const activeIndex = siblings.indexOf(this.tree.activeNode);
 				const nodeIndex = siblings.indexOf(node);
 				return nodeIndex > activeIndex;
 			}
 
+			// Moving from deeper nesting to shallower (leaving nested group)
+			// This is valid forward navigation if the node is a sibling of an ancestor
+			if (node.depth < this.tree.activeNode.depth) {
+				// Check if node's parent is an ancestor of active node
+				let ancestor = this.tree.activeNode.parent;
+				while (ancestor) {
+					if (ancestor.id === node.parent?.id) {
+						// The target node is a sibling of our ancestor
+						// This is valid forward navigation (leaving nested group)
+						return true;
+					}
+					ancestor = ancestor.parent;
+				}
+			}
+
 			return false;
 		})();
 
 		// Only clear future state for true re-navigation from different paths
-		// NOT for forward navigation within the same group
+		// NOT for valid forward navigation
 		if (
 			wasVisitedBefore &&
 			!isInCurrentHistory &&
-			!isForwardInSameContext
+			!isValidForwardNavigation
 		) {
 			// Clear any nodes that might have been added after this node in previous flows
 			// but are no longer part of the current valid flow
@@ -702,23 +718,28 @@ export class PromptTreeManager {
 			parentGroupId = this.findParentGroupIdByDepth(request.depth || 0);
 		}
 
-		const groupNode = this.addNode(
-			{
-				id: request.id,
-				type: "group",
-				label: request.label,
-				completed: false,
-				visited: false,
-				active: false,
-				depth: request.depth || 0,
-				flow: request.flow || "progressive",
-				enableArrowNavigation: request.enableArrowNavigation,
-				discoveredFields: request.discoveredFields,
-				allowBack: request.allowBack,
-				properties: { ...request },
-			},
-			parentGroupId
-		);
+		// CRITICAL FIX: Don't pass depth if not explicitly set in request
+		// Let addNode calculate it from parent to ensure correct nesting depths
+		const groupNodeData: any = {
+			id: request.id,
+			type: "group",
+			label: request.label,
+			completed: false,
+			visited: false,
+			active: false,
+			flow: request.flow || "progressive",
+			enableArrowNavigation: request.enableArrowNavigation,
+			discoveredFields: request.discoveredFields,
+			allowBack: request.allowBack,
+			properties: { ...request },
+		};
+
+		// Only include depth if explicitly provided, otherwise let addNode calculate it
+		if (request.depth !== undefined) {
+			groupNodeData.depth = request.depth;
+		}
+
+		const groupNode = this.addNode(groupNodeData, parentGroupId);
 
 		return groupNode;
 	}
