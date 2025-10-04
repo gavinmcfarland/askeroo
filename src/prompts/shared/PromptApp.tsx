@@ -10,7 +10,6 @@ import { RecursiveGroupContainer } from "../group/RecursiveGroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../../registry.js";
 import { PromptTreeManager, PromptNode } from "../../core/PromptTree.js";
-import { PluginWrapper } from "./PluginWrapper.js";
 import { setTreeManager } from "../../plugins/completed-fields/CompletedFieldsStore.js";
 import { PromptRequest } from "../../types/index.js";
 
