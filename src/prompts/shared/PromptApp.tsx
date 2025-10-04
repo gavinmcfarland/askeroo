@@ -668,20 +668,15 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			}
 
 			markFieldAsCompleted(currentPrompt, actualValue);
-			addFieldToHistory(currentPrompt, createFieldInfo(currentPrompt));
+			// addFieldToHistory - removed: tree tracks all history automatically
+			// addFieldToHistory(currentPrompt, createFieldInfo(currentPrompt));
 
 			performTreeBackNavigation();
 			const r = resolverRef.current;
 			resolverRef.current = null;
 			r?.({ __back: true });
 		},
-		[
-			currentPrompt,
-			markFieldAsCompleted,
-			addFieldToHistory,
-			createFieldInfo,
-			performTreeBackNavigation,
-		]
+		[currentPrompt, markFieldAsCompleted, performTreeBackNavigation]
 	);
 
 	const handleSubmit = useCallback(
@@ -719,12 +714,13 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					isNavigatingBack.current = false;
 
-					// Mark field as completed and track history
+					// Mark field as completed
 					markFieldAsCompleted(currentPrompt, value);
-					addFieldToHistory(
-						currentPrompt,
-						createFieldInfo(currentPrompt)
-					);
+					// addFieldToHistory - removed: tree tracks all history automatically
+					// addFieldToHistory(
+					// 	currentPrompt,
+					// 	createFieldInfo(currentPrompt)
+					// );
 				}
 				const r = resolverRef.current;
 				resolverRef.current = null;
@@ -737,8 +733,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			handleClearGroupAndBack,
 			handlePreserveAndBack,
 			markFieldAsCompleted,
-			addFieldToHistory,
-			createFieldInfo,
 		]
 	);
 
@@ -795,6 +789,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				effectiveCurrentGroupIndex >= 0 &&
 				effectiveCurrentGroupIndex > prevGroupIndex
 			) {
+				// Keep using setCompletedGroups for now - group completion tracking
+				// needs more careful refactoring as it affects navigation
 				setCompletedGroups((prev) => new Set(prev).add(prevGroup));
 			}
 		}
@@ -803,7 +799,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		// This catches cases where the last group isn't followed by another group
 		if (prevGroup && !currentGroup) {
 			// When moving from a group to no group (root-level), mark the group as completed
-			// Use a simpler check to avoid dependency issues
+			// Keep using setCompletedGroups for now
 			setCompletedGroups((prev) => new Set(prev).add(prevGroup));
 		}
 
