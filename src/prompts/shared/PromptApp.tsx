@@ -362,35 +362,21 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		[currentPrompt, performTreeBackNavigation]
 	);
 
-	// ========== OLD HANDLERS (kept for backward compatibility) ==========
-
-	// Handler: Clear group and go back
-	const handleClearGroupAndBack = useCallback(() => {
-		// Delegate to unified handler
-		handleFieldAction({ type: "clear-group-back" });
-	}, [handleFieldAction]);
-
-	// Handler: Preserve value and go back
-	const handlePreserveAndBack = useCallback(
-		(actualValue: any) => {
-			// Delegate to unified handler
-			handleFieldAction({ type: "preserve-back", value: actualValue });
-		},
-		[handleFieldAction]
-	);
+	// ========== SUBMIT HANDLER (with special value handling) ==========
 
 	const handleSubmit = useCallback(
 		(value: any) => {
 			if (!resolverRef.current || !currentPrompt) return;
+
+			// Groups resolve immediately without going through field action
 			if (currentPrompt.type === "group") {
-				// Groups resolve immediately
 				const r = resolverRef.current;
 				resolverRef.current = null;
 				r(value);
 				return;
 			}
 
-			// Handle special navigation values
+			// Handle special navigation values that plugins might send
 			if (typeof value === "object" && value?.__clearGroupAndBack) {
 				handleFieldAction({ type: "clear-group-back" });
 				return;
@@ -404,59 +390,15 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				return;
 			}
 
-			// Regular submit - delegate to unified handler
+			// Regular submit
 			handleFieldAction({ type: "submit", value });
 		},
 		[currentPrompt, handleFieldAction]
 	);
 
 	const handleBack = useCallback(() => {
-		// Delegate to unified handler
 		handleFieldAction({ type: "back" });
 	}, [handleFieldAction]);
-
-	// Track previous group to detect group completion
-	const previousGroupRef = useRef<string | null>(null);
-
-	// Detect group completion when transitioning between groups
-	useEffect(() => {
-		const prevGroup = previousGroupRef.current;
-		const groupNodes = treeManagerRef.current.getNodesByType("group");
-		const groupOrder = groupNodes.map((g) => g.id);
-
-		// Only mark a group as completed when moving to a LATER group in the sequence
-		// This prevents marking groups as completed when navigating backwards
-		if (prevGroup && currentGroup && prevGroup !== currentGroup) {
-			const prevGroupIndex = groupOrder.indexOf(prevGroup);
-			let currentGroupIndex = groupOrder.indexOf(currentGroup);
-
-			// If current group is not in groupOrder yet, calculate what its index would be
-			let effectiveCurrentGroupIndex = currentGroupIndex;
-			if (currentGroupIndex === -1) {
-				// Calculate what the index would be after adding
-				effectiveCurrentGroupIndex = groupOrder.length;
-				// Group order is tracked in tree - no separate tracking needed
-			}
-
-			// Only mark as completed if we're moving forward in the sequence
-			if (
-				prevGroupIndex >= 0 &&
-				effectiveCurrentGroupIndex >= 0 &&
-				effectiveCurrentGroupIndex > prevGroupIndex
-			) {
-				// Group completion is tracked in tree - no separate state needed
-				// The fake setter only triggered re-renders which already happen via tree updates
-			}
-		}
-
-		// Also handle the case where we complete a group and move to a non-group prompt
-		// This catches cases where the last group isn't followed by another group
-		if (prevGroup && !currentGroup) {
-			// Group completion is tracked in tree - no separate state needed
-		}
-
-		previousGroupRef.current = currentGroup;
-	}, [currentGroup]);
 
 	// ⬇️ Auto-resolve group prompts without touching resolver state
 	useEffect(() => {
@@ -468,14 +410,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		}
 	}, [currentPrompt]);
 
-	// NEW: Effect to log tree changes in development
-
 	// Note: Hints are now stored per prompt ID, so they don't leak between prompts
 	// Non-interactive prompts simply won't set a hint, so currentHintText will be null for them
-
-	// Completely ignore group prompts in render
-	const effectivePrompt =
-		currentPrompt?.type === "group" ? null : currentPrompt;
 
 	// Primary rendering: Tree-based recursive rendering
 
