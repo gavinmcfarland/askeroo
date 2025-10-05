@@ -173,7 +173,7 @@ export class PromptRuntime {
 		if (opts?.flow === "static") {
 			const nextGroupCount = this.idGenerator.getGroupCount() + 1;
 			const groupId = this.idGenerator.generateGroupId({
-				groupStack: this.state.getGroupStack(),
+				groupStack: this.getGroupStackBoth(), // MICRO STEP 4.4: Use wrapper
 				groupCount: nextGroupCount,
 				flowType: combinedOpts.flow,
 				customId: combinedOpts.id,
@@ -192,7 +192,7 @@ export class PromptRuntime {
 			return await body();
 		} finally {
 			// Pop the group from the stack when the group body completes
-			this.state.popGroup();
+			this.popGroupBoth(); // MICRO STEP 4.10: Use wrapper
 			this.ui.clearGroup?.();
 		}
 	}
@@ -206,6 +206,46 @@ export class PromptRuntime {
 	}
 
 	// ========== INTERNAL METHODS ==========
+
+	/**
+	 * Get current group from both tree and state (for gradual migration)
+	 */
+	private getCurrentGroupBoth(): string | undefined {
+		// Try tree first (new source)
+		const treeGroup = this.tree.getCurrentGroupId();
+		if (treeGroup && treeGroup !== "root") {
+			return treeGroup;
+		}
+		// Fallback to RuntimeState (existing behavior)
+		return this.state.getCurrentGroup();
+	}
+
+	/**
+	 * Get group stack from both tree and state (for gradual migration)
+	 */
+	private getGroupStackBoth(): string[] {
+		// For now, use RuntimeState
+		// In future steps, we'll build this from tree parent relationships
+		return this.state.getGroupStack();
+	}
+
+	/**
+	 * Push a group to both systems (for gradual migration)
+	 */
+	private pushGroupBoth(groupId: string): void {
+		// Push to RuntimeState (existing behavior)
+		this.state.pushGroup(groupId);
+		// Tree tracking will be added in later micro steps
+	}
+
+	/**
+	 * Pop a group from both systems (for gradual migration)
+	 */
+	private popGroupBoth(): string | undefined {
+		// Pop from RuntimeState (existing behavior)
+		return this.state.popGroup();
+		// Tree tracking will be added in later micro steps
+	}
 
 	/**
 	 * Get current step from state (will be replaced with tree-based tracking)
@@ -286,7 +326,7 @@ export class PromptRuntime {
 			kind,
 			opts,
 			currentStep: this.getCurrentStepBoth(), // MICRO STEP 3.6: Use wrapper
-			groupStack: this.state.getGroupStack(),
+			groupStack: this.getGroupStackBoth(), // MICRO STEP 4.3: Use wrapper
 			isReplaying: this.state.isReplaying(),
 		});
 
@@ -297,7 +337,7 @@ export class PromptRuntime {
 			const groupCount = this.idGenerator.incrementGroupCount();
 
 			const groupId = this.idGenerator.generateGroupId({
-				groupStack: this.state.getGroupStack(),
+				groupStack: this.getGroupStackBoth(), // MICRO STEP 4.2: Use wrapper
 				groupCount,
 				flowType: groupOpts.flow,
 				customId: groupOpts.id,
@@ -320,7 +360,7 @@ export class PromptRuntime {
 						? this.discovery.getDiscoveredFields(groupId)
 						: undefined;
 				const groupDepth = this.state.getGroupDepth();
-				const currentGroup = this.state.getCurrentGroup();
+				const currentGroup = this.getCurrentGroupBoth(); // MICRO STEP 4.7: Use wrapper
 
 				await this.ui.showGroup?.(
 					groupOpts.label,
@@ -344,7 +384,7 @@ export class PromptRuntime {
 			}
 
 			// Push group to stack
-			this.state.pushGroup(groupId);
+			this.pushGroupBoth(groupId); // MICRO STEP 4.9: Use wrapper
 			return undefined as T;
 		}
 
@@ -361,14 +401,14 @@ export class PromptRuntime {
 		const id = this.idGenerator.generateFieldId({
 			kind,
 			message,
-			groupStack: this.state.getGroupStack(),
+			groupStack: this.getGroupStackBoth(), // MICRO STEP 4.5: Use wrapper
 			stepIndex,
 			customId,
 		});
 
 		// In discovery mode, just track the field and return current value or placeholder
 		if (this.discovery.inDiscoveryMode()) {
-			const currentGroupId = this.state.getCurrentGroup();
+			const currentGroupId = this.getCurrentGroupBoth(); // MICRO STEP 4.6: Use wrapper
 			debugLogger.log("DISCOVERY_FIELD", {
 				currentGroupId,
 				id,
@@ -491,7 +531,7 @@ export class PromptRuntime {
 				}
 
 				return this.engine.step(plugin.type, opts, async (id) => {
-					const currentGroup = this.state.getCurrentGroup();
+					const currentGroup = this.getCurrentGroupBoth(); // MICRO STEP 4.8: Use wrapper
 					const processedOpts = plugin.prompt(
 						opts,
 						{ currentGroup },
