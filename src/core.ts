@@ -19,11 +19,11 @@ export function createRuntime(ui: UI) {
 
 	// Create the public API object
 	const api = {
+		executeFlow: runtime.executeFlow.bind(runtime),
 		ask: runtime.ask.bind(runtime),
 		group: runtime.group.bind(runtime),
 		BACK: runtime.BACK,
-		rediscoverStaticGroupFields:
-			runtime.rediscoverStaticGroupFields.bind(runtime),
+		rescanStaticGroupFields: runtime.rescanStaticGroupFields.bind(runtime),
 		// Expose plugin prompts dynamically
 		...runtime.getPluginPrompts(),
 	};

@@ -1,249 +1,168 @@
 /**
  * RuntimeState - Manages all runtime state for the prompt flow
  *
- * This class encapsulates the state management logic, making it easier to test,
- * debug, and reason about. It tracks user answers, navigation state, group context,
- * and provides clean methods for state manipulation.
+ * Consolidated state management with clear, descriptive method names.
+ * Handles answers, navigation, group context, and flow control.
  */
 
 import { Answers } from "../types/index.js";
 
 export class RuntimeState {
-	// User answers for each prompt
+	// ===== ANSWER STORAGE =====
 	private answers: Map<string, any> = new Map();
 
-	// List of interactive prompt IDs in current flow
+	// ===== NAVIGATION STATE =====
 	private interactivePrompts: string[] = [];
+	private currentPromptIndex = 0;
 
-	// Current step in the flow (0-based index)
-	private currentStep = 0;
+	// ===== FLOW CONTROL =====
+	private isInFlowExecution = false;
 
-	// Whether we're currently in an ask() call
-	private asking = false;
+	// ===== GROUP CONTEXT =====
+	private groupHierarchy: string[] = [];
+	private processedGroups: Set<string> = new Set();
 
-	// Track current group nesting during flow execution
-	// Note: groupStack is necessary during flow execution, before nodes are added to tree
-	private groupStack: string[] = [];
+	// ========== ANSWER MANAGEMENT ==========
 
-	// Track which groups were already processed (to avoid duplicate rendering)
-	private lastProcessedGroups: Set<string> = new Set();
-
-	// ========== ANSWERS MANAGEMENT ==========
-
-	/**
-	 * Add or update an answer for a prompt
-	 */
-	addAnswer(id: string, value: any): void {
-		this.answers.set(id, value);
+	storeAnswer(promptId: string, value: any): void {
+		this.answers.set(promptId, value);
 	}
 
-	/**
-	 * Get an answer for a prompt
-	 */
-	getAnswer(id: string): any | undefined {
-		return this.answers.get(id);
+	retrieveAnswer(promptId: string): any | undefined {
+		return this.answers.get(promptId);
 	}
 
-	/**
-	 * Check if we have an answer for a prompt
-	 */
-	hasAnswer(id: string): boolean {
-		return this.answers.has(id);
+	hasStoredAnswer(promptId: string): boolean {
+		return this.answers.has(promptId);
 	}
 
-	/**
-	 * Get all answers as a plain object
-	 */
 	getAllAnswers(): Answers {
 		return Object.fromEntries(this.answers);
 	}
 
-	/**
-	 * Get answer count
-	 */
 	getAnswerCount(): number {
 		return this.answers.size;
 	}
 
-	/**
-	 * Delete an answer
-	 */
-	deleteAnswer(id: string): void {
-		this.answers.delete(id);
+	removeAnswer(promptId: string): void {
+		this.answers.delete(promptId);
 	}
 
-	// ========== PROMPTS MANAGEMENT ==========
-
-	/**
-	 * Add a prompt to the interactive prompts list
-	 */
-	addPrompt(id: string): void {
-		this.interactivePrompts.push(id);
+	clearAllAnswers(): void {
+		this.answers.clear();
 	}
 
-	/**
-	 * Get the list of interactive prompts
-	 */
-	getPrompts(): string[] {
+	// ========== PROMPT TRACKING ==========
+
+	registerPrompt(promptId: string): void {
+		this.interactivePrompts.push(promptId);
+	}
+
+	getPromptHistory(): string[] {
 		return [...this.interactivePrompts];
 	}
 
-	/**
-	 * Get the current prompt index (same as step index)
-	 */
-	getCurrentPromptIndex(): number {
+	getTotalPromptCount(): number {
 		return this.interactivePrompts.length;
 	}
 
-	/**
-	 * Get total number of prompts
-	 */
-	getPromptCount(): number {
-		return this.interactivePrompts.length;
-	}
-
-	/**
-	 * Clear all prompts (used when starting new replay)
-	 */
-	clearPrompts(): void {
+	clearPromptHistory(): void {
 		this.interactivePrompts = [];
 	}
 
-	// ========== STEP MANAGEMENT ==========
+	// ========== NAVIGATION ==========
 
-	/**
-	 * Get current step
-	 */
-	getCurrentStep(): number {
-		return this.currentStep;
+	getCurrentPromptIndex(): number {
+		return this.currentPromptIndex;
 	}
 
-	/**
-	 * Increment current step
-	 */
-	incrementStep(): number {
-		this.currentStep++;
-		return this.currentStep;
+	advanceToNextPrompt(): number {
+		this.currentPromptIndex++;
+		return this.currentPromptIndex;
 	}
 
-	/**
-	 * Decrement current step (for back navigation)
-	 */
-	decrementStep(): number {
-		if (this.currentStep > 0) {
-			this.currentStep--;
+	returnToPreviousPrompt(): number {
+		if (this.currentPromptIndex > 0) {
+			this.currentPromptIndex--;
 		}
-		return this.currentStep;
+		return this.currentPromptIndex;
 	}
 
-	/**
-	 * Set current step to a specific value
-	 */
-	setStep(step: number): void {
-		this.currentStep = Math.max(0, step);
+	setPromptIndex(index: number): void {
+		this.currentPromptIndex = Math.max(0, index);
 	}
 
-	// ========== GROUP STACK MANAGEMENT ==========
-
-	/**
-	 * Push a group ID onto the stack
-	 */
-	pushGroup(groupId: string): void {
-		this.groupStack.push(groupId);
+	isReplayingAnswers(): boolean {
+		return this.currentPromptIndex > 0;
 	}
 
-	/**
-	 * Pop a group ID from the stack
-	 */
-	popGroup(): string | undefined {
-		return this.groupStack.pop();
+	hasReachedEndOfFlow(): boolean {
+		return this.currentPromptIndex >= this.interactivePrompts.length;
 	}
 
-	/**
-	 * Get the current group (top of stack)
-	 */
-	getCurrentGroup(): string | undefined {
-		return this.groupStack[this.groupStack.length - 1];
+	// ========== GROUP MANAGEMENT ==========
+
+	enterGroup(groupId: string): void {
+		this.groupHierarchy.push(groupId);
 	}
 
-	/**
-	 * Get the full group stack
-	 */
-	getGroupStack(): string[] {
-		return [...this.groupStack];
+	exitGroup(): string | undefined {
+		return this.groupHierarchy.pop();
 	}
 
-	/**
-	 * Get the depth of the current group nesting
-	 */
+	getCurrentGroupId(): string | undefined {
+		return this.groupHierarchy[this.groupHierarchy.length - 1];
+	}
+
+	getGroupHierarchy(): string[] {
+		return [...this.groupHierarchy];
+	}
+
 	getGroupDepth(): number {
-		return this.groupStack.length;
+		return this.groupHierarchy.length;
 	}
 
-	/**
-	 * Clear the group stack
-	 */
-	clearGroupStack(): void {
-		this.groupStack = [];
+	clearGroupHierarchy(): void {
+		this.groupHierarchy = [];
 	}
 
 	// ========== PROCESSED GROUPS ==========
 
-	/**
-	 * Mark a group as processed
-	 */
 	markGroupAsProcessed(groupId: string): void {
-		this.lastProcessedGroups.add(groupId);
+		this.processedGroups.add(groupId);
 	}
 
-	/**
-	 * Check if a group has been processed
-	 */
 	isGroupProcessed(groupId: string): boolean {
-		return this.lastProcessedGroups.has(groupId);
+		return this.processedGroups.has(groupId);
 	}
 
-	/**
-	 * Clear processed groups (used when starting new replay)
-	 */
 	clearProcessedGroups(): void {
-		this.lastProcessedGroups.clear();
+		this.processedGroups.clear();
 	}
 
-	// ========== ASKING STATE ==========
+	// ========== FLOW EXECUTION STATE ==========
 
-	/**
-	 * Set asking state
-	 */
-	setAsking(asking: boolean): void {
-		this.asking = asking;
+	beginFlowExecution(): void {
+		this.isInFlowExecution = true;
 	}
 
-	/**
-	 * Check if currently asking
-	 */
-	isAsking(): boolean {
-		return this.asking;
+	endFlowExecution(): void {
+		this.isInFlowExecution = false;
 	}
 
-	// ========== REPLAY STATE ==========
-
-	/**
-	 * Check if we're currently replaying (currentStep > 0)
-	 */
-	isReplaying(): boolean {
-		return this.currentStep > 0;
+	isExecutingFlow(): boolean {
+		return this.isInFlowExecution;
 	}
 
-	// ========== NAVIGATION HELPERS ==========
+	// ========== ANSWER CLEANUP ==========
 
 	/**
-	 * Clear all answers that come after the current step
-	 * Used for back navigation to remove future answers
+	 * Remove answers for prompts that come after the current position
+	 * Used for back navigation to clear future answers
 	 */
-	clearFutureAnswers(): void {
+	clearAnswersAfterCurrentPosition(): void {
 		const currentPrompts = new Set(
-			this.interactivePrompts.slice(0, this.currentStep)
+			this.interactivePrompts.slice(0, this.currentPromptIndex)
 		);
 		const answerIds = Array.from(this.answers.keys());
 
@@ -255,7 +174,7 @@ export class RuntimeState {
 	}
 
 	/**
-	 * Clear answers not in the reachable prompts list
+	 * Remove answers for prompts that are no longer in the flow
 	 * Used after replay to clean up unreachable answers
 	 */
 	clearUnreachableAnswers(): void {
@@ -269,47 +188,44 @@ export class RuntimeState {
 		}
 	}
 
-	// ========== FULL RESET ==========
+	// ========== RESET OPERATIONS ==========
 
 	/**
 	 * Reset state for a new replay cycle
 	 * Clears prompts, groups, and processed groups tracking
-	 * Keeps answers and currentStep intact
+	 * Keeps answers and currentPromptIndex intact
 	 */
-	resetForReplay(): void {
+	prepareForReplay(): void {
 		this.interactivePrompts = [];
-		this.groupStack = [];
-		this.lastProcessedGroups.clear();
+		this.groupHierarchy = [];
+		this.processedGroups.clear();
 	}
 
 	/**
 	 * Complete reset of all state
 	 * Use with caution - typically only needed when creating a fresh runtime
 	 */
-	reset(): void {
+	resetAll(): void {
 		this.answers.clear();
 		this.interactivePrompts = [];
-		this.currentStep = 0;
-		this.asking = false;
-		this.groupStack = [];
-		this.lastProcessedGroups.clear();
+		this.currentPromptIndex = 0;
+		this.isInFlowExecution = false;
+		this.groupHierarchy = [];
+		this.processedGroups.clear();
 	}
 
 	// ========== DEBUG/INSPECTION ==========
 
-	/**
-	 * Get a snapshot of current state for debugging
-	 */
-	getSnapshot() {
+	getDebugInfo() {
 		return {
 			answerCount: this.answers.size,
-			promptCount: this.interactivePrompts.length,
-			currentStep: this.currentStep,
-			asking: this.asking,
-			isReplaying: this.isReplaying(),
-			groupDepth: this.groupStack.length,
-			currentGroup: this.getCurrentGroup(),
-			processedGroupsCount: this.lastProcessedGroups.size,
+			totalPrompts: this.interactivePrompts.length,
+			currentIndex: this.currentPromptIndex,
+			isExecuting: this.isInFlowExecution,
+			isReplaying: this.isReplayingAnswers(),
+			groupDepth: this.groupHierarchy.length,
+			currentGroup: this.getCurrentGroupId(),
+			processedGroupsCount: this.processedGroups.size,
 		};
 	}
 }

@@ -1,5 +1,5 @@
 /**
- * DiscoveryService - Handles field discovery for static groups
+ * FieldDiscoveryService - Handles field discovery for static groups
  *
  * Static groups need to pre-scan their fields before rendering to know what
  * fields will be shown. This service manages the discovery process, tracks
@@ -15,42 +15,34 @@ export interface DiscoveredField {
 	type: string;
 }
 
-export class DiscoveryService {
-	// Whether we're currently in discovery mode
-	private isDiscoveryMode = false;
-
-	// Maps group ID to discovered fields
-	private discoveredFields: Map<string, DiscoveredField[]> = new Map();
-
-	// Stores group body functions for re-discovery
-	private staticGroupBodies: Map<string, () => Promise<any>> = new Map();
+export class FieldDiscoveryService {
+	private isScanning = false;
+	private discoveredFieldsByGroup: Map<string, DiscoveredField[]> = new Map();
+	private groupBodyFunctions: Map<string, () => Promise<any>> = new Map();
 
 	constructor(private state: RuntimeState) {}
 
-	/**
-	 * Check if currently in discovery mode
-	 */
-	inDiscoveryMode(): boolean {
-		return this.isDiscoveryMode;
+	// ========== SCANNING STATE ==========
+
+	isCurrentlyScanning(): boolean {
+		return this.isScanning;
 	}
 
-	/**
-	 * Get discovered fields for a group
-	 */
+	// ========== FIELD RETRIEVAL ==========
+
 	getDiscoveredFields(groupId: string): DiscoveredField[] | undefined {
-		return this.discoveredFields.get(groupId);
+		return this.discoveredFieldsByGroup.get(groupId);
 	}
 
-	/**
-	 * Add a discovered field for a group
-	 */
-	addDiscoveredField(groupId: string, field: DiscoveredField): void {
-		const fields = this.discoveredFields.get(groupId) || [];
+	// ========== FIELD REGISTRATION ==========
+
+	registerDiscoveredField(groupId: string, field: DiscoveredField): void {
+		const fields = this.discoveredFieldsByGroup.get(groupId) || [];
 
 		// Only add if not already present
 		if (!fields.some((f) => f.id === field.id)) {
 			fields.push(field);
-			this.discoveredFields.set(groupId, fields);
+			this.discoveredFieldsByGroup.set(groupId, fields);
 
 			debugLogger.log("DISCOVERY_FIELD_ADDED", {
 				groupId,
@@ -60,37 +52,35 @@ export class DiscoveryService {
 		}
 	}
 
-	/**
-	 * Store a group body function for later re-discovery
-	 */
-	storeGroupBody(groupId: string, body: () => Promise<any>): void {
-		this.staticGroupBodies.set(groupId, body);
+	// ========== GROUP BODY STORAGE ==========
+
+	storeGroupBodyFunction(groupId: string, body: () => Promise<any>): void {
+		this.groupBodyFunctions.set(groupId, body);
 	}
 
-	/**
-	 * Check if a group has a stored body function
-	 */
-	hasGroupBody(groupId: string): boolean {
-		return this.staticGroupBodies.has(groupId);
+	hasStoredBodyFunction(groupId: string): boolean {
+		return this.groupBodyFunctions.has(groupId);
 	}
 
+	// ========== FIELD SCANNING ==========
+
 	/**
-	 * Run discovery for a static group
-	 * This executes the group body in discovery mode to find all fields
+	 * Scan a static group to discover all its fields
+	 * Executes the group body in scanning mode to find all fields
 	 */
-	async discover(
+	async scanGroupFields(
 		groupId: string,
 		body: () => Promise<any>
 	): Promise<DiscoveredField[]> {
-		this.isDiscoveryMode = true;
+		this.isScanning = true;
 
 		debugLogger.log("DISCOVERY_START", {
 			groupId,
-			groupStack: this.state.getGroupStack(),
+			groupStack: this.state.getGroupHierarchy(),
 		});
 
 		// Push group to stack temporarily for discovery
-		this.state.pushGroup(groupId);
+		this.state.enterGroup(groupId);
 
 		try {
 			// Run discovery once to find all fields
@@ -103,82 +93,85 @@ export class DiscoveryService {
 			// Ignore errors in discovery mode
 		} finally {
 			// Remove from stack after discovery
-			this.state.popGroup();
+			this.state.exitGroup();
 		}
 
-		this.isDiscoveryMode = false;
+		this.isScanning = false;
 
-		const discoveredFieldsForGroup = this.discoveredFields.get(groupId);
+		const discoveredFields = this.discoveredFieldsByGroup.get(groupId);
 		debugLogger.log("DISCOVERY_END", {
 			groupId,
-			fields: discoveredFieldsForGroup,
+			fields: discoveredFields,
 		});
 
-		return discoveredFieldsForGroup || [];
+		return discoveredFields || [];
 	}
 
 	/**
-	 * Re-discover fields for a static group
+	 * Re-scan a static group's fields
 	 * Used when a group needs to be re-rendered with updated fields
 	 */
-	async rediscover(groupId: string): Promise<DiscoveredField[] | undefined> {
-		if (this.isDiscoveryMode) {
-			// Already in discovery mode, skip
-			return this.discoveredFields.get(groupId);
+	async rescanGroupFields(
+		groupId: string
+	): Promise<DiscoveredField[] | undefined> {
+		if (this.isScanning) {
+			// Already scanning, skip
+			return this.discoveredFieldsByGroup.get(groupId);
 		}
 
-		if (!this.staticGroupBodies.has(groupId)) {
+		if (!this.groupBodyFunctions.has(groupId)) {
 			// No stored body function, return existing fields
-			return this.discoveredFields.get(groupId);
+			return this.discoveredFieldsByGroup.get(groupId);
 		}
 
 		debugLogger.log("REDISCOVERY_START", { groupId });
 
-		const body = this.staticGroupBodies.get(groupId)!;
+		const body = this.groupBodyFunctions.get(groupId)!;
 
 		// Clear existing discovered fields for this group
-		this.discoveredFields.delete(groupId);
+		this.discoveredFieldsByGroup.delete(groupId);
 
-		this.isDiscoveryMode = true;
-		this.state.pushGroup(groupId);
+		this.isScanning = true;
+		this.state.enterGroup(groupId);
 
 		try {
 			await body();
 		} catch (e) {
 			debugLogger.log("REDISCOVERY_ERROR", { groupId, error: e });
 		} finally {
-			this.state.popGroup();
-			this.isDiscoveryMode = false;
+			this.state.exitGroup();
+			this.isScanning = false;
 		}
 
-		const rediscoveredFields = this.discoveredFields.get(groupId);
+		const rescannedFields = this.discoveredFieldsByGroup.get(groupId);
 		debugLogger.log("REDISCOVERY_END", {
 			groupId,
-			fields: rediscoveredFields,
+			fields: rescannedFields,
 		});
 
-		return rediscoveredFields;
+		return rescannedFields;
 	}
 
+	// ========== CLEANUP ==========
+
 	/**
-	 * Clear all discovered fields and stored bodies
+	 * Clear all discovered fields and stored body functions
 	 * Typically used when resetting the runtime
 	 */
-	clear(): void {
-		this.discoveredFields.clear();
-		this.staticGroupBodies.clear();
-		this.isDiscoveryMode = false;
+	clearAll(): void {
+		this.discoveredFieldsByGroup.clear();
+		this.groupBodyFunctions.clear();
+		this.isScanning = false;
 	}
 
-	/**
-	 * Get a snapshot of the current discovery state for debugging
-	 */
-	getSnapshot() {
+	// ========== DEBUG/INSPECTION ==========
+
+	getDebugInfo() {
 		return {
-			isDiscoveryMode: this.isDiscoveryMode,
-			discoveredGroupsCount: this.discoveredFields.size,
-			storedBodiesCount: this.staticGroupBodies.size,
-			groups: Array.from(this.discoveredFields.keys()),
+			isScanning: this.isScanning,
+			discoveredGroupsCount: this.discoveredFieldsByGroup.size,
+			storedBodiesCount: this.groupBodyFunctions.size,
+			groups: Array.from(this.discoveredFieldsByGroup.keys()),
 		};
 	}
 }

@@ -20,7 +20,7 @@ function ensureRuntime() {
 
 // Export lazy runtime functions with proper types
 export const ask = <T>(flow: FlowFunction<T>): Promise<T> =>
-	ensureRuntime().ask(flow);
+	ensureRuntime().executeFlow(flow);
 // Support both old and new signatures for backward compatibility
 export function group(
 	meta: GroupMeta,
