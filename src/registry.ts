@@ -58,7 +58,7 @@ export function createPlugin<T = any, R = any>(config: {
 	render?: () => React.ComponentType<any>; // Factory function that returns a component
 	transform?: (opts: T, context: { currentGroup?: string }, id: string) => T; // Optional: transform options before rendering
 	interactive?: boolean;
-}): (opts: T) => Promise<R> {
+}): (opts?: T) => Promise<R> {
 	// Validate that either component or render is provided
 	if (!config.component && !config.render) {
 		throw new Error(
@@ -81,7 +81,8 @@ export function createPlugin<T = any, R = any>(config: {
 	globalRegistry.register(plugin);
 
 	// Return the prompt function that users will call
-	return async function (opts: T): Promise<R> {
+	// Make opts optional with empty object as default
+	return async function (opts: T = {} as T): Promise<R> {
 		const runtime = getPluginRuntime(config.type);
 
 		// Call the dynamically created prompt function from the runtime

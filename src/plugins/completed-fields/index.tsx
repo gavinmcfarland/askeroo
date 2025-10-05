@@ -10,15 +10,13 @@ export interface CompletedFieldsOptions {
 
 export type { CompletedField } from "./completed-fields-store.js";
 
-// Internal plugin implementation
-const completedFieldsInternal = createPlugin<CompletedFieldsOptions, void>({
+// Completed fields display plugin
+export const completedFields = createPlugin<CompletedFieldsOptions, void>({
 	type: "completedFields",
-	interactive: false, // Completed fields display doesn't require user interaction
+	interactive: false,
 
 	render: () =>
 		function CompletedFieldsDisplay(props: any = {}) {
-			// Read directly from tree on each render - simple and reactive
-			// Gets fresh data from tree each time component renders (when treeRevision changes in parent)
 			const allFields = getCompletedFieldsData();
 			const completedFields = props.maxFields
 				? allFields.slice(0, props.maxFields)
@@ -47,10 +45,3 @@ const completedFieldsInternal = createPlugin<CompletedFieldsOptions, void>({
 			);
 		},
 });
-
-// Public API
-export function completedFields(
-	options: CompletedFieldsOptions = {}
-): Promise<void> {
-	return completedFieldsInternal(options);
-}
