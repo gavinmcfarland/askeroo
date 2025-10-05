@@ -1,4 +1,4 @@
-import { PromptPlugin } from "./types/index.js";
+import { PromptPlugin } from "../types/index.js";
 
 export type { PromptPlugin };
 
@@ -49,7 +49,7 @@ export function registerPlugin(plugin: PromptPlugin): void {
 }
 
 // Import runtime context management
-import { getCurrentRuntime, getPluginRuntime } from "./core/runtime-context.js";
+import { getCurrentRuntime, getPluginRuntime } from "./runtime-context.js";
 
 // Plugin creation function that auto-registers
 export function createPlugin<T = any, R = any>(config: {

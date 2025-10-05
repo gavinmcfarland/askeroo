@@ -1,5 +1,5 @@
-import { createRuntime } from "./core.js";
-import { ui } from "./ui.js";
+import { createRuntime } from "./core/core.js";
+import { ui } from "./core/ui.js";
 
 // Import and re-export types for better IDE support
 import type { GroupMeta, GroupOpts, FlowFunction } from "./types/index.js";
@@ -49,10 +49,14 @@ export function group(
 export const BACK = { __back: true };
 
 // Export runtime factory for advanced users
-export { createRuntime } from "./core.js";
+export { createRuntime } from "./core/core.js";
 
 // Export plugin system for developers
-export { registerPlugin, createPlugin, type PromptPlugin } from "./registry.js";
+export {
+	registerPlugin,
+	createPlugin,
+	type PromptPlugin,
+} from "./core/registry.js";
 
 // Export plugins and their types
 export { text, type TextOptions } from "./plugins/text/index.js";

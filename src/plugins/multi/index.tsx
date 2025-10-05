@@ -1,4 +1,4 @@
-import { createPlugin } from "../../registry.js";
+import { createPlugin } from "../../core/registry.js";
 import { MultiField } from "./MultiField.js";
 import { ValidatorFunction } from "../../types/index.js";
 

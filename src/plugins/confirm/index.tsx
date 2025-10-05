@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Text, Box, useInput } from "ink";
-import { createPlugin } from "../../registry.js";
+import { createPlugin } from "../../core/registry.js";
 import { ValidatorFunction } from "../../types/index.js";
 import { useFieldReset } from "../../hooks/use-auto-submit.js";
 import { isMarkdownString, parseMarkdown } from "../../utils/markdown.js";

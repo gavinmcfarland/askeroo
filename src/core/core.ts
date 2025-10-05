@@ -1,6 +1,6 @@
-import { PromptRuntime } from "./core/prompt-runtime.js";
-import { RuntimeFactory } from "./core/runtime-factory.js";
-import { UI } from "./types/index.js";
+import { PromptRuntime } from "./prompt-runtime.js";
+import { RuntimeFactory } from "./runtime-factory.js";
+import { UI } from "../types/index.js";
 
 // Export the PromptRuntime class for advanced users
 export { PromptRuntime };

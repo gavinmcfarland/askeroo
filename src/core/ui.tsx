@@ -1,9 +1,9 @@
 import React from "react";
 import { render } from "ink";
-import { PromptApp } from "./components/PromptApp.js";
-import { debugLogger } from "./utils/logging.js";
+import { PromptApp } from "../components/PromptApp.js";
+import { debugLogger } from "../utils/logging.js";
 import { globalRegistry } from "./registry.js";
-import { BackToken, PromptRequest } from "./types/index.js";
+import { BackToken, PromptRequest } from "../types/index.js";
 
 // Generate stable IDs for prompts based on content and context
 const generatePromptId = (type: string, label: string, groupName?: string) => {

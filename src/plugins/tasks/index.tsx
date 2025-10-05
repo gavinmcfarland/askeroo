@@ -1,4 +1,4 @@
-import { createPlugin } from "../../registry.js";
+import { createPlugin } from "../../core/registry.js";
 import { TasksDisplay, TasksOptions, Task } from "./Tasks.js";
 import { initializeTaskStore, initializeAllTaskStates } from "./task-store.js";
 

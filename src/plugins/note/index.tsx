@@ -1,5 +1,5 @@
 import React from "react";
-import { createPlugin } from "../../registry.js";
+import { createPlugin } from "../../core/registry.js";
 import {
 	MarkdownString,
 	parseMarkdown,

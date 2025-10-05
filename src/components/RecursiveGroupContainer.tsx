@@ -1,7 +1,7 @@
 import React from "react";
 import { Text, Box } from "ink";
 import { PromptNode, PromptTreeManager } from "../core/prompt-tree.js";
-import { globalRegistry } from "../registry.js";
+import { globalRegistry } from "../core/registry.js";
 import { PluginWrapper } from "./PluginWrapper.js";
 
 interface HintTextProps {

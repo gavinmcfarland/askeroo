@@ -6,7 +6,7 @@
  */
 
 import { debugLogger } from "../utils/logging.js";
-import { globalRegistry } from "../registry.js";
+import { globalRegistry } from "./registry.js";
 import {
 	PromptKind,
 	PromptOpts,
