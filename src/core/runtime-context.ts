@@ -8,10 +8,10 @@
 export interface RuntimeAPI {
 	executeFlow: Function;
 	ask: Function;
-	group: Function;
 	BACK: any;
 	rescanStaticGroupFields: Function;
-	[key: string]: any; // For plugin prompts
+	executeGroupBody: Function; // For group plugin
+	[key: string]: any; // For plugin prompts (including group)
 }
 
 class RuntimeContextManager {

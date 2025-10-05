@@ -70,11 +70,6 @@ export class PromptRuntime {
 	async executeFlow<T>(
 		flowDefinition: (
 			api: {
-				group: (
-					meta: GroupMeta,
-					body: () => Promise<any>,
-					opts?: GroupOpts
-				) => Promise<any>;
 				BACK: BackToken;
 			} & Record<string, any>
 		) => Promise<T>
@@ -97,7 +92,6 @@ export class PromptRuntime {
 				});
 
 				const result = await flowDefinition({
-					group: this.createGroup.bind(this),
 					BACK,
 					...this.pluginPrompts,
 				});
@@ -178,6 +172,12 @@ export class PromptRuntime {
 	/**
 	 * Create a group of prompts (public API wrapper)
 	 */
+	/**
+	 * Create a group of prompts (called by the group plugin)
+	 *
+	 * Note: The public group() API is now exposed through the group plugin.
+	 * This method is called internally by the plugin to handle group execution.
+	 */
 	async group(
 		meta: GroupMeta,
 		body: () => Promise<any>,
@@ -227,6 +227,24 @@ export class PromptRuntime {
 			this.state.exitGroup();
 			this.ui.clearGroup?.();
 		}
+	}
+
+	/**
+	 * Execute group body (called by group plugin)
+	 * This is the main entry point for the group plugin's execute hook
+	 */
+	async executeGroupBody(opts: any, body: () => Promise<any>): Promise<any> {
+		const meta: GroupMeta = {
+			label: opts.label,
+			id: opts.id,
+		};
+
+		const groupOpts: GroupOpts = {
+			flow: opts.flow,
+			enableArrowNavigation: opts.enableArrowNavigation,
+		};
+
+		return this.createGroup(meta, body, groupOpts);
 	}
 
 	/**

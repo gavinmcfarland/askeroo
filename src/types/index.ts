@@ -24,7 +24,7 @@ export type PromptRequest = {
 	[key: string]: any; // Allow any additional properties for plugin-specific options
 };
 
-// Group-related types
+// Group-related types (kept for backward compatibility with FlowFunction type)
 export type GroupMeta = { label?: string; id?: string };
 export type GroupOpts =
 	| { flow?: "progressive"; enableArrowNavigation?: never }
@@ -141,20 +141,23 @@ export type PromptPlugin = {
 		id: string
 	) => any; // Optional: transform options before rendering (defaults to identity function)
 	interactive?: boolean; // Whether this prompt requires user interaction (default: true)
+
+	// Container plugin support (for groups and similar structural elements)
+	isContainer?: boolean; // True if this plugin is a container that can hold other prompts
+	onEnter?: (runtime: any, opts: any) => Promise<void> | void; // Called when entering the container
+	onExit?: (runtime: any, opts: any) => Promise<void> | void; // Called when exiting the container
+	execute?: (
+		runtime: any,
+		opts: any,
+		body: () => Promise<any>
+	) => Promise<any>; // Custom execution logic for containers
 };
 
 // Flow function type
 export type FlowFunction<T> = (
 	api: {
-		group: {
-			(
-				meta: GroupMeta,
-				body: () => Promise<any>,
-				opts?: GroupOpts
-			): Promise<any>;
-		};
 		BACK: BackToken;
-	} & Record<string, any>
+	} & Record<string, any> // All plugins (including group) are dynamically added here
 ) => Promise<T>;
 
 // Validation function type - return string for error, null for valid

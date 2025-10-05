@@ -9,7 +9,6 @@ const flow = async () => {
 
 	// First, let's collect some data
 	const answers = await group(
-		{ id: "answers" },
 		async () => {
 			return {
 				name: await text({ label: "Name" }),
@@ -17,7 +16,7 @@ const flow = async () => {
 				phone: await text({ label: "Phone" }),
 			};
 		},
-		{ flow: "phased" }
+		{ id: "answers", flow: "phased" }
 	);
 
 	return { answers };

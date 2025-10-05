@@ -2,8 +2,8 @@ import { createRuntime } from "./core/core.js";
 import { ui } from "./core/ui.js";
 
 // Import and re-export types for better IDE support
-import type { GroupMeta, GroupOpts, FlowFunction } from "./types/index.js";
-export type { GroupMeta, GroupOpts, FlowFunction };
+import type { FlowFunction } from "./types/index.js";
+export type { FlowFunction };
 
 // Create runtime lazily to ensure all plugins are loaded first
 let runtime: any = null;
@@ -18,33 +18,7 @@ function ensureRuntime() {
 // Export lazy runtime functions with proper types
 export const ask = <T>(flow: FlowFunction<T>): Promise<T> =>
 	ensureRuntime().executeFlow(flow);
-// Support both old and new signatures for backward compatibility
-export function group(
-	meta: GroupMeta,
-	body: () => Promise<any>,
-	opts?: GroupOpts
-): Promise<any>;
-export function group(
-	body: () => Promise<any>,
-	opts?: GroupOpts & GroupMeta
-): Promise<any>;
-export function group(
-	metaOrBody: GroupMeta | (() => Promise<any>),
-	bodyOrOpts?: (() => Promise<any>) | (GroupOpts & GroupMeta),
-	opts?: GroupOpts
-): Promise<any> {
-	if (typeof metaOrBody === "function") {
-		// Old signature: group(body, opts)
-		return ensureRuntime().group({}, metaOrBody, bodyOrOpts as GroupOpts);
-	} else {
-		// New signature: group(meta, body, opts)
-		return ensureRuntime().group(
-			metaOrBody,
-			bodyOrOpts as () => Promise<any>,
-			opts
-		);
-	}
-}
+
 // BACK is just a simple token, doesn't need lazy loading
 export const BACK = { __back: true };
 
@@ -82,6 +56,12 @@ export {
 	completedFields,
 	type CompletedFieldsOptions,
 } from "./plugins/completed-fields/index.js";
+export {
+	group,
+	type GroupMeta,
+	type GroupOpts,
+	type GroupOptions,
+} from "./plugins/group/index.js";
 
 // Export markdown utilities
 export { md, type MarkdownString } from "./utils/markdown.js";

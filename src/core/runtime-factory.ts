@@ -20,10 +20,11 @@ export class RuntimeFactory {
 		const api: RuntimeAPI = {
 			executeFlow: runtime.executeFlow.bind(runtime),
 			ask: runtime.ask.bind(runtime),
-			group: runtime.group.bind(runtime),
 			BACK: runtime.BACK,
-			rescanStaticGroupFields: runtime.rescanStaticGroupFields.bind(runtime),
-			// Expose plugin prompts dynamically
+			rescanStaticGroupFields:
+				runtime.rescanStaticGroupFields.bind(runtime),
+			executeGroupBody: runtime.executeGroupBody.bind(runtime),
+			// Expose plugin prompts dynamically (including group plugin)
 			...runtime.getPluginPrompts(),
 		};
 
@@ -36,9 +37,12 @@ export class RuntimeFactory {
 	/**
 	 * Create a runtime with custom configuration options
 	 */
-	static createRuntimeWithOptions(ui: UI, options?: {
-		autoRegister?: boolean;
-	}): RuntimeAPI {
+	static createRuntimeWithOptions(
+		ui: UI,
+		options?: {
+			autoRegister?: boolean;
+		}
+	): RuntimeAPI {
 		const api = this.createRuntime(ui);
 
 		// Apply custom options

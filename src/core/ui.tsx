@@ -43,6 +43,9 @@ let currentRuntime: any = null;
 // Create a dynamic UI object that includes plugin handlers
 function createUI() {
 	const ui: any = {
+		/**
+		 * Show a group in the UI (called by runtime when executing group plugin)
+		 */
 		async showGroup(
 			label: string | undefined,
 			flow?: "phased" | "static",

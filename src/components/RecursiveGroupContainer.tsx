@@ -39,20 +39,37 @@ export function RecursiveGroupContainer({
 	// Depth 0 = root, depth 1 = root children (0 indent), depth 2 = first nesting level (3 spaces), etc.
 	const baseIndent = Math.max(0, (item.depth - 1) * 3);
 
-	// For group nodes, render children recursively
+	// For group nodes, render through the plugin system
 	if (item.type === "group") {
-		// Don't render anything for empty groups, unless they have a label
-		if (!item.children || item.children.length === 0) {
-			if (item.label) {
-				return (
-					<Box flexDirection="column">
-						<Box width={15} marginLeft={baseIndent}>
-							<Text color="gray">{item.label}</Text>
-						</Box>
-					</Box>
-				);
-			}
+		// Check if group plugin exists
+		const groupPluginExists = globalRegistry.getComponent("group");
+		if (!groupPluginExists) {
 			return null;
+		}
+
+		// Don't render anything for empty groups without a label
+		if ((!item.children || item.children.length === 0) && !item.label) {
+			return null;
+		}
+
+		// Empty group with label only
+		if (!item.children || item.children.length === 0) {
+			return (
+				<PluginWrapper
+					pluginType="group"
+					key={`group-${item.id}-empty`}
+					label={item.label}
+					flow={item.flow}
+					depth={item.depth}
+					state={
+						item.active
+							? "active"
+							: item.completed
+							? "completed"
+							: "disabled"
+					}
+				/>
+			);
 		}
 
 		// Filter children based on visibility rules
@@ -106,89 +123,77 @@ export function RecursiveGroupContainer({
 			// If group has a label, show it even without visible children
 			if (item.label) {
 				return (
-					<Box flexDirection="column">
-						<Box width={15} marginLeft={baseIndent}>
-							<Text color="gray">{item.label}</Text>
-						</Box>
-					</Box>
+					<PluginWrapper
+						pluginType="group"
+						key={`group-${item.id}-no-visible`}
+						label={item.label}
+						flow={item.flow}
+						depth={item.depth}
+						state={item.active ? "active" : "disabled"}
+					/>
 				);
 			}
 			return null;
 		}
 
-		// Handle completed groups differently
-		if (item.completed && !item.active) {
-			// For completed groups, render a simplified view
-			const completedFields = visibleChildren.filter(
-				(child) =>
-					child.type === "field" &&
-					child.completed &&
-					!child.hideAfterSubmit
-			);
+		// Determine group state
+		const groupState =
+			item.completed && !item.active
+				? "completed"
+				: item.active
+				? "active"
+				: "disabled";
 
-			if (completedFields.length === 0) {
-				return null;
-			}
+		// Handle completed groups differently - only show completed fields
+		const childrenToRender =
+			item.completed && !item.active
+				? visibleChildren.filter(
+						(child) =>
+							child.type === "field" &&
+							child.completed &&
+							!child.hideAfterSubmit
+				  )
+				: visibleChildren;
 
-			return (
-				<Box flexDirection="column">
-					{item.label && (
-						<Box width={15} marginLeft={baseIndent}>
-							<Text color="gray">{item.label}</Text>
-						</Box>
-					)}
-					<Box
-						flexDirection="column"
-						gap={1}
-						marginLeft={item.label ? baseIndent + 3 : baseIndent}
-					>
-						{completedFields.map((child, index) => (
-							<RecursiveGroupContainer
-								key={`${item.id}-completed-${child.id}-${index}`}
-								item={child}
-								treeManager={treeManager}
-								onSubmit={onSubmit}
-								onBack={onBack}
-								onHintChange={onHintChange}
-								showOnlyActiveAndCompleted={true}
-							/>
-						))}
-					</Box>
-				</Box>
-			);
+		// If no children to render and no label, return null
+		if (childrenToRender.length === 0 && !item.label) {
+			return null;
 		}
 
-		// For active/current groups, render all visible children
+		// Render children recursively
+		const renderedChildren = (
+			<>
+				{childrenToRender.map((child, index) => (
+					<RecursiveGroupContainer
+						key={`${item.id}-child-${child.id}-${index}`}
+						item={child}
+						treeManager={treeManager}
+						onSubmit={onSubmit}
+						onBack={onBack}
+						onHintChange={onHintChange}
+						hintText={child.active ? hintText : undefined}
+						showOnlyActiveAndCompleted={
+							showOnlyActiveAndCompleted ||
+							(item.completed && !item.active)
+						}
+					/>
+				))}
+				{/* Show hint text for the active group */}
+				{item.active && hintText && <HintText>{hintText}</HintText>}
+			</>
+		);
+
+		// Render group through plugin system
 		return (
-			<Box flexDirection="column">
-				{item.label && (
-					<Box width={15} marginLeft={baseIndent}>
-						<Text color="gray">{item.label}</Text>
-					</Box>
-				)}
-				<Box
-					flexDirection="column"
-					gap={1}
-					marginLeft={item.label ? baseIndent + 3 : baseIndent}
-				>
-					{visibleChildren.map((child, index) => (
-						<RecursiveGroupContainer
-							key={`${item.id}-visible-${child.id}-${index}`}
-							item={child}
-							treeManager={treeManager}
-							onSubmit={onSubmit}
-							onBack={onBack}
-							onHintChange={onHintChange}
-							hintText={child.active ? hintText : undefined}
-							showOnlyActiveAndCompleted={
-								showOnlyActiveAndCompleted
-							}
-						/>
-					))}
-					{/* Show hint text for the active group */}
-					{item.active && hintText && <HintText>{hintText}</HintText>}
-				</Box>
-			</Box>
+			<PluginWrapper
+				pluginType="group"
+				key={`group-${item.id}-${groupState}`}
+				label={item.label}
+				flow={item.flow}
+				depth={item.depth}
+				state={groupState}
+				children={renderedChildren}
+			/>
 		);
 	}
 
