@@ -405,9 +405,6 @@ export const radio = createPlugin<RadioOptions, string>({
 				<Box flexDirection="column">
 					<Box
 						flexDirection="column"
-						marginBottom={
-							isLastInGroup && flow === "phased" ? 1 : 0
-						}
 						marginTop={isFirstInGroup ? 0 : 0}
 					>
 						<Text>{label}</Text>
