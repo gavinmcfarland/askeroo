@@ -327,7 +327,6 @@ export function RecursiveGroupContainer({
 			<Box
 				marginLeft={shouldIndent ? baseIndent : 0}
 				flexDirection="column"
-				gap={1}
 			>
 				<PluginWrapper
 					pluginType={item.fieldType}

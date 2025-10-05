@@ -47,8 +47,8 @@ function NonInteractiveWrapper({
 	state?: "active" | "completed" | "disabled";
 	[key: string]: any;
 }) {
-	// Auto-submit for non-interactive plugins with reasonable delay to ensure visibility
-	useAutoSubmit(onSubmit, state, 200);
+	// Auto-submit for non-interactive plugins with minimal delay
+	useAutoSubmit(onSubmit, state, 10);
 
 	// Render the plugin component
 	return <PluginComponent onSubmit={onSubmit} state={state} {...props} />;

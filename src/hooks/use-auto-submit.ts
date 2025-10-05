@@ -12,17 +12,22 @@ export interface AutoSubmitProps {
  *
  * @param onSubmit - The submit callback to trigger
  * @param state - The current plugin state
- * @param delay - Optional delay in milliseconds before submitting (default: 100ms)
+ * @param delay - Optional delay in milliseconds before submitting (default: 0ms for immediate)
  */
 export function useAutoSubmit(
 	onSubmit: AutoSubmitProps["onSubmit"],
 	state: AutoSubmitProps["state"] = "active",
-	delay: number = 100
+	delay: number = 0
 ) {
 	useEffect(() => {
 		if (onSubmit && state === "active") {
-			const timer = setTimeout(onSubmit, delay);
-			return () => clearTimeout(timer);
+			if (delay > 0) {
+				const timer = setTimeout(onSubmit, delay);
+				return () => clearTimeout(timer);
+			} else {
+				// Submit immediately after render
+				onSubmit(undefined);
+			}
 		}
 	}, [onSubmit, state, delay]);
 }

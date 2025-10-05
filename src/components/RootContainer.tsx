@@ -6,9 +6,5 @@ interface RootContainerProps {
 }
 
 export function RootContainer({ children }: RootContainerProps) {
-	return (
-		<Box flexDirection="column" gap={1}>
-			{children}
-		</Box>
-	);
+	return <Box flexDirection="column">{children}</Box>;
 }
