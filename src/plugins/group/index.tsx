@@ -70,12 +70,7 @@ export const group = (
 					<Box flexDirection="column">
 						{label && (
 							<Box width={15} marginLeft={baseIndent}>
-								<Text
-									color={state === "active" ? "cyan" : "red"}
-									dimColor={state !== "active"}
-								>
-									{label}
-								</Text>
+								<Text>{label}</Text>
 							</Box>
 						)}
 						{children && (

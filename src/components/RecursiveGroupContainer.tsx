@@ -161,29 +161,25 @@ export function RecursiveGroupContainer({
 		}
 
 		// Render children recursively
-		const renderedChildren = (
-			<>
-				{childrenToRender.map((child, index) => (
-					<RecursiveGroupContainer
-						key={`${item.id}-child-${child.id}-${index}`}
-						item={child}
-						treeManager={treeManager}
-						onSubmit={onSubmit}
-						onBack={onBack}
-						onHintChange={onHintChange}
-						hintText={child.active ? hintText : undefined}
-						showOnlyActiveAndCompleted={
-							showOnlyActiveAndCompleted ||
-							(item.completed && !item.active)
-						}
-					/>
-				))}
-				{/* Show hint text for the active group */}
-				{item.active && hintText && <HintText>{hintText}</HintText>}
-			</>
-		);
+		// Always pass hintText down - components decide whether to display it
+		const renderedChildren = childrenToRender.map((child, index) => (
+			<RecursiveGroupContainer
+				key={`${item.id}-child-${child.id}-${index}`}
+				item={child}
+				treeManager={treeManager}
+				onSubmit={onSubmit}
+				onBack={onBack}
+				onHintChange={onHintChange}
+				hintText={hintText}
+				showOnlyActiveAndCompleted={
+					showOnlyActiveAndCompleted ||
+					(item.completed && !item.active)
+				}
+			/>
+		));
 
 		// Render group through plugin system
+		// Hint text is displayed by the active field itself, not at group level
 		return (
 			<PluginWrapper
 				pluginType="group"
@@ -244,8 +240,67 @@ export function RecursiveGroupContainer({
 			? siblingIndex === parent.children.length - 1
 			: true;
 
-		// Check if this is the first prompt in the root flow
-		const isFirstRootPrompt = item.depth === 1 && isFirstInGroup;
+		// Check if this is the first INTERACTIVE prompt in the root flow
+		// Cannot go back on the first interactive prompt (non-interactive prompts don't count)
+		const isFirstInteractivePrompt = () => {
+			// Helper to check if a node is interactive
+			const isInteractive = (node: PromptNode) => {
+				if (node.type === "group") return false; // Groups aren't interactive
+				if (!node.fieldType) return false;
+				return globalRegistry.isInteractive(node.fieldType);
+			};
+
+			// Helper to check if a group contains any interactive prompts
+			const groupHasInteractive = (group: PromptNode): boolean => {
+				return group.children.some(
+					(child) =>
+						isInteractive(child) ||
+						(child.type === "group" && groupHasInteractive(child))
+				);
+			};
+
+			// Case 1: Direct child of root
+			if (parent?.id === "root") {
+				// Check if there are any interactive prompts before this one
+				const siblingsBefore = parent.children.slice(0, siblingIndex);
+				const hasInteractiveBefore = siblingsBefore.some(
+					(sibling) =>
+						isInteractive(sibling) ||
+						(sibling.type === "group" &&
+							groupHasInteractive(sibling))
+				);
+				return !hasInteractiveBefore;
+			}
+
+			// Case 2: Inside a group at root level
+			if (parent?.type === "group" && parent.parent?.id === "root") {
+				const groupIndex = parent.parent.children.indexOf(parent);
+
+				// Check siblings before this one in the same group
+				const siblingsBefore = parent.children.slice(0, siblingIndex);
+				if (siblingsBefore.some(isInteractive)) {
+					return false;
+				}
+
+				// Check if there are interactive prompts in previous root-level items
+				const rootSiblingsBefore = parent.parent.children.slice(
+					0,
+					groupIndex
+				);
+				const hasInteractiveBefore = rootSiblingsBefore.some(
+					(sibling) =>
+						isInteractive(sibling) ||
+						(sibling.type === "group" &&
+							groupHasInteractive(sibling))
+				);
+				return !hasInteractiveBefore;
+			}
+
+			// Case 3: Nested groups - can always go back
+			return false;
+		};
+
+		const isFirstRootPrompt = isFirstInteractivePrompt();
 
 		// Determine flow type
 		const flowType = parent?.flow || "progressive";
@@ -260,6 +315,10 @@ export function RecursiveGroupContainer({
 			? "disabled"
 			: "active";
 
+		// Compute effective allowBack - false if it's the first interactive prompt
+		const effectiveAllowBack =
+			item.allowBack !== false && !isFirstRootPrompt;
+
 		return (
 			<Box marginLeft={shouldIndent ? baseIndent : 0}>
 				<PluginWrapper
@@ -272,7 +331,7 @@ export function RecursiveGroupContainer({
 					completedValue={isCompleted ? item.value : undefined}
 					onSubmit={isActive ? onSubmit : () => {}}
 					onBack={isActive ? onBack : undefined}
-					allowBack={item.allowBack !== false}
+					allowBack={effectiveAllowBack}
 					flow={flowType}
 					isFirstInGroup={isFirstInGroup}
 					isLastInGroup={isLastInGroup}
