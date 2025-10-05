@@ -37,7 +37,7 @@ function ensureApp(): Promise<(request: PromptRequest) => Promise<any>> {
 	});
 }
 
-// Store reference to the runtime for re-discovery
+// Store reference to the runtime for re-discovery and tree access
 let currentRuntime: any = null;
 
 // Create a dynamic UI object that includes plugin handlers
@@ -88,6 +88,11 @@ function createUI() {
 
 		setRuntime(runtime: any): void {
 			currentRuntime = runtime;
+		},
+
+		getTreeManager(): any {
+			// NEW: Expose runtime's tree manager to UI
+			return currentRuntime?.getTree?.() || null;
 		},
 
 		async rediscoverStaticGroup(groupId: string) {

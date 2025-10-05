@@ -20,6 +20,7 @@ import {
 import { IdGenerator } from "./IdGenerator.js";
 import { RuntimeState } from "./RuntimeState.js";
 import { DiscoveryService } from "./DiscoveryService.js";
+import { PromptTreeManager } from "./PromptTree.js";
 
 const BACK: BackToken = { __back: true };
 
@@ -29,6 +30,7 @@ export class PromptRuntime {
 	private state: RuntimeState;
 	private discovery: DiscoveryService;
 	private ui: UI;
+	private tree: PromptTreeManager; // NEW: Tree-based state management
 
 	// Engine for step execution
 	private engine: Engine;
@@ -45,6 +47,7 @@ export class PromptRuntime {
 		this.ui = ui;
 		this.idGenerator = new IdGenerator();
 		this.state = new RuntimeState();
+		this.tree = new PromptTreeManager(); // NEW: Initialize tree
 		this.discovery = new DiscoveryService(this.state);
 
 		// Create engine with bound methods
@@ -80,7 +83,7 @@ export class PromptRuntime {
 		) => Promise<T>
 	): Promise<T> {
 		debugLogger.log("ASK_START", {
-			currentStep: this.state.getCurrentStep(),
+			currentStep: this.getCurrentStepBoth(), // MICRO STEP 3.2: Use wrapper
 			answersCount: this.state.getAnswerCount(),
 		});
 
@@ -93,7 +96,7 @@ export class PromptRuntime {
 				this.state.setAsking(true);
 				debugLogger.log("FLOW_START", {
 					isReplaying: this.state.isReplaying(),
-					currentStep: this.state.getCurrentStep(),
+					currentStep: this.getCurrentStepBoth(), // MICRO STEP 3.3: Use wrapper
 				});
 
 				const result = await flow({
@@ -106,7 +109,7 @@ export class PromptRuntime {
 
 				// If we've asked all interactive prompts in this path, we're done
 				if (
-					this.state.getCurrentStep() >= this.state.getPromptCount()
+					this.getCurrentStepBoth() >= this.state.getPromptCount() // MICRO STEP 3.4: Use wrapper
 				) {
 					debugLogger.log("FLOW_COMPLETE", {
 						result,
@@ -126,17 +129,18 @@ export class PromptRuntime {
 				this.state.setAsking(false);
 				if (e === BACK) {
 					debugLogger.log("NAVIGATION_BACK", {
-						currentStep: this.state.getCurrentStep(),
+						currentStep: this.getCurrentStepBoth(), // MICRO STEP 3.5a: Use wrapper
 						totalSteps: this.state.getPromptCount(),
 					});
 
 					// Go back one step
-					if (this.state.getCurrentStep() > 0) {
-						this.state.decrementStep();
+					if (this.getCurrentStepBoth() > 0) {
+						// MICRO STEP 3.5b: Use wrapper
+						this.decrementStepBoth(); // MICRO STEP 3.5c: Use wrapper
 						this.state.clearFutureAnswers();
 
 						debugLogger.log("BACK_NAVIGATION_STATE", {
-							newStep: this.state.getCurrentStep(),
+							newStep: this.getCurrentStepBoth(), // MICRO STEP 3.5d: Use wrapper
 							remainingAnswers: this.state.getAnswerCount(),
 						});
 					}
@@ -204,6 +208,73 @@ export class PromptRuntime {
 	// ========== INTERNAL METHODS ==========
 
 	/**
+	 * Get current step from state (will be replaced with tree-based tracking)
+	 * For now, just delegates to RuntimeState
+	 */
+	private getCurrentStepBoth(): number {
+		// For now, just use RuntimeState
+		// In future steps, we'll use tree history to calculate this
+		return this.state.getCurrentStep();
+	}
+
+	/**
+	 * Increment step in both systems (for gradual migration)
+	 */
+	private incrementStepBoth(): void {
+		// Increment in RuntimeState (existing behavior)
+		this.state.incrementStep();
+		// Tree navigation will be added in later micro steps
+	}
+
+	/**
+	 * Decrement step in both systems (for gradual migration)
+	 */
+	private decrementStepBoth(): void {
+		// Decrement in RuntimeState (existing behavior)
+		this.state.decrementStep();
+		// Tree navigation will be added in later micro steps
+	}
+
+	/**
+	 * Add an answer to both tree and state (for gradual migration)
+	 */
+	private addAnswerBoth(id: string, value: any): void {
+		// Add to existing state (unchanged behavior)
+		this.state.addAnswer(id, value);
+		// Also add to tree (new, parallel storage)
+		const node = this.tree.getNode(id);
+		if (node) {
+			this.tree.updateNode(id, { value });
+		}
+	}
+
+	/**
+	 * Get an answer from tree first, fallback to state (for gradual migration)
+	 */
+	private getAnswerBoth(id: string): any | undefined {
+		// Try tree first (new source)
+		const node = this.tree.getNode(id);
+		if (node && node.value !== undefined) {
+			return node.value;
+		}
+		// Fallback to existing state (unchanged behavior)
+		return this.state.getAnswer(id);
+	}
+
+	/**
+	 * Check if we have an answer in either tree or state (for gradual migration)
+	 */
+	private hasAnswerBoth(id: string): boolean {
+		// Check tree first (new source)
+		const node = this.tree.getNode(id);
+		if (node && node.value !== undefined) {
+			return true;
+		}
+		// Fallback to existing state (unchanged behavior)
+		return this.state.hasAnswer(id);
+	}
+
+	/**
 	 * Engine step method - handles both groups and fields
 	 */
 	private async step<T>(
@@ -214,7 +285,7 @@ export class PromptRuntime {
 		debugLogger.log("ENGINE_STEP", {
 			kind,
 			opts,
-			currentStep: this.state.getCurrentStep(),
+			currentStep: this.getCurrentStepBoth(), // MICRO STEP 3.6: Use wrapper
 			groupStack: this.state.getGroupStack(),
 			isReplaying: this.state.isReplaying(),
 		});
@@ -314,8 +385,9 @@ export class PromptRuntime {
 			}
 
 			// Use current field value if available, otherwise use smart placeholder
-			if (this.state.hasAnswer(id)) {
-				const currentValue = this.state.getAnswer(id);
+			if (this.hasAnswerBoth(id)) {
+				// MICRO STEP 2.4: Check both sources
+				const currentValue = this.getAnswerBoth(id); // MICRO STEP 2.4: Get from both sources
 				debugLogger.log("DISCOVERY_CURRENT_VALUE", {
 					id,
 					currentValue,
@@ -338,20 +410,22 @@ export class PromptRuntime {
 
 		// If we already have an answer and we're replaying past this step, use it
 		if (
-			stepIndex < this.state.getCurrentStep() &&
-			this.state.hasAnswer(id)
+			stepIndex < this.getCurrentStepBoth() && // MICRO STEP 3.7a: Use wrapper
+			this.hasAnswerBoth(id) // MICRO STEP 2.5: Check both sources
 		) {
+			const answer = this.getAnswerBoth(id); // MICRO STEP 2.5: Get from both sources
 			debugLogger.log("PROMPT_REPLAY", {
 				id,
 				stepIndex,
-				currentStep: this.state.getCurrentStep(),
-				answer: this.state.getAnswer(id),
+				currentStep: this.getCurrentStepBoth(), // MICRO STEP 3.7b: Use wrapper
+				answer,
 			});
-			return this.state.getAnswer(id) as T;
+			return answer as T;
 		}
 
 		// If this is the current step to ask, prompt the user
-		if (stepIndex === this.state.getCurrentStep()) {
+		if (stepIndex === this.getCurrentStepBoth()) {
+			// MICRO STEP 3.7c: Use wrapper
 			debugLogger.log("PROMPT_ASK", {
 				id,
 				stepIndex,
@@ -365,11 +439,12 @@ export class PromptRuntime {
 			}
 
 			debugLogger.log("PROMPT_ANSWER", { id, stepIndex, result });
-			this.state.addAnswer(id, result);
-			this.state.incrementStep();
+			this.addAnswerBoth(id, result); // MICRO STEP 2.2: Use both storage
+			this.incrementStepBoth(); // MICRO STEP 3.8: Use wrapper
 
 			// Check if this was the last field and notify UI immediately
-			if (this.state.getCurrentStep() >= this.state.getPromptCount()) {
+			if (this.getCurrentStepBoth() >= this.state.getPromptCount()) {
+				// MICRO STEP 3.9: Use wrapper
 				debugLogger.log("LAST_FIELD_COMPLETE", {
 					id,
 					stepIndex,
@@ -382,19 +457,21 @@ export class PromptRuntime {
 		}
 
 		// If we have an answer for this step, use it
-		if (this.state.hasAnswer(id)) {
+		if (this.hasAnswerBoth(id)) {
+			// MICRO STEP 2.6: Check both sources
+			const answer = this.getAnswerBoth(id); // MICRO STEP 2.6: Get from both sources
 			debugLogger.log("PROMPT_CACHED", {
 				id,
 				stepIndex,
-				answer: this.state.getAnswer(id),
+				answer,
 			});
-			return this.state.getAnswer(id) as T;
+			return answer as T;
 		}
 
 		// This shouldn't happen in normal flow, but handle it defensively
 		const result = await askFn(id);
 		if (this.isBack(result)) throw BACK;
-		this.state.addAnswer(id, result);
+		this.addAnswerBoth(id, result); // MICRO STEP 2.3: Use both storage
 		this.state.setStep(stepIndex + 1);
 		return result as T;
 	}
@@ -449,11 +526,23 @@ export class PromptRuntime {
 	}
 
 	/**
+	 * Get the tree manager (for UI access)
+	 */
+	getTree(): PromptTreeManager {
+		return this.tree;
+	}
+
+	/**
 	 * Get current runtime state snapshot (for debugging)
 	 */
 	getStateSnapshot() {
 		return {
 			state: this.state.getSnapshot(),
+			tree: {
+				nodeCount: this.tree.getTree().nodeIndex.size,
+				historyLength: this.tree.getNavigationPath().length,
+				activeNode: this.tree.getActiveNode()?.id,
+			},
 			discovery: this.discovery.getSnapshot(),
 			idGenerator: {
 				groupCount: this.idGenerator.getGroupCount(),
