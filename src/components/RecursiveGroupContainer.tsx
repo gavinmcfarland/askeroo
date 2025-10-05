@@ -333,7 +333,7 @@ export function RecursiveGroupContainer({
 					pluginType={item.fieldType}
 					key={`plugin-${item.id}-${item.depth}-${pluginState}`}
 					{...item.properties} // Spread all plugin properties
-					message={item.label || ""}
+					message={item.properties.message || item.label || ""}
 					initialValue={getInitialValue()}
 					state={pluginState}
 					completedValue={isCompleted ? item.value : undefined}
