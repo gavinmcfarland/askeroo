@@ -87,13 +87,13 @@ export class PromptRuntime {
 	): Promise<T> {
 		debugLogger.log("ASK_START", {
 			currentStep: this.getCurrentStepBoth(), // MICRO STEP 3.2: Use wrapper
-			answersCount: this.state.getAnswerCount(),
+			answersCount: this.tree.getAnswerCount(), // MICRO STEP 5.10: Use tree instead of RuntimeState
 		});
 
 		while (true) {
 			// Reset for replay
-			this.flow.resetForReplay(); // MICRO STEP 5.7: Use FlowController
-			this.state.resetForReplay(); // Keep RuntimeState in sync
+			this.flow.resetForReplay(); // MICRO STEP 5.10: FlowController primary
+			this.state.resetForReplay(); // Keep RuntimeState in sync for compatibility
 			this.idGenerator.reset();
 
 			try {
@@ -141,11 +141,12 @@ export class PromptRuntime {
 					if (this.getCurrentStepBoth() > 0) {
 						// MICRO STEP 3.5b: Use wrapper
 						this.decrementStepBoth(); // MICRO STEP 3.5c: Use wrapper
+						// MICRO STEP 5.10: Keep clearFutureAnswers for compatibility during transition
 						this.state.clearFutureAnswers();
 
 						debugLogger.log("BACK_NAVIGATION_STATE", {
 							newStep: this.getCurrentStepBoth(), // MICRO STEP 3.5d: Use wrapper
-							remainingAnswers: this.state.getAnswerCount(),
+							remainingAnswers: this.tree.getAnswerCount(), // MICRO STEP 5.10: Use tree instead of RuntimeState
 						});
 					}
 				} else {
@@ -264,29 +265,27 @@ export class PromptRuntime {
 	 * Increment step (MIGRATED - uses FlowController)
 	 */
 	private incrementStepBoth(): void {
-		// MICRO STEP 5.4: Use FlowController for step tracking
+		// MICRO STEP 5.10: FlowController primary, keep RuntimeState in sync for compatibility
 		this.flow.incrementStep();
-		// Keep RuntimeState in sync for now
-		this.state.incrementStep();
+		this.state.incrementStep(); // Keep RuntimeState in sync for compatibility
 	}
 
 	/**
 	 * Decrement step (MIGRATED - uses FlowController)
 	 */
 	private decrementStepBoth(): void {
-		// MICRO STEP 5.4: Use FlowController for step tracking
+		// MICRO STEP 5.10: FlowController primary, keep RuntimeState in sync for back navigation
 		this.flow.decrementStep();
-		// Keep RuntimeState in sync for now
-		this.state.decrementStep();
+		this.state.decrementStep(); // Keep RuntimeState in sync for compatibility
 	}
 
 	/**
-	 * Add a prompt to both systems (for gradual migration)
+	 * Add a prompt (MIGRATED - uses FlowController)
 	 */
 	private addPromptBoth(id: string): void {
-		// MICRO STEP 5.6.1: Add to both systems to keep them in sync
+		// MICRO STEP 5.10: FlowController primary, keep RuntimeState in sync for compatibility
 		this.flow.addPrompt(id);
-		this.state.addPrompt(id);
+		this.state.addPrompt(id); // Keep RuntimeState in sync for compatibility
 	}
 
 	/**
@@ -414,7 +413,7 @@ export class PromptRuntime {
 		}
 
 		// This is an interactive prompt
-		const stepIndex = this.state.getCurrentPromptIndex();
+		const stepIndex = this.flow.getCurrentPromptIndex(); // MICRO STEP 5.10: Use FlowController
 
 		// Generate stable, deterministic ID
 		const customId = "id" in opts ? opts.id : undefined;

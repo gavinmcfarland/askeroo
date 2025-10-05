@@ -544,6 +544,19 @@ export class PromptTreeManager {
 		return [...this.tree.history];
 	}
 
+	/**
+	 * Get the count of answers stored in the tree
+	 */
+	getAnswerCount(): number {
+		let count = 0;
+		for (const node of this.tree.nodeIndex.values()) {
+			if (node.type === "field" && node.value !== undefined) {
+				count++;
+			}
+		}
+		return count;
+	}
+
 	// Get the flow type of a group (for runtime queries)
 	getGroupFlow(
 		groupId: string
