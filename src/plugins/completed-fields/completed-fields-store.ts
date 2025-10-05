@@ -2,7 +2,7 @@
 // Following the same pattern as TaskStore
 
 import { FieldState } from "../../types/index.js";
-import { PromptTreeManager, PromptNode } from "../../core/PromptTree.js";
+import { PromptTreeManager, PromptNode } from "../../core/prompt-tree.js";
 
 export interface CompletedField {
 	id: string;

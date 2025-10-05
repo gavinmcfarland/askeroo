@@ -1,6 +1,6 @@
 import React from "react";
 import { Text, Box } from "ink";
-import { getCompletedFieldsData } from "./CompletedFieldsStore.js";
+import { getCompletedFieldsData } from "./completed-fields-store.js";
 
 export interface CompletedFieldsOptions {
 	maxFields?: number;
@@ -9,7 +9,7 @@ export interface CompletedFieldsOptions {
 	disabled?: boolean;
 }
 
-export type { CompletedField } from "./CompletedFieldsStore.js";
+export type { CompletedField } from "./completed-fields-store.js";
 
 // Plugin reads directly from tree via getCompletedFieldsData()
 // Component re-renders when parent (PromptApp) re-renders due to treeRevision changes

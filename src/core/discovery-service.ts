@@ -7,7 +7,7 @@
  */
 
 import { debugLogger } from "../utils/logging.js";
-import { RuntimeState } from "./RuntimeState.js";
+import { RuntimeState } from "./runtime-state.js";
 
 export interface DiscoveredField {
 	id: string;

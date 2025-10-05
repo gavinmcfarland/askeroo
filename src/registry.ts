@@ -49,7 +49,7 @@ export function registerPlugin(plugin: PromptPlugin): void {
 }
 
 // Import runtime context management
-import { getCurrentRuntime, getPluginRuntime } from "./core/RuntimeContext.js";
+import { getCurrentRuntime, getPluginRuntime } from "./core/runtime-context.js";
 
 // Plugin creation function that auto-registers
 export function createPlugin<T = any, R = any>(config: {

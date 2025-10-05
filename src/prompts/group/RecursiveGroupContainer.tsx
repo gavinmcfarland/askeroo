@@ -1,6 +1,6 @@
 import React from "react";
 import { Text, Box } from "ink";
-import { PromptNode, PromptTreeManager } from "../../core/PromptTree.js";
+import { PromptNode, PromptTreeManager } from "../../core/prompt-tree.js";
 import { globalRegistry } from "../../registry.js";
 import { PluginWrapper } from "../shared/PluginWrapper.js";
 

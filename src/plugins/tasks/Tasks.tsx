@@ -46,7 +46,7 @@ import {
 	getTaskStatesForList,
 	getAllTaskStatesForList,
 	hasAnyTaskLists,
-} from "./TaskStore.js";
+} from "./task-store.js";
 
 // Track active task lists for tasks.add() functionality
 let activeTaskLists: Set<string> = new Set();

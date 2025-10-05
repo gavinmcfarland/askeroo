@@ -1,6 +1,6 @@
 import { createPlugin } from "../../registry.js";
 import { TasksDisplay, TasksOptions, Task } from "./Tasks.js";
-import { initializeTaskStore, initializeAllTaskStates } from "./TaskStore.js";
+import { initializeTaskStore, initializeAllTaskStates } from "./task-store.js";
 
 // Re-export types
 export type { Task, TaskLabel, CompleteOn } from "./Tasks.js";

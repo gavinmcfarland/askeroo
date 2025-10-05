@@ -5,8 +5,8 @@
  * Manages the lifecycle of runtime creation and registration.
  */
 
-import { PromptRuntime } from "./PromptRuntime.js";
-import { setCurrentRuntime, type RuntimeAPI } from "./RuntimeContext.js";
+import { PromptRuntime } from "./prompt-runtime.js";
+import { setCurrentRuntime, type RuntimeAPI } from "./runtime-context.js";
 import { UI } from "../types/index.js";
 
 export class RuntimeFactory {

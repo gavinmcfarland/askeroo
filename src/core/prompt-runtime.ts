@@ -16,10 +16,10 @@ import {
 	BackToken,
 	Engine,
 } from "../types/index.js";
-import { IdGenerator } from "./IdGenerator.js";
-import { RuntimeState } from "./RuntimeState.js";
-import { FieldDiscoveryService } from "./DiscoveryService.js";
-import { PromptTreeManager } from "./PromptTree.js";
+import { IdGenerator } from "./id-generator.js";
+import { RuntimeState } from "./runtime-state.js";
+import { FieldDiscoveryService } from "./discovery-service.js";
+import { PromptTreeManager } from "./prompt-tree.js";
 
 const BACK: BackToken = { __back: true };
 

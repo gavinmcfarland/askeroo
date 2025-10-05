@@ -9,8 +9,8 @@ import { flushSync } from "react-dom";
 import { RecursiveGroupContainer } from "../group/RecursiveGroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../../registry.js";
-import { PromptTreeManager, PromptNode } from "../../core/PromptTree.js";
-import { setTreeManager } from "../../plugins/completed-fields/CompletedFieldsStore.js";
+import { PromptTreeManager, PromptNode } from "../../core/prompt-tree.js";
+import { setTreeManager } from "../../plugins/completed-fields/completed-fields-store.js";
 import { PromptRequest } from "../../types/index.js";
 
 // Type declaration for debug utilities

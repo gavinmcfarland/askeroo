@@ -1,6 +1,6 @@
 import React from "react";
 import { globalRegistry } from "../../registry.js";
-import { useAutoSubmit } from "../../hooks/useAutoSubmit.js";
+import { useAutoSubmit } from "../../hooks/use-auto-submit.js";
 
 interface PluginWrapperProps {
 	pluginType: string;

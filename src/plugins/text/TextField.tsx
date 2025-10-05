@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useFieldReset } from "../../hooks/useAutoSubmit.js";
+import { useFieldReset } from "../../hooks/use-auto-submit.js";
 import { Text, Box, useInput } from "ink";
 import { ValidatorFunction } from "../../types/index.js";
 
