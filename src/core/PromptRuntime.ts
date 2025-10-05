@@ -230,27 +230,60 @@ export class PromptRuntime {
 	 * Get group stack from both tree and state (for gradual migration)
 	 */
 	private getGroupStackBoth(): string[] {
-		// For now, use RuntimeState
-		// In future steps, we'll build this from tree parent relationships
-		return this.state.getGroupStack();
+		// MICRO STEP 7.1b: Build group stack from tree parent relationships
+		const activeNode = this.tree.getActiveNode();
+		if (!activeNode) {
+			return [];
+		}
+
+		const stack: string[] = [];
+		let current: typeof activeNode | undefined = activeNode;
+		while (current && current.id !== "root") {
+			if (current.type === "group") {
+				stack.unshift(current.id);
+			}
+			current = current.parent;
+		}
+		return stack;
 	}
 
 	/**
 	 * Push a group to both systems (for gradual migration)
 	 */
 	private pushGroupBoth(groupId: string): void {
-		// Push to RuntimeState (existing behavior)
+		// MICRO STEP 7.1b: Push to RuntimeState for now, tree manages groups through navigation
 		this.state.pushGroup(groupId);
-		// Tree tracking will be added in later micro steps
+		// Tree manages group hierarchy through node relationships
 	}
 
 	/**
 	 * Pop a group from both systems (for gradual migration)
 	 */
 	private popGroupBoth(): string | undefined {
-		// Pop from RuntimeState (existing behavior)
+		// MICRO STEP 7.1b: Pop from RuntimeState for now, tree manages groups through navigation
 		return this.state.popGroup();
-		// Tree tracking will be added in later micro steps
+		// Tree manages group hierarchy through node relationships
+	}
+
+	/**
+	 * Get group depth (MIGRATED - uses tree)
+	 */
+	private getGroupDepthBoth(): number {
+		// MICRO STEP 7.1b: Calculate depth from tree parent relationships
+		const activeNode = this.tree.getActiveNode();
+		if (!activeNode) {
+			return 0;
+		}
+
+		let depth = 0;
+		let current: typeof activeNode | undefined = activeNode;
+		while (current && current.parent && current.id !== "root") {
+			if (current.type === "group") {
+				depth++;
+			}
+			current = current.parent;
+		}
+		return depth;
 	}
 
 	/**
@@ -262,19 +295,19 @@ export class PromptRuntime {
 	}
 
 	/**
-	 * Increment step (MIGRATED - uses FlowController)
+	 * Increment step (MIGRATED - FlowController primary)
 	 */
 	private incrementStepBoth(): void {
-		// MICRO STEP 5.10: FlowController primary, keep RuntimeState in sync for compatibility
+		// MICRO STEP 7.1 REVERTED: Keep RuntimeState sync for back navigation compatibility
 		this.flow.incrementStep();
 		this.state.incrementStep(); // Keep RuntimeState in sync for compatibility
 	}
 
 	/**
-	 * Decrement step (MIGRATED - uses FlowController)
+	 * Decrement step (MIGRATED - FlowController primary)
 	 */
 	private decrementStepBoth(): void {
-		// MICRO STEP 5.10: FlowController primary, keep RuntimeState in sync for back navigation
+		// MICRO STEP 7.1 REVERTED: Keep RuntimeState sync for back navigation compatibility
 		this.flow.decrementStep();
 		this.state.decrementStep(); // Keep RuntimeState in sync for compatibility
 	}
@@ -383,7 +416,7 @@ export class PromptRuntime {
 					groupOpts.flow === "static"
 						? this.discovery.getDiscoveredFields(groupId)
 						: undefined;
-				const groupDepth = this.state.getGroupDepth();
+				const groupDepth = this.getGroupDepthBoth(); // MICRO STEP 7.1b: Use tree-based depth
 				const currentGroup = this.getCurrentGroupBoth(); // MICRO STEP 4.7: Use wrapper
 
 				await this.ui.showGroup?.(
