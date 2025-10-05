@@ -320,7 +320,11 @@ export function RecursiveGroupContainer({
 			item.allowBack !== false && !isFirstRootPrompt;
 
 		return (
-			<Box marginLeft={shouldIndent ? baseIndent : 0}>
+			<Box
+				marginLeft={shouldIndent ? baseIndent : 0}
+				flexDirection="column"
+				gap={1}
+			>
 				<PluginWrapper
 					pluginType={item.fieldType}
 					key={`plugin-${item.id}-${item.depth}-${pluginState}`}
