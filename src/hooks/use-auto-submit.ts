@@ -1,9 +1,9 @@
 import { useEffect } from "react";
+import { PluginState } from "../types/index.js";
 
 export interface AutoSubmitProps {
 	onSubmit?: (value: any) => void;
-	completed?: boolean;
-	disabled?: boolean;
+	state?: PluginState;
 }
 
 /**
@@ -11,22 +11,20 @@ export interface AutoSubmitProps {
  * without requiring user interaction.
  *
  * @param onSubmit - The submit callback to trigger
- * @param completed - Whether the field is already completed
- * @param disabled - Whether the field is disabled
+ * @param state - The current plugin state
  * @param delay - Optional delay in milliseconds before submitting (default: 100ms)
  */
 export function useAutoSubmit(
 	onSubmit: AutoSubmitProps["onSubmit"],
-	completed: AutoSubmitProps["completed"],
-	disabled: AutoSubmitProps["disabled"],
+	state: AutoSubmitProps["state"] = "active",
 	delay: number = 100
 ) {
 	useEffect(() => {
-		if (onSubmit && !completed && !disabled) {
+		if (onSubmit && state === "active") {
 			const timer = setTimeout(onSubmit, delay);
 			return () => clearTimeout(timer);
 		}
-	}, [onSubmit, completed, disabled, delay]);
+	}, [onSubmit, state, delay]);
 }
 
 /**

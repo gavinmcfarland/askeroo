@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useFieldReset } from "../../hooks/use-auto-submit.js";
 import { Text, Box, useInput } from "ink";
-import { ValidatorFunction } from "../../types/index.js";
+import { ValidatorFunction, PluginState } from "../../types/index.js";
 
 interface RadioOption {
 	value: string;
@@ -28,9 +28,8 @@ interface Props {
 	onBack?: () => void;
 	initialValue?: string;
 	allowBack?: boolean;
-	completed?: boolean;
+	state?: PluginState;
 	completedValue?: string;
-	disabled?: boolean;
 	flow?: "progressive" | "phased" | "static";
 	onNavigate?: (direction: "up" | "down") => void;
 	isFirstInGroup?: boolean;
@@ -54,9 +53,8 @@ export function RadioField({
 	onBack,
 	initialValue,
 	allowBack = true,
-	completed = false,
+	state = "active",
 	completedValue,
-	disabled = false,
 	flow,
 	onNavigate,
 	isFirstInGroup = false,
@@ -111,6 +109,7 @@ export function RadioField({
 	}, [filteredOptions.length, maxVisible]);
 
 	// Reset submitted state when field becomes active again (not disabled)
+	const disabled = state === "disabled";
 	useFieldReset(disabled, submitted, setSubmitted);
 
 	// Calculate visible window for scrolling
@@ -188,7 +187,7 @@ export function RadioField({
 
 	// Helper function to run validation on submission attempt
 	const runValidation = async (valueToValidate: string): Promise<boolean> => {
-		if (!onValidate || disabled || completed) {
+		if (!onValidate || state !== "active") {
 			setValidationError(null);
 			return true;
 		}
@@ -207,7 +206,7 @@ export function RadioField({
 	useEffect(() => {
 		if (!onHintChange) return;
 
-		if (!disabled && !completed) {
+		if (state === "active") {
 			const hintText = (
 				<>
 					{!isFirstRootPrompt && allowBack && (
@@ -229,8 +228,7 @@ export function RadioField({
 			onHintChange(null);
 		}
 	}, [
-		disabled,
-		completed,
+		state,
 		isFirstRootPrompt,
 		allowBack,
 		showNumbers,
@@ -377,12 +375,12 @@ export function RadioField({
 		{
 			// Only register input listener when field is active (not disabled/completed)
 			// This prevents memory leaks from accumulating event listeners
-			isActive: !disabled && !completed && !submitted,
+			isActive: state === "active" && !submitted,
 		}
 	);
 
 	// Show completed state
-	if (completed && completedValue !== undefined) {
+	if (state === "completed" && completedValue !== undefined) {
 		const completedOption = options.find(
 			(option) => option.value === completedValue
 		);

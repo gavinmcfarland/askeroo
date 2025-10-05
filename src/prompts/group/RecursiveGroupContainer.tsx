@@ -248,23 +248,23 @@ export function RecursiveGroupContainer({
 		// CompletedFields and other display-only plugins should not be indented
 		const shouldIndent = item.fieldType !== "completedFields";
 
+		// Determine plugin state
+		const pluginState = isCompleted
+			? "completed"
+			: !isActive
+			? "disabled"
+			: "active";
+
 		return (
 			<Box marginLeft={shouldIndent ? baseIndent : 0}>
 				<PluginWrapper
 					pluginType={item.fieldType}
-					key={`plugin-${item.id}-${item.depth}-${
-						isActive
-							? "active"
-							: isCompleted
-							? "completed"
-							: "pending"
-					}`}
+					key={`plugin-${item.id}-${item.depth}-${pluginState}`}
 					{...item.properties} // Spread all plugin properties
 					message={item.label || ""}
 					initialValue={getInitialValue()}
-					completed={isCompleted}
+					state={pluginState}
 					completedValue={isCompleted ? item.value : undefined}
-					disabled={!isActive && !isCompleted}
 					onSubmit={isActive ? onSubmit : () => {}}
 					onBack={isActive ? onBack : undefined}
 					allowBack={item.allowBack !== false}

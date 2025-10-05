@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useFieldReset } from "../../hooks/use-auto-submit.js";
 import { Text, Box, useInput } from "ink";
 import { isMarkdownString, parseMarkdown } from "../../utils/markdown.js";
-import { ValidatorFunction } from "../../types/index.js";
+import { ValidatorFunction, PluginState } from "../../types/index.js";
 
 export interface ConfirmOption {
 	value: any;
@@ -27,9 +27,8 @@ interface ConfirmFieldProps {
 	onBack?: () => void;
 	initialValue?: any;
 	allowBack?: boolean;
-	completed?: boolean;
+	state?: PluginState;
 	completedValue?: any;
-	disabled?: boolean;
 	flow?: "progressive" | "phased" | "static";
 	onNavigate?: (direction: "up" | "down") => void;
 	isFirstInGroup?: boolean;
@@ -52,9 +51,8 @@ export function ConfirmField({
 	onBack,
 	initialValue,
 	allowBack = true,
-	completed = false,
+	state = "active",
 	completedValue,
-	disabled = false,
 	flow,
 	onNavigate,
 	isFirstInGroup = false,
@@ -117,6 +115,7 @@ export function ConfirmField({
 	const [validationError, setValidationError] = useState<string | null>(null);
 
 	// Reset submitted state when field becomes active again (not disabled)
+	const disabled = state === "disabled";
 	useFieldReset(disabled, submitted, setSubmitted);
 
 	// Update selected index when initialValue changes
@@ -138,7 +137,7 @@ export function ConfirmField({
 
 	// Helper function to run validation on submission attempt
 	const runValidation = async (valueToValidate: any): Promise<boolean> => {
-		if (!onValidate || disabled || completed) {
+		if (!onValidate || state !== "active") {
 			setValidationError(null);
 			return true;
 		}
@@ -157,7 +156,7 @@ export function ConfirmField({
 	useEffect(() => {
 		if (!onHintChange) return;
 
-		if (!disabled && !completed) {
+		if (state === "active") {
 			// Check if we're using default options (no custom options provided)
 			const isUsingDefaultOptions = !options;
 
@@ -175,11 +174,11 @@ export function ConfirmField({
 			// Clear hint when field is disabled/completed
 			onHintChange(null);
 		}
-	}, [disabled, completed, isFirstRootPrompt, options]); // Removed confirmOptions and defaultOptions
+	}, [state, isFirstRootPrompt, options]); // Removed confirmOptions and defaultOptions
 
 	useInput(
 		async (input, key) => {
-			if (submitted || completed || disabled) return;
+			if (submitted || state !== "active") return;
 
 			// Handle static group navigation with arrow keys (only if enabled)
 			if (flow === "static" && enableArrowNavigation) {
@@ -306,7 +305,7 @@ export function ConfirmField({
 		{
 			// Only register input listener when field is active (not disabled/completed)
 			// This prevents memory leaks from accumulating event listeners
-			isActive: !disabled && !completed && !submitted,
+			isActive: state === "active" && !submitted,
 		}
 	);
 
@@ -332,7 +331,7 @@ export function ConfirmField({
 	};
 
 	// Show completed state
-	if (completed) {
+	if (state === "completed") {
 		const displayValue =
 			completedValue !== undefined
 				? completedValue
@@ -357,7 +356,7 @@ export function ConfirmField({
 	}
 
 	// Show disabled state
-	if (disabled) {
+	if (state === "disabled") {
 		return (
 			<Box flexDirection="column">
 				<Text dimColor>{label}</Text>

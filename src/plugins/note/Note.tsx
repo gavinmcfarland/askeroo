@@ -5,14 +5,14 @@ import {
 	isMarkdownString,
 	MarkdownString,
 } from "../../utils/markdown.js";
+import { PluginState } from "../../types/index.js";
 
 export interface NoteOptions {
 	message: string | MarkdownString;
 	// Plugin component props
 	onSubmit?: (value: void) => void;
 	onBack?: () => void;
-	completed?: boolean;
-	disabled?: boolean;
+	state?: PluginState;
 	meta?: Record<string, any>; // User-defined metadata for this field
 }
 

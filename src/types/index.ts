@@ -137,3 +137,6 @@ export type FlowFunction<T> = (
 export type ValidatorFunction<T = any> = (
 	value: T
 ) => string | null | Promise<string | null>;
+
+// Plugin state type - unified state for all plugins
+export type PluginState = "active" | "completed" | "disabled";

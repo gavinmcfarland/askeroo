@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { TaskWarning } from "./index.js";
+import { PluginState } from "../../types/index.js";
 
 export interface TaskLabel {
 	idle?: string;
@@ -26,8 +27,7 @@ export interface TasksOptions {
 	// Plugin component props
 	onSubmit?: (value: void) => void;
 	onBack?: () => void;
-	completed?: boolean;
-	disabled?: boolean;
+	state?: PluginState;
 	meta?: Record<string, any>; // User-defined metadata for this field
 }
 
@@ -533,7 +533,7 @@ export function TasksDisplay(props: TasksOptions) {
 			setIsExecuting(false);
 
 			// Only submit after we know everything is done
-			if (props.onSubmit && !props.completed && !props.disabled) {
+			if (props.onSubmit && props.state === "active") {
 				props.onSubmit!(undefined as any);
 			}
 		}
@@ -603,7 +603,7 @@ export function TasksDisplay(props: TasksOptions) {
 
 	// Initialize all tasks as idle, then start execution after a brief delay
 	useEffect(() => {
-		if (!props.completed && !props.disabled && !isExecuting) {
+		if (props.state === "active" && !isExecuting) {
 			// Initialize all tasks as idle for this task list
 			initializeTasksAsIdle(props.tasks);
 
@@ -612,7 +612,7 @@ export function TasksDisplay(props: TasksOptions) {
 				executeAllTasks();
 			}, 400);
 		}
-	}, [props.completed, props.disabled]);
+	}, [props.state]);
 
 	const renderDynamicTasks = (): React.ReactNode[] => {
 		const dynamicTaskNodes: React.ReactNode[] = [];

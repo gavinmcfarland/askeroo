@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Text, Box, useInput } from "ink";
-import { ValidatorFunction } from "../../types/index.js";
+import { ValidatorFunction, PluginState } from "../../types/index.js";
 
 interface MultiFieldOption {
 	value: string;
@@ -16,9 +16,8 @@ interface MultiFieldProps {
 	onSubmit: (values: string[]) => void;
 	onBack?: () => void;
 	allowBack?: boolean;
-	completed?: boolean;
+	state?: PluginState;
 	completedValue?: string[];
-	disabled?: boolean;
 	onHintChange?: (hint: React.ReactNode) => void;
 	isFirstRootPrompt?: boolean;
 	noneOption?: {
@@ -41,9 +40,8 @@ export function MultiField({
 	onSubmit,
 	onBack,
 	allowBack = true,
-	completed = false,
+	state = "active",
 	completedValue,
-	disabled = false,
 	onHintChange,
 	isFirstRootPrompt = false,
 	noneOption,
@@ -197,6 +195,7 @@ export function MultiField({
 	}, [filteredOptions.length, maxVisible]);
 
 	// Reset submitted state when field becomes active again (not disabled)
+	const disabled = state === "disabled";
 	useEffect(() => {
 		if (!disabled && submitted) {
 			setSubmitted(false);
@@ -288,7 +287,7 @@ export function MultiField({
 	const runValidation = async (
 		valuesToValidate: string[]
 	): Promise<boolean> => {
-		if (!onValidate || disabled || completed) {
+		if (!onValidate || state !== "active") {
 			setValidationError(null);
 			return true;
 		}
@@ -307,7 +306,7 @@ export function MultiField({
 	useEffect(() => {
 		if (!onHintChange) return;
 
-		if (!disabled && !completed) {
+		if (state === "active") {
 			const hintText = (
 				<>
 					{!isFirstRootPrompt && allowBack && (
@@ -328,7 +327,7 @@ export function MultiField({
 			// Clear hint when field is disabled/completed
 			onHintChange(null);
 		}
-	}, [disabled, completed, isFirstRootPrompt, searchable]);
+	}, [state, isFirstRootPrompt, searchable]);
 
 	// Memoize the initialValue to prevent unnecessary re-renders
 	const stableInitial = useMemo(() => {
@@ -375,7 +374,7 @@ export function MultiField({
 
 	useInput(
 		async (input, key) => {
-			if (submitted || completed || disabled) return;
+			if (submitted || state !== "active") return;
 
 			// Handle search input FIRST if searchable is enabled
 			if (searchable && input && input !== " ") {
@@ -505,11 +504,11 @@ export function MultiField({
 		{
 			// Only register input listener when field is active (not disabled/completed)
 			// This prevents memory leaks from accumulating event listeners
-			isActive: !disabled && !completed && !submitted,
+			isActive: state === "active" && !submitted,
 		}
 	);
 
-	if (completed) {
+	if (state === "completed") {
 		const displayValue =
 			(completedValue || []).length === 0 && noneOption
 				? noneOption.label
@@ -525,7 +524,7 @@ export function MultiField({
 		);
 	}
 
-	if (disabled) {
+	if (state === "disabled") {
 		return (
 			<Box flexDirection="row" gap={1}>
 				<Text dimColor>{label}</Text>

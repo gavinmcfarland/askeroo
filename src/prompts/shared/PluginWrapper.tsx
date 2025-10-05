@@ -39,26 +39,17 @@ export function PluginWrapper({ pluginType, ...props }: PluginWrapperProps) {
 function NonInteractiveWrapper({
 	PluginComponent,
 	onSubmit,
-	completed,
-	disabled,
+	state = "active",
 	...props
 }: {
 	PluginComponent: React.ComponentType<any>;
 	onSubmit?: (value: any) => void;
-	completed?: boolean;
-	disabled?: boolean;
+	state?: "active" | "completed" | "disabled";
 	[key: string]: any;
 }) {
 	// Auto-submit for non-interactive plugins
-	useAutoSubmit(onSubmit, completed, disabled);
+	useAutoSubmit(onSubmit, state);
 
-	// Render the plugin component without the auto-submit logic
-	return (
-		<PluginComponent
-			onSubmit={onSubmit}
-			completed={completed}
-			disabled={disabled}
-			{...props}
-		/>
-	);
+	// Render the plugin component
+	return <PluginComponent onSubmit={onSubmit} state={state} {...props} />;
 }

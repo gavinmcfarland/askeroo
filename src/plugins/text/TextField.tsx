@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useFieldReset } from "../../hooks/use-auto-submit.js";
 import { Text, Box, useInput } from "ink";
-import { ValidatorFunction } from "../../types/index.js";
+import { ValidatorFunction, PluginState } from "../../types/index.js";
 
 interface Props {
 	label?: string;
@@ -16,9 +16,8 @@ interface Props {
 	onBack?: () => void;
 	initialValue?: string;
 	allowBack?: boolean;
-	completed?: boolean;
+	state?: PluginState;
 	completedValue?: string;
-	disabled?: boolean;
 	flow?: "progressive" | "phased" | "static";
 	onNavigate?: (direction: "up" | "down") => void;
 	isFirstInGroup?: boolean;
@@ -37,9 +36,8 @@ export function TextField({
 	onBack,
 	initialValue = "",
 	allowBack = true,
-	completed = false,
+	state = "active",
 	completedValue,
-	disabled = false,
 	flow,
 	onNavigate,
 	isFirstInGroup = false,
@@ -56,6 +54,7 @@ export function TextField({
 	const [validationError, setValidationError] = useState<string | null>(null);
 
 	// Reset submitted state when field becomes active again (not disabled)
+	const disabled = state === "disabled";
 	useFieldReset(disabled, submitted, setSubmitted);
 
 	// Separately handle value restoration when initialValue changes
@@ -70,7 +69,7 @@ export function TextField({
 
 	// Helper function to run validation on submission attempt
 	const runValidation = async (valueToValidate: string): Promise<boolean> => {
-		if (!onValidate || disabled || completed) {
+		if (!onValidate || state !== "active") {
 			setValidationError(null);
 			return true;
 		}
@@ -89,7 +88,7 @@ export function TextField({
 	useEffect(() => {
 		if (!onHintChange) return;
 
-		if (!disabled && !completed) {
+		if (state === "active") {
 			const hintText = (
 				<>
 					{!isFirstRootPrompt && allowBack && (
@@ -104,12 +103,12 @@ export function TextField({
 			// Clear hint when field is disabled/completed
 			onHintChange(null);
 		}
-	}, [disabled, completed, flow, isFirstRootPrompt]); // Removed onHintChange from dependencies
+	}, [state, flow, isFirstRootPrompt]); // Removed onHintChange from dependencies
 
 	useInput(
 		async (input, key) => {
 			// Early return as safety check (though isActive should prevent this)
-			if (submitted || completed || disabled) return;
+			if (submitted || state !== "active") return;
 
 			// Handle Ctrl+U or Cmd+K to clear entire input (common terminal shortcuts)
 			if ((key.ctrl && input === "u") || (key.meta && input === "k")) {
@@ -241,11 +240,11 @@ export function TextField({
 		{
 			// Only register input listener when field is active (not disabled/completed)
 			// This prevents memory leaks from accumulating event listeners
-			isActive: !disabled && !completed && !submitted,
+			isActive: state === "active" && !submitted,
 		}
 	);
 
-	if (completed) {
+	if (state === "completed") {
 		return (
 			<Box flexDirection="column">
 				<Text>{label}</Text>
@@ -256,7 +255,7 @@ export function TextField({
 		);
 	}
 
-	if (disabled) {
+	if (state === "disabled") {
 		return (
 			<Box gap={1}>
 				<Box width={14}>

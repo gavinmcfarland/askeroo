@@ -1,12 +1,12 @@
 import React from "react";
 import { Text, Box } from "ink";
 import { getCompletedFieldsData } from "./completed-fields-store.js";
+import { PluginState } from "../../types/index.js";
 
 export interface CompletedFieldsOptions {
 	maxFields?: number;
 	onSubmit?: (value: void) => void;
-	completed?: boolean;
-	disabled?: boolean;
+	state?: PluginState;
 }
 
 export type { CompletedField } from "./completed-fields-store.js";
