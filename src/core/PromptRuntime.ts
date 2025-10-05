@@ -369,7 +369,7 @@ export class PromptRuntime {
 			});
 
 			// Simplified logic - show group if not already processed
-			const shouldShowGroup = !this.state.isGroupProcessed(groupId);
+			const shouldShowGroup = !this.flow.isGroupProcessed(groupId); // MICRO STEP 5.8: Use FlowController
 
 			// Only call askFn (which creates UI prompts) if we should show the group
 			if (shouldShowGroup) {
@@ -397,7 +397,7 @@ export class PromptRuntime {
 					currentGroup
 				);
 
-				this.state.markGroupAsProcessed(groupId);
+				this.flow.markGroupAsProcessed(groupId); // MICRO STEP 5.8: Use FlowController
 				await askFn(groupId);
 			} else {
 				debugLogger.log("GROUP_SKIP", {
