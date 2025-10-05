@@ -100,20 +100,24 @@ export function RecursiveGroupContainer({
 				return allPreviousCompleted;
 			}
 
-			// For progressive/phased groups, show completed, active, and the next pending field
-			if (child.completed || child.active) {
-				return true;
-			}
-
-			// Also show the first pending field that should be next
+			// Handle different flow types separately
 			if (item.flow === "progressive") {
-				// In progressive flow, show the next pending field after all completed ones
+				// Progressive flow: show completed, active, and the next pending field
+				if (child.completed || child.active) {
+					return true;
+				}
+				// Show the next pending field after all completed ones
 				const siblings = item.children;
 				const childIndex = siblings.indexOf(child);
 				const allPreviousCompleted = siblings
 					.slice(0, childIndex)
 					.every((prev) => prev.completed);
 				return allPreviousCompleted;
+			}
+
+			if (item.flow === "phased") {
+				// Phased flow: show only the active field, not completed ones
+				return child.active;
 			}
 
 			return false;

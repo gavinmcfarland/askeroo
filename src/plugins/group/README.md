@@ -49,7 +49,7 @@ const userInfo = await group(
 
 ### Phased Groups
 
-Phased groups show all fields but maintain progressive completion:
+Phased groups show only one field at a time:
 
 ```typescript
 const userInfo = await group(
@@ -75,8 +75,8 @@ const userInfo = await group(
 ### GroupOpts
 
 -   `flow?: "progressive" | "phased" | "static"` - Execution flow type
-    -   `"progressive"` (default): Reveal fields one at a time
-    -   `"phased"`: Show all fields but complete progressively
+    -   `"progressive"` (default): Fields are progressively revealed as the user answers them
+    -   `"phased"`: Only one field is visible at a time
     -   `"static"`: Discover all fields upfront, enable arrow navigation
 -   `enableArrowNavigation?: boolean` - Only available with `flow: "static"`, enables arrow key navigation
 
@@ -115,14 +115,14 @@ const result = await group(
 
 ### Progressive Flow
 
--   **Behavior**: Fields appear one at a time as you complete them
+-   **Behavior**: Fields are progressively revealed as the user answers them
 -   **Use case**: Linear workflows where each field depends on the previous one
 -   **Navigation**: Standard forward/back navigation with escape key
 
 ### Phased Flow
 
--   **Behavior**: All fields are visible but you complete them in order
--   **Use case**: When you want to show the full structure upfront
+-   **Behavior**: Only one field is visible at a time
+-   **Use case**: When you want to focus on one field at a time
 -   **Navigation**: Standard forward/back navigation with escape key
 
 ### Static Flow

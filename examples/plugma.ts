@@ -16,7 +16,7 @@ import { md } from "../src/utils/markdown.js";
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const flow = async () => {
-	// await note("[ Plugma ]{bgMagenta} [v2.1.0]{dim}");
+	await note("[ Plugma ]{bgMagenta} [v2.1.0]{dim}");
 
 	await completedFields();
 
@@ -181,6 +181,7 @@ const flow = async () => {
 					},
 					{
 						label: "Group 2",
+						flow: "phased",
 					}
 				);
 			}
@@ -208,7 +209,7 @@ const flow = async () => {
 
 			return answers;
 		},
-		{ label: "Group 1" }
+		{ label: "Group 1", flow: "phased" }
 	);
 
 	const extra1 = await text({
