@@ -141,8 +141,8 @@ export class PromptRuntime {
 					if (this.getCurrentStepBoth() > 0) {
 						// MICRO STEP 3.5b: Use wrapper
 						this.decrementStepBoth(); // MICRO STEP 3.5c: Use wrapper
-						// MICRO STEP 5.10: Keep clearFutureAnswers for compatibility during transition
-						this.state.clearFutureAnswers();
+						// MICRO STEP 7.2: Use tree-based answer cleanup
+						this.tree.clearFutureAnswers(this.getCurrentStepBoth());
 
 						debugLogger.log("BACK_NAVIGATION_STATE", {
 							newStep: this.getCurrentStepBoth(), // MICRO STEP 3.5d: Use wrapper
@@ -155,7 +155,7 @@ export class PromptRuntime {
 			}
 
 			// Clean up answers for prompts that were not reached in this replay
-			this.state.clearUnreachableAnswers();
+			this.tree.clearUnreachableAnswers(); // MICRO STEP 7.2: Use tree-based cleanup
 		}
 	}
 
@@ -569,7 +569,7 @@ export class PromptRuntime {
 		const result = await askFn(id);
 		if (this.isBack(result)) throw BACK;
 		this.addAnswerBoth(id, result); // MICRO STEP 2.3: Use both storage
-		this.state.setStep(stepIndex + 1);
+		this.flow.setStep(stepIndex + 1); // MICRO STEP 7.2: Use FlowController
 		return result as T;
 	}
 

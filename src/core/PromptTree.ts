@@ -557,6 +557,42 @@ export class PromptTreeManager {
 		return count;
 	}
 
+	/**
+	 * Clear future answers (for back navigation)
+	 * Removes answers from nodes that come after the current step
+	 */
+	clearFutureAnswers(currentStep: number): void {
+		const navigationPath = this.getNavigationPath();
+		const currentPrompts = new Set(
+			navigationPath.slice(0, currentStep).map((node) => node.id)
+		);
+
+		for (const node of this.tree.nodeIndex.values()) {
+			if (node.type === "field" && !currentPrompts.has(node.id)) {
+				node.value = undefined;
+				node.completed = false;
+			}
+		}
+	}
+
+	/**
+	 * Clear unreachable answers (after replay)
+	 * Removes answers from nodes that are not in the current flow
+	 */
+	clearUnreachableAnswers(): void {
+		const reachableNodes = new Set(this.tree.nodeIndex.keys());
+
+		for (const node of this.tree.nodeIndex.values()) {
+			if (node.type === "field" && node.value !== undefined) {
+				// Keep answers only for nodes that are still in the tree
+				if (!reachableNodes.has(node.id)) {
+					node.value = undefined;
+					node.completed = false;
+				}
+			}
+		}
+	}
+
 	// Get the flow type of a group (for runtime queries)
 	getGroupFlow(
 		groupId: string
