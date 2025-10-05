@@ -48,9 +48,7 @@ const completedFieldsInternal = createPlugin<CompletedFieldsOptions, void>({
 		},
 });
 
-// Public API with overloads for optional parameters
-export function completedFields(): Promise<void>;
-export function completedFields(options: CompletedFieldsOptions): Promise<void>;
+// Public API
 export function completedFields(
 	options: CompletedFieldsOptions = {}
 ): Promise<void> {
