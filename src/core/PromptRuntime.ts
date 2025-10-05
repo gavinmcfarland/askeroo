@@ -96,7 +96,7 @@ export class PromptRuntime {
 			this.idGenerator.reset();
 
 			try {
-				this.state.setAsking(true);
+				this.flow.setAsking(true); // MICRO STEP 5.5: Use FlowController
 				debugLogger.log("FLOW_START", {
 					isReplaying: this.state.isReplaying(),
 					currentStep: this.getCurrentStepBoth(), // MICRO STEP 3.3: Use wrapper
@@ -108,7 +108,7 @@ export class PromptRuntime {
 					...this.pluginPrompts,
 				});
 
-				this.state.setAsking(false);
+				this.flow.setAsking(false); // MICRO STEP 5.5: Use FlowController
 
 				// If we've asked all interactive prompts in this path, we're done
 				if (
@@ -129,7 +129,7 @@ export class PromptRuntime {
 					return result;
 				}
 			} catch (e) {
-				this.state.setAsking(false);
+				this.flow.setAsking(false); // MICRO STEP 5.5: Use FlowController
 				if (e === BACK) {
 					debugLogger.log("NAVIGATION_BACK", {
 						currentStep: this.getCurrentStepBoth(), // MICRO STEP 3.5a: Use wrapper
@@ -165,7 +165,8 @@ export class PromptRuntime {
 		body: () => Promise<any>,
 		opts?: GroupOpts
 	): Promise<any> {
-		if (!this.state.isAsking()) {
+		if (!this.flow.isAsking()) {
+			// MICRO STEP 5.5: Use FlowController
 			throw new Error("group() must be called inside ask()");
 		}
 
@@ -251,31 +252,31 @@ export class PromptRuntime {
 	}
 
 	/**
-	 * Get current step from state (will be replaced with tree-based tracking)
-	 * For now, just delegates to RuntimeState
+	 * Get current step (MIGRATED - uses FlowController)
 	 */
 	private getCurrentStepBoth(): number {
-		// For now, just use RuntimeState
-		// In future steps, we'll use tree history to calculate this
-		return this.state.getCurrentStep();
+		// MICRO STEP 5.3: Use FlowController for step tracking
+		return this.flow.getCurrentStep();
 	}
 
 	/**
-	 * Increment step in both systems (for gradual migration)
+	 * Increment step (MIGRATED - uses FlowController)
 	 */
 	private incrementStepBoth(): void {
-		// Increment in RuntimeState (existing behavior)
+		// MICRO STEP 5.4: Use FlowController for step tracking
+		this.flow.incrementStep();
+		// Keep RuntimeState in sync for now
 		this.state.incrementStep();
-		// Tree navigation will be added in later micro steps
 	}
 
 	/**
-	 * Decrement step in both systems (for gradual migration)
+	 * Decrement step (MIGRATED - uses FlowController)
 	 */
 	private decrementStepBoth(): void {
-		// Decrement in RuntimeState (existing behavior)
+		// MICRO STEP 5.4: Use FlowController for step tracking
+		this.flow.decrementStep();
+		// Keep RuntimeState in sync for now
 		this.state.decrementStep();
-		// Tree navigation will be added in later micro steps
 	}
 
 	/**
@@ -527,7 +528,8 @@ export class PromptRuntime {
 			this.pluginPrompts[plugin.type] = async (
 				opts: any
 			): Promise<any> => {
-				if (!this.state.isAsking()) {
+				if (!this.flow.isAsking()) {
+					// MICRO STEP 5.5: Use FlowController
 					throw new Error(
 						`${plugin.type}() must be called inside ask()`
 					);
