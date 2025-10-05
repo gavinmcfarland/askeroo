@@ -1,9 +1,6 @@
 import { createRuntime } from "./core.js";
 import { ui } from "./ui.js";
 
-// Import plugins to ensure they register themselves
-import "./plugins/completed-fields/CompletedFields.js";
-
 // Import and re-export types for better IDE support
 import type { GroupMeta, GroupOpts, FlowFunction } from "./types/index.js";
 export type { GroupMeta, GroupOpts, FlowFunction };

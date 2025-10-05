@@ -680,9 +680,4 @@ export const radio = createPlugin<RadioOptions, string>({
 				</Box>
 			);
 		},
-
-	// The prompt logic - just return the options, runtime handles UI
-	prompt(opts: RadioOptions, { currentGroup }, id: string) {
-		return opts;
-	},
 });

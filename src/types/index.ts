@@ -135,7 +135,11 @@ export type PromptPlugin = {
 	type: string;
 	component?: React.ComponentType<any>; // Legacy: Plugin provides its own React component
 	render?: (props: PluginRenderProps) => React.ReactElement; // New: Inline render function
-	prompt: (opts: any, context: { currentGroup?: string }, id: string) => any;
+	transform?: (
+		opts: any,
+		context: { currentGroup?: string },
+		id: string
+	) => any; // Optional: transform options before rendering (defaults to identity function)
 	interactive?: boolean; // Whether this prompt requires user interaction (default: true)
 };
 

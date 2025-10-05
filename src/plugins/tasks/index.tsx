@@ -86,11 +86,6 @@ const tasksInternal = createPlugin<TasksOptions, TasksResult>({
 	type: "tasks",
 	component: TasksDisplay,
 	interactive: false, // Tasks don't require user interaction
-
-	// The prompt logic - return the results after execution
-	prompt(opts: TasksOptions) {
-		return opts;
-	},
 });
 
 // Public API function with add method and execution mode options

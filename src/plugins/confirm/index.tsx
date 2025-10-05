@@ -379,9 +379,4 @@ export const confirm = createPlugin<ConfirmOptions, any>({
 				</Box>
 			);
 		},
-
-	// The prompt logic - just return the options, runtime handles UI
-	prompt(opts: ConfirmOptions, { currentGroup }, id: string) {
-		return opts;
-	},
 });

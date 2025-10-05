@@ -508,11 +508,11 @@ export class PromptRuntime {
 
 				return this.engine.step(plugin.type, opts, async (id) => {
 					const currentGroup = this.state.getCurrentGroupId();
-					const processedOpts = plugin.prompt(
-						opts,
-						{ currentGroup },
-						id
-					);
+					// If plugin has a transform function, use it to process opts
+					// Otherwise, just pass opts through unchanged
+					const processedOpts = plugin.transform
+						? plugin.transform(opts, { currentGroup }, id)
+						: opts;
 					return this.ui[plugin.type](
 						processedOpts,
 						currentGroup,

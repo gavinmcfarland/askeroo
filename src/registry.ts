@@ -56,7 +56,7 @@ export function createPlugin<T = any, R = any>(config: {
 	type: string;
 	component?: React.ComponentType<any>;
 	render?: () => React.ComponentType<any>; // Factory function that returns a component
-	prompt: (opts: T, context: { currentGroup?: string }, id: string) => T;
+	transform?: (opts: T, context: { currentGroup?: string }, id: string) => T; // Optional: transform options before rendering
 	interactive?: boolean;
 }): (opts: T) => Promise<R> {
 	// Validate that either component or render is provided
@@ -73,7 +73,7 @@ export function createPlugin<T = any, R = any>(config: {
 	const plugin: PromptPlugin = {
 		type: config.type,
 		component: component,
-		prompt: config.prompt,
+		transform: config.transform,
 		interactive: config.interactive,
 	};
 
