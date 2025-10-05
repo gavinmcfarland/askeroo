@@ -48,12 +48,8 @@ export function registerPlugin(plugin: PromptPlugin): void {
 	globalRegistry.register(plugin);
 }
 
-// Store current runtime context
-let currentRuntime: any = null;
-
-export function setCurrentRuntime(runtime: any): void {
-	currentRuntime = runtime;
-}
+// Import runtime context management
+import { getCurrentRuntime, getPluginRuntime } from "./core/RuntimeContext.js";
 
 // Plugin creation function that auto-registers
 export function createPlugin<T = any, R = any>(config: {
@@ -74,20 +70,10 @@ export function createPlugin<T = any, R = any>(config: {
 
 	// Return the prompt function that users will call
 	return async function (opts: T): Promise<R> {
-		if (!currentRuntime) {
-			throw new Error(
-				`Plugin "${config.type}" must be used with a runtime. Make sure you're importing from a file that has called createRuntime().`
-			);
-		}
+		const runtime = getPluginRuntime(config.type);
 
 		// Call the dynamically created prompt function from the runtime
-		const dynamicPrompt = currentRuntime[config.type];
-		if (!dynamicPrompt) {
-			throw new Error(
-				`Plugin "${config.type}" is not available in the current runtime.`
-			);
-		}
-
+		const dynamicPrompt = runtime[config.type];
 		return dynamicPrompt(opts);
 	};
 }

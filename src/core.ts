@@ -1,5 +1,5 @@
 import { PromptRuntime } from "./core/PromptRuntime.js";
-import { setCurrentRuntime } from "./registry.js";
+import { RuntimeFactory } from "./core/RuntimeFactory.js";
 import { UI } from "./types/index.js";
 
 // Export the PromptRuntime class for advanced users
@@ -15,23 +15,7 @@ export { PromptRuntime };
  * @returns Runtime instance with ask, group, and plugin methods
  */
 export function createRuntime(ui: UI) {
-	const runtime = new PromptRuntime(ui);
-
-	// Create the public API object
-	const api = {
-		executeFlow: runtime.executeFlow.bind(runtime),
-		ask: runtime.ask.bind(runtime),
-		group: runtime.group.bind(runtime),
-		BACK: runtime.BACK,
-		rescanStaticGroupFields: runtime.rescanStaticGroupFields.bind(runtime),
-		// Expose plugin prompts dynamically
-		...runtime.getPluginPrompts(),
-	};
-
-	// Set the API object as the current runtime so plugins can access it
-	setCurrentRuntime(api);
-
-	return api;
+	return RuntimeFactory.createRuntime(ui);
 }
 
 export { createRuntime as default };
