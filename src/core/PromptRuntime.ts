@@ -112,11 +112,11 @@ export class PromptRuntime {
 
 				// If we've asked all interactive prompts in this path, we're done
 				if (
-					this.getCurrentStepBoth() >= this.state.getPromptCount() // MICRO STEP 3.4: Use wrapper
+					this.getCurrentStepBoth() >= this.getPromptCountBoth() // MICRO STEP 5.6.2: Use FlowController
 				) {
 					debugLogger.log("FLOW_COMPLETE", {
 						result,
-						totalSteps: this.state.getPromptCount(),
+						totalSteps: this.getPromptCountBoth(), // MICRO STEP 5.6.2: Use FlowController
 					});
 
 					// Notify UI that the flow is complete
@@ -133,7 +133,7 @@ export class PromptRuntime {
 				if (e === BACK) {
 					debugLogger.log("NAVIGATION_BACK", {
 						currentStep: this.getCurrentStepBoth(), // MICRO STEP 3.5a: Use wrapper
-						totalSteps: this.state.getPromptCount(),
+						totalSteps: this.getPromptCountBoth(), // MICRO STEP 5.6.2: Use FlowController
 					});
 
 					// Go back one step
@@ -277,6 +277,26 @@ export class PromptRuntime {
 		this.flow.decrementStep();
 		// Keep RuntimeState in sync for now
 		this.state.decrementStep();
+	}
+
+	/**
+	 * Add a prompt to both systems (for gradual migration)
+	 */
+	private addPromptBoth(id: string): void {
+		// MICRO STEP 5.6.1: Add to both systems to keep them in sync
+		this.flow.addPrompt(id);
+		this.state.addPrompt(id);
+	}
+
+	/**
+	 * Get prompt count from both systems (for gradual migration)
+	 */
+	private getPromptCountBoth(): number {
+		// MICRO STEP 5.6.2: Use FlowController, keep RuntimeState in sync
+		const flowCount = this.flow.getPromptCount();
+		const stateCount = this.state.getPromptCount();
+		// They should be the same, but return FlowController value
+		return flowCount;
 	}
 
 	/**
@@ -450,7 +470,7 @@ export class PromptRuntime {
 			return placeholderValue as T;
 		}
 
-		this.state.addPrompt(id);
+		this.addPromptBoth(id); // MICRO STEP 5.6.1: Use both systems
 
 		// If we already have an answer and we're replaying past this step, use it
 		if (
@@ -487,12 +507,12 @@ export class PromptRuntime {
 			this.incrementStepBoth(); // MICRO STEP 3.8: Use wrapper
 
 			// Check if this was the last field and notify UI immediately
-			if (this.getCurrentStepBoth() >= this.state.getPromptCount()) {
-				// MICRO STEP 3.9: Use wrapper
+			if (this.getCurrentStepBoth() >= this.getPromptCountBoth()) {
+				// MICRO STEP 5.6.2: Use FlowController
 				debugLogger.log("LAST_FIELD_COMPLETE", {
 					id,
 					stepIndex,
-					totalSteps: this.state.getPromptCount(),
+					totalSteps: this.getPromptCountBoth(), // MICRO STEP 5.6.2: Use FlowController
 				});
 				this.ui.completeFlow?.();
 			}
