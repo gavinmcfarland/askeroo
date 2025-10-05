@@ -19,7 +19,6 @@ import {
 } from "../types/index.js";
 import { IdGenerator } from "./IdGenerator.js";
 import { RuntimeState } from "./RuntimeState.js";
-import { FlowController } from "./FlowController.js"; // MICRO STEP 5.2: Import FlowController
 import { DiscoveryService } from "./DiscoveryService.js";
 import { PromptTreeManager } from "./PromptTree.js";
 
@@ -29,7 +28,6 @@ export class PromptRuntime {
 	// Core services
 	private idGenerator: IdGenerator;
 	private state: RuntimeState;
-	private flow: FlowController; // MICRO STEP 5.3: New flow controller
 	private discovery: DiscoveryService;
 	private ui: UI;
 	private tree: PromptTreeManager; // NEW: Tree-based state management
@@ -49,7 +47,6 @@ export class PromptRuntime {
 		this.ui = ui;
 		this.idGenerator = new IdGenerator();
 		this.state = new RuntimeState();
-		this.flow = new FlowController(); // MICRO STEP 5.4: Initialize flow controller
 		this.tree = new PromptTreeManager(); // NEW: Initialize tree
 		this.discovery = new DiscoveryService(this.state);
 
@@ -581,7 +578,6 @@ export class PromptRuntime {
 	getStateSnapshot() {
 		return {
 			state: this.state.getSnapshot(),
-			flow: this.flow.getSnapshot(), // MICRO STEP 5.5: Include flow controller
 			tree: {
 				nodeCount: this.tree.getTree().nodeIndex.size,
 				historyLength: this.tree.getNavigationPath().length,
