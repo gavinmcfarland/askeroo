@@ -1,6 +1,6 @@
 import React from "react";
 import { render } from "ink";
-import { PromptApp } from "./prompts/shared/PromptApp.js";
+import { PromptApp } from "./components/PromptApp.js";
 import { debugLogger } from "./utils/logging.js";
 import { globalRegistry } from "./registry.js";
 import { BackToken, PromptRequest } from "./types/index.js";
