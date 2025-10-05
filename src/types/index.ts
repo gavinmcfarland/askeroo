@@ -112,9 +112,29 @@ export interface PromptOrderState {
 }
 
 // Plugin registry types
+export type PluginRenderProps = {
+	value?: any;
+	initialValue?: any;
+	completedValue?: any;
+	state: PluginState;
+	message?: string;
+	label?: string;
+	onSubmit: (value: any) => void;
+	onBack?: () => void;
+	flow?: "progressive" | "phased" | "static";
+	isFirstInGroup?: boolean;
+	isLastInGroup?: boolean;
+	isFirstRootPrompt?: boolean;
+	enableArrowNavigation?: boolean;
+	onHintChange?: (hint: React.ReactNode) => void;
+	allowBack?: boolean;
+	[key: string]: any; // Allow any additional plugin-specific props
+};
+
 export type PromptPlugin = {
 	type: string;
-	component: React.ComponentType<any>; // Plugin provides its own React component
+	component?: React.ComponentType<any>; // Legacy: Plugin provides its own React component
+	render?: (props: PluginRenderProps) => React.ReactElement; // New: Inline render function
 	prompt: (opts: any, context: { currentGroup?: string }, id: string) => any;
 	interactive?: boolean; // Whether this prompt requires user interaction (default: true)
 };

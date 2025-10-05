@@ -54,13 +54,25 @@ import { getCurrentRuntime, getPluginRuntime } from "./core/runtime-context.js";
 // Plugin creation function that auto-registers
 export function createPlugin<T = any, R = any>(config: {
 	type: string;
-	component: React.ComponentType<any>;
+	component?: React.ComponentType<any>;
+	render?: () => React.ComponentType<any>; // Factory function that returns a component
 	prompt: (opts: T, context: { currentGroup?: string }, id: string) => T;
 	interactive?: boolean;
 }): (opts: T) => Promise<R> {
+	// Validate that either component or render is provided
+	if (!config.component && !config.render) {
+		throw new Error(
+			`Plugin "${config.type}" must provide either a component or render function`
+		);
+	}
+
+	// If render is provided, call it to get the component
+	const component =
+		config.component || (config.render ? config.render() : undefined);
+
 	const plugin: PromptPlugin = {
 		type: config.type,
-		component: config.component,
+		component: component,
 		prompt: config.prompt,
 		interactive: config.interactive,
 	};
