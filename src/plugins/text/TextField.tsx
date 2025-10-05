@@ -53,89 +53,70 @@ export function TextField({
 	const [submitted, setSubmitted] = useState(false);
 	const [validationError, setValidationError] = useState<string | null>(null);
 
-	// Reset submitted state when field becomes active again (not disabled)
+	// Reset state when field becomes active
 	const disabled = state === "disabled";
 	useFieldReset(disabled, submitted, setSubmitted);
 
-	// Separately handle value restoration when initialValue changes
 	useEffect(() => {
-		// Always restore the initialValue when the field becomes active (not disabled)
-		// This ensures preserved values are restored when navigating back to fields
 		if (!disabled) {
 			setValue(initialValue);
 			setCursorPosition(initialValue.length);
 		}
 	}, [initialValue, disabled]);
 
-	// Helper function to run validation on submission attempt
-	const runValidation = async (valueToValidate: string): Promise<boolean> => {
+	// Validation helper
+	const runValidation = async (val: string): Promise<boolean> => {
 		if (!onValidate || state !== "active") {
 			setValidationError(null);
 			return true;
 		}
-
 		try {
-			const result = await onValidate(valueToValidate);
+			const result = await onValidate(val);
 			setValidationError(result);
 			return result === null;
-		} catch (error) {
+		} catch {
 			setValidationError("Validation error occurred");
 			return false;
 		}
 	};
 
-	// Provide hint text to parent component
+	// Hint management
 	useEffect(() => {
 		if (!onHintChange) return;
-
-		if (state === "active") {
-			const hintText = (
+		onHintChange(
+			state === "active" && !isFirstRootPrompt && allowBack ? (
 				<>
-					{!isFirstRootPrompt && allowBack && (
-						<>
-							<Text color="yellow">escape</Text> go back
-						</>
-					)}
+					<Text color="yellow">escape</Text> go back
 				</>
-			);
-			onHintChange(hintText);
-		} else {
-			// Clear hint when field is disabled/completed
-			onHintChange(null);
-		}
-	}, [state, flow, isFirstRootPrompt]); // Removed onHintChange from dependencies
+			) : null
+		);
+	}, [state, isFirstRootPrompt, allowBack, onHintChange]);
 
 	useInput(
 		async (input, key) => {
-			// Early return as safety check (though isActive should prevent this)
 			if (submitted || state !== "active") return;
 
-			// Handle Ctrl+U or Cmd+K to clear entire input (common terminal shortcuts)
+			// Keyboard shortcuts
 			if ((key.ctrl && input === "u") || (key.meta && input === "k")) {
 				setValue("");
 				setCursorPosition(0);
 				return;
 			}
-
-			// Handle Ctrl+A to move cursor to beginning
 			if (key.ctrl && input === "a") {
 				setCursorPosition(0);
 				return;
 			}
-
-			// Handle Ctrl+E to move cursor to end
 			if (key.ctrl && input === "e") {
 				setCursorPosition(value.length);
 				return;
 			}
 
-			// Handle cursor movement with arrow keys (when not in arrow navigation mode for groups)
+			// Cursor movement (not in static group arrow nav mode)
 			if (!(flow === "static" && enableArrowNavigation)) {
 				if (key.leftArrow) {
 					setCursorPosition(Math.max(0, cursorPosition - 1));
 					return;
 				}
-
 				if (key.rightArrow) {
 					setCursorPosition(
 						Math.min(value.length, cursorPosition + 1)
@@ -144,113 +125,69 @@ export function TextField({
 				}
 			}
 
-			// Handle static group navigation with arrow keys (only if enabled)
+			// Static group navigation
 			if (flow === "static" && enableArrowNavigation) {
-				if (key.downArrow) {
-					if (!isLastInGroup) {
-						// Check validation before moving to next field
-						const isValid = await runValidation(value);
-						if (!isValid) {
-							// Don't move to next field if there's a validation error
-							return;
-						}
-						// Always submit current value (even if empty) and move to next field
-						// The completion logic will determine if empty fields are considered "completed"
-						setSubmitted(true);
-						onSubmit(value);
-						return;
-					}
-					// On last field, down arrow does nothing (doesn't submit)
-					return;
-				} else if (key.upArrow) {
-					// For up navigation in static groups with arrow navigation enabled
-					if (!isFirstInGroup) {
-						// Check validation before navigating up
-						const isValid = await runValidation(value);
-						if (!isValid) {
-							// Don't navigate if there's a validation error
-							return;
-						}
-						// Only navigate up if not on the first field (stay within group bounds)
-						setSubmitted(true);
-						onSubmit({ __preserveAndBack: true, value: value });
-					}
-					// If on first field, do nothing (don't exit the group)
+				if (key.downArrow && !isLastInGroup) {
+					if (!(await runValidation(value))) return;
+					setSubmitted(true);
+					onSubmit(value);
 					return;
 				}
+				if (key.upArrow && !isFirstInGroup) {
+					if (!(await runValidation(value))) return;
+					setSubmitted(true);
+					onSubmit({ __preserveAndBack: true, value });
+					return;
+				}
+				if (key.downArrow || key.upArrow) return;
 			}
 
-			// Handle escape key for static groups (always enabled regardless of arrow navigation)
+			// Escape handling
 			if (flow === "static" && key.escape) {
 				if (enableArrowNavigation && !isFirstInGroup) {
-					// Check validation before navigating up with escape
-					const isValid = await runValidation(value);
-					if (!isValid) {
-						// Don't navigate if there's a validation error
-						return;
-					}
-					// If arrow navigation is enabled and not on first field, escape moves up within group (preserve value)
+					if (!(await runValidation(value))) return;
 					setSubmitted(true);
-					onSubmit({ __preserveAndBack: true, value: value });
+					onSubmit({ __preserveAndBack: true, value });
 				} else if (enableArrowNavigation && isFirstInGroup) {
-					// Escape on first field with arrow navigation: clear entire group and exit
 					setSubmitted(true);
 					onSubmit({ __clearGroupAndBack: true });
-				} else {
-					// Escape when arrow navigation is disabled: regular back behavior
-					if (allowBack && onBack) {
-						onBack();
-					}
+				} else if (allowBack && onBack) {
+					onBack();
 				}
 				return;
 			}
 
 			if (key.return) {
-				// Check validation before submitting
-				const isValid = await runValidation(value);
-				if (!isValid) {
-					// Don't submit if there's a validation error
-					return;
-				}
-				// Enter submits the current value
+				if (!(await runValidation(value))) return;
 				setSubmitted(true);
 				onSubmit(value);
 			} else if (key.backspace || key.delete) {
 				if (cursorPosition > 0) {
-					const newValue =
+					setValue(
 						value.slice(0, cursorPosition - 1) +
-						value.slice(cursorPosition);
-					setValue(newValue);
+							value.slice(cursorPosition)
+					);
 					setCursorPosition(cursorPosition - 1);
 				}
-			} else if (key.escape && flow !== "static") {
-				// Regular escape behavior for non-static groups
-				if (allowBack && onBack) {
-					onBack();
-				}
+			} else if (key.escape && flow !== "static" && allowBack && onBack) {
+				onBack();
 			} else if (!key.ctrl && !key.meta && input) {
-				const newValue =
+				setValue(
 					value.slice(0, cursorPosition) +
-					input +
-					value.slice(cursorPosition);
-				setValue(newValue);
+						input +
+						value.slice(cursorPosition)
+				);
 				setCursorPosition(cursorPosition + 1);
 			}
 		},
-		{
-			// Only register input listener when field is active (not disabled/completed)
-			// This prevents memory leaks from accumulating event listeners
-			isActive: state === "active" && !submitted,
-		}
+		{ isActive: state === "active" && !submitted }
 	);
 
 	if (state === "completed") {
 		return (
 			<Box flexDirection="column">
 				<Text>{label}</Text>
-				<Text>
-					<Text color="blue">{completedValue || value}</Text>
-				</Text>
+				<Text color="blue">{completedValue || value}</Text>
 			</Box>
 		);
 	}
@@ -261,8 +198,8 @@ export function TextField({
 				<Box width={14}>
 					<Text dimColor>{shortLabel || label}</Text>
 				</Box>
-				<Text dimColor>
-					<Text color="gray">...</Text>
+				<Text dimColor color="gray">
+					...
 				</Text>
 			</Box>
 		);

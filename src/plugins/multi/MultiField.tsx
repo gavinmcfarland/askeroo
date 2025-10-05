@@ -64,34 +64,15 @@ export function MultiField({
 		);
 	}, [options]);
 
-	// Initialize selectedValues based on initialValue
 	const getInitialValues = (): string[] => {
-		let initialValues: string[] = [];
-
-		if (Array.isArray(initialValue)) {
-			initialValues = initialValue;
-		} else {
-			initialValues = [];
-		}
-
-		// If noneOption is provided, adjust the initial state
-		if (noneOption) {
-			const hasRegularSelections = initialValues.some(
-				(val) => val !== NONE_VALUE
-			);
-			if (hasRegularSelections) {
-				// Remove NONE_VALUE if any regular options are selected
-				return initialValues.filter((val) => val !== NONE_VALUE);
-			} else if (initialValues.length === 0) {
-				// If no options are selected at all, add NONE_VALUE
-				return [NONE_VALUE];
-			} else {
-				// If only NONE_VALUE is selected, keep it
-				return initialValues;
-			}
-		}
-
-		return initialValues;
+		const vals = Array.isArray(initialValue) ? initialValue : [];
+		if (!noneOption) return vals;
+		const hasRegular = vals.some((v) => v !== NONE_VALUE);
+		return hasRegular
+			? vals.filter((v) => v !== NONE_VALUE)
+			: vals.length === 0
+			? [NONE_VALUE]
+			: vals;
 	};
 
 	const [selectedValues, setSelectedValues] = useState<string[]>(
@@ -99,32 +80,20 @@ export function MultiField({
 	);
 	const [validationError, setValidationError] = useState<string | null>(null);
 
-	// Internal search state management
 	const [internalSearchQuery, setInternalSearchQuery] = useState("");
-	const currentSearchQuery = internalSearchQuery;
 
-	// Filter options based on search query
 	const filteredOptions = useMemo(() => {
-		if (!searchable || !currentSearchQuery.trim()) {
+		if (!searchable || !internalSearchQuery.trim())
 			return normalizedOptions;
-		}
-
-		// Keep all options in their original order, showing both selected and matching options
-		// Selected options stay in place, they don't move to the top
-		return normalizedOptions.filter((option) => {
-			const isSelected = selectedValues.includes(option.value);
-			const matchesSearch =
-				option.label
-					.toLowerCase()
-					.includes(currentSearchQuery.toLowerCase()) ||
-				option.value
-					.toLowerCase()
-					.includes(currentSearchQuery.toLowerCase());
-
-			// Show option if it's selected OR if it matches the search
-			return isSelected || matchesSearch;
+		const q = internalSearchQuery.toLowerCase();
+		return normalizedOptions.filter((opt) => {
+			const isSelected = selectedValues.includes(opt.value);
+			const matches =
+				opt.label.toLowerCase().includes(q) ||
+				opt.value.toLowerCase().includes(q);
+			return isSelected || matches;
 		});
-	}, [normalizedOptions, searchable, currentSearchQuery, selectedValues]);
+	}, [normalizedOptions, searchable, internalSearchQuery, selectedValues]);
 
 	const totalOptions = filteredOptions.length + (noneOption ? 1 : 0);
 
@@ -194,12 +163,9 @@ export function MultiField({
 		setWindowStart(0);
 	}, [filteredOptions.length, maxVisible]);
 
-	// Reset submitted state when field becomes active again (not disabled)
 	const disabled = state === "disabled";
 	useEffect(() => {
-		if (!disabled && submitted) {
-			setSubmitted(false);
-		}
+		if (!disabled && submitted) setSubmitted(false);
 	}, [disabled, submitted]);
 
 	// Calculate visible window for options (including none option)
@@ -283,31 +249,25 @@ export function MultiField({
 		};
 	};
 
-	// Helper function to run validation on submission attempt
-	const runValidation = async (
-		valuesToValidate: string[]
-	): Promise<boolean> => {
+	const runValidation = async (vals: string[]): Promise<boolean> => {
 		if (!onValidate || state !== "active") {
 			setValidationError(null);
 			return true;
 		}
-
 		try {
-			const result = await onValidate(valuesToValidate);
+			const result = await onValidate(vals);
 			setValidationError(result);
 			return result === null;
-		} catch (error) {
+		} catch {
 			setValidationError("Validation error occurred");
 			return false;
 		}
 	};
 
-	// Provide hint text to parent component
 	useEffect(() => {
 		if (!onHintChange) return;
-
-		if (state === "active") {
-			const hintText = (
+		onHintChange(
+			state === "active" ? (
 				<>
 					{!isFirstRootPrompt && allowBack && (
 						<>
@@ -321,101 +281,73 @@ export function MultiField({
 						</>
 					)}
 				</>
-			);
-			onHintChange(hintText);
-		} else {
-			// Clear hint when field is disabled/completed
-			onHintChange(null);
-		}
-	}, [state, isFirstRootPrompt, searchable]);
+			) : null
+		);
+	}, [state, isFirstRootPrompt, searchable, allowBack, onHintChange]);
 
-	// Memoize the initialValue to prevent unnecessary re-renders
-	const stableInitial = useMemo(() => {
-		return [...initialValue];
-	}, [initialValue.join(",")]);
-
-	// Track previous initialValue to detect actual changes
+	const stableInitial = useMemo(
+		() => [...initialValue],
+		[initialValue.join(",")]
+	);
 	const prevInitialRef = useRef<string[]>([]);
 
-	// Update selected values when initialValue actually changes
 	useEffect(() => {
-		if (!submitted && !disabled) {
-			// Check if initialValue actually changed
-			const initialChanged =
-				stableInitial.length !== prevInitialRef.current.length ||
-				stableInitial.some(
-					(val, idx) => val !== prevInitialRef.current[idx]
-				);
-
-			if (initialChanged) {
-				let newValues: string[] = [...stableInitial];
-
-				// If noneOption is provided, adjust the state
-				if (noneOption) {
-					const hasRegularSelections = newValues.some(
-						(val) => val !== NONE_VALUE
-					);
-					if (hasRegularSelections) {
-						// Remove NONE_VALUE if any regular options are selected
-						newValues = newValues.filter(
-							(val) => val !== NONE_VALUE
-						);
-					} else if (newValues.length === 0) {
-						// If no options are selected at all, add NONE_VALUE
-						newValues = [NONE_VALUE];
-					}
-				}
-
-				setSelectedValues(newValues);
-				prevInitialRef.current = [...stableInitial];
+		if (submitted || disabled) return;
+		const changed =
+			stableInitial.length !== prevInitialRef.current.length ||
+			stableInitial.some((v, i) => v !== prevInitialRef.current[i]);
+		if (changed) {
+			let vals = [...stableInitial];
+			if (noneOption) {
+				const hasRegular = vals.some((v) => v !== NONE_VALUE);
+				vals = hasRegular
+					? vals.filter((v) => v !== NONE_VALUE)
+					: vals.length === 0
+					? [NONE_VALUE]
+					: vals;
 			}
+			setSelectedValues(vals);
+			prevInitialRef.current = [...stableInitial];
 		}
-	}, [stableInitial, normalizedOptions, submitted, disabled, noneOption]);
+	}, [stableInitial, submitted, disabled, noneOption]);
 
 	useInput(
 		async (input, key) => {
 			if (submitted || state !== "active") return;
 
-			// Handle search input FIRST if searchable is enabled
-			if (searchable && input && input !== " ") {
-				// Debug log
-				// Check if it's a printable character (not a special key)
-				if (
-					input.length === 1 &&
-					!key.ctrl &&
-					!key.meta &&
-					!key.return &&
-					!key.escape &&
-					!key.upArrow &&
-					!key.downArrow &&
-					!key.leftArrow &&
-					!key.rightArrow
-				) {
-					const newQuery = currentSearchQuery + input;
-					setInternalSearchQuery(newQuery);
-					return;
-				}
+			// Search input
+			if (
+				searchable &&
+				input &&
+				input !== " " &&
+				input.length === 1 &&
+				!key.ctrl &&
+				!key.meta &&
+				!key.return &&
+				!key.escape &&
+				!key.upArrow &&
+				!key.downArrow &&
+				!key.leftArrow &&
+				!key.rightArrow
+			) {
+				setInternalSearchQuery(internalSearchQuery + input);
+				return;
 			}
 
-			// Handle back navigation (Escape)
+			// Escape handling
 			if (key.escape) {
-				// If searching, clear the search query first
-				if (searchable && currentSearchQuery.trim()) {
+				if (searchable && internalSearchQuery.trim()) {
 					setInternalSearchQuery("");
 					return;
 				}
-
-				// If there's a noneOption and regular options are selected, clear selections and select none first
 				if (
 					noneOption &&
-					selectedValues.some((val) => val !== NONE_VALUE)
+					selectedValues.some((v) => v !== NONE_VALUE)
 				) {
 					setSelectedValues([NONE_VALUE]);
 					setError(null);
 					return;
 				}
-
-				// Only go back if no regular options are selected (or no noneOption)
 				if (allowBack && onBack) {
 					onBack();
 					return;
@@ -423,103 +355,74 @@ export function MultiField({
 			}
 
 			if (key.return) {
-				// Filter out NONE_VALUE from the final result for validation
-				const finalValues = selectedValues.filter(
-					(val) => val !== NONE_VALUE
-				);
-				// Check validation before submitting
-				const isValid = await runValidation(finalValues);
-				if (!isValid) {
-					// Don't submit if there's a validation error
-					return;
-				}
+				const vals = selectedValues.filter((v) => v !== NONE_VALUE);
+				if (!(await runValidation(vals))) return;
 				setSubmitted(true);
-				onSubmit(finalValues);
+				onSubmit(vals);
 				return;
 			}
 
-			// Handle spacebar for toggling selection
 			if (input === " ") {
-				const isNoneOption = noneOption && selectedIndex === 0;
-				const currentOption = isNoneOption
+				const isNone = noneOption && selectedIndex === 0;
+				const opt = isNone
 					? { value: NONE_VALUE, label: noneOption!.label }
 					: filteredOptions[selectedIndex - (noneOption ? 1 : 0)];
-
-				if (currentOption) {
-					toggleSelection(currentOption.value);
-				}
+				if (opt) toggleSelection(opt.value);
 				return;
 			}
 
-			// Handle backspace for search
 			if (searchable && (key.backspace || key.delete || input === "\b")) {
-				const newQuery = currentSearchQuery.slice(0, -1);
-				setInternalSearchQuery(newQuery);
+				setInternalSearchQuery(internalSearchQuery.slice(0, -1));
 				return;
 			}
 
 			if (key.leftArrow) {
-				const newIndex =
-					selectedIndex > 0 ? selectedIndex - 1 : totalOptions - 1;
-				setSelectedIndex(newIndex);
+				setSelectedIndex(
+					selectedIndex > 0 ? selectedIndex - 1 : totalOptions - 1
+				);
 				return;
 			}
-
 			if (key.rightArrow) {
-				const newIndex =
-					selectedIndex < totalOptions - 1 ? selectedIndex + 1 : 0;
-				setSelectedIndex(newIndex);
+				setSelectedIndex(
+					selectedIndex < totalOptions - 1 ? selectedIndex + 1 : 0
+				);
 				return;
 			}
-
 			if (key.upArrow) {
 				navigateUp();
 				return;
 			}
-
 			if (key.downArrow) {
 				navigateDown();
 				return;
 			}
 
-			// Handle number keys for direct selection toggle (only if showNumbers is enabled)
 			if (showNumbers) {
 				const num = parseInt(input);
 				if (!isNaN(num) && num >= 1 && num <= totalOptions) {
-					const newIndex = num - 1;
-					setSelectedIndex(newIndex);
-
-					const isNoneOption = noneOption && newIndex === 0;
-					const currentOption = isNoneOption
+					const idx = num - 1;
+					setSelectedIndex(idx);
+					const isNone = noneOption && idx === 0;
+					const opt = isNone
 						? { value: NONE_VALUE, label: noneOption!.label }
-						: filteredOptions[newIndex - (noneOption ? 1 : 0)];
-
-					if (currentOption) {
-						toggleSelection(currentOption.value);
-					}
+						: filteredOptions[idx - (noneOption ? 1 : 0)];
+					if (opt) toggleSelection(opt.value);
 					return;
 				}
 			}
 		},
-		{
-			// Only register input listener when field is active (not disabled/completed)
-			// This prevents memory leaks from accumulating event listeners
-			isActive: state === "active" && !submitted,
-		}
+		{ isActive: state === "active" && !submitted }
 	);
 
 	if (state === "completed") {
-		const displayValue =
+		const val =
 			(completedValue || []).length === 0 && noneOption
 				? noneOption.label
 				: (completedValue || []).join(", ");
-
 		return (
 			<Box flexDirection="column">
 				<Text>{label}</Text>
-				<Text>
-					<Text color="blue">{displayValue}</Text>
-				</Text>
+				<Text color="blue">{val}</Text>
 			</Box>
 		);
 	}
@@ -528,8 +431,8 @@ export function MultiField({
 		return (
 			<Box flexDirection="row" gap={1}>
 				<Text dimColor>{label}</Text>
-				<Text dimColor>
-					<Text color="gray">...</Text>
+				<Text dimColor color="gray">
+					...
 				</Text>
 			</Box>
 		);
@@ -599,13 +502,13 @@ export function MultiField({
 											const renderLabel = () => {
 												if (
 													!searchable ||
-													!currentSearchQuery.trim()
+													!internalSearchQuery.trim()
 												) {
 													return option.label;
 												}
 
 												const query =
-													currentSearchQuery.toLowerCase();
+													internalSearchQuery.toLowerCase();
 												const label = option.label;
 												const lowerLabel =
 													label.toLowerCase();
@@ -777,13 +680,13 @@ export function MultiField({
 								const renderLabel = () => {
 									if (
 										!searchable ||
-										!currentSearchQuery.trim()
+										!internalSearchQuery.trim()
 									) {
 										return option.label;
 									}
 
 									const query =
-										currentSearchQuery.toLowerCase();
+										internalSearchQuery.toLowerCase();
 									const label = option.label;
 									const lowerLabel = label.toLowerCase();
 									const matchIndex =
@@ -899,13 +802,13 @@ export function MultiField({
 								const renderLabel = () => {
 									if (
 										!searchable ||
-										!currentSearchQuery.trim()
+										!internalSearchQuery.trim()
 									) {
 										return option.label;
 									}
 
 									const query =
-										currentSearchQuery.toLowerCase();
+										internalSearchQuery.toLowerCase();
 									const label = option.label;
 									const lowerLabel = label.toLowerCase();
 									const matchIndex =
@@ -971,9 +874,9 @@ export function MultiField({
 			)}
 			{searchable &&
 				filteredOptions.length === 0 &&
-				currentSearchQuery.trim() && (
+				internalSearchQuery.trim() && (
 					<Text color="red">
-						No options match "{currentSearchQuery}"
+						No options match "{internalSearchQuery}"
 					</Text>
 				)}
 			{error && <Text color="red">{error}</Text>}

@@ -114,254 +114,172 @@ export function ConfirmField({
 	const [submitted, setSubmitted] = useState(false);
 	const [validationError, setValidationError] = useState<string | null>(null);
 
-	// Reset submitted state when field becomes active again (not disabled)
 	const disabled = state === "disabled";
 	useFieldReset(disabled, submitted, setSubmitted);
 
-	// Update selected index when initialValue changes
 	useEffect(() => {
-		if (initialValue !== undefined && !options) {
-			// When using default options and there's an initialValue,
-			// the initial value becomes the second option (index 1)
-			setSelectedIndex(1);
-		} else if (initialValue !== undefined) {
-			// For custom options, find the index normally
-			const index = confirmOptions.findIndex(
-				(option) => option.value === initialValue
-			);
-			if (index >= 0) {
-				setSelectedIndex(index);
-			}
-		}
+		if (initialValue === undefined) return;
+		const index = !options
+			? 1
+			: confirmOptions.findIndex((opt) => opt.value === initialValue);
+		if (index >= 0) setSelectedIndex(index);
 	}, [initialValue, confirmOptions, options]);
 
-	// Helper function to run validation on submission attempt
-	const runValidation = async (valueToValidate: any): Promise<boolean> => {
+	const runValidation = async (val: any): Promise<boolean> => {
 		if (!onValidate || state !== "active") {
 			setValidationError(null);
 			return true;
 		}
-
 		try {
-			const result = await onValidate(valueToValidate);
+			const result = await onValidate(val);
 			setValidationError(result);
 			return result === null;
-		} catch (error) {
+		} catch {
 			setValidationError("Validation error occurred");
 			return false;
 		}
 	};
 
-	// Provide hint text to parent component
 	useEffect(() => {
 		if (!onHintChange) return;
-
-		if (state === "active") {
-			// Check if we're using default options (no custom options provided)
-			const isUsingDefaultOptions = !options;
-
-			const hintText = (
+		onHintChange(
+			state === "active" && !isFirstRootPrompt && allowBack ? (
 				<>
-					{!isFirstRootPrompt && allowBack && (
-						<>
-							<Text color="yellow">escape</Text> go back
-						</>
-					)}
+					<Text color="yellow">escape</Text> go back
 				</>
-			);
-			onHintChange(hintText);
-		} else {
-			// Clear hint when field is disabled/completed
-			onHintChange(null);
-		}
-	}, [state, isFirstRootPrompt, options]); // Removed confirmOptions and defaultOptions
+			) : null
+		);
+	}, [state, isFirstRootPrompt, allowBack, onHintChange]);
 
 	useInput(
 		async (input, key) => {
 			if (submitted || state !== "active") return;
 
-			// Handle static group navigation with arrow keys (only if enabled)
+			// Static group navigation
 			if (flow === "static" && enableArrowNavigation) {
-				if (key.downArrow) {
-					if (!isLastInGroup) {
-						const selectedValue =
-							confirmOptions[selectedIndex].value;
-						// Check validation before moving to next field
-						const isValid = await runValidation(selectedValue);
-						if (!isValid) {
-							// Don't move if there's a validation error
-							return;
-						}
-						setSubmitted(true);
-						onSubmit(selectedValue);
-						return;
-					}
-					return;
-				} else if (key.upArrow) {
-					if (!isFirstInGroup) {
-						const selectedValue =
-							confirmOptions[selectedIndex].value;
-						// Check validation before navigating up
-						const isValid = await runValidation(selectedValue);
-						if (!isValid) {
-							// Don't navigate if there's a validation error
-							return;
-						}
-						setSubmitted(true);
-						onSubmit({
-							__preserveAndBack: true,
-							value: selectedValue,
-						});
-					}
+				const val = confirmOptions[selectedIndex].value;
+				if (key.downArrow && !isLastInGroup) {
+					if (!(await runValidation(val))) return;
+					setSubmitted(true);
+					onSubmit(val);
 					return;
 				}
+				if (key.upArrow && !isFirstInGroup) {
+					if (!(await runValidation(val))) return;
+					setSubmitted(true);
+					onSubmit({ __preserveAndBack: true, value: val });
+					return;
+				}
+				if (key.downArrow || key.upArrow) return;
 			}
 
-			// Handle escape key for static groups
+			// Escape for static groups
 			if (flow === "static" && key.escape) {
+				const val = confirmOptions[selectedIndex].value;
 				if (enableArrowNavigation && !isFirstInGroup) {
-					const selectedValue = confirmOptions[selectedIndex].value;
-					// Check validation before navigating up with escape
-					const isValid = await runValidation(selectedValue);
-					if (!isValid) {
-						// Don't navigate if there's a validation error
-						return;
-					}
+					if (!(await runValidation(val))) return;
 					setSubmitted(true);
-					onSubmit({ __preserveAndBack: true, value: selectedValue });
+					onSubmit({ __preserveAndBack: true, value: val });
 				} else if (enableArrowNavigation && isFirstInGroup) {
 					setSubmitted(true);
 					onSubmit({ __clearGroupAndBack: true });
-				} else {
-					if (allowBack && onBack) {
-						onBack();
-					}
-				}
-				return;
-			}
-
-			if (key.return) {
-				const selectedValue = confirmOptions[selectedIndex].value;
-				// Check validation before submitting
-				const isValid = await runValidation(selectedValue);
-				if (!isValid) {
-					// Don't submit if there's a validation error
-					return;
-				}
-				setSubmitted(true);
-				onSubmit(selectedValue);
-				return;
-			}
-
-			if (key.escape && flow !== "static") {
-				if (allowBack && onBack) {
+				} else if (allowBack && onBack) {
 					onBack();
 				}
 				return;
 			}
 
-			// Handle Y/N keys only for default Yes/No options
+			if (key.return) {
+				const val = confirmOptions[selectedIndex].value;
+				if (!(await runValidation(val))) return;
+				setSubmitted(true);
+				onSubmit(val);
+				return;
+			}
+
+			if (key.escape && flow !== "static" && allowBack && onBack) {
+				onBack();
+				return;
+			}
+
+			// Y/N shortcuts for default options
 			if (
-				!options && // Using default options
+				!options &&
 				(input.toLowerCase() === "y" || input.toLowerCase() === "n")
 			) {
-				const newValue = input.toLowerCase() === "y";
-				const newIndex = confirmOptions.findIndex(
-					(option) => option.value === newValue
+				const val = input.toLowerCase() === "y";
+				const idx = confirmOptions.findIndex(
+					(opt) => opt.value === val
 				);
-				setSelectedIndex(newIndex);
-				// Check validation before submitting with Y/N shortcut
-				const isValid = await runValidation(newValue);
-				if (!isValid) {
-					// Don't submit if there's a validation error
-					return;
-				}
+				setSelectedIndex(idx);
+				if (!(await runValidation(val))) return;
 				setSubmitted(true);
-				onSubmit(newValue);
+				onSubmit(val);
 				return;
 			}
 
-			// Arrow key navigation for options
+			// Arrow navigation
 			if (key.leftArrow || key.upArrow) {
-				const newIndex = allowLoop
-					? selectedIndex > 0
-						? selectedIndex - 1
-						: confirmOptions.length - 1
-					: Math.max(0, selectedIndex - 1);
-				setSelectedIndex(newIndex);
+				setSelectedIndex(
+					allowLoop
+						? selectedIndex > 0
+							? selectedIndex - 1
+							: confirmOptions.length - 1
+						: Math.max(0, selectedIndex - 1)
+				);
 				return;
 			}
-
 			if (key.rightArrow || key.downArrow) {
-				const newIndex = allowLoop
-					? selectedIndex < confirmOptions.length - 1
-						? selectedIndex + 1
-						: 0
-					: Math.min(confirmOptions.length - 1, selectedIndex + 1);
-				setSelectedIndex(newIndex);
+				setSelectedIndex(
+					allowLoop
+						? selectedIndex < confirmOptions.length - 1
+							? selectedIndex + 1
+							: 0
+						: Math.min(confirmOptions.length - 1, selectedIndex + 1)
+				);
 				return;
 			}
 		},
-		{
-			// Only register input listener when field is active (not disabled/completed)
-			// This prevents memory leaks from accumulating event listeners
-			isActive: state === "active" && !submitted,
-		}
+		{ isActive: state === "active" && !submitted }
 	);
 
-	// Render message - either as markdown or plain text
 	const renderMessage = () => {
 		if (!displayMessage) return null;
-
 		if (isMarkdownString(displayMessage)) {
-			const elements = parseMarkdown(
-				displayMessage.content,
-				displayMessage.theme
-			);
 			return (
 				<Box flexDirection="column">
-					{elements.map((element, index) => (
-						<Box key={index}>{element}</Box>
+					{parseMarkdown(
+						displayMessage.content,
+						displayMessage.theme
+					).map((el, i) => (
+						<Box key={i}>{el}</Box>
 					))}
 				</Box>
 			);
 		}
-
 		return <Text>{displayMessage}</Text>;
 	};
 
-	// Show completed state
 	if (state === "completed") {
-		const displayValue =
+		const val =
 			completedValue !== undefined
 				? completedValue
 				: confirmOptions[selectedIndex]?.value;
-
-		// Find the option that matches the completed value
-		const completedOption = confirmOptions.find(
-			(option) => option.value === displayValue
-		);
-		const displayLabel = completedOption
-			? completedOption.label
-			: String(displayValue);
-
+		const opt = confirmOptions.find((o) => o.value === val);
 		return (
 			<Box flexDirection="column">
 				<Text>{shortLabel || label}</Text>
-				<Text>
-					<Text color="blue">{displayLabel}</Text>
-				</Text>
+				<Text color="blue">{opt ? opt.label : String(val)}</Text>
 			</Box>
 		);
 	}
 
-	// Show disabled state
 	if (state === "disabled") {
 		return (
 			<Box flexDirection="column">
 				<Text dimColor>{label}</Text>
-				<Text dimColor>
-					<Text color="gray">...</Text>
+				<Text dimColor color="gray">
+					...
 				</Text>
 			</Box>
 		);

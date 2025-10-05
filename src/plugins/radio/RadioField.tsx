@@ -78,37 +78,30 @@ export function RadioField({
 	const [windowStart, setWindowStart] = useState(0);
 
 	const [internalSearchQuery, setInternalSearchQuery] = useState("");
-	const currentSearchQuery = internalSearchQuery;
 	const [submitted, setSubmitted] = useState(false);
 	const [validationError, setValidationError] = useState<string | null>(null);
 
-	// Filter options based on search query
 	const filteredOptions =
-		searchable && currentSearchQuery.trim() && options
+		searchable && internalSearchQuery.trim() && options
 			? options.filter(
-					(option) =>
-						option.label
+					(opt) =>
+						opt.label
 							.toLowerCase()
-							.includes(currentSearchQuery.toLowerCase()) ||
-						option.value
+							.includes(internalSearchQuery.toLowerCase()) ||
+						opt.value
 							.toLowerCase()
-							.includes(currentSearchQuery.toLowerCase())
+							.includes(internalSearchQuery.toLowerCase())
 			  )
 			: options || [];
 
-	// Reset selected index when search query changes
 	useEffect(() => {
 		if (selectedIndex >= filteredOptions.length) {
 			setSelectedIndex(Math.max(0, filteredOptions.length - 1));
 		}
-	}, [currentSearchQuery, filteredOptions.length, selectedIndex]);
+	}, [internalSearchQuery, filteredOptions.length, selectedIndex]);
 
-	// Reset window position when options change significantly
-	useEffect(() => {
-		setWindowStart(0);
-	}, [filteredOptions.length, maxVisible]);
+	useEffect(() => setWindowStart(0), [filteredOptions.length, maxVisible]);
 
-	// Reset submitted state when field becomes active again (not disabled)
 	const disabled = state === "disabled";
 	useFieldReset(disabled, submitted, setSubmitted);
 
@@ -173,41 +166,32 @@ export function RadioField({
 		};
 	};
 
-	// Update selected index when initialValue changes
 	useEffect(() => {
 		if (initialValue !== undefined) {
-			const index = options.findIndex(
-				(option) => option.value === initialValue
-			);
-			if (index >= 0) {
-				setSelectedIndex(index);
-			}
+			const idx = options.findIndex((opt) => opt.value === initialValue);
+			if (idx >= 0) setSelectedIndex(idx);
 		}
 	}, [initialValue, options]);
 
-	// Helper function to run validation on submission attempt
-	const runValidation = async (valueToValidate: string): Promise<boolean> => {
+	const runValidation = async (val: string): Promise<boolean> => {
 		if (!onValidate || state !== "active") {
 			setValidationError(null);
 			return true;
 		}
-
 		try {
-			const result = await onValidate(valueToValidate);
+			const result = await onValidate(val);
 			setValidationError(result);
 			return result === null;
-		} catch (error) {
+		} catch {
 			setValidationError("Validation error occurred");
 			return false;
 		}
 	};
 
-	// Provide hint text to parent component
 	useEffect(() => {
 		if (!onHintChange) return;
-
-		if (state === "active") {
-			const hintText = (
+		onHintChange(
+			state === "active" ? (
 				<>
 					{!isFirstRootPrompt && allowBack && (
 						<>
@@ -221,34 +205,19 @@ export function RadioField({
 						</>
 					)}
 				</>
-			);
-			onHintChange(hintText);
-		} else {
-			// Clear hint when field is disabled/completed
-			onHintChange(null);
-		}
-	}, [
-		state,
-		isFirstRootPrompt,
-		allowBack,
-		showNumbers,
-		searchable,
-		filteredOptions.length,
-	]); // Removed onHintChange from dependencies
+			) : null
+		);
+	}, [state, isFirstRootPrompt, allowBack, searchable, onHintChange]);
 
 	useInput(
 		async (input, key) => {
 			if (disabled || submitted) return;
 
-			// Handle back navigation (Escape)
 			if (key.escape) {
-				// If searching, clear the search query first
-				if (searchable && currentSearchQuery.trim()) {
+				if (searchable && internalSearchQuery.trim()) {
 					setInternalSearchQuery("");
 					return;
 				}
-
-				// Only go back if allowed
 				if (allowBack && onBack) {
 					onBack();
 					return;
@@ -267,133 +236,106 @@ export function RadioField({
 				}
 			}
 
-			if (key.return) {
-				if (filteredOptions.length > 0) {
-					const selectedValue = filteredOptions[selectedIndex].value;
-					// Check validation before submitting
-					const isValid = await runValidation(selectedValue);
-					if (!isValid) {
-						// Don't submit if there's a validation error
-						return;
-					}
-					setSubmitted(true);
-					onSubmit(selectedValue);
-				}
+			if (key.return && filteredOptions.length > 0) {
+				const val = filteredOptions[selectedIndex].value;
+				if (!(await runValidation(val))) return;
+				setSubmitted(true);
+				onSubmit(val);
 				return;
 			}
 
-			// Handle search input if searchable is enabled
-			if (searchable && input && input !== " ") {
-				// Check if it's a printable character (not a special key)
-				if (
-					input.length === 1 &&
-					!key.ctrl &&
-					!key.meta &&
-					!key.return &&
-					!key.escape &&
-					!key.upArrow &&
-					!key.downArrow &&
-					!key.leftArrow &&
-					!key.rightArrow
-				) {
-					const newQuery = currentSearchQuery + input;
-					setInternalSearchQuery(newQuery);
-					return;
-				}
+			// Search input
+			if (
+				searchable &&
+				input &&
+				input !== " " &&
+				input.length === 1 &&
+				!key.ctrl &&
+				!key.meta &&
+				!key.return &&
+				!key.escape &&
+				!key.upArrow &&
+				!key.downArrow &&
+				!key.leftArrow &&
+				!key.rightArrow
+			) {
+				setInternalSearchQuery(internalSearchQuery + input);
+				return;
 			}
 
-			// Handle backspace for search
 			if (searchable && (key.backspace || key.delete || input === "\b")) {
-				const newQuery = currentSearchQuery.slice(0, -1);
-				setInternalSearchQuery(newQuery);
+				setInternalSearchQuery(internalSearchQuery.slice(0, -1));
 				return;
 			}
 
-			// Handle left/right arrow navigation in options
+			// Arrow navigation
 			if (key.leftArrow && !enableArrowNavigation) {
-				const newIndex =
+				setSelectedIndex(
 					selectedIndex > 0
 						? selectedIndex - 1
 						: allowLoop
 						? filteredOptions.length - 1
-						: selectedIndex;
-				setSelectedIndex(newIndex);
+						: selectedIndex
+				);
 				return;
 			}
-
 			if (key.rightArrow && !enableArrowNavigation) {
-				const newIndex =
+				setSelectedIndex(
 					selectedIndex < filteredOptions.length - 1
 						? selectedIndex + 1
 						: allowLoop
 						? 0
-						: selectedIndex;
-				setSelectedIndex(newIndex);
+						: selectedIndex
+				);
 				return;
 			}
-
-			// Handle up/down arrow navigation in options (if not used for group navigation)
 			if (key.upArrow && !enableArrowNavigation) {
-				const newIndex = allowLoop
-					? selectedIndex > 0
-						? selectedIndex - 1
-						: filteredOptions.length - 1
-					: Math.max(0, selectedIndex - 1);
-				setSelectedIndex(newIndex);
+				setSelectedIndex(
+					allowLoop
+						? selectedIndex > 0
+							? selectedIndex - 1
+							: filteredOptions.length - 1
+						: Math.max(0, selectedIndex - 1)
+				);
 				return;
 			}
-
 			if (key.downArrow && !enableArrowNavigation) {
-				const newIndex = allowLoop
-					? selectedIndex < filteredOptions.length - 1
-						? selectedIndex + 1
-						: 0
-					: Math.min(filteredOptions.length - 1, selectedIndex + 1);
-				setSelectedIndex(newIndex);
+				setSelectedIndex(
+					allowLoop
+						? selectedIndex < filteredOptions.length - 1
+							? selectedIndex + 1
+							: 0
+						: Math.min(
+								filteredOptions.length - 1,
+								selectedIndex + 1
+						  )
+				);
 				return;
 			}
 
-			// Handle number keys for direct selection (only if showNumbers is enabled)
-			if (showNumbers === true) {
+			// Number selection
+			if (showNumbers) {
 				const num = parseInt(input);
 				if (!isNaN(num) && num >= 1 && num <= filteredOptions.length) {
-					const newIndex = num - 1;
-					setSelectedIndex(newIndex);
-					const selectedValue = filteredOptions[newIndex].value;
-					// Check validation before submitting
-					const isValid = await runValidation(selectedValue);
-					if (!isValid) {
-						// Don't submit if there's a validation error
-						return;
-					}
+					const idx = num - 1;
+					setSelectedIndex(idx);
+					const val = filteredOptions[idx].value;
+					if (!(await runValidation(val))) return;
 					setSubmitted(true);
-					onSubmit(selectedValue);
+					onSubmit(val);
 					return;
 				}
 			}
 		},
-		{
-			// Only register input listener when field is active (not disabled/completed)
-			// This prevents memory leaks from accumulating event listeners
-			isActive: state === "active" && !submitted,
-		}
+		{ isActive: state === "active" && !submitted }
 	);
 
-	// Show completed state
 	if (state === "completed" && completedValue !== undefined) {
-		const completedOption = options.find(
-			(option) => option.value === completedValue
-		);
-		const displayLabel = completedOption
-			? completedOption.label
-			: completedValue;
-
+		const opt = options.find((o) => o.value === completedValue);
 		return (
 			<Box flexDirection="column">
 				<Text>{label}</Text>
-				<Text>
-					<Text color="blue">{displayLabel}</Text>
-				</Text>
+				<Text color="blue">{opt ? opt.label : completedValue}</Text>
 			</Box>
 		);
 	}
@@ -436,13 +378,13 @@ export function RadioField({
 												const renderLabel = () => {
 													if (
 														!searchable ||
-														!currentSearchQuery.trim()
+														!internalSearchQuery.trim()
 													) {
 														return option.label;
 													}
 
 													const query =
-														currentSearchQuery.toLowerCase();
+														internalSearchQuery.toLowerCase();
 													const label = option.label;
 													const lowerLabel =
 														label.toLowerCase();
@@ -583,13 +525,13 @@ export function RadioField({
 									const renderLabel = () => {
 										if (
 											!searchable ||
-											!currentSearchQuery.trim()
+											!internalSearchQuery.trim()
 										) {
 											return option.label;
 										}
 
 										const query =
-											currentSearchQuery.toLowerCase();
+											internalSearchQuery.toLowerCase();
 										const label = option.label;
 										const lowerLabel = label.toLowerCase();
 										const matchIndex =
@@ -683,13 +625,13 @@ export function RadioField({
 									const renderLabel = () => {
 										if (
 											!searchable ||
-											!currentSearchQuery.trim()
+											!internalSearchQuery.trim()
 										) {
 											return option.label;
 										}
 
 										const query =
-											currentSearchQuery.toLowerCase();
+											internalSearchQuery.toLowerCase();
 										const label = option.label;
 										const lowerLabel = label.toLowerCase();
 										const matchIndex =
@@ -759,9 +701,9 @@ export function RadioField({
 				)}
 				{searchable &&
 					filteredOptions.length === 0 &&
-					currentSearchQuery.trim() && (
+					internalSearchQuery.trim() && (
 						<Text color="red">
-							No options match "{currentSearchQuery}"
+							No options match "{internalSearchQuery}"
 						</Text>
 					)}
 				{hintPosition === "bottom" && (
