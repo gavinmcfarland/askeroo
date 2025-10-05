@@ -92,13 +92,14 @@ export class PromptRuntime {
 
 		while (true) {
 			// Reset for replay
-			this.state.resetForReplay();
+			this.flow.resetForReplay(); // MICRO STEP 5.7: Use FlowController
+			this.state.resetForReplay(); // Keep RuntimeState in sync
 			this.idGenerator.reset();
 
 			try {
 				this.flow.setAsking(true); // MICRO STEP 5.5: Use FlowController
 				debugLogger.log("FLOW_START", {
-					isReplaying: this.state.isReplaying(),
+					isReplaying: this.flow.isReplaying(), // MICRO STEP 5.7: Use FlowController
 					currentStep: this.getCurrentStepBoth(), // MICRO STEP 3.3: Use wrapper
 				});
 
@@ -351,7 +352,7 @@ export class PromptRuntime {
 			opts,
 			currentStep: this.getCurrentStepBoth(), // MICRO STEP 3.6: Use wrapper
 			groupStack: this.getGroupStackBoth(), // MICRO STEP 4.3: Use wrapper
-			isReplaying: this.state.isReplaying(),
+			isReplaying: this.flow.isReplaying(), // MICRO STEP 5.7: Use FlowController
 		});
 
 		if (kind === "group") {
@@ -403,7 +404,7 @@ export class PromptRuntime {
 					groupId,
 					groupLabel: groupOpts.label,
 					shouldShowGroup,
-					isReplaying: this.state.isReplaying(),
+					isReplaying: this.flow.isReplaying(), // MICRO STEP 5.7: Use FlowController
 				});
 			}
 
