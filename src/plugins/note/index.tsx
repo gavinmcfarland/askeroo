@@ -6,7 +6,6 @@ import {
 	isMarkdownString,
 } from "../../utils/markdown.js";
 import { Box } from "ink";
-import { PluginComponentProps } from "../../types/index.js";
 
 /**
  * User-provided options for the note plugin
@@ -22,11 +21,7 @@ const noteInternal = createPlugin<NoteOptions, void>({
 	type: "note",
 	interactive: false, // Notes don't require user interaction
 
-	render: ({
-		node,
-		options,
-		events,
-	}: PluginComponentProps<NoteOptions, void>) => {
+	render: ({ node, options, events }) => {
 		const isMarkdownObject = isMarkdownString(options.message);
 
 		return (

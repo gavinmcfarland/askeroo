@@ -35,7 +35,11 @@ export const MultiField = ({
 	node,
 	options: opts,
 	events,
-}: PluginComponentProps<MultiOptions, string[]>) => {
+}: {
+	node: any;
+	options: MultiOptions;
+	events: any;
+}) => {
 	// Use label if provided, fallback to message for compatibility
 	const label = opts.label || opts.message || "Select";
 
@@ -55,9 +59,9 @@ export const MultiField = ({
 	const getInitialValues = (): string[] => {
 		const vals = Array.isArray(opts.initialValue) ? opts.initialValue : [];
 		if (!opts.noneOption) return vals;
-		const hasRegular = vals.some((v) => v !== NONE_VALUE);
+		const hasRegular = vals.some((v: string) => v !== NONE_VALUE);
 		return hasRegular
-			? vals.filter((v) => v !== NONE_VALUE)
+			? vals.filter((v: string) => v !== NONE_VALUE)
 			: vals.length === 0
 			? [NONE_VALUE]
 			: vals;

@@ -1,11 +1,7 @@
 import React from "react";
 import { Text, Box } from "ink";
 import { createPlugin } from "../../core/registry.js";
-import type {
-	GroupMeta,
-	GroupOpts,
-	PluginComponentProps,
-} from "../../types/index.js";
+import type { GroupMeta, GroupOpts } from "../../types/index.js";
 
 // Re-export types
 export type { GroupMeta, GroupOpts };
@@ -62,11 +58,7 @@ export const group = (
 		interactive: false,
 		isContainer: true,
 
-		render: ({
-			node,
-			options,
-			events,
-		}: PluginComponentProps<GroupOptions, any>) => {
+		render: ({ node, options, events }) => {
 			const baseIndent = Math.max(0, ((node.depth || 0) - 1) * 3);
 
 			return (

@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Text, Box, useInput } from "ink";
 import { createPlugin } from "../../core/registry.js";
-import { ValidatorFunction, PluginComponentProps } from "../../types/index.js";
 import { useFieldReset } from "../../hooks/use-auto-submit.js";
 
 /**
@@ -18,11 +17,7 @@ export const text = createPlugin<TextOptions, string>({
 	type: "text",
 	interactive: true,
 
-	render: ({
-		node,
-		options,
-		events,
-	}: PluginComponentProps<TextOptions, string>) => {
+	render: ({ node, options, events }) => {
 		const [value, setValue] = useState(options.initialValue || "");
 		const [cursorPosition, setCursorPosition] = useState(
 			(options.initialValue || "").length

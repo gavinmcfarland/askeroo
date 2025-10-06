@@ -1,4 +1,9 @@
-import { PromptPlugin, PluginOptionsWithBuiltins } from "../types/index.js";
+import * as React from "react";
+import {
+	PromptPlugin,
+	PluginOptionsWithBuiltins,
+	PluginComponentProps,
+} from "../types/index.js";
 
 export type { PromptPlugin };
 
@@ -60,7 +65,7 @@ import { getCurrentRuntime, getPluginRuntime } from "./runtime-context.js";
 export function createPlugin<T = any, R = any>(config: {
 	type: string;
 	component?: React.ComponentType<any>;
-	render?: React.ComponentType<any>; // Component directly (not a factory)
+	render?: (props: PluginComponentProps<T, R>) => React.ReactElement | null; // Component with inferred props
 	transform?: (opts: T, context: { currentGroup?: string }, id: string) => T; // Optional: transform options before rendering
 	interactive?: boolean;
 	// Container plugin support

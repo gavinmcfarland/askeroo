@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Text, Box, useInput } from "ink";
 import { createPlugin } from "../../core/registry.js";
-import { PluginComponentProps } from "../../types/index.js";
 import { useFieldReset } from "../../hooks/use-auto-submit.js";
 import { isMarkdownString, parseMarkdown } from "../../utils/markdown.js";
 
@@ -32,11 +31,7 @@ export const confirm = createPlugin<ConfirmOptions, any>({
 	type: "confirm",
 	interactive: true,
 
-	render: ({
-		node,
-		options: opts,
-		events,
-	}: PluginComponentProps<ConfirmOptions, any>) => {
+	render: ({ node, options: opts, events }) => {
 		// Use label if provided, fallback to message for compatibility
 		const displayMessage = opts.label || opts.message || "Confirm?";
 

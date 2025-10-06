@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Text, Box, useInput } from "ink";
 import { createPlugin } from "../../core/registry.js";
-import { PluginComponentProps } from "../../types/index.js";
 import { useFieldReset } from "../../hooks/use-auto-submit.js";
 
 export interface RadioOption {
@@ -33,11 +32,7 @@ export const radio = createPlugin<RadioOptions, string>({
 	type: "radio",
 	interactive: true,
 
-	render: ({
-		node,
-		options: opts,
-		events,
-	}: PluginComponentProps<RadioOptions, string>) => {
+	render: ({ node, options: opts, events }) => {
 		const [selectedIndex, setSelectedIndex] = useState(() => {
 			if (opts.initialValue && opts.options) {
 				const index = (opts.options || []).findIndex(

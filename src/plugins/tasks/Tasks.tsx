@@ -143,7 +143,11 @@ export const TasksDisplay = ({
 	node,
 	options,
 	events,
-}: PluginComponentProps<TasksOptions, void>) => {
+}: {
+	node: any;
+	options: TasksOptions;
+	events: any;
+}) => {
 	const [isExecuting, setIsExecuting] = useState(false);
 	const [spinnerFrame, setSpinnerFrame] = useState(0);
 	// Use a stable taskListId based on task content to enable state persistence

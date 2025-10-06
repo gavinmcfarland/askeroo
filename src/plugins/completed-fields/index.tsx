@@ -2,7 +2,6 @@ import React from "react";
 import { Text, Box } from "ink";
 import { createPlugin } from "../../core/registry.js";
 import { getCompletedFieldsData } from "./completed-fields-store.js";
-import { PluginComponentProps } from "../../types/index.js";
 
 /**
  * User-provided options for the completed fields plugin
@@ -19,11 +18,7 @@ export const completedFields = createPlugin<CompletedFieldsOptions, void>({
 	type: "completedFields",
 	interactive: false,
 
-	render: ({
-		node,
-		options,
-		events,
-	}: PluginComponentProps<CompletedFieldsOptions, void>) => {
+	render: ({ node, options, events }) => {
 		const allFields = getCompletedFieldsData();
 		const completedFields = options.maxFields
 			? allFields.slice(0, options.maxFields)
