@@ -6,7 +6,7 @@ import { PluginComponentProps } from "../../types/index.js";
 export interface TaskLabel {
 	idle?: string;
 	running?: string;
-	done?: string;
+	success?: string;
 	error?: string;
 }
 
@@ -31,7 +31,7 @@ export interface TasksOptions {
 	// meta?
 }
 
-type TaskStatus = "idle" | "running" | "done" | "error" | "warning";
+type TaskStatus = "idle" | "running" | "success" | "error" | "warning";
 
 interface TaskState {
 	status: TaskStatus;
@@ -105,7 +105,9 @@ export function addDynamicTask(task: Task): Promise<void> {
 					await task.action();
 				}
 
-				updateTaskStateInStore(taskListId, taskId, { status: "done" });
+				updateTaskStateInStore(taskListId, taskId, {
+					status: "success",
+				});
 				resolve();
 			} catch (error) {
 				if (error instanceof TaskWarning) {
@@ -325,9 +327,10 @@ export const TasksDisplay = ({
 		return (
 			{
 				running: labelObj.running || fallback || "Running...",
-				done: labelObj.done || fallback || "Done",
+				success: labelObj.success || fallback || "Success",
 				error: labelObj.error || fallback || "Error",
-				warning: labelObj.done || fallback || "Done (with warnings)",
+				warning:
+					labelObj.success || fallback || "Success (with warnings)",
 				idle: fallback,
 			}[status] || fallback
 		);
@@ -338,7 +341,7 @@ export const TasksDisplay = ({
 			{
 				idle: "□",
 				running: spinnerFrames[spinnerFrame],
-				done: "■",
+				success: "■",
 				warning: "▲",
 				error: "✗",
 			}[status] || "□"
@@ -350,7 +353,7 @@ export const TasksDisplay = ({
 			{
 				idle: "gray",
 				running: "blue",
-				done: "green",
+				success: "green",
 				warning: "yellow",
 				error: "red",
 			}[status] || "gray"
@@ -391,7 +394,7 @@ export const TasksDisplay = ({
 			if (completeOn === "self") {
 				// Complete after action, let children run in background
 				await actionPromise;
-				updateTaskState(taskId, { status: "done" });
+				updateTaskState(taskId, { status: "success" });
 
 				// Start children in background (don't await)
 				if (task.tasks && task.tasks.length > 0) {
@@ -464,7 +467,7 @@ export const TasksDisplay = ({
 
 				// Wait for whichever completes first
 				await Promise.race([actionPromise, childrenPromise]);
-				updateTaskState(taskId, { status: "done" });
+				updateTaskState(taskId, { status: "success" });
 
 				// Continue other tasks in background if needed
 				if (!actionCompleted || !childrenCompleted) {
@@ -500,7 +503,7 @@ export const TasksDisplay = ({
 					}
 				}
 
-				updateTaskState(taskId, { status: "done" });
+				updateTaskState(taskId, { status: "success" });
 			}
 		} catch (error) {
 			if (error instanceof TaskWarning) {

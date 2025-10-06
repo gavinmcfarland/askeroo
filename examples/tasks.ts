@@ -63,7 +63,7 @@ const flow = async () => {
 						label: {
 							idle: "Initializing git",
 							running: "Setting up git repository",
-							done: "Git initialized",
+							success: "Git initialized",
 							error: "Failed to initialize git",
 						},
 						action: async () => {
@@ -74,7 +74,7 @@ const flow = async () => {
 						label: {
 							idle: "Checking environment",
 							running: "Validating environment",
-							done: "Environment checked",
+							success: "Environment checked",
 							error: "Environment validation failed",
 						},
 						action: async () => {

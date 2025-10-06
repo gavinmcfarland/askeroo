@@ -4,12 +4,14 @@ A modern CLI prompt library with flow control, back navigation, and conditional 
 
 ## Features
 
--   Works great out of the box, with key prompts, like text, radio, multi.
+-   Works great out of the box, with key prompts, like text, radio, multi
 -   Create your own bespoke prompts using a highly flexible framework
--   Stateful navigation that preserves user's inputs
+-   Runs prompts in a flow which you can configure and customise to suit your needs
+-   Stateful navigation that preserves user's inputs and supports back navigation
 -   Return structured data your way with imperative-style functions
--   Write dynamic branching with conditionals fields
--   Rich markdown support with md template literals for formatted labels and content
+-   Write dynamic branching with groups and conditionals
+-   Run tasks with progress tracking, parallel or sequential execution, and error handling
+-   Display notes with support for markdown and chalk syntax
 
 ## Installation
 
@@ -19,35 +21,41 @@ npm i askeroo
 
 ## Quick Start
 
+Askeroo comes with a default runtime and set of prompts that you can use out of the box.
+
 ```typescript
-import { ask, group, text, confirm } from "askeroo/core";
+import { ask, group, text, confirm } from "askeroo";
 
 const flow = async () => {
-    // Group 1: Profile
-    const profile = await group(
-        async () => {
-            const first = await text({ message: "First name" });
-            const last = await text({ message: "Last name" });
-            return { first, last };
-        },
-        { message: "Profile" }
-    );
+    // Display notes
+    await note("[Hello world!]{bgBlue}");
 
-    // Group 2: Preferences (with conditional)
+    // Call prompts on their own
+    const nickname = await text({ label: "Nickname" });
+
+    // Group prompts together
+    const profile = await group(async () => {
+        const first = await text({ label: "First name" });
+        const last = await text({ label: "Last name" });
+        return { first, last };
+    });
+
+    // Create conditional inputs
     const prefs = await group(
         async () => {
-            const role = await text({ message: "Role (user/admin)" });
+            const role = await text({ label: "Role (user/admin)" });
             if (role === "admin") {
-                const code = await text({ message: "Access code" });
+                const code = await text({ label: "Access code" });
                 return { role, code };
             }
-            const news = await confirm({ message: "Subscribe to newsletter?" });
+            const news = await confirm({ label: "Subscribe to newsletter?" });
             return { role, news };
         },
-        { message: "Preferences" }
+        { label: "Preferences" } // Optional group labels
     );
 
-    return { profile, prefs };
+    // Return structured data your way
+    return { nickname, profile, prefs };
 };
 
 const result = await ask(flow);

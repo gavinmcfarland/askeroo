@@ -9,7 +9,7 @@ export type { Task, TaskLabel, CompleteOn } from "./Tasks.js";
 export interface TaskResult {
 	id: string;
 	label: string;
-	status: "done" | "error" | "warning";
+	status: "success" | "error" | "warning";
 	error?: string;
 	warning?: string;
 	duration?: number;
@@ -50,20 +50,20 @@ async function getTaskResults(): Promise<TasksResult> {
 		// Include completed tasks (not idle/running) and top-level tasks, plus dynamic tasks
 		if (
 			(!taskId.includes(".") || taskId.startsWith("dynamic.")) &&
-			["done", "error", "warning"].includes(taskState.status)
+			["success", "error", "warning"].includes(taskState.status)
 		) {
 			totalTasks++;
 
 			const result: TaskResult = {
 				id: taskId,
 				label: getTaskLabel(taskId) || `Task ${taskId}`,
-				status: taskState.status as "done" | "error" | "warning",
+				status: taskState.status as "success" | "error" | "warning",
 				error: taskState.error,
 				warning: taskState.warning,
 			};
 
 			// Count task outcomes
-			if (taskState.status === "done") completedTasks++;
+			if (taskState.status === "success") completedTasks++;
 			else if (taskState.status === "error") failedTasks++;
 			else if (taskState.status === "warning") warningTasks++;
 

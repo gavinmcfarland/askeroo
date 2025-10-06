@@ -51,7 +51,7 @@ await tasks([
         label: {
             idle: "Waiting to start...",
             running: "Building project...",
-            done: "Project built successfully",
+            success: "Project built successfully",
             error: "Build failed",
         },
         action: async () => {
@@ -128,7 +128,7 @@ interface Task {
 interface TaskLabel {
     idle?: string;
     running?: string;
-    done?: string;
+    success?: string;
     error?: string;
 }
 
@@ -144,7 +144,7 @@ interface TasksResult {
 interface TaskResult {
     id: string;
     label: string;
-    status: "done" | "error" | "warning";
+    status: "success" | "error" | "warning";
     error?: string;
     warning?: string;
     duration?: number;
