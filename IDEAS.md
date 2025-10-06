@@ -5,3 +5,4 @@
 -   Add, onCancel or onExit listener
 -   Add onValidate, onChange
 -   CMD + backspace should only clear text before cursor
+-   how to deprecate auto-submit in prompts and support way to prevent navigating back via component

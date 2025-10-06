@@ -85,89 +85,23 @@ console.log(result);
 
     Group prompts visually and control their behaviour together.
 
-    **Options**
-
-    ```ts
-    interface GroupOpts {
-        label?: string;
-        flow?: "progressive" | "phased" | "static";
-        allowBack?: boolean;
-        arrowNavigation?: boolean;
-    }
-    ```
-
-    -   **allowBack:** (default true) - allow user to go back
-    -   **flow:** (default progressive) - change the behaviour of how prompts appear in a group.
-        -   **Progressive:** fields are progressively revealed as the user answers them.
-        -   **Phased:** only one is visible at a time.
-        -   **Static:** all fields are visible at the same time.
-    -   **arrowNavigation:** (default false) only applicable to static groups. If true allows users to navigate up and down.
-    -   **statePersistence:** 'remember', 'persist', 'none'
-
 ## Prompts
 
 -   ### `text(options: TextOpts)`
 
     Show a text input.
 
-    **Options**
-
-    ```ts
-    interface TextOpts {
-        label: string;
-        shortLabel?: string;
-        initialValue?: string;
-        placeholder?: string;
-        required?: boolean;
-    }
-    ```
-
 -   ### `confirm(options: ConfirmOpts)`
 
     Show a confirmation with choice of yes or no.
-
-    **Options**
-
-    ```ts
-    interface ConfirmOpts {
-        label?: string;
-        shortLabel?: string;
-        allowLoop?: boolean;
-        options?: AtLeastTwo<{ value: any; label: string }>[];
-    }
-    ```
 
 -   ### `radio(options: RadioOpts)`
 
     Show a single-choice selection from multiple options.
 
-    ```ts
-    interface RadioOpts {
-        label?: string;
-        shortLabel?: string;
-        allowLoop?: boolean;
-        searchable: boolean;
-        options: Array<{ value: string; label: string }>;
-        initialValue?: string;
-    }
-    ```
-
 -   ### `multi(options: MultiOpts)`
 
     Show a multi-choice selection allowing multiple options.
-
-    ```ts
-    interface MultiOpts {
-        label?: string;
-        shortLabel?: string;
-        allowLoop?: boolean;
-        searchable: boolean;
-        options: Array<{ value: string; label: string }>;
-        initialValue?: string[];
-        noneOption?: { label: string };
-        otherOption?: { label: string };
-    }
-    ```
 
 -   ### `note(MarkdownString)`
 
@@ -177,88 +111,9 @@ console.log(result);
 
     Render a React component using Ink.
 
-    ```ts
-    interface ComponentOpts {
-        component: ReactComponent;
-    }
-    ```
-
 -   ### `tasks(taskList: Task[], options?: TasksOpts)`
 
     Execute a list of tasks with progress indication and error handling.
-
-    ```ts
-    interface Task {
-        label: string | TaskLabel;
-        action?: () => Promise<void>;
-        tasks?: Task[]; // Nested subtasks
-        concurrent?: boolean;
-        continueOnError?: boolean;
-        completeOn?: "children" | "self" | "either";
-    }
-
-    interface TaskLabel {
-        idle?: string;
-        running?: string;
-        done?: string;
-        error?: string;
-    }
-
-    interface TasksOpts {
-        concurrent?: boolean; // true = parallel (default), false = sequential
-    }
-
-    interface TasksResult {
-        success: boolean;
-        totalTasks: number;
-        completedTasks: number;
-        failedTasks: number;
-        warningTasks: number;
-        results: TaskResult[];
-    }
-    ```
-
-    **Usage**
-
-    ```ts
-    // Basic task execution
-    const result = await tasks([
-        {
-            label: "Installing dependencies",
-            action: async () => {
-                await installDependencies();
-            },
-        },
-        {
-            label: "Building project",
-            action: async () => {
-                await buildProject();
-            },
-        },
-    ]);
-
-    // Sequential execution
-    await tasks(taskList, { concurrent: false });
-
-    // Parallel execution (default)
-    await tasks(taskList, { concurrent: true });
-    ```
-
-    **Methods**
-
-    -   `tasks.add(taskList: Task[], options?: { concurrent?: boolean })` - Add tasks dynamically during execution
-    -   `tasks.sequential(taskList: Task[])` - Execute tasks sequentially
-    -   `tasks.parallel(taskList: Task[])` - Execute tasks in parallel
-
--   ### `completedFields(options: CompletedFieldsOpts)`
-
-    Show the status of completed fields.
-
-    ```ts
-    interfaceCompletedFieldsOpts {
-        filter: string[];
-    }
-    ```
 
 ## Create a prompt
 
@@ -276,7 +131,6 @@ export interface CustomOptions {
 // Create and export the plugin
 export const customField = createPrompt<CustomOptions, string>({
     type: "custom-field",
-    interactive: true,
     component: ({ node, options, events }: any) {
         const [value, setValue] = useState("");
 
