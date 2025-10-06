@@ -62,6 +62,11 @@ export {
 	type GroupOpts,
 	type GroupOptions,
 } from "./plugins/group/index.js";
+export { createAsk } from "./core/ask-factory.js";
+export {
+	customAsk,
+	type CustomAskOptions,
+} from "./plugins/custom-ask/index.js";
 
 // Export markdown utilities
 export { md, type MarkdownString } from "./utils/markdown.js";

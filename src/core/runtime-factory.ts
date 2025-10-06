@@ -18,6 +18,7 @@ import "../plugins/radio/index.js";
 import "../plugins/tasks/index.js";
 import "../plugins/completed-fields/index.js";
 import "../plugins/group/index.js";
+import "../plugins/custom-ask/index.js";
 
 export class RuntimeFactory {
 	/**

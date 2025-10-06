@@ -6,12 +6,14 @@ The plugin system allows you to create custom prompt types and register them wit
 
 Core plugins are registered when you import them from the main package. They include:
 
-- `text` - Text input fields
-- `confirm` - Yes/no confirmation prompts
-- `multi` - Multi-select prompts
-- `note` - Display-only note prompts
-- `completed-fields` - Display completed field values
-- `radio` - Radio button selection prompts
+-   `text` - Text input fields
+-   `confirm` - Yes/no confirmation prompts
+-   `multi` - Multi-select prompts
+-   `note` - Display-only note prompts
+-   `completed-fields` - Display completed field values
+-   `radio` - Radio button selection prompts
+-   `group` - Group prompts into logical sections
+-   `custom-ask` - Create custom ask functions with customizable root containers
 
 ## Creating Custom Plugins
 
@@ -20,55 +22,85 @@ Core plugins are registered when you import them from the main package. They inc
 The easiest way to create a plugin is using the `createPlugin` helper, which automatically registers your plugin when the module is imported:
 
 ```typescript
-import React from 'react';
-import { createPlugin } from '../registry.js';
+import React from "react";
+import { createPlugin } from "../registry.js";
 
 // Your component
 function MyCustomField({ label, onSubmit, ...props }) {
-  return (
-    <Text>{label}</Text>
-    // Your custom UI logic here
-  );
+    return (
+        <Text>{label}</Text>
+        // Your custom UI logic here
+    );
 }
 
 // Create and auto-register the plugin
 export const myCustomField = createPlugin({
-  type: 'my-custom-field',
-  component: MyCustomField,
-  interactive: true, // Optional: whether this requires user interaction
-  prompt: (opts, context, id) => opts, // Process options if needed
+    type: "my-custom-field",
+    component: MyCustomField,
+    interactive: true, // Optional: whether this requires user interaction
+    prompt: (opts, context, id) => opts, // Process options if needed
 });
 ```
 
 Then use it in your code:
 
 ```typescript
-import { ask } from '../core.js';
-import { myCustomField } from './path/to/my-custom-field.js'; // Import registers the plugin automatically
+import { ask } from "../core.js";
+import { myCustomField } from "./path/to/my-custom-field.js"; // Import registers the plugin automatically
 
 const result = await ask(async ({ myCustomField }) => {
-  return await myCustomField({
-    label: "Enter something custom:",
-    // any other options
-  });
+    return await myCustomField({
+        label: "Enter something custom:",
+        // any other options
+    });
 });
 ```
 
 **Note:** Just importing the plugin file registers it with the runtime, just like built-in plugins work when you import them from the main package.
+
+## Special Plugins
+
+### Custom Ask Plugin
+
+The `custom-ask` plugin allows you to create your own `ask()` function with a customizable root container. This is useful for adding branding, custom layouts, or conditional styling to your prompt flows.
+
+```typescript
+import { createCustomAsk } from "../plugins/custom-ask/index.js";
+
+const result = await createCustomAsk(
+    async ({ text, confirm }) => {
+        const name = await text({ label: "Name" });
+        const confirmed = await confirm({ label: "Confirm?" });
+        return { name, confirmed };
+    },
+    {
+        rootContainer: ({ children }) => (
+            <Box flexDirection="column" borderStyle="double" padding={1}>
+                <Text color="blue" bold>
+                    🚀 My Custom App
+                </Text>
+                {children}
+            </Box>
+        ),
+    }
+);
+```
+
+See the [Custom Ask Plugin README](./custom-ask/README.md) for detailed documentation and examples.
 
 ### Method 2: Manual Registration
 
 For more control, you can manually register plugins:
 
 ```typescript
-import { registerPlugin, globalRegistry } from '../registry.js';
+import { registerPlugin, globalRegistry } from "../registry.js";
 
 // Define your plugin
 const myPlugin = {
-  type: 'my-plugin',
-  component: MyComponent,
-  interactive: true,
-  prompt: (opts, context, id) => opts,
+    type: "my-plugin",
+    component: MyComponent,
+    interactive: true,
+    prompt: (opts, context, id) => opts,
 };
 
 // Register it
@@ -82,21 +114,21 @@ globalRegistry.register(myPlugin);
 
 Each plugin must have:
 
-- `type`: Unique string identifier for the plugin
-- `component`: React component that renders the UI
-- `prompt`: Function that processes options and returns them to the runtime
-- `interactive`: (Optional) Boolean indicating if this requires user input
+-   `type`: Unique string identifier for the plugin
+-   `component`: React component that renders the UI
+-   `prompt`: Function that processes options and returns them to the runtime
+-   `interactive`: (Optional) Boolean indicating if this requires user input
 
 ## Plugin Component Props
 
 Your component will receive:
 
-- All options passed to the plugin function
-- `onSubmit`: Function to call when the user completes the prompt
-- `onBack`: Function to call for back navigation (if enabled)
-- `completed`: Boolean indicating if this field is in completed state
-- `disabled`: Boolean indicating if this field should be disabled
-- Plus other standard props like `flow`, `allowBack`, etc.
+-   All options passed to the plugin function
+-   `onSubmit`: Function to call when the user completes the prompt
+-   `onBack`: Function to call for back navigation (if enabled)
+-   `completed`: Boolean indicating if this field is in completed state
+-   `disabled`: Boolean indicating if this field should be disabled
+-   Plus other standard props like `flow`, `allowBack`, etc.
 
 ## Best Practices
 
@@ -109,58 +141,65 @@ Your component will receive:
 ## Example: Custom Slider Plugin
 
 ```typescript
-import React, { useState } from 'react';
-import { Text, useInput } from 'ink';
-import { createPlugin } from '../registry.js';
+import React, { useState } from "react";
+import { Text, useInput } from "ink";
+import { createPlugin } from "../registry.js";
 
 interface SliderProps {
-  label: string;
-  min?: number;
-  max?: number;
-  step?: number;
-  onSubmit: (value: number) => void;
-  // ... other standard props
+    label: string;
+    min?: number;
+    max?: number;
+    step?: number;
+    onSubmit: (value: number) => void;
+    // ... other standard props
 }
 
-function SliderField({ label, min = 0, max = 100, step = 1, onSubmit, ...props }: SliderProps) {
-  const [value, setValue] = useState(min);
+function SliderField({
+    label,
+    min = 0,
+    max = 100,
+    step = 1,
+    onSubmit,
+    ...props
+}: SliderProps) {
+    const [value, setValue] = useState(min);
 
-  useInput((input, key) => {
-    if (key.leftArrow && value > min) {
-      setValue(Math.max(min, value - step));
-    }
-    if (key.rightArrow && value < max) {
-      setValue(Math.min(max, value + step));
-    }
-    if (key.return) {
-      onSubmit(value);
-    }
-  });
+    useInput((input, key) => {
+        if (key.leftArrow && value > min) {
+            setValue(Math.max(min, value - step));
+        }
+        if (key.rightArrow && value < max) {
+            setValue(Math.min(max, value + step));
+        }
+        if (key.return) {
+            onSubmit(value);
+        }
+    });
 
-  return (
-    <>
-      <Text>{label}</Text>
-      <Text>Value: {value} (Use ← → to adjust, Enter to confirm)</Text>
-    </>
-  );
+    return (
+        <>
+            <Text>{label}</Text>
+            <Text>Value: {value} (Use ← → to adjust, Enter to confirm)</Text>
+        </>
+    );
 }
 
 export const slider = createPlugin<SliderProps, number>({
-  type: 'slider',
-  component: SliderField,
-  prompt: (opts) => opts,
+    type: "slider",
+    component: SliderField,
+    prompt: (opts) => opts,
 });
 ```
 
 This plugin would be used like:
 
 ```typescript
-import './path/to/slider-plugin.js';
+import "./path/to/slider-plugin.js";
 
 const volume = await slider({
-  label: "Select volume level:",
-  min: 0,
-  max: 10,
-  step: 1,
+    label: "Select volume level:",
+    min: 0,
+    max: 10,
+    step: 1,
 });
 ```
