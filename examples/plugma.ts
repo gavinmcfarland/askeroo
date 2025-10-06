@@ -16,22 +16,38 @@ import { md } from "../src/utils/markdown.js";
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const flow = async () => {
+	// await note("[ Plugma ]{bgMagenta} [v2.1.0]{dim}");
 	await note("[ Plugma ]{bgMagenta} [v2.1.0]{dim}");
 
 	await completedFields();
 
 	const name = await text({
-		label: "Name",
+		label: "Name1",
 		initialValue: "My Plugin",
 	});
 
 	const name2 = await text({
-		label: "Name",
+		label: "Name2",
 		initialValue: "My Plugin",
 	});
 
 	const name3 = await text({
-		label: "Name",
+		label: "Name3",
+		initialValue: "My Plugin",
+	});
+
+	const name4 = await text({
+		label: "Name4",
+		initialValue: "My Plugin",
+	});
+
+	const name5 = await text({
+		label: "Name5",
+		initialValue: "My Plugin",
+	});
+
+	const name6 = await text({
+		label: "Name6",
 		initialValue: "My Plugin",
 	});
 
