@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { TaskWarning } from "./index.js";
-import { PluginState } from "../../types/index.js";
+import { PluginComponentProps } from "../../types/index.js";
 
 export interface TaskLabel {
 	idle?: string;
@@ -21,14 +21,14 @@ export interface Task {
 	completeOn?: CompleteOn;
 }
 
+/**
+ * User-provided options for the tasks plugin
+ */
 export interface TasksOptions {
 	tasks: Task[];
-	concurrent?: boolean; // Controls root-level task execution: true = parallel (default), false = sequential
-	// Plugin component props
-	onSubmit?: (value: void) => void;
-	onBack?: () => void;
-	state?: PluginState;
-	meta?: Record<string, any>; // User-defined metadata for this field
+	concurrent?: boolean;
+	// Built-ins are automatically added via PluginOptionsWithBuiltins:
+	// meta?
 }
 
 type TaskStatus = "idle" | "running" | "done" | "error" | "warning";
@@ -139,19 +139,23 @@ export async function waitForPendingTasks(): Promise<void> {
 }
 
 // Main component for the plugin
-export function TasksDisplay(props: TasksOptions) {
+export const TasksDisplay = ({
+	node,
+	options,
+	events,
+}: PluginComponentProps<TasksOptions, void>) => {
 	const [isExecuting, setIsExecuting] = useState(false);
 	const [spinnerFrame, setSpinnerFrame] = useState(0);
 	// Use a stable taskListId based on task content to enable state persistence
 	const [taskListId] = useState(() => {
 		// Create a deterministic ID based on task structure
 		const taskHash = JSON.stringify(
-			props.tasks.map((t) => ({
+			options.tasks.map((t: Task) => ({
 				label: t.label,
 				concurrent: t.concurrent,
 			}))
 		);
-		const hash = taskHash.split("").reduce((a, b) => {
+		const hash = taskHash.split("").reduce((a: number, b: string) => {
 			a = (a << 5) - a + b.charCodeAt(0);
 			return a & a;
 		}, 0);
@@ -515,16 +519,16 @@ export function TasksDisplay(props: TasksOptions) {
 
 		try {
 			// Execute tasks based on concurrent setting (default: parallel)
-			if (props.concurrent === false) {
+			if (options.concurrent === false) {
 				// Sequential execution
-				for (let i = 0; i < props.tasks.length; i++) {
-					const task = props.tasks[i];
+				for (let i = 0; i < options.tasks.length; i++) {
+					const task = options.tasks[i];
 					await executeTask(task, getTaskId(task, i));
 				}
 			} else {
 				// Parallel execution (default behavior)
 				await Promise.allSettled(
-					props.tasks.map((task, i) =>
+					options.tasks.map((task: Task, i: number) =>
 						executeTask(task, getTaskId(task, i))
 					)
 				);
@@ -533,8 +537,8 @@ export function TasksDisplay(props: TasksOptions) {
 			setIsExecuting(false);
 
 			// Only submit after we know everything is done
-			if (props.onSubmit && props.state === "active") {
-				props.onSubmit!(undefined as any);
+			if (events.onSubmit && node.state === "active") {
+				events.onSubmit(undefined as any);
 			}
 		}
 	};
@@ -603,16 +607,16 @@ export function TasksDisplay(props: TasksOptions) {
 
 	// Initialize all tasks as idle, then start execution after a brief delay
 	useEffect(() => {
-		if (props.state === "active" && !isExecuting) {
+		if (node.state === "active" && !isExecuting) {
 			// Initialize all tasks as idle for this task list
-			initializeTasksAsIdle(props.tasks);
+			initializeTasksAsIdle(options.tasks);
 
 			// Start execution after a brief delay to show idle state
 			setTimeout(() => {
 				executeAllTasks();
 			}, 400);
 		}
-	}, [props.state]);
+	}, [node.state]);
 
 	const renderDynamicTasks = (): React.ReactNode[] => {
 		const dynamicTaskNodes: React.ReactNode[] = [];
@@ -668,8 +672,10 @@ export function TasksDisplay(props: TasksOptions) {
 
 	return (
 		<Box flexDirection="column">
-			{props.tasks.map((task, index) => renderTask(task, index))}
+			{options.tasks.map((task: Task, index: number) =>
+				renderTask(task, index)
+			)}
 			{renderDynamicTasks()}
 		</Box>
 	);
-}
+};

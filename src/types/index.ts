@@ -133,8 +133,8 @@ export type PluginRenderProps = {
 
 export type PromptPlugin = {
 	type: string;
-	component?: React.ComponentType<any>; // Legacy: Plugin provides its own React component
-	render?: (props: PluginRenderProps) => React.ReactElement; // New: Inline render function
+	component?: React.ComponentType<any>; // Plugin component
+	render?: React.ComponentType<any>; // Alternative to component (direct component, not factory)
 	transform?: (
 		opts: any,
 		context: { currentGroup?: string },
@@ -167,3 +167,72 @@ export type ValidatorFunction<T = any> = (
 
 // Plugin state type - unified state for all plugins
 export type PluginState = "active" | "completed" | "disabled";
+
+// ============================================================================
+// Plugin Component Props Types (New Structured API)
+// ============================================================================
+
+/**
+ * Node properties - library-managed flow state
+ * These are shared across all plugins and managed by the framework
+ */
+export interface PluginNode {
+	state: PluginState;
+	flow?: "progressive" | "phased" | "static";
+	isFirstInGroup?: boolean;
+	isLastInGroup?: boolean;
+	isFirstRootPrompt?: boolean;
+	allowBack?: boolean;
+	completedValue?: any;
+	enableArrowNavigation?: boolean;
+	depth?: number;
+	children?: React.ReactNode;
+}
+
+/**
+ * Base event handlers available to all plugins
+ * Generic type T is the value type the plugin submits
+ */
+export interface PluginEvents<T = any> {
+	onSubmit?: (value: T | any) => void; // Allow any for special navigation objects
+	onBack?: () => void;
+	onHintChange?: (hint: React.ReactNode) => void;
+	onValidate?: ValidatorFunction<T>;
+	onNavigate?: (direction: "up" | "down") => void;
+	[key: string]: any; // Allow plugin-specific events
+}
+
+/**
+ * Helper type for plugin component props
+ * Combines node, user options, and events into structured format
+ *
+ * @template TOptions - User-provided plugin options
+ * @template TValue - The value type the plugin submits
+ */
+export interface PluginComponentProps<TOptions = any, TValue = any> {
+	node: PluginNode;
+	options: TOptions;
+	events: PluginEvents<TValue>;
+}
+
+/**
+ * Helper type that combines user options with built-in properties
+ * This is what the plugin function accepts (e.g., text({ label: "...", allowBack: false }))
+ *
+ * @template TOptions - User-provided plugin options
+ * @template TValue - The value type the plugin submits
+ */
+export type PluginOptionsWithBuiltins<
+	TOptions = any,
+	TValue = any
+> = TOptions & {
+	// Node built-ins (can be provided by user)
+	id?: string;
+	excludeFromCompleted?: boolean;
+	hideAfterSubmit?: boolean;
+	allowBack?: boolean;
+	// Event handlers (can be provided by user)
+	onValidate?: ValidatorFunction<TValue>;
+	// Meta
+	meta?: Record<string, any>;
+};

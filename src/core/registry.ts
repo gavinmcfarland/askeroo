@@ -1,4 +1,4 @@
-import { PromptPlugin } from "../types/index.js";
+import { PromptPlugin, PluginOptionsWithBuiltins } from "../types/index.js";
 
 export type { PromptPlugin };
 
@@ -60,7 +60,7 @@ import { getCurrentRuntime, getPluginRuntime } from "./runtime-context.js";
 export function createPlugin<T = any, R = any>(config: {
 	type: string;
 	component?: React.ComponentType<any>;
-	render?: () => React.ComponentType<any>; // Factory function that returns a component
+	render?: React.ComponentType<any>; // Component directly (not a factory)
 	transform?: (opts: T, context: { currentGroup?: string }, id: string) => T; // Optional: transform options before rendering
 	interactive?: boolean;
 	// Container plugin support
@@ -68,7 +68,7 @@ export function createPlugin<T = any, R = any>(config: {
 	execute?: (runtime: any, opts: T, body?: () => Promise<any>) => Promise<R>;
 	onEnter?: (runtime: any, opts: T) => Promise<void> | void;
 	onExit?: (runtime: any, opts: T) => Promise<void> | void;
-}): (opts?: T) => Promise<R> {
+}): (opts?: PluginOptionsWithBuiltins<T, R>) => Promise<R> {
 	// Validate that either component or render is provided (not required for containers with execute)
 	if (!config.component && !config.render && !config.execute) {
 		throw new Error(
@@ -76,9 +76,8 @@ export function createPlugin<T = any, R = any>(config: {
 		);
 	}
 
-	// If render is provided, call it to get the component
-	const component =
-		config.component || (config.render ? config.render() : undefined);
+	// Use render directly as the component (no factory call needed)
+	const component = config.component || config.render;
 
 	const plugin: PromptPlugin = {
 		type: config.type,
@@ -96,7 +95,12 @@ export function createPlugin<T = any, R = any>(config: {
 
 	// Return the prompt function that users will call
 	// Make opts optional with empty object as default
-	return async function (opts: T = {} as T): Promise<R> {
+	return async function (
+		opts: PluginOptionsWithBuiltins<T, R> = {} as PluginOptionsWithBuiltins<
+			T,
+			R
+		>
+	): Promise<R> {
 		const runtime = getPluginRuntime(config.type);
 
 		// For container plugins with custom execute, call it directly

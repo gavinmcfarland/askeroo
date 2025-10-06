@@ -6,10 +6,15 @@ import {
 	isMarkdownString,
 } from "../../utils/markdown.js";
 import { Box } from "ink";
+import { PluginComponentProps } from "../../types/index.js";
 
+/**
+ * User-provided options for the note plugin
+ */
 export interface NoteOptions {
 	message: string | MarkdownString;
-	meta?: Record<string, any>; // User-defined metadata for this field
+	// Built-ins are automatically added via PluginOptionsWithBuiltins:
+	// meta?
 }
 
 // Internal plugin implementation
@@ -17,23 +22,26 @@ const noteInternal = createPlugin<NoteOptions, void>({
 	type: "note",
 	interactive: false, // Notes don't require user interaction
 
-	render: () =>
-		function NoteDisplay(props: any) {
-			const isMarkdownObject = isMarkdownString(props.message);
+	render: ({
+		node,
+		options,
+		events,
+	}: PluginComponentProps<NoteOptions, void>) => {
+		const isMarkdownObject = isMarkdownString(options.message);
 
-			return (
-				<Box flexDirection="column">
-					{parseMarkdown(
-						isMarkdownObject
-							? (props.message as MarkdownString).content
-							: (props.message as string) || "",
-						isMarkdownObject
-							? (props.message as MarkdownString).theme
-							: undefined
-					)}
-				</Box>
-			);
-		},
+		return (
+			<Box flexDirection="column">
+				{parseMarkdown(
+					isMarkdownObject
+						? (options.message as MarkdownString).content
+						: (options.message as string) || "",
+					isMarkdownObject
+						? (options.message as MarkdownString).theme
+						: undefined
+				)}
+			</Box>
+		);
+	},
 });
 
 // Public API function

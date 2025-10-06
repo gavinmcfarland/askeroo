@@ -209,7 +209,7 @@ const flow = async () => {
 
 			return answers;
 		},
-		{ label: "Group 1", flow: "phased" }
+		{ label: "Group 1" }
 	);
 
 	const extra1 = await text({
