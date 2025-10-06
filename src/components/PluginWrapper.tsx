@@ -104,5 +104,14 @@ function NonInteractiveWrapper({
 	useAutoSubmit(events.onSubmit, node.state || "active", 10);
 
 	// Render the plugin component
-	return <PluginComponent node={node} options={options} events={events} />;
+	const pluginResult = (
+		<PluginComponent node={node} options={options} events={events} />
+	);
+
+	// If the plugin component returns null, return null to avoid taking up space
+	if (pluginResult === null) {
+		return null;
+	}
+
+	return pluginResult;
 }

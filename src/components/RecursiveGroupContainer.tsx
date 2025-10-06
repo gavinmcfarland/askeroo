@@ -333,6 +333,30 @@ export function RecursiveGroupContainer({
 		const effectiveAllowBack =
 			item.allowBack !== false && !isFirstRootPrompt;
 
+		// Special handling for completedFields plugin to avoid Box wrapper when empty
+		if (item.fieldType === "completedFields") {
+			return (
+				<PluginWrapper
+					pluginType={item.fieldType}
+					key={`plugin-${item.id}-${item.depth}-${pluginState}`}
+					{...item.properties} // Spread all plugin properties
+					message={item.properties.message || item.label || ""}
+					initialValue={getInitialValue()}
+					state={pluginState}
+					completedValue={isCompleted ? item.value : undefined}
+					onSubmit={isActive ? onSubmit : () => {}}
+					onBack={isActive ? onBack : undefined}
+					allowBack={effectiveAllowBack}
+					flow={flowType}
+					isFirstInGroup={isFirstInGroup}
+					isLastInGroup={isLastInGroup}
+					isFirstRootPrompt={isFirstRootPrompt}
+					enableArrowNavigation={parent?.enableArrowNavigation}
+					{...(isActive && onHintChange && { onHintChange })}
+				/>
+			);
+		}
+
 		return (
 			<Box
 				marginLeft={shouldIndent ? baseIndent : 0}
