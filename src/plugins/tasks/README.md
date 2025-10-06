@@ -1,286 +1,151 @@
-# Tasks Plugin
+# Tasks
 
-The Tasks plugin provides a way to execute and visualize task lists with support for sequential, concurrent, and dynamic task execution.
+The tasks plugin executes and visualizes task lists with support for sequential, concurrent, nested, and dynamic task execution with visual progress indicators.
 
-## Basic Usage
+## Usage
 
-### `tasks(taskList)`
+```ts
+import { tasks, TaskWarning } from "askeroo";
 
-Execute a list of tasks with visual progress indicators.
-
-```typescript
-import { tasks } from './src/plugins/tasks/index.js';
-
+// Basic usage
 const result = await tasks([
-  {
-    label: "Setup project",
-    action: async () => {
-      // Your setup logic here
-    }
-  },
-  {
-    label: "Build application",
-    action: async () => {
-      // Your build logic here
-    }
-  }
-]);
-
-console.log(result.success); // true if all tasks completed successfully
-console.log(result.totalTasks); // Number of tasks executed
-```
-
-### `tasks.add(task)`
-
-Add tasks dynamically during execution.
-
-```typescript
-import { tasks } from './src/plugins/tasks/index.js';
-
-// Start with initial tasks
-const resultPromise = tasks([
-  {
-    label: "Initialize",
-    action: async () => {
-      // During execution, add more tasks
-      await tasks.add({
-        label: "Dynamic task",
+    {
+        label: "Setup project",
         action: async () => {
-          console.log("This task was added dynamically!");
-        }
-      });
-    }
-  }
+            // Your setup logic here
+        },
+    },
+    {
+        label: "Build application",
+        action: async () => {
+            // Your build logic here
+        },
+    },
 ]);
 
-const result = await resultPromise;
-```
-
-## Task Configuration
-
-### Basic Task Structure
-
-```typescript
-interface Task {
-  label: string | TaskLabel;           // Task description
-  action?: () => Promise<void>;        // Task function to execute
-  tasks?: Task[];                      // Nested subtasks
-  concurrent?: boolean;                // Execute subtasks in parallel
-  continueOnError?: boolean;           // Don't stop on task failure
-}
-```
-
-### Dynamic Labels
-
-Tasks can have different labels based on their status:
-
-```typescript
-{
-  label: {
-    idle: "Waiting to start...",
-    running: "Building project...",
-    done: "Project built successfully",
-    error: "Build failed"
-  },
-  action: async () => {
-    // Build logic
-  }
-}
-```
-
-### Nested Tasks
-
-Create hierarchical task structures:
-
-```typescript
+// Nested tasks with concurrent execution
 await tasks([
-  {
-    label: "Setup Environment",
-    tasks: [
-      {
-        label: "Install dependencies",
-        action: async () => { /* install logic */ }
-      },
-      {
-        label: "Configure settings",
-        action: async () => { /* config logic */ }
-      }
-    ]
-  }
+    {
+        label: "Build Assets",
+        concurrent: true,
+        tasks: [
+            {
+                label: "Compile CSS",
+                action: async () => {
+                    /* CSS compilation */
+                },
+            },
+            {
+                label: "Compile JS",
+                action: async () => {
+                    /* JS compilation */
+                },
+            },
+        ],
+    },
 ]);
-```
 
-### Concurrent Execution
-
-Execute subtasks in parallel:
-
-```typescript
+// Dynamic labels
 await tasks([
-  {
-    label: "Build Assets",
-    concurrent: true, // Run subtasks in parallel
-    tasks: [
-      {
-        label: "Compile CSS",
-        action: async () => { /* CSS compilation */ }
-      },
-      {
-        label: "Compile JS",
-        action: async () => { /* JS compilation */ }
-      }
-    ]
-  }
+    {
+        label: {
+            idle: "Waiting to start...",
+            running: "Building project...",
+            done: "Project built successfully",
+            error: "Build failed",
+        },
+        action: async () => {
+            // Build logic
+        },
+    },
 ]);
-```
 
-## Error Handling
+// Add tasks dynamically
+const resultPromise = tasks([
+    {
+        label: "Initialize",
+        action: async () => {
+            await tasks.add({
+                label: "Dynamic task",
+                action: async () => {
+                    console.log("Added dynamically!");
+                },
+            });
+        },
+    },
+]);
 
-### Task Warnings
-
-Use `TaskWarning` for non-fatal issues:
-
-```typescript
-import { tasks, TaskWarning } from './src/plugins/tasks/index.js';
-
+// Task warnings for non-fatal issues
 await tasks([
-  {
-    label: "Optional optimization",
-    action: async () => {
-      try {
-        // Some optimization that might fail
-        await optimizeImages();
-      } catch (error) {
-        // Throw warning instead of failing the entire flow
-        throw new TaskWarning("Image optimization failed, continuing...");
-      }
-    }
-  }
+    {
+        label: "Optional optimization",
+        action: async () => {
+            try {
+                await optimizeImages();
+            } catch (error) {
+                throw new TaskWarning("Optimization failed, continuing...");
+            }
+        },
+    },
 ]);
 ```
 
-### Continue on Error
+## Options
 
-Allow task execution to continue even if some tasks fail:
-
-```typescript
-await tasks([
-  {
-    label: "Data Processing",
-    continueOnError: true,
-    tasks: [
-      {
-        label: "Process file 1",
-        action: async () => { /* might fail */ }
-      },
-      {
-        label: "Process file 2",
-        action: async () => { /* will still run even if file 1 fails */ }
-      }
-    ]
-  }
-]);
-```
-
-## Task Results
-
-The `tasks()` function returns detailed execution results:
-
-```typescript
-interface TasksResult {
-  success: boolean;        // true if no tasks failed
-  totalTasks: number;      // Total number of tasks executed
-  completedTasks: number;  // Tasks that completed successfully
-  failedTasks: number;     // Tasks that failed with errors
-  warningTasks: number;    // Tasks that completed with warnings
-  results: TaskResult[];   // Detailed results for each task
-}
-
-interface TaskResult {
-  id: string;              // Task identifier
-  label: string;           // Task label that was displayed
-  status: 'done' | 'error' | 'warning';
-  error?: string;          // Error message if task failed
-  warning?: string;        // Warning message if task had warnings
-  duration?: number;       // Task execution time (if available)
-  subtasks?: TaskResult[]; // Results of any subtasks
-}
-```
+| Prop              | Type                  | Default  | Description                        |
+| ----------------- | --------------------- | -------- | ---------------------------------- |
+| `label`           | `string \| TaskLabel` | Required | Task description or dynamic labels |
+| `action`          | `() => Promise<void>` | -        | Task function to execute           |
+| `tasks`           | `Task[]`              | -        | Nested subtasks                    |
+| `concurrent`      | `boolean`             | `false`  | Execute subtasks in parallel       |
+| `continueOnError` | `boolean`             | `false`  | Continue execution on task failure |
 
 ## Visual Indicators
 
-The plugin shows visual progress with symbols:
+| Symbol | Status    | Color  |
+| ------ | --------- | ------ |
+| `□`    | Idle      | Gray   |
+| `⋯`    | Running   | Blue   |
+| `■`    | Completed | Green  |
+| `▲`    | Warning   | Yellow |
+| `✗`    | Error     | Red    |
 
-- `□` - Task waiting to start (idle)
-- `⋯` - Task currently running
-- `■` - Task completed successfully
-- `▲` - Task completed with warnings
-- `✗` - Task failed with error
+## Types
 
-Colors indicate status:
-- Gray: idle
-- Blue: running
-- Green: completed
-- Yellow: warning
-- Red: error
+```ts
+interface Task {
+    label: string | TaskLabel;
+    action?: () => Promise<void>;
+    tasks?: Task[];
+    concurrent?: boolean;
+    continueOnError?: boolean;
+}
 
-## Dynamic Task Addition
+interface TaskLabel {
+    idle?: string;
+    running?: string;
+    done?: string;
+    error?: string;
+}
 
-Tasks can be added during execution for complex workflows:
+interface TasksResult {
+    success: boolean;
+    totalTasks: number;
+    completedTasks: number;
+    failedTasks: number;
+    warningTasks: number;
+    results: TaskResult[];
+}
 
-```typescript
-await tasks([
-  {
-    label: "Analyze project",
-    action: async () => {
-      const files = await getProjectFiles();
+interface TaskResult {
+    id: string;
+    label: string;
+    status: "done" | "error" | "warning";
+    error?: string;
+    warning?: string;
+    duration?: number;
+    subtasks?: TaskResult[];
+}
 
-      // Add a task for each file found
-      for (const file of files) {
-        await tasks.add({
-          label: `Process ${file.name}`,
-          action: async () => {
-            await processFile(file);
-          }
-        });
-      }
-    }
-  }
-]);
-```
-
-## Best Practices
-
-1. **Use descriptive labels**: Make it clear what each task does
-2. **Handle errors appropriately**: Use `TaskWarning` for non-critical failures
-3. **Leverage concurrent execution**: Use `concurrent: true` for independent tasks
-4. **Structure logically**: Group related tasks under parent tasks
-5. **Provide status-specific labels**: Use different labels for different states when helpful
-
-## Integration with Other Plugins
-
-The tasks plugin works well with other prompt plugins:
-
-```typescript
-import { ask } from './src/core.js';
-import { tasks } from './src/plugins/tasks/index.js';
-import { confirm } from './src/plugins/confirm/index.js';
-
-const result = await ask(async ({ group }) => {
-  const shouldBuild = await confirm({
-    message: "Build the project?"
-  });
-
-  if (shouldBuild) {
-    await tasks([
-      {
-        label: "Building project...",
-        action: async () => {
-          // Build logic
-        }
-      }
-    ]);
-  }
-
-  return { built: shouldBuild };
-});
+class TaskWarning extends Error {}
 ```
