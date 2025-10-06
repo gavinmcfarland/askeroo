@@ -100,6 +100,10 @@ await tasks([
 | `concurrent`      | `boolean`             | `false`  | Execute subtasks in parallel       |
 | `continueOnError` | `boolean`             | `false`  | Continue execution on task failure |
 
+| Function          | Description            |
+| ----------------- | ---------------------- |
+| `tasks.add(task)` | Add a task dynamically |
+
 ## Visual Indicators
 
 | Symbol | Status    | Color  |

@@ -1,11 +1,11 @@
-import { createPlugin } from "../../core/registry.js";
+import { createPrompt } from "../../core/registry.js";
 import { MultiField, MultiOptions } from "./MultiField.js";
 
 // Re-export types
 export type { MultiOptions };
 
 // Multi-select prompt plugin
-export const multi = createPlugin<MultiOptions, string[]>({
+export const multi = createPrompt<MultiOptions, string[]>({
 	type: "multi",
 	component: MultiField,
 });

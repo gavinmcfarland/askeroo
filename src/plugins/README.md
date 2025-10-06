@@ -17,13 +17,13 @@ Core plugins are registered when you import them from the main package. They inc
 
 ## Creating Custom Plugins
 
-### Method 1: Using `createPlugin` (Recommended)
+### Method 1: Using `createPrompt` (Recommended)
 
-The easiest way to create a plugin is using the `createPlugin` helper, which automatically registers your plugin when the module is imported:
+The easiest way to create a plugin is using the `createPrompt` helper, which automatically registers your plugin when the module is imported:
 
 ```typescript
 import React from "react";
-import { createPlugin } from "../registry.js";
+import { createPrompt } from "../registry.js";
 
 // Your component
 function MyCustomField({ label, onSubmit, ...props }) {
@@ -34,7 +34,7 @@ function MyCustomField({ label, onSubmit, ...props }) {
 }
 
 // Create and auto-register the plugin
-export const myCustomField = createPlugin({
+export const myCustomField = createPrompt({
     type: "my-custom-field",
     component: MyCustomField,
     autoSubmit: false, // Optional: whether this auto-submits (default: false)
@@ -143,7 +143,7 @@ Your component will receive:
 ```typescript
 import React, { useState } from "react";
 import { Text, useInput } from "ink";
-import { createPlugin } from "../registry.js";
+import { createPrompt } from "../registry.js";
 
 interface SliderProps {
     label: string;
@@ -184,7 +184,7 @@ function SliderField({
     );
 }
 
-export const slider = createPlugin<SliderProps, number>({
+export const slider = createPrompt<SliderProps, number>({
     type: "slider",
     component: SliderField,
     prompt: (opts) => opts,

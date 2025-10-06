@@ -62,7 +62,7 @@ export function registerPlugin(plugin: PromptPlugin): void {
 import { getCurrentRuntime, getPluginRuntime } from "./runtime-context.js";
 
 // Plugin creation function that auto-registers
-export function createPlugin<T = any, R = any>(config: {
+export function createPrompt<T = any, R = any>(config: {
 	type: string;
 	component?:
 		| React.ComponentType<PluginComponentProps<T, R>>

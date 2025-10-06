@@ -52,8 +52,8 @@ const credentials = await group(
 
 | Prop                    | Type                                    | Default         | Description                                |
 | ----------------------- | --------------------------------------- | --------------- | ------------------------------------------ |
-| `label`                 | `string`                                | -               | Label for the group                        |
-| `id`                    | `string`                                | Auto-generated  | Custom ID for the group                    |
+| `label`                 | `string`                                | optional        | Label for the group                        |
+| `id`                    | `string`                                | optional        | To indentify specific groups               |
 | `flow`                  | `"progressive" \| "phased" \| "static"` | `"progressive"` | Execution flow type                        |
 | `enableArrowNavigation` | `boolean`                               | `false`         | Enable arrow navigation (static flow only) |
 

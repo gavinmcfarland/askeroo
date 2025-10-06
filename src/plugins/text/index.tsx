@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Text, Box, useInput } from "ink";
-import { createPlugin } from "../../core/registry.js";
+import { createPrompt } from "../../core/registry.js";
 import { useFieldReset } from "../../hooks/use-auto-submit.js";
 
 /**
@@ -13,7 +13,7 @@ export interface TextOptions {
 }
 
 // Core text input plugin
-export const text = createPlugin<TextOptions, string>({
+export const text = createPrompt<TextOptions, string>({
 	type: "text",
 	// autoSubmit: false (default) - Requires user interaction
 

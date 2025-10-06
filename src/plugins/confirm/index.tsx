@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Text, Box, useInput } from "ink";
-import { createPlugin } from "../../core/registry.js";
+import { createPrompt } from "../../core/registry.js";
 import { useFieldReset } from "../../hooks/use-auto-submit.js";
 import { isMarkdownString, parseMarkdown } from "../../utils/markdown.js";
 
@@ -27,7 +27,7 @@ export interface ConfirmOptions {
 }
 
 // Enhanced confirm input plugin with custom options support
-export const confirm = createPlugin<ConfirmOptions, any>({
+export const confirm = createPrompt<ConfirmOptions, any>({
 	type: "confirm",
 	// autoSubmit: false (default) - Requires user interaction
 

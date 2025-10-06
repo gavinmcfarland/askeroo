@@ -1,6 +1,6 @@
 import React from "react";
 import { Text, Box } from "ink";
-import { createPlugin } from "../../core/registry.js";
+import { createPrompt } from "../../core/registry.js";
 import type { GroupMeta, GroupOpts } from "../../types/index.js";
 
 // Re-export types
@@ -53,7 +53,7 @@ export const group = (
 	(body: () => Promise<any>, opts?: GroupOpts & GroupMeta): Promise<any> =>
 		plugin({ ...opts, body })
 )(
-	createPlugin<GroupOptions, any>({
+	createPrompt<GroupOptions, any>({
 		type: "group",
 		autoSubmit: true,
 		isContainer: true,

@@ -14,7 +14,7 @@ export { createRuntime } from "./core/core.js";
 // Export plugin system for developers
 export {
 	registerPlugin,
-	createPlugin,
+	createPrompt,
 	type PromptPlugin,
 } from "./core/registry.js";
 

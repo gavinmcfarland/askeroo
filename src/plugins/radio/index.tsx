@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Text, Box, useInput } from "ink";
-import { createPlugin } from "../../core/registry.js";
+import { createPrompt } from "../../core/registry.js";
 import { useFieldReset } from "../../hooks/use-auto-submit.js";
 
 export interface RadioOption {
@@ -28,7 +28,7 @@ export interface RadioOptions {
 }
 
 // Core radio input plugin
-export const radio = createPlugin<RadioOptions, string>({
+export const radio = createPrompt<RadioOptions, string>({
 	type: "radio",
 	// autoSubmit: false (default) - Requires user interaction
 

@@ -5,13 +5,13 @@ Displays informational messages with markdown support that automatically advance
 ## Usage
 
 ```ts
-import { note, md } from "askeroo";
+import { note } from "askeroo";
 
 // Basic note
 await note("Installation complete!");
 
 // Markdown note
-await note(md`
+await note("
     ## Welcome!
 
     Your setup is **complete**. You can now:
@@ -19,7 +19,7 @@ await note(md`
     -   Run your application
     -   View documentation
     -   Configure settings
-`);
+"");
 ```
 
 ## Options

@@ -1,4 +1,4 @@
-import { createPlugin } from "../../core/registry.js";
+import { createPrompt } from "../../core/registry.js";
 import { TasksDisplay, TasksOptions, Task } from "./Tasks.js";
 import { initializeTaskStore, initializeAllTaskStates } from "./task-store.js";
 
@@ -82,7 +82,7 @@ async function getTaskResults(): Promise<TasksResult> {
 }
 
 // Internal plugin implementation
-const tasksInternal = createPlugin<TasksOptions, TasksResult>({
+const tasksInternal = createPrompt<TasksOptions, TasksResult>({
 	type: "tasks",
 	component: TasksDisplay,
 	// autoSubmit: false (default) - Tasks manage their own submission timing

@@ -1,5 +1,5 @@
 import React from "react";
-import { createPlugin } from "../../core/registry.js";
+import { createPrompt } from "../../core/registry.js";
 import {
 	MarkdownString,
 	parseMarkdown,
@@ -17,7 +17,7 @@ export interface NoteOptions {
 }
 
 // Internal plugin implementation
-const noteInternal = createPlugin<NoteOptions, void>({
+const noteInternal = createPrompt<NoteOptions, void>({
 	type: "note",
 	autoSubmit: true, // Notes auto-submit without user interaction
 

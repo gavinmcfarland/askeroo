@@ -1,5 +1,5 @@
 // Export plugin creation utilities
-export { createPlugin } from "./registry.js";
+export { createPrompt } from "./registry.js";
 
 // Export types for plugin developers
 export type { PromptPlugin } from "./registry.js";

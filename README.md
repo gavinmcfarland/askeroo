@@ -265,7 +265,7 @@ console.log(result);
 ```ts
 import React, { useState } from "react";
 import { Text, useInput } from "ink";
-import { createPlugin } from "askeroo/core";
+import { createPrompt } from "askeroo/core";
 
 // Define your options interface
 export interface CustomOptions {
@@ -274,7 +274,7 @@ export interface CustomOptions {
 }
 
 // Create and export the plugin
-export const customField = createPlugin<CustomOptions, string>({
+export const customField = createPrompt<CustomOptions, string>({
     type: "custom-field",
     interactive: true,
     component: ({ node, options, events }: any) {
