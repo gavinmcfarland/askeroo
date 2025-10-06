@@ -20,7 +20,7 @@ function DefaultRootContainer({ children }: { children: React.ReactNode }) {
 	return <Box flexDirection="column">{children}</Box>;
 }
 
-export const customAsk = createAsk<
+export const ask = createAsk<
 	CustomAskOptions & { body: FlowFunction<any> },
 	any
 >({

@@ -11,7 +11,6 @@ import {
 import { completedFields } from "../src/plugins/completed-fields/index.js";
 import { note } from "../src/plugins/note/index.js";
 import { md } from "../src/utils/markdown.js";
-import { customAsk } from "../src/plugins/custom-ask/index.js";
 
 // Sleep helper function
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -296,7 +295,7 @@ const flow = async () => {
 
 (async () => {
 	try {
-		const result = await customAsk(flow);
+		const result = await ask(flow);
 
 		console.log("\nResult:", JSON.stringify(result, null, 2));
 	} catch (error) {

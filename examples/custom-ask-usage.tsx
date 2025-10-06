@@ -1,7 +1,6 @@
 import React from "react";
 import { Box, Text } from "ink";
 import { ask } from "../src/index.js";
-import { customAsk } from "../src/plugins/custom-ask/index.js";
 
 // Import the plugin to register it
 import "../src/plugins/custom-ask/index.js";
@@ -10,10 +9,10 @@ async function demonstrateCustomAsk() {
 	console.log("🚀 Demonstrating Custom Ask Plugin Usage...\n");
 
 	try {
-		// Example 1: Using customAsk within the main ask function
-		console.log("Example 1: Using customAsk with custom container");
-		const result1 = await ask(async ({ customAsk }: any) => {
-			return await customAsk(
+		// Example 1: Using ask within the main ask function
+		console.log("Example 1: Using ask with custom container");
+		const result1 = await ask(async ({ ask }: any) => {
+			return await ask(
 				async ({ text, confirm }: any) => {
 					const name = await text({ label: "What's your name?" });
 					const confirmed = await confirm({
@@ -47,10 +46,10 @@ async function demonstrateCustomAsk() {
 		console.log("Result 1:", result1);
 		console.log("\n" + "=".repeat(50) + "\n");
 
-		// Example 2: Using customAsk with different styling
+		// Example 2: Using ask with different styling
 		console.log("Example 2: Professional form container");
-		const result2 = await ask(async ({ customAsk, text, multi }: any) => {
-			return await customAsk(
+		const result2 = await ask(async ({ ask, text, multi }: any) => {
+			return await ask(
 				async ({ text, multi }: any) => {
 					const name = await text({ label: "Full Name" });
 					const skills = await multi({
@@ -87,8 +86,8 @@ async function demonstrateCustomAsk() {
 
 		// Example 3: Minimal container
 		console.log("Example 3: Minimal indented container");
-		const result3 = await ask(async ({ customAsk, radio }: any) => {
-			return await customAsk(
+		const result3 = await ask(async ({ ask, radio }: any) => {
+			return await ask(
 				async ({ radio }: any) => {
 					const choice = await radio({
 						label: "Choose an option:",

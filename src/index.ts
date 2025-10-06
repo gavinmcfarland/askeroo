@@ -1,23 +1,9 @@
-import { createRuntime } from "./core/core.js";
-import { ui } from "./core/ui.js";
-
 // Import and re-export types for better IDE support
 import type { FlowFunction } from "./types/index.js";
 export type { FlowFunction };
 
-// Create runtime lazily to ensure all plugins are loaded first
-let runtime: any = null;
-
-function ensureRuntime() {
-	if (!runtime) {
-		runtime = createRuntime(ui);
-	}
-	return runtime;
-}
-
-// Export lazy runtime functions with proper types
-export const ask = <T>(flow: FlowFunction<T>): Promise<T> =>
-	ensureRuntime().executeFlow(flow);
+// Export the new customizable ask function
+export { ask } from "./plugins/custom-ask/index.js";
 
 // BACK is just a simple token, doesn't need lazy loading
 export const BACK = { __back: true };
@@ -63,10 +49,7 @@ export {
 	type GroupOptions,
 } from "./plugins/group/index.js";
 export { createAsk } from "./core/ask-factory.js";
-export {
-	customAsk,
-	type CustomAskOptions,
-} from "./plugins/custom-ask/index.js";
+export { type CustomAskOptions } from "./plugins/custom-ask/index.js";
 
 // Export markdown utilities
 export { md, type MarkdownString } from "./utils/markdown.js";

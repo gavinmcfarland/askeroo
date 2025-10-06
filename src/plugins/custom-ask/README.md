@@ -4,13 +4,16 @@ The Custom Ask plugin allows you to create your own `ask()` function with a cust
 
 ## ✨ Usage
 
-The `customAsk` function is a **drop-in replacement** for the built-in `ask()` function. It creates its own runtime context and can be used standalone with customizable root containers.
+The `ask` function now includes built-in support for customizable root containers. It creates its own runtime context and can be used with or without custom containers.
 
 **✅ Correct usage:**
 
 ```typescript
-// Use as a standalone function - just like the built-in ask()
-const result = await customAsk(flow, options);
+// Use as a standard ask function
+const result = await ask(flow);
+
+// Use with custom container
+const result = await ask(flow, options);
 ```
 
 ## Features
@@ -27,9 +30,9 @@ const result = await customAsk(flow, options);
 ```typescript
 import React from "react";
 import { Box, Text } from "ink";
-import { customAsk } from "../src/plugins/custom-ask/index.js";
+import { ask } from "../src/index.js";
 
-const result = await customAsk(
+const result = await ask(
     async ({ text, confirm }) => {
         const name = await text({ label: "What's your name?" });
         const confirmed = await confirm({ label: "Is this correct?" });
@@ -152,9 +155,9 @@ const ask = createAskWithContainer(({ children }) => (
 
 ## API Reference
 
-### `customAsk(flow, options)`
+### `ask(flow, options?)`
 
-Standalone function that creates its own runtime context. Drop-in replacement for the built-in `ask()` function.
+The main ask function with built-in support for customizable root containers. Creates its own runtime context.
 
 **Parameters:**
 
