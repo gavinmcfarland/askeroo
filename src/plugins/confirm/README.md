@@ -1,6 +1,6 @@
 # Confirm
 
-The confirm plugin provides flexible confirmation prompts with support for Yes/No questions and custom options.
+Provides flexible confirmation prompts with support for Yes/No questions and custom options.
 
 ## Usage
 

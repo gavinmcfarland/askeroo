@@ -1,6 +1,6 @@
 # Ask
 
-The ask plugin enables runtime execution of prompt flows, creating and managing the runtime context, handling prompt sequencing, state management and navigation.
+Enables runtime execution of prompt flows, creating and managing the runtime context, handling prompt sequencing, state management and navigation.
 
 ## Usage
 

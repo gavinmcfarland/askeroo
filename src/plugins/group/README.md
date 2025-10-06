@@ -1,6 +1,6 @@
 # Group
 
-The group function organizes and structures prompts into logical groups with support for progressive, phased, and static execution flows.
+Organizes and structures prompts into logical groups with support for progressive, phased, and static execution flows.
 
 **Note:** Groups are NOT plugins - they are structural elements rendered by `RecursiveGroupContainer`.
 

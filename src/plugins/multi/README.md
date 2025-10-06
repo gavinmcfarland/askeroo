@@ -1,6 +1,6 @@
 # Multi
 
-The multi plugin provides a multi-select interface for choosing multiple options from a list with support for search, scrolling, and quick number selection.
+Provides a multi-select interface for choosing multiple options from a list with support for search, scrolling, and quick number selection.
 
 ## Usage
 

@@ -1,6 +1,6 @@
 # Text
 
-The text plugin provides a text input field with cursor support and keyboard shortcuts for collecting user input.
+Provides a text input field with cursor support and keyboard shortcuts for collecting user input.
 
 ## Usage
 

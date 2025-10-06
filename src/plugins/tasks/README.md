@@ -1,6 +1,6 @@
 # Tasks
 
-The tasks plugin executes and visualizes task lists with support for sequential, concurrent, nested, and dynamic task execution with visual progress indicators.
+Executes and visualizes task lists with support for sequential, concurrent, nested, and dynamic task execution with visual progress indicators.
 
 ## Usage
 

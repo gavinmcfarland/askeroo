@@ -1,6 +1,6 @@
 # Note
 
-The note plugin displays informational messages with markdown support that automatically advance without requiring user interaction.
+Displays informational messages with markdown support that automatically advance without requiring user interaction.
 
 ## Usage
 

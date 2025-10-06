@@ -1,6 +1,6 @@
 # CompletedFields
 
-The completedFields plugin displays completed fields with filtering, grouping, and real-time updates that automatically refresh as fields are added or removed.
+Displays completed fields with filtering, grouping, and real-time updates that automatically refresh as fields are added or removed.
 
 ## Usage
 

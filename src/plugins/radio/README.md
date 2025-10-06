@@ -1,6 +1,6 @@
 # Radio
 
-The radio plugin provides a single-select interface for choosing one option from a list with support for search, scrolling, hints, and quick number selection.
+Provides a single-select interface for choosing one option from a list with support for search, scrolling, hints, and quick number selection.
 
 ## Usage
 
