@@ -141,7 +141,7 @@ export type PromptPlugin = {
 		context: { currentGroup?: string },
 		id: string
 	) => any; // Optional: transform options before rendering (defaults to identity function)
-	interactive?: boolean; // Whether this prompt requires user interaction (default: true)
+	autoSubmit?: boolean; // Whether this prompt auto-submits without user interaction (default: false)
 
 	// Container plugin support (for groups and similar structural elements)
 	isContainer?: boolean; // True if this plugin is a container that can hold other prompts

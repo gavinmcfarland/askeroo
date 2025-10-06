@@ -37,7 +37,7 @@ function MyCustomField({ label, onSubmit, ...props }) {
 export const myCustomField = createPlugin({
     type: "my-custom-field",
     component: MyCustomField,
-    interactive: true, // Optional: whether this requires user interaction
+    autoSubmit: false, // Optional: whether this auto-submits (default: false)
     prompt: (opts, context, id) => opts, // Process options if needed
 });
 ```
@@ -99,7 +99,7 @@ import { registerPlugin, globalRegistry } from "../registry.js";
 const myPlugin = {
     type: "my-plugin",
     component: MyComponent,
-    interactive: true,
+    autoSubmit: false,
     prompt: (opts, context, id) => opts,
 };
 
@@ -117,7 +117,7 @@ Each plugin must have:
 -   `type`: Unique string identifier for the plugin
 -   `component`: React component that renders the UI
 -   `prompt`: Function that processes options and returns them to the runtime
--   `interactive`: (Optional) Boolean indicating if this requires user input
+-   `autoSubmit`: (Optional) Boolean indicating if this auto-submits without user input (default: false)
 
 ## Plugin Component Props
 

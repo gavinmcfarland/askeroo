@@ -7,7 +7,7 @@ export interface AutoSubmitProps {
 }
 
 /**
- * Hook for non-interactive plugins that need to auto-submit
+ * Hook for plugins with autoSubmit=true that need to auto-submit
  * without requiring user interaction.
  *
  * @param onSubmit - The submit callback to trigger

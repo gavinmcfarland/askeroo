@@ -16,7 +16,7 @@ export type { CompletedField } from "./completed-fields-store.js";
 // Completed fields display plugin
 export const completedFields = createPlugin<CompletedFieldsOptions, void>({
 	type: "completedFields",
-	interactive: false,
+	autoSubmit: true,
 
 	component: ({ node, options, events }: any) => {
 		const allFields = getCompletedFieldsData();

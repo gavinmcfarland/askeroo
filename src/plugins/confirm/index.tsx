@@ -29,7 +29,7 @@ export interface ConfirmOptions {
 // Enhanced confirm input plugin with custom options support
 export const confirm = createPlugin<ConfirmOptions, any>({
 	type: "confirm",
-	interactive: true,
+	// autoSubmit: false (default) - Requires user interaction
 
 	component: ({ node, options, events }: any) => {
 		// Use label if provided, fallback to message for compatibility

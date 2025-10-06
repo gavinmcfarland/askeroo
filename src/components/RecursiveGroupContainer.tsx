@@ -254,32 +254,32 @@ export function RecursiveGroupContainer({
 			? siblingIndex === parent.children.length - 1
 			: true;
 
-		// Check if this is the first INTERACTIVE prompt in the root flow
-		// Cannot go back on the first interactive prompt (non-interactive prompts don't count)
+		// Check if this is the first user-interactive prompt in the root flow
+		// Cannot go back on the first user-interactive prompt (auto-submit prompts don't count)
 		const isFirstInteractivePrompt = () => {
-			// Helper to check if a node is interactive
-			const isInteractive = (node: PromptNode) => {
-				if (node.type === "group") return false; // Groups aren't interactive
+			// Helper to check if a node requires user interaction (not auto-submit)
+			const requiresUserInteraction = (node: PromptNode) => {
+				if (node.type === "group") return false; // Groups don't require user interaction
 				if (!node.fieldType) return false;
-				return globalRegistry.isInteractive(node.fieldType);
+				return !globalRegistry.shouldAutoSubmit(node.fieldType);
 			};
 
-			// Helper to check if a group contains any interactive prompts
+			// Helper to check if a group contains any user-interactive prompts
 			const groupHasInteractive = (group: PromptNode): boolean => {
 				return group.children.some(
 					(child) =>
-						isInteractive(child) ||
+						requiresUserInteraction(child) ||
 						(child.type === "group" && groupHasInteractive(child))
 				);
 			};
 
 			// Case 1: Direct child of root
 			if (parent?.id === "root") {
-				// Check if there are any interactive prompts before this one
+				// Check if there are any user-interactive prompts before this one
 				const siblingsBefore = parent.children.slice(0, siblingIndex);
 				const hasInteractiveBefore = siblingsBefore.some(
 					(sibling) =>
-						isInteractive(sibling) ||
+						requiresUserInteraction(sibling) ||
 						(sibling.type === "group" &&
 							groupHasInteractive(sibling))
 				);
@@ -292,18 +292,18 @@ export function RecursiveGroupContainer({
 
 				// Check siblings before this one in the same group
 				const siblingsBefore = parent.children.slice(0, siblingIndex);
-				if (siblingsBefore.some(isInteractive)) {
+				if (siblingsBefore.some(requiresUserInteraction)) {
 					return false;
 				}
 
-				// Check if there are interactive prompts in previous root-level items
+				// Check if there are user-interactive prompts in previous root-level items
 				const rootSiblingsBefore = parent.parent.children.slice(
 					0,
 					groupIndex
 				);
 				const hasInteractiveBefore = rootSiblingsBefore.some(
 					(sibling) =>
-						isInteractive(sibling) ||
+						requiresUserInteraction(sibling) ||
 						(sibling.type === "group" &&
 							groupHasInteractive(sibling))
 				);
@@ -329,7 +329,7 @@ export function RecursiveGroupContainer({
 			? "disabled"
 			: "active";
 
-		// Compute effective allowBack - false if it's the first interactive prompt
+		// Compute effective allowBack - false if it's the first user-interactive prompt
 		const effectiveAllowBack =
 			item.allowBack !== false && !isFirstRootPrompt;
 

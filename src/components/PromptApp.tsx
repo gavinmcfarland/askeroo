@@ -122,7 +122,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				if (
 					request.type !== "group" &&
 					internalRefs.current.firstFieldId === null &&
-					globalRegistry.isInteractive(request.type)
+					!globalRegistry.shouldAutoSubmit(request.type)
 				) {
 					internalRefs.current.firstFieldId = request.id;
 				}
@@ -397,7 +397,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	}, [currentPrompt]);
 
 	// Note: Hints are now stored per prompt ID, so they don't leak between prompts
-	// Non-interactive prompts simply won't set a hint, so currentHintText will be null for them
+	// Auto-submit prompts simply won't set a hint, so currentHintText will be null for them
 
 	// Primary rendering: Tree-based recursive rendering
 

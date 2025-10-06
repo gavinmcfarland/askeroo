@@ -19,7 +19,7 @@ export interface NoteOptions {
 // Internal plugin implementation
 const noteInternal = createPlugin<NoteOptions, void>({
 	type: "note",
-	interactive: false, // Notes don't require user interaction
+	autoSubmit: true, // Notes auto-submit without user interaction
 
 	component: ({ node, options, events }: any) => {
 		const msg = options.message;

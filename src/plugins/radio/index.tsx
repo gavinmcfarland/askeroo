@@ -30,7 +30,7 @@ export interface RadioOptions {
 // Core radio input plugin
 export const radio = createPlugin<RadioOptions, string>({
 	type: "radio",
-	interactive: true,
+	// autoSubmit: false (default) - Requires user interaction
 
 	component: ({ node, options, events }: any) => {
 		const [selectedIndex, setSelectedIndex] = useState(() => {

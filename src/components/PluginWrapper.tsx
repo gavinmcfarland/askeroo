@@ -8,8 +8,8 @@ interface PluginWrapperProps {
 }
 
 /**
- * Wrapper component that automatically handles auto-submission for non-interactive plugins.
- * Interactive plugins are rendered as-is, while non-interactive plugins get auto-submit behavior.
+ * Wrapper component that automatically handles auto-submission for plugins.
+ * Plugins with autoSubmit=true get auto-submit behavior, while others wait for user interaction.
  *
  * This wrapper transforms flat props into a structured format with:
  * - `options`: User-provided configuration (label, shortLabel, initialValue, etc.)
@@ -18,7 +18,7 @@ interface PluginWrapperProps {
  */
 export function PluginWrapper({ pluginType, ...props }: PluginWrapperProps) {
 	const PluginComponent = globalRegistry.getComponent(pluginType);
-	const isInteractive = globalRegistry.isInteractive(pluginType);
+	const shouldAutoSubmit = globalRegistry.shouldAutoSubmit(pluginType);
 
 	if (!PluginComponent) {
 		return null;
@@ -27,17 +27,17 @@ export function PluginWrapper({ pluginType, ...props }: PluginWrapperProps) {
 	// Transform flat props into structured format
 	const transformedProps = transformPropsToStructure(props);
 
-	// For non-interactive plugins, wrap with auto-submit logic
-	if (!isInteractive) {
+	// For auto-submit plugins, wrap with auto-submit logic
+	if (shouldAutoSubmit) {
 		return (
-			<NonInteractiveWrapper
+			<AutoSubmitWrapper
 				PluginComponent={PluginComponent}
 				{...transformedProps}
 			/>
 		);
 	}
 
-	// For interactive plugins, render directly
+	// For interactive plugins (default), render directly
 	return <PluginComponent {...transformedProps} />;
 }
 
@@ -87,9 +87,9 @@ function transformPropsToStructure(props: Record<string, any>) {
 }
 
 /**
- * Inner wrapper that applies auto-submit behavior to non-interactive plugins
+ * Inner wrapper that applies auto-submit behavior to plugins with autoSubmit=true
  */
-function NonInteractiveWrapper({
+function AutoSubmitWrapper({
 	PluginComponent,
 	node,
 	options,
@@ -100,7 +100,7 @@ function NonInteractiveWrapper({
 	options: Record<string, any>;
 	events: Record<string, any>;
 }) {
-	// Auto-submit for non-interactive plugins with minimal delay
+	// Auto-submit for plugins with autoSubmit=true with minimal delay
 	useAutoSubmit(events.onSubmit, node.state || "active", 10);
 
 	// Render the plugin component

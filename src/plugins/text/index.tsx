@@ -15,7 +15,7 @@ export interface TextOptions {
 // Core text input plugin
 export const text = createPlugin<TextOptions, string>({
 	type: "text",
-	interactive: true,
+	// autoSubmit: false (default) - Requires user interaction
 
 	component: ({ node, options, events }: any) => {
 		const initialValue = options.initialValue || "";

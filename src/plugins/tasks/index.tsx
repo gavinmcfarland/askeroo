@@ -85,7 +85,7 @@ async function getTaskResults(): Promise<TasksResult> {
 const tasksInternal = createPlugin<TasksOptions, TasksResult>({
 	type: "tasks",
 	component: TasksDisplay,
-	interactive: true, // Tasks manage their own submission timing (not truly interactive, but needs manual control)
+	// autoSubmit: false (default) - Tasks manage their own submission timing
 });
 
 // Public API function with add method and execution mode options

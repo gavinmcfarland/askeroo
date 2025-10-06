@@ -27,9 +27,9 @@ class PromptRegistry {
 		return plugin?.component;
 	}
 
-	isInteractive(type: string): boolean {
+	shouldAutoSubmit(type: string): boolean {
 		const plugin = this.plugins.get(type);
-		return plugin?.interactive !== false; // Default to true if not specified
+		return plugin?.autoSubmit === true; // Default to false if not specified
 	}
 
 	isContainer(type: string): boolean {
@@ -68,7 +68,7 @@ export function createPlugin<T = any, R = any>(config: {
 		| React.ComponentType<PluginComponentProps<T, R>>
 		| ((props: any) => React.ReactElement | null);
 	transform?: (opts: T, context: { currentGroup?: string }, id: string) => T; // Optional: transform options before rendering
-	interactive?: boolean;
+	autoSubmit?: boolean;
 	// Container plugin support
 	isContainer?: boolean;
 	execute?: (runtime: any, opts: T, body?: () => Promise<any>) => Promise<R>;
@@ -89,7 +89,7 @@ export function createPlugin<T = any, R = any>(config: {
 		type: config.type,
 		component: component,
 		transform: config.transform,
-		interactive: config.interactive,
+		autoSubmit: config.autoSubmit,
 		isContainer: config.isContainer,
 		execute: config.execute,
 		onEnter: config.onEnter,

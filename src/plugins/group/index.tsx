@@ -55,7 +55,7 @@ export const group = (
 )(
 	createPlugin<GroupOptions, any>({
 		type: "group",
-		interactive: false,
+		autoSubmit: true,
 		isContainer: true,
 
 		component: ({ node, options, events }: any) => {
