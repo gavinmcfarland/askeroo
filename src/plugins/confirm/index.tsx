@@ -31,49 +31,40 @@ export const confirm = createPlugin<ConfirmOptions, any>({
 	type: "confirm",
 	interactive: true,
 
-	component: ({ node, options: opts, events }: any) => {
+	component: ({ node, options, events }: any) => {
 		// Use label if provided, fallback to message for compatibility
-		const displayMessage = opts.label || opts.message || "Confirm?";
+		const displayMessage = options.label || options.message || "Confirm?";
 
 		// Default options if none provided (memoized to prevent re-creation)
 		const confirmOptions: ConfirmOption[] = React.useMemo(() => {
-			if (opts.options) {
-				// If custom options are provided, use them as-is
-				return opts.options;
-			}
+			if (options.options) return options.options;
 
-			// Default behavior: create options based on initialValue
+			// Default options based on initialValue
 			const defaultOptions = [
 				{ value: true, label: "Yes" },
 				{ value: false, label: "No" },
 			];
 
-			// If there's an initialValue, make it the second option
-			if (opts.initialValue !== undefined) {
-				const initialOption = defaultOptions.find(
-					(opt) => opt.value === opts.initialValue
-				);
-				const otherOption = defaultOptions.find(
-					(opt) => opt.value !== opts.initialValue
-				);
-
-				if (initialOption && otherOption) {
-					return [otherOption, initialOption];
-				}
+			if (options.initialValue !== undefined) {
+				const [initialOption, otherOption] =
+					defaultOptions[0].value === options.initialValue
+						? [defaultOptions[0], defaultOptions[1]]
+						: [defaultOptions[1], defaultOptions[0]];
+				return [otherOption, initialOption];
 			}
 
 			return defaultOptions;
-		}, [opts.options, opts.initialValue]);
+		}, [options.options, options.initialValue]);
 
 		const [selectedIndex, setSelectedIndex] = useState(() => {
-			if (opts.initialValue !== undefined && !opts.options) {
+			if (options.initialValue !== undefined && !options.options) {
 				// When using default options and there's an initialValue,
 				// the initial value becomes the second option (index 1)
 				return 1;
-			} else if (opts.initialValue !== undefined) {
+			} else if (options.initialValue !== undefined) {
 				// For custom options, find the index normally
 				const index = confirmOptions.findIndex(
-					(option) => option.value === opts.initialValue
+					(option) => option.value === options.initialValue
 				);
 				return index >= 0 ? index : 0;
 			}
@@ -89,14 +80,14 @@ export const confirm = createPlugin<ConfirmOptions, any>({
 		useFieldReset(disabled, submitted, setSubmitted);
 
 		useEffect(() => {
-			if (opts.initialValue === undefined) return;
-			const index = !opts.options
+			if (options.initialValue === undefined) return;
+			const index = !options.options
 				? 1
 				: confirmOptions.findIndex(
-						(opt) => opt.value === opts.initialValue
+						(opt) => opt.value === options.initialValue
 				  );
 			if (index >= 0) setSelectedIndex(index);
-		}, [opts.initialValue, confirmOptions, opts.options]);
+		}, [options.initialValue, confirmOptions, options.options]);
 
 		const runValidation = async (val: any): Promise<boolean> => {
 			if (!events.onValidate || node.state !== "active") {
@@ -138,40 +129,37 @@ export const confirm = createPlugin<ConfirmOptions, any>({
 				// Static group navigation
 				if (node.flow === "static" && node.enableArrowNavigation) {
 					const val = confirmOptions[selectedIndex].value;
-					if (key.downArrow && !node.isLastInGroup) {
+					if (
+						(key.downArrow && !node.isLastInGroup) ||
+						(key.upArrow && !node.isFirstInGroup)
+					) {
 						if (!(await runValidation(val))) return;
 						setSubmitted(true);
-						events.onSubmit?.(val);
-						return;
-					}
-					if (key.upArrow && !node.isFirstInGroup) {
-						if (!(await runValidation(val))) return;
-						setSubmitted(true);
-						events.onSubmit?.({
-							__preserveAndBack: true,
-							value: val,
-						});
+						events.onSubmit?.(
+							key.downArrow
+								? val
+								: { __preserveAndBack: true, value: val }
+						);
 						return;
 					}
 					if (key.downArrow || key.upArrow) return;
 				}
 
 				// Escape for static groups
-				if (node.flow === "static" && key.escape) {
-					const val = confirmOptions[selectedIndex].value;
-					if (node.enableArrowNavigation && !node.isFirstInGroup) {
-						if (!(await runValidation(val))) return;
-						setSubmitted(true);
-						events.onSubmit?.({
-							__preserveAndBack: true,
-							value: val,
-						});
-					} else if (
-						node.enableArrowNavigation &&
-						node.isFirstInGroup
-					) {
-						setSubmitted(true);
-						events.onSubmit?.({ __clearGroupAndBack: true });
+				if (key.escape && node.flow === "static") {
+					if (node.enableArrowNavigation) {
+						const val = confirmOptions[selectedIndex].value;
+						if (!node.isFirstInGroup) {
+							if (!(await runValidation(val))) return;
+							setSubmitted(true);
+							events.onSubmit?.({
+								__preserveAndBack: true,
+								value: val,
+							});
+						} else {
+							setSubmitted(true);
+							events.onSubmit?.({ __clearGroupAndBack: true });
+						}
 					} else if (node.allowBack && events.onBack) {
 						events.onBack();
 					}
@@ -198,7 +186,7 @@ export const confirm = createPlugin<ConfirmOptions, any>({
 
 				// Y/N shortcuts for default options
 				if (
-					!opts.options &&
+					!options.options &&
 					(input.toLowerCase() === "y" || input.toLowerCase() === "n")
 				) {
 					const val = input.toLowerCase() === "y";
@@ -213,22 +201,19 @@ export const confirm = createPlugin<ConfirmOptions, any>({
 				}
 
 				// Arrow navigation
+				const allowLoop = options.allowLoop ?? true;
 				if (key.leftArrow || key.upArrow) {
 					setSelectedIndex(
-						opts.allowLoop ?? true
-							? selectedIndex > 0
-								? selectedIndex - 1
-								: confirmOptions.length - 1
+						allowLoop && selectedIndex === 0
+							? confirmOptions.length - 1
 							: Math.max(0, selectedIndex - 1)
 					);
 					return;
 				}
 				if (key.rightArrow || key.downArrow) {
 					setSelectedIndex(
-						opts.allowLoop ?? true
-							? selectedIndex < confirmOptions.length - 1
-								? selectedIndex + 1
-								: 0
+						allowLoop && selectedIndex === confirmOptions.length - 1
+							? 0
 							: Math.min(
 									confirmOptions.length - 1,
 									selectedIndex + 1
@@ -265,7 +250,7 @@ export const confirm = createPlugin<ConfirmOptions, any>({
 			const opt = confirmOptions.find((o) => o.value === val);
 			return (
 				<Box flexDirection="column">
-					<Text>{opts.shortLabel || opts.label}</Text>
+					<Text>{options.shortLabel || options.label}</Text>
 					<Text color="blue">{opt ? opt.label : String(val)}</Text>
 				</Box>
 			);
@@ -274,7 +259,7 @@ export const confirm = createPlugin<ConfirmOptions, any>({
 		if (node.state === "disabled") {
 			return (
 				<Box flexDirection="column">
-					<Text dimColor>{opts.label}</Text>
+					<Text dimColor>{options.label}</Text>
 					<Text dimColor color="gray">
 						...
 					</Text>
@@ -286,7 +271,7 @@ export const confirm = createPlugin<ConfirmOptions, any>({
 		return (
 			<Box flexDirection="column">
 				{renderMessage()}
-				{opts.hintPosition === "side" ? (
+				{options.hintPosition === "side" ? (
 					// Side layout - two columns, hint only for selected option
 					<Box flexDirection="row">
 						<Box flexDirection="column" width={25}>
@@ -329,7 +314,7 @@ export const confirm = createPlugin<ConfirmOptions, any>({
 									{index === selectedIndex ? "●" : "○"}{" "}
 									{option.label}
 								</Text>
-								{opts.hintPosition === "inline" &&
+								{options.hintPosition === "inline" &&
 									index === selectedIndex &&
 									option.hint && (
 										<Text color="gray" dimColor>
@@ -341,7 +326,7 @@ export const confirm = createPlugin<ConfirmOptions, any>({
 						))}
 					</Box>
 				)}
-				{opts.hintPosition === "bottom" &&
+				{options.hintPosition === "bottom" &&
 					(() => {
 						const selectedOption = confirmOptions[selectedIndex];
 						return selectedOption?.hint ? (

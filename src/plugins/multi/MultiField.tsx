@@ -33,7 +33,7 @@ export interface MultiOptions {
 
 export const MultiField = ({
 	node,
-	options: opts,
+	options: options,
 	events,
 }: {
 	node: any;
@@ -41,7 +41,7 @@ export const MultiField = ({
 	events: any;
 }) => {
 	// Use label if provided, fallback to message for compatibility
-	const label = opts.label || opts.message || "Select";
+	const label = options.label || options.message || "Select";
 
 	const onSearchQueryChange = events.onSearchQueryChange as
 		| ((query: string) => void)
@@ -49,16 +49,19 @@ export const MultiField = ({
 	const NONE_VALUE = "__NONE__";
 	// Normalize options to support both string[] and MultiFieldOption[]
 	const normalizedOptions: MultiFieldOption[] = useMemo(() => {
-		return (opts.options || []).map((option: string | MultiFieldOption) =>
-			typeof option === "string"
-				? { value: option, label: option }
-				: option
+		return (options.options || []).map(
+			(option: string | MultiFieldOption) =>
+				typeof option === "string"
+					? { value: option, label: option }
+					: option
 		);
-	}, [opts.options]);
+	}, [options.options]);
 
 	const getInitialValues = (): string[] => {
-		const vals = Array.isArray(opts.initialValue) ? opts.initialValue : [];
-		if (!opts.noneOption) return vals;
+		const vals = Array.isArray(options.initialValue)
+			? options.initialValue
+			: [];
+		if (!options.noneOption) return vals;
 		const hasRegular = vals.some((v: string) => v !== NONE_VALUE);
 		return hasRegular
 			? vals.filter((v: string) => v !== NONE_VALUE)
@@ -75,7 +78,7 @@ export const MultiField = ({
 	const [internalSearchQuery, setInternalSearchQuery] = useState("");
 
 	const filteredOptions = useMemo(() => {
-		if (!opts.searchable || !internalSearchQuery.trim())
+		if (!options.searchable || !internalSearchQuery.trim())
 			return normalizedOptions;
 		const q = internalSearchQuery.toLowerCase();
 		return normalizedOptions.filter((opt) => {
@@ -87,12 +90,12 @@ export const MultiField = ({
 		});
 	}, [
 		normalizedOptions,
-		opts.searchable,
+		options.searchable,
 		internalSearchQuery,
 		selectedValues,
 	]);
 
-	const totalOptions = filteredOptions.length + (opts.noneOption ? 1 : 0);
+	const totalOptions = filteredOptions.length + (options.noneOption ? 1 : 0);
 
 	// Simple navigation state
 	const [selectedIndex, setSelectedIndex] = useState(0);
@@ -102,7 +105,7 @@ export const MultiField = ({
 
 	const navigateUp = () => {
 		const newIndex =
-			opts.allowLoop ?? true
+			options.allowLoop ?? true
 				? selectedIndex > 0
 					? selectedIndex - 1
 					: totalOptions - 1
@@ -112,7 +115,7 @@ export const MultiField = ({
 
 	const navigateDown = () => {
 		const newIndex =
-			opts.allowLoop ?? true
+			options.allowLoop ?? true
 				? selectedIndex < totalOptions - 1
 					? selectedIndex + 1
 					: 0
@@ -124,7 +127,7 @@ export const MultiField = ({
 
 	// Toggle selection function
 	const toggleSelection = (optionValue: string) => {
-		const isNoneOption = opts.noneOption && optionValue === NONE_VALUE;
+		const isNoneOption = options.noneOption && optionValue === NONE_VALUE;
 		let newSelectedValues: string[];
 
 		if (isNoneOption) {
@@ -151,16 +154,17 @@ export const MultiField = ({
 
 	// Adjust focus when filtered options change to ensure it stays within bounds
 	useEffect(() => {
-		const maxIndex = filteredOptions.length + (opts.noneOption ? 1 : 0) - 1;
+		const maxIndex =
+			filteredOptions.length + (options.noneOption ? 1 : 0) - 1;
 		if (selectedIndex > maxIndex) {
 			setSelectedIndex(Math.max(0, maxIndex));
 		}
-	}, [filteredOptions.length, opts.noneOption]);
+	}, [filteredOptions.length, options.noneOption]);
 
 	// Reset window position when options change significantly
 	useEffect(() => {
 		setWindowStart(0);
-	}, [filteredOptions.length, opts.maxVisible]);
+	}, [filteredOptions.length, options.maxVisible]);
 
 	const disabled = node.state === "disabled";
 	useEffect(() => {
@@ -170,11 +174,12 @@ export const MultiField = ({
 	// Calculate visible window for options (including none option)
 	// Combined list positions: 0=none (if present), 1=first_option, 2=second_option, etc.
 	const getVisibleWindow = () => {
-		const totalOptions = filteredOptions.length + (opts.noneOption ? 1 : 0);
+		const totalOptions =
+			filteredOptions.length + (options.noneOption ? 1 : 0);
 
-		if (!opts.maxVisible || totalOptions <= opts.maxVisible) {
+		if (!options.maxVisible || totalOptions <= options.maxVisible) {
 			return {
-				showNoneOption: !!opts.noneOption,
+				showNoneOption: !!options.noneOption,
 				visibleOptions: filteredOptions,
 				startIndex: 0,
 				showStartEllipsis: false,
@@ -186,19 +191,19 @@ export const MultiField = ({
 		// The window operates on the combined list (none option + filtered options)
 		let currentWindowStart = windowStart;
 		let currentWindowEnd = Math.min(
-			currentWindowStart + opts.maxVisible,
+			currentWindowStart + options.maxVisible,
 			totalOptions
 		);
 
 		// If selected index is at or beyond the bottom of current window, scroll down
 		if (selectedIndex >= currentWindowEnd) {
-			currentWindowStart = selectedIndex - opts.maxVisible + 1;
+			currentWindowStart = selectedIndex - options.maxVisible + 1;
 			currentWindowEnd = selectedIndex + 1;
 		}
 		// If selected index is before the top of current window, scroll up
 		else if (selectedIndex < currentWindowStart) {
 			currentWindowStart = selectedIndex;
-			currentWindowEnd = selectedIndex + opts.maxVisible;
+			currentWindowEnd = selectedIndex + options.maxVisible;
 		}
 
 		// Ensure we don't exceed bounds
@@ -207,12 +212,12 @@ export const MultiField = ({
 
 		// Adjust windowStart if we hit the end and have room to show more
 		if (
-			currentWindowEnd - currentWindowStart < opts.maxVisible &&
+			currentWindowEnd - currentWindowStart < options.maxVisible &&
 			currentWindowStart > 0
 		) {
 			currentWindowStart = Math.max(
 				0,
-				currentWindowEnd - opts.maxVisible
+				currentWindowEnd - options.maxVisible
 			);
 		}
 
@@ -222,13 +227,13 @@ export const MultiField = ({
 		}
 
 		// Determine if none option should be shown (it's at position 0 in combined list)
-		const showNoneOption = opts.noneOption && currentWindowStart === 0;
+		const showNoneOption = options.noneOption && currentWindowStart === 0;
 
 		// Calculate which regular options to show
 		// If none option is present, it occupies position 0, so regular options start at position 1
 		let optionsStart, optionsEnd;
 
-		if (opts.noneOption) {
+		if (options.noneOption) {
 			// With none option: positions 0=none, 1=first_option, 2=second_option, etc.
 			optionsStart = Math.max(0, currentWindowStart - 1);
 			optionsEnd = Math.min(filteredOptions.length, currentWindowEnd - 1);
@@ -277,7 +282,7 @@ export const MultiField = ({
 						</>
 					)}
 					<Text color="yellow">space</Text> select
-					{opts.searchable && (
+					{options.searchable && (
 						<>
 							, <Text color="yellow">type</Text> to search
 						</>
@@ -288,14 +293,14 @@ export const MultiField = ({
 	}, [
 		node.state,
 		node.isFirstRootPrompt,
-		opts.searchable,
+		options.searchable,
 		node.allowBack,
 		events.onHintChange,
 	]);
 
 	const stableInitial = useMemo(
-		() => [...(opts.initialValue || [])],
-		[(opts.initialValue || []).join(",")]
+		() => [...(options.initialValue || [])],
+		[(options.initialValue || []).join(",")]
 	);
 	const prevInitialRef = useRef<string[]>([]);
 
@@ -306,7 +311,7 @@ export const MultiField = ({
 			stableInitial.some((v, i) => v !== prevInitialRef.current[i]);
 		if (changed) {
 			let vals = [...stableInitial];
-			if (opts.noneOption) {
+			if (options.noneOption) {
 				const hasRegular = vals.some((v) => v !== NONE_VALUE);
 				vals = hasRegular
 					? vals.filter((v) => v !== NONE_VALUE)
@@ -317,7 +322,7 @@ export const MultiField = ({
 			setSelectedValues(vals);
 			prevInitialRef.current = [...stableInitial];
 		}
-	}, [stableInitial, submitted, disabled, opts.noneOption]);
+	}, [stableInitial, submitted, disabled, options.noneOption]);
 
 	useInput(
 		async (input, key) => {
@@ -325,7 +330,7 @@ export const MultiField = ({
 
 			// Search input
 			if (
-				opts.searchable &&
+				options.searchable &&
 				input &&
 				input !== " " &&
 				input.length === 1 &&
@@ -344,12 +349,12 @@ export const MultiField = ({
 
 			// Escape handling
 			if (key.escape) {
-				if (opts.searchable && internalSearchQuery.trim()) {
+				if (options.searchable && internalSearchQuery.trim()) {
 					setInternalSearchQuery("");
 					return;
 				}
 				if (
-					opts.noneOption &&
+					options.noneOption &&
 					selectedValues.some((v) => v !== NONE_VALUE)
 				) {
 					setSelectedValues([NONE_VALUE]);
@@ -371,18 +376,18 @@ export const MultiField = ({
 			}
 
 			if (input === " ") {
-				const isNone = opts.noneOption && selectedIndex === 0;
+				const isNone = options.noneOption && selectedIndex === 0;
 				const opt = isNone
-					? { value: NONE_VALUE, label: opts.noneOption!.label }
+					? { value: NONE_VALUE, label: options.noneOption!.label }
 					: filteredOptions[
-							selectedIndex - (opts.noneOption ? 1 : 0)
+							selectedIndex - (options.noneOption ? 1 : 0)
 					  ];
 				if (opt) toggleSelection(opt.value);
 				return;
 			}
 
 			if (
-				opts.searchable &&
+				options.searchable &&
 				(key.backspace || key.delete || input === "\b")
 			) {
 				setInternalSearchQuery(internalSearchQuery.slice(0, -1));
@@ -410,15 +415,18 @@ export const MultiField = ({
 				return;
 			}
 
-			if (opts.showNumbers) {
+			if (options.showNumbers) {
 				const num = parseInt(input);
 				if (!isNaN(num) && num >= 1 && num <= totalOptions) {
 					const idx = num - 1;
 					setSelectedIndex(idx);
-					const isNone = opts.noneOption && idx === 0;
+					const isNone = options.noneOption && idx === 0;
 					const opt = isNone
-						? { value: NONE_VALUE, label: opts.noneOption!.label }
-						: filteredOptions[idx - (opts.noneOption ? 1 : 0)];
+						? {
+								value: NONE_VALUE,
+								label: options.noneOption!.label,
+						  }
+						: filteredOptions[idx - (options.noneOption ? 1 : 0)];
 					if (opt) toggleSelection(opt.value);
 					return;
 				}
@@ -429,8 +437,8 @@ export const MultiField = ({
 
 	if (node.state === "completed") {
 		const val =
-			(node.completedValue || []).length === 0 && opts.noneOption
-				? opts.noneOption.label
+			(node.completedValue || []).length === 0 && options.noneOption
+				? options.noneOption.label
 				: (node.completedValue || []).join(", ");
 		return (
 			<Box flexDirection="column">
@@ -454,7 +462,7 @@ export const MultiField = ({
 	return (
 		<Box flexDirection="column">
 			<Text>{label}</Text>
-			{opts.hintPosition === "side" ? (
+			{options.hintPosition === "side" ? (
 				<Box flexDirection="row">
 					<Box flexDirection="column" width={25}>
 						{(() => {
@@ -485,8 +493,8 @@ export const MultiField = ({
 											{selectedValues.includes(NONE_VALUE)
 												? "■"
 												: "□"}{" "}
-											{opts.showNumbers && "1. "}
-											{opts.noneOption!.label}
+											{options.showNumbers && "1. "}
+											{options.noneOption!.label}
 										</Text>
 									)}
 									{visibleOptions.map(
@@ -495,10 +503,10 @@ export const MultiField = ({
 												startIndex + visibleIndex;
 											const displayIndex =
 												actualIndex +
-												(opts.noneOption ? 2 : 1);
+												(options.noneOption ? 2 : 1);
 											const optionIndex =
 												actualIndex +
-												(opts.noneOption ? 1 : 0);
+												(options.noneOption ? 1 : 0);
 											const isSelected =
 												selectedValues.includes(
 													option.value
@@ -514,7 +522,7 @@ export const MultiField = ({
 											// Highlight matching text if searching
 											const renderLabel = () => {
 												if (
-													!opts.searchable ||
+													!options.searchable ||
 													!internalSearchQuery.trim()
 												) {
 													return option.label;
@@ -571,7 +579,7 @@ export const MultiField = ({
 													color={color}
 												>
 													{isSelected ? "■" : "□"}{" "}
-													{opts.showNumbers &&
+													{options.showNumbers &&
 														`${displayIndex}. `}
 													{renderLabel()}
 												</Text>
@@ -610,7 +618,7 @@ export const MultiField = ({
 												startIndex + visibleIndex;
 											const optionIndex =
 												actualIndex +
-												(opts.noneOption ? 1 : 0);
+												(options.noneOption ? 1 : 0);
 											const isFocused =
 												optionIndex === selectedIndex;
 											return (
@@ -633,7 +641,7 @@ export const MultiField = ({
 						})()}
 					</Box>
 				</Box>
-			) : opts.hintPosition === "inline-fixed" ? (
+			) : options.hintPosition === "inline-fixed" ? (
 				(() => {
 					const {
 						showNoneOption,
@@ -662,8 +670,8 @@ export const MultiField = ({
 											{selectedValues.includes(NONE_VALUE)
 												? "■"
 												: "□"}{" "}
-											{opts.showNumbers && "1. "}
-											{opts.noneOption!.label}
+											{options.showNumbers && "1. "}
+											{options.noneOption!.label}
 										</Text>
 									</Box>
 									<Box flexGrow={1}>
@@ -676,9 +684,9 @@ export const MultiField = ({
 							{visibleOptions.map((option, visibleIndex) => {
 								const actualIndex = startIndex + visibleIndex;
 								const displayIndex =
-									actualIndex + (opts.noneOption ? 2 : 1);
+									actualIndex + (options.noneOption ? 2 : 1);
 								const optionIndex =
-									actualIndex + (opts.noneOption ? 1 : 0);
+									actualIndex + (options.noneOption ? 1 : 0);
 								const isSelected = selectedValues.includes(
 									option.value
 								);
@@ -692,7 +700,7 @@ export const MultiField = ({
 								// Highlight matching text if searching
 								const renderLabel = () => {
 									if (
-										!opts.searchable ||
+										!options.searchable ||
 										!internalSearchQuery.trim()
 									) {
 										return option.label;
@@ -745,7 +753,7 @@ export const MultiField = ({
 										<Box width={25}>
 											<Text color={color}>
 												{isSelected ? "■" : "□"}{" "}
-												{opts.showNumbers &&
+												{options.showNumbers &&
 													`${displayIndex}. `}
 												{renderLabel()}
 											</Text>
@@ -791,16 +799,16 @@ export const MultiField = ({
 									{selectedValues.includes(NONE_VALUE)
 										? "■"
 										: "□"}{" "}
-									{opts.showNumbers && "1. "}
-									{opts.noneOption!.label}
+									{options.showNumbers && "1. "}
+									{options.noneOption!.label}
 								</Text>
 							)}
 							{visibleOptions.map((option, visibleIndex) => {
 								const actualIndex = startIndex + visibleIndex;
 								const displayIndex =
-									actualIndex + (opts.noneOption ? 2 : 1);
+									actualIndex + (options.noneOption ? 2 : 1);
 								const optionIndex =
-									actualIndex + (opts.noneOption ? 1 : 0);
+									actualIndex + (options.noneOption ? 1 : 0);
 								const isSelected = selectedValues.includes(
 									option.value
 								);
@@ -814,7 +822,7 @@ export const MultiField = ({
 								// Highlight matching text if searching
 								const renderLabel = () => {
 									if (
-										!opts.searchable ||
+										!options.searchable ||
 										!internalSearchQuery.trim()
 									) {
 										return option.label;
@@ -866,11 +874,11 @@ export const MultiField = ({
 									<Box key={option.value} flexDirection="row">
 										<Text color={color}>
 											{isSelected ? "■" : "□"}{" "}
-											{opts.showNumbers &&
+											{options.showNumbers &&
 												`${displayIndex}. `}
 											{renderLabel()}
 										</Text>
-										{opts.hintPosition === "inline" &&
+										{options.hintPosition === "inline" &&
 											isFocused &&
 											option.hint && (
 												<Text color="gray">
@@ -886,7 +894,7 @@ export const MultiField = ({
 					);
 				})()
 			)}
-			{opts.searchable &&
+			{options.searchable &&
 				filteredOptions.length === 0 &&
 				internalSearchQuery.trim() && (
 					<Text color="red">
@@ -894,19 +902,19 @@ export const MultiField = ({
 					</Text>
 				)}
 			{error && <Text color="red">{error}</Text>}
-			{opts.hintPosition === "bottom" && (
+			{options.hintPosition === "bottom" && (
 				<Box marginTop={1} key={`hint-${selectedIndex}`}>
 					<Text color="gray">
 						{(() => {
 							// Check if none option is focused first
-							if (opts.noneOption && selectedIndex === 0) {
+							if (options.noneOption && selectedIndex === 0) {
 								// None option doesn't support hints
 								return " ";
 							}
 
 							// Find the focused option from filteredOptions
 							const focusedOptionIndex =
-								selectedIndex - (opts.noneOption ? 1 : 0);
+								selectedIndex - (options.noneOption ? 1 : 0);
 							const focusedOption =
 								filteredOptions[focusedOptionIndex];
 

@@ -24,10 +24,7 @@ export const completedFields = createPlugin<CompletedFieldsOptions, void>({
 			? allFields.slice(0, options.maxFields)
 			: allFields;
 
-		// Don't render anything if there are no completed fields
-		if (completedFields.length === 0) {
-			return null;
-		}
+		if (completedFields.length === 0) return null;
 
 		return (
 			<Box flexDirection="column">

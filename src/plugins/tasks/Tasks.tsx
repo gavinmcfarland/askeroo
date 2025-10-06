@@ -317,40 +317,44 @@ export const TasksDisplay = ({
 	};
 
 	const getLabel = (task: Task, status: TaskStatus): string => {
-		if (typeof task.label === "string") {
-			return task.label;
-		}
+		if (typeof task.label === "string") return task.label;
 
 		const labelObj = task.label as TaskLabel;
-		switch (status) {
-			case "running":
-				return labelObj.running || labelObj.idle || "Running...";
-			case "done":
-				return labelObj.done || labelObj.idle || "Done";
-			case "error":
-				return labelObj.error || labelObj.idle || "Error";
-			case "warning":
-				return labelObj.done || labelObj.idle || "Done (with warnings)";
-			default:
-				return labelObj.idle || "Task";
-		}
+		const fallback = labelObj.idle || "Task";
+
+		return (
+			{
+				running: labelObj.running || fallback || "Running...",
+				done: labelObj.done || fallback || "Done",
+				error: labelObj.error || fallback || "Error",
+				warning: labelObj.done || fallback || "Done (with warnings)",
+				idle: fallback,
+			}[status] || fallback
+		);
 	};
 
 	const getSymbol = (status: TaskStatus): string => {
-		switch (status) {
-			case "idle":
-				return "□";
-			case "running":
-				return spinnerFrames[spinnerFrame];
-			case "done":
-				return "■";
-			case "warning":
-				return "▲";
-			case "error":
-				return "✗";
-			default:
-				return "□";
-		}
+		return (
+			{
+				idle: "□",
+				running: spinnerFrames[spinnerFrame],
+				done: "■",
+				warning: "▲",
+				error: "✗",
+			}[status] || "□"
+		);
+	};
+
+	const getColor = (status: TaskStatus): string => {
+		return (
+			{
+				idle: "gray",
+				running: "blue",
+				done: "green",
+				warning: "yellow",
+				error: "red",
+			}[status] || "gray"
+		);
 	};
 
 	const updateTaskState = (taskId: string, state: Partial<TaskState>) => {
@@ -562,19 +566,7 @@ export const TasksDisplay = ({
 		return (
 			<Box key={taskId} flexDirection="column">
 				<Box>
-					<Text
-						color={
-							state.status === "error"
-								? "red"
-								: state.status === "warning"
-								? "yellow"
-								: state.status === "done"
-								? "green"
-								: state.status === "running"
-								? "blue"
-								: "gray"
-						}
-					>
+					<Text color={getColor(state.status)}>
 						{indent}
 						{symbol} {label}
 					</Text>
@@ -589,10 +581,9 @@ export const TasksDisplay = ({
 						<Text color="red">{state.error}</Text>
 					</Box>
 				)}
-				{task.tasks &&
-					task.tasks.map((subtask, subIndex) =>
-						renderTask(subtask, subIndex, `${taskId}.`, level + 1)
-					)}
+				{task.tasks?.map((subtask, subIndex) =>
+					renderTask(subtask, subIndex, `${taskId}.`, level + 1)
+				)}
 			</Box>
 		);
 	};
@@ -640,19 +631,7 @@ export const TasksDisplay = ({
 				dynamicTaskNodes.push(
 					<Box key={`current-${taskId}`} flexDirection="column">
 						<Box>
-							<Text
-								color={
-									state.status === "error"
-										? "red"
-										: state.status === "warning"
-										? "yellow"
-										: state.status === "done"
-										? "green"
-										: state.status === "running"
-										? "blue"
-										: "gray"
-								}
-							>
+							<Text color={getColor(state.status)}>
 								{symbol} {label}
 							</Text>
 						</Box>

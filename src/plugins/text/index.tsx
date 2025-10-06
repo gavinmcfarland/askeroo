@@ -18,9 +18,10 @@ export const text = createPlugin<TextOptions, string>({
 	interactive: true,
 
 	component: ({ node, options, events }: any) => {
-		const [value, setValue] = useState(options.initialValue || "");
+		const initialValue = options.initialValue || "";
+		const [value, setValue] = useState(initialValue);
 		const [cursorPosition, setCursorPosition] = useState(
-			(options.initialValue || "").length
+			initialValue.length
 		);
 		const [submitted, setSubmitted] = useState(false);
 		const [validationError, setValidationError] = useState<string | null>(
@@ -33,8 +34,9 @@ export const text = createPlugin<TextOptions, string>({
 
 		useEffect(() => {
 			if (!disabled) {
-				setValue(options.initialValue || "");
-				setCursorPosition((options.initialValue || "").length);
+				const initial = options.initialValue || "";
+				setValue(initial);
+				setCursorPosition(initial.length);
 			}
 		}, [options.initialValue, disabled]);
 
@@ -127,17 +129,27 @@ export const text = createPlugin<TextOptions, string>({
 				}
 
 				// Escape handling
-				if (node.flow === "static" && key.escape) {
-					if (node.enableArrowNavigation && !node.isFirstInGroup) {
-						if (!(await runValidation(value))) return;
-						setSubmitted(true);
-						events.onSubmit?.({ __preserveAndBack: true, value });
-					} else if (
-						node.enableArrowNavigation &&
-						node.isFirstInGroup
-					) {
-						setSubmitted(true);
-						events.onSubmit?.({ __clearGroupAndBack: true });
+				if (key.escape) {
+					if (node.flow === "static") {
+						if (
+							node.enableArrowNavigation &&
+							!node.isFirstInGroup
+						) {
+							if (!(await runValidation(value))) return;
+							setSubmitted(true);
+							events.onSubmit?.({
+								__preserveAndBack: true,
+								value,
+							});
+						} else if (
+							node.enableArrowNavigation &&
+							node.isFirstInGroup
+						) {
+							setSubmitted(true);
+							events.onSubmit?.({ __clearGroupAndBack: true });
+						} else if (node.allowBack && events.onBack) {
+							events.onBack();
+						}
 					} else if (node.allowBack && events.onBack) {
 						events.onBack();
 					}
@@ -156,13 +168,6 @@ export const text = createPlugin<TextOptions, string>({
 						);
 						setCursorPosition(cursorPosition - 1);
 					}
-				} else if (
-					key.escape &&
-					node.flow !== "static" &&
-					node.allowBack &&
-					events.onBack
-				) {
-					events.onBack();
 				} else if (!key.ctrl && !key.meta && input) {
 					setValue(
 						value.slice(0, cursorPosition) +
@@ -213,16 +218,11 @@ export const text = createPlugin<TextOptions, string>({
 					</Box>
 					<Text color="cyan">
 						{value.slice(0, cursorPosition)}
-						{cursorPosition < value.length && (
-							<Text backgroundColor="grey" color="black">
-								{value[cursorPosition]}
-							</Text>
-						)}
-						{cursorPosition >= value.length && (
-							<Text backgroundColor="grey" color="black">
-								{" "}
-							</Text>
-						)}
+						<Text backgroundColor="grey" color="black">
+							{cursorPosition < value.length
+								? value[cursorPosition]
+								: " "}
+						</Text>
 						{value.slice(
 							cursorPosition +
 								(cursorPosition < value.length ? 1 : 0)

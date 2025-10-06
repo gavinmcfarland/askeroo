@@ -22,17 +22,14 @@ const noteInternal = createPlugin<NoteOptions, void>({
 	interactive: false, // Notes don't require user interaction
 
 	component: ({ node, options, events }: any) => {
-		const isMarkdownObject = isMarkdownString(options.message);
+		const msg = options.message;
+		const isMarkdown = isMarkdownString(msg);
 
 		return (
 			<Box flexDirection="column">
 				{parseMarkdown(
-					isMarkdownObject
-						? (options.message as MarkdownString).content
-						: (options.message as string) || "",
-					isMarkdownObject
-						? (options.message as MarkdownString).theme
-						: undefined
+					isMarkdown ? msg.content : msg || "",
+					isMarkdown ? msg.theme : undefined
 				)}
 			</Box>
 		);

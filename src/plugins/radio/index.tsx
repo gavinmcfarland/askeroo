@@ -32,11 +32,12 @@ export const radio = createPlugin<RadioOptions, string>({
 	type: "radio",
 	interactive: true,
 
-	component: ({ node, options: opts, events }: any) => {
+	component: ({ node, options, events }: any) => {
 		const [selectedIndex, setSelectedIndex] = useState(() => {
-			if (opts.initialValue && opts.options) {
-				const index = (opts.options || []).findIndex(
-					(option: RadioOption) => option.value === opts.initialValue
+			if (options.initialValue && options.options) {
+				const index = (options.options || []).findIndex(
+					(option: RadioOption) =>
+						option.value === options.initialValue
 				);
 				return index >= 0 ? index : 0;
 			}
@@ -53,8 +54,8 @@ export const radio = createPlugin<RadioOptions, string>({
 		);
 
 		const filteredOptions =
-			opts.searchable && internalSearchQuery.trim() && opts.options
-				? (opts.options || []).filter(
+			options.searchable && internalSearchQuery.trim() && options.options
+				? (options.options || []).filter(
 						(opt: RadioOption) =>
 							opt.label
 								.toLowerCase()
@@ -63,7 +64,7 @@ export const radio = createPlugin<RadioOptions, string>({
 								.toLowerCase()
 								.includes(internalSearchQuery.toLowerCase())
 				  )
-				: opts.options || [];
+				: options.options || [];
 
 		useEffect(() => {
 			if (selectedIndex >= filteredOptions.length) {
@@ -73,7 +74,7 @@ export const radio = createPlugin<RadioOptions, string>({
 
 		useEffect(
 			() => setWindowStart(0),
-			[filteredOptions.length, opts.maxVisible]
+			[filteredOptions.length, options.maxVisible]
 		);
 
 		const disabled = node.state === "disabled";
@@ -81,7 +82,10 @@ export const radio = createPlugin<RadioOptions, string>({
 
 		// Calculate visible window for scrolling
 		const getVisibleOptions = () => {
-			if (!opts.maxVisible || filteredOptions.length <= opts.maxVisible) {
+			if (
+				!options.maxVisible ||
+				filteredOptions.length <= options.maxVisible
+			) {
 				return {
 					visibleOptions: filteredOptions,
 					startIndex: 0,
@@ -93,19 +97,19 @@ export const radio = createPlugin<RadioOptions, string>({
 			// Calculate visible window - scroll only when at edges
 			let currentWindowStart = windowStart;
 			let currentWindowEnd = Math.min(
-				currentWindowStart + opts.maxVisible,
+				currentWindowStart + options.maxVisible,
 				filteredOptions.length
 			);
 
 			// If selected index is at the bottom of current window, scroll down
 			if (selectedIndex >= currentWindowEnd) {
-				currentWindowStart = selectedIndex - opts.maxVisible + 1;
+				currentWindowStart = selectedIndex - options.maxVisible + 1;
 				currentWindowEnd = selectedIndex + 1;
 			}
 			// If selected index is at the top of current window, scroll up
 			else if (selectedIndex < currentWindowStart) {
 				currentWindowStart = selectedIndex;
-				currentWindowEnd = selectedIndex + opts.maxVisible;
+				currentWindowEnd = selectedIndex + options.maxVisible;
 			}
 
 			// Ensure we don't exceed bounds
@@ -117,12 +121,12 @@ export const radio = createPlugin<RadioOptions, string>({
 
 			// Adjust windowStart if we hit the end
 			if (
-				currentWindowEnd - currentWindowStart < opts.maxVisible &&
+				currentWindowEnd - currentWindowStart < options.maxVisible &&
 				currentWindowStart > 0
 			) {
 				currentWindowStart = Math.max(
 					0,
-					currentWindowEnd - opts.maxVisible
+					currentWindowEnd - options.maxVisible
 				);
 			}
 
@@ -147,13 +151,13 @@ export const radio = createPlugin<RadioOptions, string>({
 		};
 
 		useEffect(() => {
-			if (opts.initialValue !== undefined) {
-				const idx = (opts.options || []).findIndex(
-					(opt: RadioOption) => opt.value === opts.initialValue
+			if (options.initialValue !== undefined) {
+				const idx = (options.options || []).findIndex(
+					(opt: RadioOption) => opt.value === options.initialValue
 				);
 				if (idx >= 0) setSelectedIndex(idx);
 			}
-		}, [opts.initialValue, opts.options]);
+		}, [options.initialValue, options.options]);
 
 		const runValidation = async (val: string): Promise<boolean> => {
 			if (!events.onValidate || node.state !== "active") {
@@ -180,7 +184,7 @@ export const radio = createPlugin<RadioOptions, string>({
 								<Text color="yellow">escape</Text> go back
 							</>
 						)}
-						{opts.searchable && (
+						{options.searchable && (
 							<>
 								{!node.isFirstRootPrompt && node.allowBack
 									? ", "
@@ -195,7 +199,7 @@ export const radio = createPlugin<RadioOptions, string>({
 			node.state,
 			node.isFirstRootPrompt,
 			node.allowBack,
-			opts.searchable,
+			options.searchable,
 			events.onHintChange,
 		]);
 
@@ -204,7 +208,7 @@ export const radio = createPlugin<RadioOptions, string>({
 				if (disabled || submitted) return;
 
 				if (key.escape) {
-					if (opts.searchable && internalSearchQuery.trim()) {
+					if (options.searchable && internalSearchQuery.trim()) {
 						setInternalSearchQuery("");
 						return;
 					}
@@ -236,7 +240,7 @@ export const radio = createPlugin<RadioOptions, string>({
 
 				// Search input
 				if (
-					opts.searchable &&
+					options.searchable &&
 					input &&
 					input !== " " &&
 					input.length === 1 &&
@@ -254,7 +258,7 @@ export const radio = createPlugin<RadioOptions, string>({
 				}
 
 				if (
-					opts.searchable &&
+					options.searchable &&
 					(key.backspace || key.delete || input === "\b")
 				) {
 					setInternalSearchQuery(internalSearchQuery.slice(0, -1));
@@ -262,52 +266,28 @@ export const radio = createPlugin<RadioOptions, string>({
 				}
 
 				// Arrow navigation
-				if (key.leftArrow && !node.enableArrowNavigation) {
-					setSelectedIndex(
-						selectedIndex > 0
-							? selectedIndex - 1
-							: opts.allowLoop
-							? filteredOptions.length - 1
-							: selectedIndex
-					);
-					return;
-				}
-				if (key.rightArrow && !node.enableArrowNavigation) {
-					setSelectedIndex(
-						selectedIndex < filteredOptions.length - 1
-							? selectedIndex + 1
-							: opts.allowLoop
-							? 0
-							: selectedIndex
-					);
-					return;
-				}
-				if (key.upArrow && !node.enableArrowNavigation) {
-					setSelectedIndex(
-						opts.allowLoop
-							? selectedIndex > 0
-								? selectedIndex - 1
-								: filteredOptions.length - 1
-							: Math.max(0, selectedIndex - 1)
-					);
-					return;
-				}
-				if (key.downArrow && !node.enableArrowNavigation) {
-					setSelectedIndex(
-						opts.allowLoop
-							? selectedIndex < filteredOptions.length - 1
-								? selectedIndex + 1
-								: 0
-							: Math.min(
-									filteredOptions.length - 1,
-									selectedIndex + 1
-							  )
-					);
-					return;
+				if (!node.enableArrowNavigation) {
+					const maxIndex = filteredOptions.length - 1;
+					if (key.leftArrow || key.upArrow) {
+						setSelectedIndex(
+							options.allowLoop && selectedIndex === 0
+								? maxIndex
+								: Math.max(0, selectedIndex - 1)
+						);
+						return;
+					}
+					if (key.rightArrow || key.downArrow) {
+						setSelectedIndex(
+							options.allowLoop && selectedIndex === maxIndex
+								? 0
+								: Math.min(maxIndex, selectedIndex + 1)
+						);
+						return;
+					}
 				}
 
 				// Number selection
-				if (opts.showNumbers) {
+				if (options.showNumbers) {
 					const num = parseInt(input);
 					if (
 						!isNaN(num) &&
@@ -328,12 +308,12 @@ export const radio = createPlugin<RadioOptions, string>({
 		);
 
 		if (node.state === "completed" && node.completedValue !== undefined) {
-			const opt = (opts.options || []).find(
+			const opt = (options.options || []).find(
 				(o: RadioOption) => o.value === node.completedValue
 			);
 			return (
 				<Box flexDirection="column">
-					<Text>{opts.label}</Text>
+					<Text>{options.label}</Text>
 					<Text color="blue">
 						{opt ? opt.label : node.completedValue}
 					</Text>
@@ -342,34 +322,43 @@ export const radio = createPlugin<RadioOptions, string>({
 		}
 
 		const renderLabel = (option: RadioOption, isSelected: boolean) => {
-			if (!opts.searchable || !internalSearchQuery.trim()) {
+			if (!options.searchable || !internalSearchQuery.trim())
 				return option.label;
-			}
 
 			const query = internalSearchQuery.toLowerCase();
-			const optLabel = option.label;
-			const lowerLabel = optLabel.toLowerCase();
-			const matchIndex = lowerLabel.indexOf(query);
+			const label = option.label;
+			const matchIndex = label.toLowerCase().indexOf(query);
 
-			if (matchIndex === -1) {
-				return optLabel;
-			}
-
-			const beforeMatch = optLabel.slice(0, matchIndex);
-			const match = optLabel.slice(matchIndex, matchIndex + query.length);
-			const afterMatch = optLabel.slice(matchIndex + query.length);
-			const highlightColor = isSelected
-				? "cyan"
-				: option.color || "white";
+			if (matchIndex === -1) return label;
 
 			return (
 				<>
-					{beforeMatch}
-					<Text underline color={highlightColor}>
-						{match}
+					{label.slice(0, matchIndex)}
+					<Text
+						underline
+						color={isSelected ? "cyan" : option.color || "white"}
+					>
+						{label.slice(matchIndex, matchIndex + query.length)}
 					</Text>
-					{afterMatch}
+					{label.slice(matchIndex + query.length)}
 				</>
+			);
+		};
+
+		const renderOption = (
+			option: RadioOption,
+			actualIndex: number,
+			isInline: boolean
+		) => {
+			const isSelected = actualIndex === selectedIndex;
+			const color = isSelected ? "cyan" : option.color || "gray";
+
+			return (
+				<Text color={color}>
+					{isSelected ? "●" : "○"}{" "}
+					{options.showNumbers && `${actualIndex + 1}. `}
+					{renderLabel(option, isSelected)}
+				</Text>
 			);
 		};
 
@@ -379,8 +368,8 @@ export const radio = createPlugin<RadioOptions, string>({
 					flexDirection="column"
 					marginTop={node.isFirstInGroup ? 0 : 0}
 				>
-					<Text>{opts.label}</Text>
-					{opts.hintPosition === "side" ? (
+					<Text>{options.label}</Text>
+					{options.hintPosition === "side" ? (
 						<Box flexDirection="row">
 							<Box flexDirection="column" width={25}>
 								{(() => {
@@ -403,33 +392,14 @@ export const radio = createPlugin<RadioOptions, string>({
 													const actualIndex =
 														startIndex +
 														visibleIndex;
-													const isSelected =
-														actualIndex ===
-														selectedIndex;
-													const color = isSelected
-														? "cyan"
-														: option.color ||
-														  "gray";
-
 													return (
-														<Text
-															key={option.value}
-															color={color}
-														>
-															{isSelected
-																? "●"
-																: "○"}{" "}
-															{opts.showNumbers ===
-																true &&
-																`${
-																	actualIndex +
-																	1
-																}. `}
-															{renderLabel(
+														<Box key={option.value}>
+															{renderOption(
 																option,
-																isSelected
+																actualIndex,
+																false
 															)}
-														</Text>
+														</Box>
 													);
 												}
 											)}
@@ -485,7 +455,7 @@ export const radio = createPlugin<RadioOptions, string>({
 								})()}
 							</Box>
 						</Box>
-					) : opts.hintPosition === "inline-fixed" ? (
+					) : options.hintPosition === "inline-fixed" ? (
 						(() => {
 							const {
 								visibleOptions,
@@ -507,31 +477,17 @@ export const radio = createPlugin<RadioOptions, string>({
 												startIndex + visibleIndex;
 											const isSelected =
 												actualIndex === selectedIndex;
-											const color = isSelected
-												? "cyan"
-												: option.color || "gray";
-
 											return (
 												<Box
 													key={option.value}
 													flexDirection="row"
 												>
 													<Box width={25}>
-														<Text color={color}>
-															{isSelected
-																? "●"
-																: "○"}{" "}
-															{opts.showNumbers ===
-																true &&
-																`${
-																	actualIndex +
-																	1
-																}. `}
-															{renderLabel(
-																option,
-																isSelected
-															)}
-														</Text>
+														{renderOption(
+															option,
+															actualIndex,
+															false
+														)}
 													</Box>
 													<Box flexGrow={1}>
 														<Text color="gray">
@@ -573,33 +529,22 @@ export const radio = createPlugin<RadioOptions, string>({
 												startIndex + visibleIndex;
 											const isSelected =
 												actualIndex === selectedIndex;
-											const color = isSelected
-												? "cyan"
-												: option.color || "gray";
-
 											return (
 												<Box
 													key={option.value}
 													flexDirection="row"
 												>
-													<Text color={color}>
-														{isSelected ? "●" : "○"}{" "}
-														{opts.showNumbers ===
-															true &&
-															`${
-																actualIndex + 1
-															}. `}
-														{renderLabel(
-															option,
-															isSelected
-														)}
-													</Text>
-													{opts.hintPosition ===
+													{renderOption(
+														option,
+														actualIndex,
+														false
+													)}
+													{options.hintPosition ===
 														"inline" &&
 														isSelected &&
 														option.hint && (
 															<Text color="gray">
-																{"  "}
+																{" "}
 																{option.hint}
 															</Text>
 														)}
@@ -614,14 +559,14 @@ export const radio = createPlugin<RadioOptions, string>({
 							);
 						})()
 					)}
-					{opts.searchable &&
+					{options.searchable &&
 						filteredOptions.length === 0 &&
 						internalSearchQuery.trim() && (
 							<Text color="red">
 								No options match "{internalSearchQuery}"
 							</Text>
 						)}
-					{opts.hintPosition === "bottom" && (
+					{options.hintPosition === "bottom" && (
 						<Box marginTop={1} key={`hint-${selectedIndex}`}>
 							<Text color="gray">
 								{filteredOptions[selectedIndex]?.hint || " "}
