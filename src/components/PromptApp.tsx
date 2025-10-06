@@ -12,6 +12,7 @@ import { globalRegistry } from "../core/registry.js";
 import { PromptTreeManager, PromptNode } from "../core/prompt-tree.js";
 import { setTreeManager } from "../plugins/completed-fields/completed-fields-store.js";
 import { PromptRequest } from "../types/index.js";
+import { applyInkRenderingFix } from "../utils/ink-rendering-fix.js";
 
 // Type declaration for debug utilities
 declare global {
@@ -193,6 +194,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	// Extract tree navigation and synchronization logic to be used by all back navigation paths
 	const performTreeBackNavigation = useCallback(() => {
+		// Apply Ink rendering timing fix before state updates
+		applyInkRenderingFix();
+
 		try {
 			const canGoBack = treeManagerRef.current.canGoBack();
 			if (canGoBack) {
@@ -268,6 +272,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 				case "clear-group-back": {
 					// Clear group and go back
+					// Apply Ink rendering timing fix before state updates
+					applyInkRenderingFix();
 					treeManagerRef.current.clearGroupAndGoBack(nodeId);
 					resolveValue = { __back: true };
 					break;
