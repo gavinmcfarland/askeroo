@@ -3,7 +3,7 @@ import type { FlowFunction } from "./types/index.js";
 export type { FlowFunction };
 
 // Export the new customizable ask function
-export { ask } from "./plugins/custom-ask/index.js";
+export { ask } from "./plugins/ask/index.js";
 
 // BACK is just a simple token, doesn't need lazy loading
 export const BACK = { __back: true };
@@ -49,7 +49,7 @@ export {
 	type GroupOptions,
 } from "./plugins/group/index.js";
 export { createAsk } from "./core/ask-factory.js";
-export { type CustomAskOptions } from "./plugins/custom-ask/index.js";
+export { type AskOptions } from "./plugins/ask/index.js";
 
 // Export markdown utilities
 export { md, type MarkdownString } from "./utils/markdown.js";
