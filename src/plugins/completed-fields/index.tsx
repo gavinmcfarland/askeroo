@@ -18,7 +18,7 @@ export const completedFields = createPlugin<CompletedFieldsOptions, void>({
 	type: "completedFields",
 	interactive: false,
 
-	render: ({ node, options, events }) => {
+	component: ({ node, options, events }: any) => {
 		const allFields = getCompletedFieldsData();
 		const completedFields = options.maxFields
 			? allFields.slice(0, options.maxFields)

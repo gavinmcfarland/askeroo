@@ -17,7 +17,7 @@ export const text = createPlugin<TextOptions, string>({
 	type: "text",
 	interactive: true,
 
-	render: ({ node, options, events }) => {
+	component: ({ node, options, events }: any) => {
 		const [value, setValue] = useState(options.initialValue || "");
 		const [cursorPosition, setCursorPosition] = useState(
 			(options.initialValue || "").length

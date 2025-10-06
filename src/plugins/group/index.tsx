@@ -58,7 +58,7 @@ export const group = (
 		interactive: false,
 		isContainer: true,
 
-		render: ({ node, options, events }) => {
+		component: ({ node, options, events }: any) => {
 			const baseIndent = Math.max(0, ((node.depth || 0) - 1) * 3);
 
 			return (

@@ -21,7 +21,7 @@ const noteInternal = createPlugin<NoteOptions, void>({
 	type: "note",
 	interactive: false, // Notes don't require user interaction
 
-	render: ({ node, options, events }) => {
+	component: ({ node, options, events }: any) => {
 		const isMarkdownObject = isMarkdownString(options.message);
 
 		return (

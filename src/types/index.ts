@@ -133,8 +133,9 @@ export type PluginRenderProps = {
 
 export type PromptPlugin = {
 	type: string;
-	component?: React.ComponentType<any>; // Plugin component
-	render?: React.ComponentType<any>; // Alternative to component (direct component, not factory)
+	component?:
+		| React.ComponentType<any>
+		| ((props: any) => React.ReactElement | null); // Plugin component or render function
 	transform?: (
 		opts: any,
 		context: { currentGroup?: string },

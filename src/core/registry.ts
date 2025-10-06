@@ -64,8 +64,9 @@ import { getCurrentRuntime, getPluginRuntime } from "./runtime-context.js";
 // Plugin creation function that auto-registers
 export function createPlugin<T = any, R = any>(config: {
 	type: string;
-	component?: React.ComponentType<any>;
-	render?: (props: PluginComponentProps<T, R>) => React.ReactElement | null; // Component with inferred props
+	component?:
+		| React.ComponentType<PluginComponentProps<T, R>>
+		| ((props: any) => React.ReactElement | null);
 	transform?: (opts: T, context: { currentGroup?: string }, id: string) => T; // Optional: transform options before rendering
 	interactive?: boolean;
 	// Container plugin support
@@ -74,15 +75,15 @@ export function createPlugin<T = any, R = any>(config: {
 	onEnter?: (runtime: any, opts: T) => Promise<void> | void;
 	onExit?: (runtime: any, opts: T) => Promise<void> | void;
 }): (opts?: PluginOptionsWithBuiltins<T, R>) => Promise<R> {
-	// Validate that either component or render is provided (not required for containers with execute)
-	if (!config.component && !config.render && !config.execute) {
+	// Validate that either component or execute is provided (not required for containers with execute)
+	if (!config.component && !config.execute) {
 		throw new Error(
-			`Plugin "${config.type}" must provide either a component, render function, or execute function`
+			`Plugin "${config.type}" must provide either a component or execute function`
 		);
 	}
 
-	// Use render directly as the component (no factory call needed)
-	const component = config.component || config.render;
+	// Use component directly
+	const component = config.component;
 
 	const plugin: PromptPlugin = {
 		type: config.type,

@@ -32,7 +32,7 @@ export const radio = createPlugin<RadioOptions, string>({
 	type: "radio",
 	interactive: true,
 
-	render: ({ node, options: opts, events }) => {
+	component: ({ node, options: opts, events }: any) => {
 		const [selectedIndex, setSelectedIndex] = useState(() => {
 			if (opts.initialValue && opts.options) {
 				const index = (opts.options || []).findIndex(

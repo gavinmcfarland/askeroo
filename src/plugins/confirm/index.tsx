@@ -31,7 +31,7 @@ export const confirm = createPlugin<ConfirmOptions, any>({
 	type: "confirm",
 	interactive: true,
 
-	render: ({ node, options: opts, events }) => {
+	component: ({ node, options: opts, events }: any) => {
 		// Use label if provided, fallback to message for compatibility
 		const displayMessage = opts.label || opts.message || "Confirm?";
 
