@@ -100,6 +100,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						}
 					});
 
+					// Deactivate the current active node so it can show in completed state
+					const activeNode = treeManagerRef.current.getActiveNode();
+					if (activeNode) {
+						activeNode.active = false;
+					}
+
 					// Trigger re-render
 					setTreeRevision((prev) => prev + 1);
 
