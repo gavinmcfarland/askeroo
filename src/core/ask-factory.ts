@@ -16,27 +16,34 @@ export function createAsk<T = any, R = any>(config: {
 	onEnter?: (runtime: any, opts: T) => Promise<void> | void;
 	onExit?: (runtime: any, opts: T) => Promise<void> | void;
 }): (flow: FlowFunction<any>, opts?: T) => Promise<any> {
-	return (flow: FlowFunction<any>, opts?: T) => {
+	return async (flow: FlowFunction<any>, opts?: T) => {
 		// Store the custom root container globally so the UI can access it
 		const originalRootContainer = (globalThis as any).__customRootContainer;
 		const originalRootContainerProps = (globalThis as any)
 			.__customRootContainerProps;
 
-		// Set the custom root container if provided in options
+		// Set the custom root container if provided in options, otherwise use component from config
 		if (opts && typeof opts === "object" && "rootContainer" in opts) {
 			(globalThis as any).__customRootContainer = (
 				opts as any
 			).rootContainer;
 			(globalThis as any).__customRootContainerProps =
 				(opts as any).rootContainerProps || {};
+		} else if (config.component) {
+			// Use the component from createAsk config as the default root container
+			(globalThis as any).__customRootContainer = config.component;
+			(globalThis as any).__customRootContainerProps = {};
 		}
+
+		// Force cleanup of any existing UI instance to ensure fresh render with new container
+		ui.cleanup?.();
 
 		try {
 			// Create a runtime with the standard UI (which will now use our custom root container)
 			const runtime = createRuntime(ui);
 
 			// Execute the flow with the custom runtime
-			return runtime.executeFlow(flow);
+			return await runtime.executeFlow(flow);
 		} finally {
 			// Restore the original root container
 			(globalThis as any).__customRootContainer = originalRootContainer;
