@@ -182,6 +182,7 @@ console.log(result);
         component: ReactComponent;
     }
     ```
+
 -   ### `tasks(taskList: Task[], options?: TasksOpts)`
 
     Execute a list of tasks with progress indication and error handling.
@@ -193,7 +194,7 @@ console.log(result);
         tasks?: Task[]; // Nested subtasks
         concurrent?: boolean;
         continueOnError?: boolean;
-        completeOn?: 'children' | 'self' | 'either';
+        completeOn?: "children" | "self" | "either";
     }
 
     interface TaskLabel {
@@ -226,14 +227,14 @@ console.log(result);
             label: "Installing dependencies",
             action: async () => {
                 await installDependencies();
-            }
+            },
         },
         {
             label: "Building project",
             action: async () => {
                 await buildProject();
-            }
-        }
+            },
+        },
     ]);
 
     // Sequential execution
@@ -262,43 +263,65 @@ console.log(result);
 ## Create a prompt
 
 ```ts
-export interface TextOptions {
+import React, { useState } from "react";
+import { Text, useInput } from "ink";
+import { createPlugin } from "askeroo/core";
+
+// Define your options interface
+export interface CustomOptions {
     label: string;
-    initialValue?: string;
+    placeholder?: string;
 }
 
-// Core text input plugin
-export const text = createPlugin<TextOptions, string>({
-    type: "text",
-    component: TextField,
+// Create and export the plugin
+export const customField = createPlugin<CustomOptions, string>({
+    type: "custom-field",
+    interactive: true,
+    component: ({ node, options, events }: any) {
+        const [value, setValue] = useState("");
 
-    // The prompt logic - just return the options, runtime handles UI
-    prompt(opts: TextOptions, { currentGroup }, id: string) {
-        return opts;
-    },
+        useInput((input, key) => {
+            if (key.return) {
+                events.onSubmit?.(value);
+            } else if (input) {
+                setValue((prev) => prev + input);
+            }
+        });
+
+        // Handle different states
+        if (node.state === "completed") {
+            return (
+                <Text>
+                    {options.label}: <Text color="blue">{node.completedValue}</Text>
+                </Text>
+            );
+        }
+
+        if (node.state === "disabled") {
+            return <Text dimColor>{options.label}: ...</Text>;
+        }
+
+        return (
+            <Text>
+                {options.label}: {value}
+            </Text>
+        );
+    }
 });
 ```
 
-### Component Props
+### Usage
 
 ```ts
-export interface Props {
-    label: string;
-	onSubmit: ;
-	onBack: ;
-    onNavigate: ;
-    onHintChange: ;
-	initialValue: string;
-	allowBack: boolean;
-	completed: boolean;
-	completedValue: boolean;
-	disabled: boolean;
-	flow: 'progressive' | 'phased' | 'static';
-	isFirstInGroup: boolean;
-	isLastInGroup: boolean;
-	arrowNavigation: boolean;
-	isFirstRootPrompt: boolean;
-}
+import { ask } from "askeroo/core";
+import { customField } from "./custom-field.js"; // Import registers the plugin
+
+const result = await ask(async () => {
+    const input = await customField({
+        label: "Enter something",
+    });
+    return { input };
+});
 ```
 
 ## Examples
