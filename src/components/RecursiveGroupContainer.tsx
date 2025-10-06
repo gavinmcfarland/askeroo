@@ -178,7 +178,21 @@ export function RecursiveGroupContainer({
 			/>
 		));
 
-		// Render group through plugin system
+		// For root node, check if there's a custom root container
+		// If so, use it instead of the group plugin (to allow ask component to control layout)
+		const isRootNode = item.id === "root" && item.depth === 0;
+		const CustomRootContainer = isRootNode
+			? (globalThis as any).__customRootContainer
+			: null;
+
+		// If custom root container exists for root node, use it directly
+		if (CustomRootContainer && isRootNode) {
+			return (
+				<CustomRootContainer>{renderedChildren}</CustomRootContainer>
+			);
+		}
+
+		// Otherwise, render group through plugin system
 		// Hint text is displayed by the active field itself, not at group level
 		return (
 			<PluginWrapper

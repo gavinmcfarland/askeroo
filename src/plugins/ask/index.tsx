@@ -1,6 +1,5 @@
-import { Box, Text } from "ink";
 import { createAsk } from "../../core/ask-factory.js";
-import type { FlowFunction } from "../../types/index.js";
+import { Box } from "ink";
 
 export interface AskOptions {}
 
@@ -8,11 +7,10 @@ export const ask = createAsk<AskOptions, any>({
 	type: "flow",
 
 	component: ({ children }: any) => {
+		// This component now receives the individual prompts as children
+		// and controls their layout (flexDirection, spacing, etc.)
 		return (
-			<Box flexDirection="row">
-				<Text color="magenta" bold>
-					🚀 Custom Container
-				</Text>
+			<Box flexDirection="column" gap={1}>
 				{children}
 			</Box>
 		);

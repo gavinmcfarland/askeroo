@@ -337,15 +337,13 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	// Primary rendering: Tree-based recursive rendering
 
-	// Check if a custom root container is available
-	const CustomRootContainer = (globalThis as any).__customRootContainer;
-	const customRootContainerProps =
-		(globalThis as any).__customRootContainerProps || {};
+	// When custom root container exists, RecursiveGroupContainer will use it internally for the root node
+	// Otherwise, wrap in the default RootContainer
+	const hasCustomContainer = !!(globalThis as any).__customRootContainer;
 
-	const ContainerComponent = CustomRootContainer || RootContainer;
-
-	return (
-		<ContainerComponent {...customRootContainerProps}>
+	if (hasCustomContainer) {
+		// Custom container will be applied at the root node level inside RecursiveGroupContainer
+		return (
 			<RecursiveGroupContainer
 				item={currentTree.root}
 				treeManager={treeManagerRef.current}
@@ -354,6 +352,20 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				onHintChange={handleHintChange}
 				hintText={currentHintText}
 			/>
-		</ContainerComponent>
+		);
+	}
+
+	// Default rendering with RootContainer wrapper
+	return (
+		<RootContainer>
+			<RecursiveGroupContainer
+				item={currentTree.root}
+				treeManager={treeManagerRef.current}
+				onSubmit={handleSubmit}
+				onBack={handleBack}
+				onHintChange={handleHintChange}
+				hintText={currentHintText}
+			/>
+		</RootContainer>
 	);
 }
