@@ -194,19 +194,20 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	// Extract tree navigation and synchronization logic to be used by all back navigation paths
 	const performTreeBackNavigation = useCallback(() => {
-		// Apply Ink rendering timing fix before state updates
-		applyInkRenderingFix();
-
 		try {
 			const canGoBack = treeManagerRef.current.canGoBack();
 			if (canGoBack) {
 				const result = treeManagerRef.current.goBack();
 				if (result.success) {
-					// SIMPLIFIED FIX: The tree is the single source of truth
-					// All state is managed by the tree structure itself
-					// We just need to trigger a re-render to sync the UI with the tree state
-					// The syncToLegacyState() method will handle all the state syncing
-					setTreeRevision((prev) => prev + 1);
+					// Apply Ink rendering timing fix AFTER tree mutation but BEFORE React update
+					// This ensures tree is in consistent state before triggering re-render
+					applyInkRenderingFix();
+
+					// Use flushSync to ensure tree state updates are applied synchronously
+					// before React re-renders. This prevents Ink from rendering with stale state.
+					flushSync(() => {
+						setTreeRevision((prev) => prev + 1);
+					});
 				}
 			}
 		} catch (error) {
@@ -250,15 +251,20 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				}
 
 				case "back": {
-					// Back navigation
+					// Back navigation - performTreeBackNavigation handles its own state update
 					performTreeBackNavigation();
 					internalRefs.current.isNavigatingBack = true;
 					resolveValue = { __back: true };
-					break;
+					// IMPORTANT: Don't trigger additional re-render, performTreeBackNavigation already did it
+					// Resolve promise and return early
+					const resolver = internalRefs.current.resolver;
+					internalRefs.current.resolver = null;
+					resolver?.(resolveValue);
+					return;
 				}
 
 				case "preserve-back": {
-					// Preserve value and go back
+					// Preserve value and go back - performTreeBackNavigation handles its own state update
 					const node = treeManagerRef.current.getNode(nodeId);
 					if (node) {
 						node.value = action.value;
@@ -267,20 +273,33 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					}
 					performTreeBackNavigation();
 					resolveValue = { __back: true };
-					break;
+					// IMPORTANT: Don't trigger additional re-render, performTreeBackNavigation already did it
+					// Resolve promise and return early
+					const resolver = internalRefs.current.resolver;
+					internalRefs.current.resolver = null;
+					resolver?.(resolveValue);
+					return;
 				}
 
 				case "clear-group-back": {
 					// Clear group and go back
-					// Apply Ink rendering timing fix before state updates
-					applyInkRenderingFix();
 					treeManagerRef.current.clearGroupAndGoBack(nodeId);
+					// Apply Ink rendering timing fix AFTER tree mutation but BEFORE React update
+					applyInkRenderingFix();
+					// Use flushSync for immediate state update
+					flushSync(() => {
+						setTreeRevision((prev) => prev + 1);
+					});
 					resolveValue = { __back: true };
-					break;
+					// Resolve promise and return early (already triggered re-render)
+					const resolver = internalRefs.current.resolver;
+					internalRefs.current.resolver = null;
+					resolver?.(resolveValue);
+					return;
 				}
 			}
 
-			// Trigger re-render
+			// Trigger re-render for submit actions only
 			setTreeRevision((prev) => prev + 1);
 
 			// Resolve the promise
