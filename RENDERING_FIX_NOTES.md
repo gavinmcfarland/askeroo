@@ -61,47 +61,13 @@ flushSync(() => {
 
 **Why:** Changing the `key` prop forces React to completely unmount and remount the entire component tree, preventing any stale state from persisting. This is particularly effective when Ink has to redraw the entire terminal.
 
-### 3. **Rendering Suppression During State Transitions** ⭐ **KEY FIX**
+### 3. ~~**Rendering Suppression During State Transitions**~~ ❌ **REMOVED - CAUSED BLINKING**
 
-**File:** `src/components/PromptApp.tsx`
+**Note:** This approach was initially implemented but has been **removed** because it caused the entire CLI to blink when navigating back.
 
-```typescript
-// Add suppressRendering flag
-const internalRefs = useRef({
-    // ...
-    suppressRendering: false,
-});
+**Why it was removed:** Returning `null` from the render function caused Ink to completely unmount the entire UI, clearing the terminal. When the component re-rendered after suppression was lifted, it would remount everything, creating a visible flash/blink effect. This was worse than the original duplication issue.
 
-// In render function - return null during transitions
-if (internalRefs.current.suppressRendering) {
-    return null;
-}
-
-// During back navigation
-const performTreeBackNavigation = useCallback(() => {
-    // Set flag BEFORE any state changes
-    internalRefs.current.suppressRendering = true;
-
-    const result = treeManagerRef.current.goBack();
-    if (result.success) {
-        applyInkRenderingFix();
-
-        // This render will output null (no terminal output)
-        flushSync(() => {
-            setTreeRevision((prev) => prev + 1);
-            setRenderKey((prev) => prev + 1);
-        });
-
-        // On next tick: lift suppression and render final state
-        setImmediate(() => {
-            internalRefs.current.suppressRendering = false;
-            setTreeRevision((prev) => prev + 1); // Trigger final render
-        });
-    }
-}, []);
-```
-
-**Why:** By returning `null` from the render function during state transitions, we completely prevent Ink from writing anything to the terminal buffer. The intermediate render produces zero output. Only the final render (after suppression is lifted) writes to the terminal, ensuring clean scroll history with no duplicates.
+**Lesson learned:** Preventing intermediate renders by returning `null` is too aggressive for Ink-based applications. The combination of `renderKey` (forcing remount) and `flushSync` is sufficient to prevent duplication without causing visual artifacts.
 
 ### 4. Async Rendering Fix (Available for Future Use)
 
@@ -125,19 +91,16 @@ export async function applyInkRenderingFixAsync(): Promise<void> {
 
 ## How These Solutions Work Together
 
-1. **Rendering Suppression** prevents ANY output during state transitions by returning `null`
-2. **Increased Micro-Delays** give React more time to reconcile state
-3. **Force Remount** ensures a clean slate by completely remounting the component tree
-4. **flushSync** ensures state updates happen synchronously
-5. **setImmediate** schedules the final render on the next event loop tick with complete state
+1. **Increased Micro-Delays** give React more time to reconcile state changes before Ink renders
+2. **Force Remount** ensures a clean slate by completely remounting the component tree
+3. **flushSync** ensures state updates happen synchronously before React re-renders
 
-This multi-layered approach ensures that:
+This approach ensures that:
 
--   **Zero intermediate renders** to the terminal buffer (component returns `null` during transition)
 -   React has sufficient time to reconcile all state changes
--   The component tree is completely refreshed on back navigation
--   Ink only outputs once: the final, correct state
--   Terminal scroll history remains clean (no ghost duplicates)
+-   The component tree is completely refreshed on back navigation with a consistent state
+-   Ink renders the correct state without intermediate artifacts
+-   No visual blinking or flashing occurs during navigation
 
 ## Testing
 
@@ -156,12 +119,12 @@ The fix should work in both:
 ## Files Modified
 
 -   `src/utils/ink-rendering-fix.ts` - Enhanced with new strategies
--   `src/components/PromptApp.tsx` - Added renderKey and output suppression
+-   `src/components/PromptApp.tsx` - Added renderKey for forced remount (output suppression removed due to blinking issue)
 
 ## Performance Impact
 
 -   **Minimal:** The micro-delays are very short (synchronous console.log calls)
--   **Acceptable:** The output suppression only lasts during state transitions (milliseconds)
+-   **Imperceptible:** The remount happens so quickly that users don't notice any delay
 -   **Necessary:** These small delays prevent visual glitches that significantly degrade UX
 
 ## Future Improvements

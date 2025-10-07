@@ -52,7 +52,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		isNavigatingBack: false,
 		firstFieldId: null as string | null,
 		hintsByPromptId: new Map<string, React.ReactNode>(),
-		suppressRendering: false, // Flag to prevent rendering during state transitions
 	});
 
 	// Memoized tree to ensure UI updates when tree structure changes
@@ -205,9 +204,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		try {
 			const canGoBack = treeManagerRef.current.canGoBack();
 			if (canGoBack) {
-				// Set suppression flag BEFORE any state changes to prevent intermediate renders
-				internalRefs.current.suppressRendering = true;
-
 				// Perform tree navigation
 				const result = treeManagerRef.current.goBack();
 				if (result.success) {
@@ -216,27 +212,15 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					applyInkRenderingFix();
 
 					// Use flushSync to ensure tree state updates are applied synchronously
-					// The render during flushSync will return null because suppressRendering is true
 					flushSync(() => {
 						setTreeRevision((prev) => prev + 1);
 						// Force a complete remount to prevent duplication issues
 						// when Ink has to redraw the entire terminal (e.g., in short terminals)
 						setRenderKey((prev) => prev + 1);
 					});
-
-					// Wait for next tick before allowing rendering again and trigger another render
-					// This ensures only ONE render happens, with the fully updated state
-					setImmediate(() => {
-						internalRefs.current.suppressRendering = false;
-						// Force another render now that suppression is lifted
-						setTreeRevision((prev) => prev + 1);
-					});
-				} else {
-					internalRefs.current.suppressRendering = false;
 				}
 			}
 		} catch (error) {
-			internalRefs.current.suppressRendering = false;
 			console.warn(
 				"Tree navigation error (non-critical during migration):",
 				error
@@ -308,25 +292,15 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				}
 
 				case "clear-group-back": {
-					// Set suppression flag BEFORE any state changes
-					internalRefs.current.suppressRendering = true;
-
 					// Clear group and go back
 					treeManagerRef.current.clearGroupAndGoBack(nodeId);
 					// Apply Ink rendering timing fix AFTER tree mutation but BEFORE React update
 					applyInkRenderingFix();
-					// Use flushSync for immediate state update (will render null because of suppression)
+					// Use flushSync for immediate state update
 					flushSync(() => {
 						setTreeRevision((prev) => prev + 1);
 						// Force a complete remount to prevent duplication issues
 						setRenderKey((prev) => prev + 1);
-					});
-
-					// Wait for next tick before allowing rendering again and trigger final render
-					setImmediate(() => {
-						internalRefs.current.suppressRendering = false;
-						// Force another render now that suppression is lifted
-						setTreeRevision((prev) => prev + 1);
 					});
 
 					resolveValue = { __back: true };
@@ -404,12 +378,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// When custom root container exists, RecursiveGroupContainer will use it internally for the root node
 	// Otherwise, wrap in the default RootContainer
 	const hasCustomContainer = !!(globalThis as any).__customRootContainer;
-
-	// Don't render anything if we're in the middle of a state transition
-	// This prevents Ink from outputting intermediate states to the terminal buffer
-	if (internalRefs.current.suppressRendering) {
-		return null;
-	}
 
 	if (hasCustomContainer) {
 		// Custom container will be applied at the root node level inside RecursiveGroupContainer
