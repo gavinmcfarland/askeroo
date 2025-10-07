@@ -380,8 +380,8 @@ export function RecursiveGroupContainer({
 					enableArrowNavigation={parent?.enableArrowNavigation}
 					{...(isActive && onHintChange && { onHintChange })}
 				/>
-				{/* Show hint text for active fields */}
-				{isActive && hintText && <HintText>{hintText}</HintText>}
+				{/* Always render hint area for active fields to prevent layout shift */}
+				{isActive && <HintText>{hintText || " "}</HintText>}
 			</Box>
 		);
 	}

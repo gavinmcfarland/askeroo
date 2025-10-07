@@ -68,18 +68,27 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	const handleHintChange = useCallback(
 		(hint: React.ReactNode) => {
 			if (currentPrompt?.id) {
-				internalRefs.current.hintsByPromptId.set(
-					currentPrompt.id,
-					hint
-				);
-				// Trigger re-render to show the updated hint
-				setTreeRevision((prev) => prev + 1);
+				// Only store non-null hints to prevent flicker during back navigation
+				// When a field becomes inactive, plugins send null, but we want to
+				// preserve the last known hint so it displays immediately on back nav
+				if (hint !== null) {
+					internalRefs.current.hintsByPromptId.set(
+						currentPrompt.id,
+						hint
+					);
+					// Use flushSync to make hint update synchronous and prevent blinking
+					flushSync(() => {
+						setTreeRevision((prev) => prev + 1);
+					});
+				}
 			}
 		},
 		[currentPrompt?.id]
 	);
 
 	// Get hint for current prompt only
+	// Keep showing current hint during back navigation to prevent flicker
+	// The flushSync in handleHintChange ensures new hint appears synchronously
 	const currentHintText = currentPrompt?.id
 		? internalRefs.current.hintsByPromptId.get(currentPrompt.id) || null
 		: null;
@@ -282,6 +291,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						node.completed = true; // Mark as completed when preserving
 					}
 					performTreeBackNavigation();
+					internalRefs.current.isNavigatingBack = true;
 					resolveValue = { __back: true };
 					// IMPORTANT: Don't trigger additional re-render, performTreeBackNavigation already did it
 					// Resolve promise and return early
@@ -303,6 +313,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						setRenderKey((prev) => prev + 1);
 					});
 
+					internalRefs.current.isNavigatingBack = true;
 					resolveValue = { __back: true };
 					// Resolve promise and return early (already triggered re-render)
 					const resolver = internalRefs.current.resolver;
