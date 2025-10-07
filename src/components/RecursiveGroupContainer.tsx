@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, Box } from "ink";
+import { Text, Box, Newline } from "ink";
 import { PromptNode, PromptTreeManager } from "../core/prompt-tree.js";
 import { globalRegistry } from "../core/registry.js";
 import { PluginWrapper } from "./PluginWrapper.js";
@@ -9,7 +9,12 @@ interface HintTextProps {
 }
 
 function HintText({ children }: HintTextProps) {
-	return <Text dimColor>{children}</Text>;
+	return (
+		<>
+			<Text> </Text>
+			<Text dimColor>{children}</Text>
+		</>
+	);
 }
 
 interface RecursiveGroupContainerProps {

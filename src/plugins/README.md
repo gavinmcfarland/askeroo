@@ -1,10 +1,30 @@
 # Plugin System
 
-The plugin system allows you to create custom prompt types and register them with the runtime.
+The plugin system uses **automatic registration** - plugins register themselves when imported. This allows you to:
+
+-   Only import and bundle the plugins you actually use
+-   Create custom plugins that work exactly like built-in ones
+-   No need to manually register plugins or modify core files
+
+## How It Works
+
+When you import a plugin (either built-in or custom), it automatically registers itself with the global registry. The runtime then discovers and uses all registered plugins dynamically.
+
+```typescript
+// When you import plugins, they auto-register
+import { ask, text, confirm } from "askeroo";
+
+// Now they're available in your flow
+const result = await ask(async () => {
+    const name = await text({ label: "Name?" });
+    const ok = await confirm({ label: "Continue?" });
+    return { name, ok };
+});
+```
 
 ## Core Plugins
 
-Core plugins are registered when you import them from the main package. They include:
+Built-in plugins that auto-register when imported:
 
 -   `text` - Text input fields
 -   `confirm` - Yes/no confirmation prompts
@@ -12,51 +32,69 @@ Core plugins are registered when you import them from the main package. They inc
 -   `note` - Display-only note prompts
 -   `completed-fields` - Display completed field values
 -   `radio` - Radio button selection prompts
+-   `tasks` - Task list prompts
 -   `group` - Group prompts into logical sections
--   `custom-ask` - Create custom ask functions with customizable root containers
+-   `ask` - The main ask function with customizable root containers
 
 ## Creating Custom Plugins
 
-### Method 1: Using `createPrompt` (Recommended)
+### Using `createPrompt` (Recommended)
 
-The easiest way to create a plugin is using the `createPrompt` helper, which automatically registers your plugin when the module is imported:
+Use the `createPrompt` helper to create plugins that auto-register when imported:
 
 ```typescript
-import React from "react";
-import { createPrompt } from "../registry.js";
+import { useState } from "react";
+import { Text, useInput } from "ink";
+import { createPrompt } from "askeroo";
 
-// Your component
-function MyCustomField({ label, onSubmit, ...props }) {
-    return (
-        <Text>{label}</Text>
-        // Your custom UI logic here
-    );
+interface MyOptions {
+    label: string;
 }
 
-// Create and auto-register the plugin
-export const myCustomField = createPrompt({
+// Create and export your plugin - it auto-registers when imported
+export const myCustomField = createPrompt<MyOptions, string>({
     type: "my-custom-field",
-    component: MyCustomField,
-    autoSubmit: false, // Optional: whether this auto-submits (default: false)
-    prompt: (opts, context, id) => opts, // Process options if needed
+    component: ({ node, options, events }) => {
+        const [value, setValue] = useState("");
+
+        useInput(
+            (input, key) => {
+                if (key.return) {
+                    events.onSubmit?.(value);
+                } else if (input) {
+                    setValue((prev) => prev + input);
+                }
+            },
+            { isActive: node.state === "active" }
+        );
+
+        return (
+            <Text>
+                {options.label}: {value}
+            </Text>
+        );
+    },
+    autoSubmit: false, // Optional: auto-submit without user interaction
+    transform: (opts) => opts, // Optional: transform options before rendering
 });
 ```
 
 Then use it in your code:
 
 ```typescript
-import { ask } from "../core.js";
-import { myCustomField } from "./path/to/my-custom-field.js"; // Import registers the plugin automatically
+import { ask } from "askeroo";
+import { myCustomField } from "./my-custom-field.js";
 
-const result = await ask(async ({ myCustomField }) => {
-    return await myCustomField({
-        label: "Enter something custom:",
-        // any other options
+// Just importing myCustomField registers it automatically!
+const result = await ask(async () => {
+    const value = await myCustomField({
+        label: "Enter something custom",
     });
+    return { value };
 });
 ```
 
-**Note:** Just importing the plugin file registers it with the runtime, just like built-in plugins work when you import them from the main package.
+**Key Point:** The plugin registers itself when imported - no manual registration needed!
 
 ## Special Plugins
 
@@ -88,27 +126,28 @@ const result = await createCustomAsk(
 
 See the [Custom Ask Plugin README](./custom-ask/README.md) for detailed documentation and examples.
 
-### Method 2: Manual Registration
+### Manual Registration (Advanced)
 
-For more control, you can manually register plugins:
+For advanced use cases, you can manually register plugins:
 
 ```typescript
-import { registerPlugin, globalRegistry } from "../registry.js";
+import { registerPlugin, globalRegistry } from "askeroo";
 
 // Define your plugin
 const myPlugin = {
     type: "my-plugin",
     component: MyComponent,
     autoSubmit: false,
-    prompt: (opts, context, id) => opts,
 };
 
-// Register it
+// Register it manually
 registerPlugin(myPlugin);
 
 // Or access the registry directly
 globalRegistry.register(myPlugin);
 ```
+
+> **Note:** Manual registration is rarely needed. Use `createPrompt` for automatic registration.
 
 ## Plugin Structure
 
@@ -132,11 +171,12 @@ Your component will receive:
 
 ## Best Practices
 
-1. **Self-register**: Import your plugin file to automatically register it
-2. **Export the function**: Export the plugin function for use in flows
-3. **Handle all states**: Support completed, disabled, and active states
-4. **Follow conventions**: Use consistent prop names and behaviors
-5. **Type safety**: Use TypeScript interfaces for better developer experience
+1. **Use `createPrompt`**: It handles auto-registration and provides type safety
+2. **Import only what you need**: Only import the plugins your app uses for optimal bundle size
+3. **Handle all states**: Support `completed`, `disabled`, and `active` states in your component
+4. **Type safety**: Define TypeScript interfaces for options and return types
+5. **Export the function**: Export the result of `createPrompt` for use in flows
+6. **Test in isolation**: Plugins can be tested independently since they're self-contained
 
 ## Example: Custom Slider Plugin
 
@@ -191,15 +231,28 @@ export const slider = createPrompt<SliderProps, number>({
 });
 ```
 
-This plugin would be used like:
+Use the slider plugin like this:
 
 ```typescript
-import "./path/to/slider-plugin.js";
+import { ask } from "askeroo";
+import { slider } from "./slider-plugin.js"; // Auto-registers when imported
 
-const volume = await slider({
-    label: "Select volume level:",
-    min: 0,
-    max: 10,
-    step: 1,
+const result = await ask(async () => {
+    const volume = await slider({
+        label: "Select volume level:",
+        min: 0,
+        max: 10,
+        step: 1,
+    });
+
+    return { volume };
 });
 ```
+
+## Benefits of Auto-Registration
+
+1. **Tree-shaking**: Unused plugins aren't bundled in your app
+2. **No boilerplate**: No need to manually register each plugin
+3. **Extensible**: Custom plugins work exactly like built-in ones
+4. **Type-safe**: Full TypeScript support with inference
+5. **Modular**: Plugins are self-contained and independent

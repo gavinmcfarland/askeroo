@@ -1,6 +1,9 @@
 # Askeroo
 
-A modern CLI prompt library with flow control, back navigation, and conditional fields using Ink.
+A modern CLI prompt library with flow control, back navigation, and conditional fields.
+
+> [NOTE!]
+> This library is still in alpha and things might change before release.
 
 ## Features
 
@@ -62,7 +65,62 @@ const result = await ask(flow);
 console.log(result);
 ```
 
-## API Reference
+## How does Askeroo work?
+
+Askeroo is built around the concept of a flow, where each prompt is executed in sequence. Some prompts can auto-submit, while others wait for user input, and each prompt can appear in different states—before activation, while active, and after completion. Prompts are also dynamic: they can be updated or changed at any point within your flow function.
+
+When you call `ask(flow)`, Askeroo sets up a runtime that runs your flow function **multiple times** using a replay mechanism. This allows for a smooth and interactive experience:
+
+1. **First run**: The flow executes, prompts are shown one by one, and answers are stored.
+2. **User navigates back**: The runtime replays the flow, automatically filling in previous answers.
+3. **User changes an answer**: The runtime clears any answers that came after the changed prompt and continues from there.
+4. **Repeat**: This process continues until the user completes the flow.
+
+From the user's perspective, this feels like a seamless way to move back and forth between prompts. Behind the scenes, Askeroo is replaying your flow function as needed to determine which prompts should be shown at each step.
+
+```ts
+// Your flow function runs multiple times
+const flow = async () => {
+    const role = await radio({
+        label: "Select your role",
+        options: ["Developer", "Designer"],
+    });
+
+    if (role === "Developer") {
+        const language = await radio({
+            label: "Preferred language",
+            options: ["TypeScript", "JavaScript"],
+        });
+        return { role, language };
+    }
+
+    const tool = await radio({
+        label: "Design tool",
+        options: ["Figma", "Sketch"],
+    });
+    return { role, tool };
+};
+```
+
+**Flow:**
+
+```
+Select your role: Developer
+   ↓
+Preferred language: TypeScript
+   ↓
+User presses back ⬆
+   ↓
+Select your role: Designer
+   ↓
+Design tool: Figma
+   ↓
+Complete
+```
+
+The flow replays automatically when the user navigates back, clearing subsequent answers and showing the appropriate prompts based on the new selection.
+
+## Running Flows
 
 -   ### Run prompt flows
 
@@ -123,12 +181,18 @@ console.log(result);
 
     Execute a list of tasks with progress indication and error handling.
 
-## Create a prompt
+## Create Custom Prompts
+
+Askeroo uses **automatic plugin registration** - when you create a prompt with `createPrompt`, it registers itself when imported. This means:
+
+-   ✅ No manual registration needed
+-   ✅ Only bundle the prompts you actually use
+-   ✅ Custom prompts work exactly like built-in ones
 
 ```ts
 import React, { useState } from "react";
 import { Text, useInput } from "ink";
-import { createPrompt } from "askeroo/core";
+import { createPrompt } from "askeroo";
 
 // Define your options interface
 export interface CustomOptions {
@@ -136,7 +200,7 @@ export interface CustomOptions {
     placeholder?: string;
 }
 
-// Create and export the plugin
+// Create and export the plugin - it auto-registers when imported!
 export const customField = createPrompt<CustomOptions, string>({
     type: "custom-field",
     component: ({ node, options, events }: any) {
@@ -175,8 +239,8 @@ export const customField = createPrompt<CustomOptions, string>({
 ### Usage
 
 ```ts
-import { ask } from "askeroo/core";
-import { customField } from "./custom-field.js"; // Import registers the plugin
+import { ask } from "askeroo";
+import { customField } from "./custom-field.js"; // Auto-registers when imported!
 
 const result = await ask(async () => {
     const input = await customField({
@@ -191,8 +255,10 @@ const result = await ask(async () => {
 Run the included example:
 
 ```bash
-npm run example       # Ink UI example
+npm run example
 ```
+
+Try `npm run build && npm run example test-run`
 
 ## Development
 

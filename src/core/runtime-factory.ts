@@ -9,17 +9,6 @@ import { PromptRuntime } from "./prompt-runtime.js";
 import { setCurrentRuntime, type RuntimeAPI } from "./runtime-context.js";
 import { UI } from "../types/index.js";
 
-// Import all plugins to ensure they're registered
-import "../plugins/text/index.js";
-import "../plugins/confirm/index.js";
-import "../plugins/multi/index.js";
-import "../plugins/note/index.js";
-import "../plugins/radio/index.js";
-import "../plugins/tasks/index.js";
-import "../plugins/completed-fields/index.js";
-import "../plugins/group/index.js";
-import "../plugins/ask/index.js";
-
 export class RuntimeFactory {
 	/**
 	 * Create a new runtime instance with full configuration
