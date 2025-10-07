@@ -3,22 +3,16 @@
  *
  * Handles runtime instantiation, API binding, and dependency injection.
  * Manages the lifecycle of runtime creation and registration.
+ *
+ * Note: This factory is decoupled from plugin implementations. Plugins are
+ * loaded via default-plugins.ts which is imported from index.ts. This allows
+ * the runtime to be plugin-agnostic while maintaining a clean separation of
+ * concerns.
  */
 
 import { PromptRuntime } from "./prompt-runtime.js";
 import { setCurrentRuntime, type RuntimeAPI } from "./runtime-context.js";
 import { UI } from "../types/index.js";
-
-// Import all plugins to ensure they're registered
-import "../plugins/text/index.js";
-import "../plugins/confirm/index.js";
-import "../plugins/multi/index.js";
-import "../plugins/note/index.js";
-import "../plugins/radio/index.js";
-import "../plugins/tasks/index.js";
-import "../plugins/completed-fields/index.js";
-import "../plugins/group/index.js";
-import "../plugins/ask/index.js";
 
 export class RuntimeFactory {
 	/**

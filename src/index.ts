@@ -2,6 +2,9 @@
 import type { FlowFunction } from "./types/index.js";
 export type { FlowFunction };
 
+// Load default plugins (must be imported before runtime creation)
+import "./core/default-plugins.js";
+
 // Export the new customizable ask function
 export { ask } from "./plugins/ask/index.js";
 
