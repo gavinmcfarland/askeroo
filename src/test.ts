@@ -4,7 +4,7 @@
 import { ask, group, text, confirm } from "./index.js";
 
 // Then import plugins after runtime is established
-import { multi } from "./plugins/multi/index.js";
+import { multi } from "./built-ins/multi/index.js";
 
 const flow = async () => {
 	const name = await text({

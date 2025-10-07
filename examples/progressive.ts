@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { ask, group, text, confirm } from "../src/index.js";
-import { multi } from "../src/plugins/multi/index.js";
+import { multi } from "../src/built-ins/multi/index.js";
 
 const flow = async () => {
 	const answers = await group(async () => {

@@ -8,8 +8,8 @@ import {
 	multi,
 	tasks,
 } from "../src/index.js";
-import { completedFields } from "../src/plugins/completed-fields/index.js";
-import { note } from "../src/plugins/note/index.js";
+import { completedFields } from "../src/built-ins/completed-fields/index.js";
+import { note } from "../src/built-ins/note/index.js";
 
 // Sleep helper function
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

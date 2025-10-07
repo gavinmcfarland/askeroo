@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { ask, group, text, confirm } from "../src/index.js";
-import { multi } from "../src/plugins/multi/index.js";
+import { multi } from "../src/built-ins/multi/index.js";
 import { logResult } from "../src/utils/logging.js";
 
 const flow = async () => {

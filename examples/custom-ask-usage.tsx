@@ -3,7 +3,7 @@ import { Box, Text } from "ink";
 import { ask } from "../src/index.js";
 
 // Import the plugin to register it
-import "../src/plugins/ask/index.js";
+import "../src/built-ins/ask/index.js";
 
 async function demonstrateCustomAsk() {
 	console.log("🚀 Demonstrating Custom Ask Plugin Usage...\n");

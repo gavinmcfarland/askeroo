@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { ask, group, text, confirm } from "../src/index.js";
-import { completedFields } from "../src/plugins/completed-fields/index.js";
+import { completedFields } from "../src/built-ins/completed-fields/index.js";
 
 const flow = async () => {
 	// Show completed fields after first field

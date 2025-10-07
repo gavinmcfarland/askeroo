@@ -10,7 +10,7 @@ import { RecursiveGroupContainer } from "./RecursiveGroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../core/registry.js";
 import { PromptTreeManager, PromptNode } from "../core/prompt-tree.js";
-import { setTreeManager } from "../plugins/completed-fields/completed-fields-store.js";
+import { setTreeManager } from "../built-ins/completed-fields/completed-fields-store.js";
 import { PromptRequest } from "../types/index.js";
 import { applyInkRenderingFix } from "../utils/ink-rendering-fix.js";
 

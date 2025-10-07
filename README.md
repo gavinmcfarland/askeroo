@@ -2,7 +2,7 @@
 
 A modern CLI prompt library with flow control, back navigation, and conditional fields.
 
-> [NOTE!]
+> [!WARNING]
 > This library is still in alpha and things might change before release.
 
 ## Features
