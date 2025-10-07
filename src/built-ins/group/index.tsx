@@ -59,22 +59,20 @@ export const group = (
 		isContainer: true,
 
 		component: ({ node, options, events }: any) => {
-			const baseIndent = Math.max(0, ((node.depth || 0) - 1) * 3);
-
 			return (
 				<Box flexDirection="column">
 					{options.label && (
-						<Box marginLeft={baseIndent}>
-							<Text color="yellow">{options.label}</Text>
+						<Box>
+							<Text color="green">
+								{options.label} {node.depth}
+							</Text>
 						</Box>
 					)}
 					{node.children && (
 						<Box
 							flexDirection="column"
 							gap={1}
-							marginLeft={
-								options.label ? baseIndent + 3 : baseIndent
-							}
+							marginLeft={options.label ? 3 : 0}
 						>
 							{node.children}
 						</Box>

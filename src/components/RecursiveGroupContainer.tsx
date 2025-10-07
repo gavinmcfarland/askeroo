@@ -363,10 +363,7 @@ export function RecursiveGroupContainer({
 		}
 
 		return (
-			<Box
-				marginLeft={shouldIndent ? baseIndent : 0}
-				flexDirection="column"
-			>
+			<Box flexDirection="column">
 				<PluginWrapper
 					pluginType={item.fieldType}
 					key={`plugin-${item.id}-${item.depth}-${pluginState}`}
