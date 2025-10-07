@@ -86,11 +86,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		[currentPrompt?.id]
 	);
 
-	// Get hint for current prompt only
-	// Keep showing current hint during back navigation to prevent flicker
+	// Get hint for the ACTIVE node from the tree (not currentPrompt)
+	// This ensures hint stays in sync with tree state during navigation
 	// The flushSync in handleHintChange ensures new hint appears synchronously
-	const currentHintText = currentPrompt?.id
-		? internalRefs.current.hintsByPromptId.get(currentPrompt.id) || null
+	const activeNode = treeManagerRef.current.getActiveNode();
+	const currentHintText = activeNode?.id
+		? internalRefs.current.hintsByPromptId.get(activeNode.id) || null
 		: null;
 
 	useEffect(() => {
