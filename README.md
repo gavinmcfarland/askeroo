@@ -27,7 +27,7 @@ npm i askeroo
 Askeroo comes with a default runtime and set of prompts that you can use out of the box.
 
 ```typescript
-import { ask, group, text, confirm } from "askeroo";
+import { ask, group, text, confirm, note } from "askeroo";
 
 const flow = async () => {
     // Display notes
