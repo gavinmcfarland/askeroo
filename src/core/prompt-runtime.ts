@@ -506,7 +506,6 @@ export class PromptRuntime {
 			});
 			this.ui.completeFlow?.();
 		}
-
 		return result as T;
 	}
 

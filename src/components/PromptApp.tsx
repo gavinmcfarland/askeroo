@@ -135,6 +135,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				) {
 					internalRefs.current.firstFieldId = request.id;
 				}
+
+				// IMPORTANT: Assign resolver BEFORE updating state
+				// This ensures the useEffect can access the resolver immediately
+				internalRefs.current.resolver = resolve;
+
 				// Use flushSync to ensure both updates happen atomically in a single render
 				flushSync(() => {
 					// Update currentPrompt and handle back navigation cleanup
@@ -158,9 +163,6 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					}
 				});
 
-				// Assign resolver without rendering
-				internalRefs.current.resolver = resolve;
-
 				// NEW: Add prompt to tree structure and activate it
 				try {
 					// SIMPLIFIED: Runtime provides explicit parent via request.groupName
@@ -175,21 +177,19 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					// Activate the prompt in the tree (crucial for rendering)
 					if (request.type !== "group") {
 						treeManagerRef.current.navigateTo(request.id);
+					} else {
+						// Mark group as visited and active so it shows up in the tree
+						const groupNode = treeManagerRef.current.getNode(
+							request.id
+						);
+						if (groupNode) {
+							groupNode.visited = true;
+							groupNode.active = true; // Mark as active so it renders
+						}
 					}
 
 					// Force re-render to reflect tree changes
 					setTreeRevision((prev) => prev + 1);
-
-					// Log tree structure for debugging
-					if (process.env.NODE_ENV === "development") {
-						console.log(
-							"🌳 Tree updated for prompt:",
-							request.id,
-							request.type,
-							"parent:",
-							explicitParent
-						);
-					}
 				} catch (error) {
 					console.warn(
 						"Tree management error (non-critical during migration):",
