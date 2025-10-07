@@ -64,8 +64,8 @@ export const group = (
 			return (
 				<Box flexDirection="column">
 					{options.label && (
-						<Box width={15} marginLeft={baseIndent}>
-							<Text>{options.label}</Text>
+						<Box marginLeft={baseIndent}>
+							<Text color="yellow">{options.label}</Text>
 						</Box>
 					)}
 					{node.children && (
