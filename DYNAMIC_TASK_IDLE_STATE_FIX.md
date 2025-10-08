@@ -1,167 +1,78 @@
-# Dynamic Task Idle State Fix
+# Dynamic Task Idle State Fix - SUPERSEDED
 
-## Problem
+> **⚠️ NOTE:** This document describes an interim fix that has been superseded by a better implementation.  
+> **See:** `PLUGIN_STATE_CONTEXT_IMPLEMENTATION.md` for the current implementation.
 
-When dynamic tasks were added during task execution, the idle state (□) was inconsistently visible. Sometimes it would appear, other times the task would immediately show in the running state (spinner), making it unclear whether the task had started.
+## Original Problem
 
-## Root Cause
+When dynamic tasks were added during task execution, the idle state (□) was inconsistently visible due to race conditions with the polling mechanism.
 
-The issue was a **race condition** between task execution timing and the UI polling mechanism:
+## Original Fix (Polling-Based)
 
-1. **Task execution**: When a dynamic task is added via `tasks.add()`:
+The initial fix decoupled task registration from execution:
 
-    - Task added to store with `"idle"` status
-    - Immediately started execution with a fixed delay (originally 100ms)
-    - Transitioned to `"running"` status after the delay
+-   Tasks registered with "idle" status
+-   Polling mechanism detected tasks
+-   After detection, triggered execution
+-   This ensured idle state was visible for at least one poll cycle
 
-2. **UI polling mechanism**: The TasksDisplay component polls the global task store for updates:
-    - Poll interval: **~100ms** (with exponential backoff)
-    - First poll after task addition: **0-100ms** (depending on timing)
+**Issues with this approach:**
 
-### The Race Condition
+-   Still relied on polling (0-100ms latency)
+-   CPU overhead from constant polling
+-   Complex polling logic with exponential backoff
 
-```
-Timeline (BEFORE FIX):
-T+0ms:      Dynamic task added with status="idle"
-T+0-100ms:  Next UI poll occurs (may or may not see idle state)
-T+100ms:    Task transitions to status="running"
-T+100-200ms: UI poll definitely sees "running" state
+## Current Implementation (Context-Based)
 
-Result: If the poll happens after T+100ms, the idle state is never rendered!
-```
+**Replaced polling with React Context for instant, reactive updates.**
 
-### Why This Happened
+### How It Works Now
 
-The problem was that **task execution started on a fixed timer**, independent of whether the UI had detected and rendered the task. The polling mechanism couldn't guarantee it would catch the idle state before the timer expired.
+1. **PluginStateContext** provides reactive state management
+2. Tasks trigger `notifyChange()` when state updates
+3. TasksDisplay subscribes with `usePluginState()` hook
+4. React handles updates instantly with `flushSync()`
 
-## Solution
+### Benefits
 
-**Decouple task registration from task execution** by making the polling mechanism control when tasks start:
+-   ⚡ **0ms latency** (was 0-100ms)
+-   💪 **Zero polling overhead** (was constant CPU usage)
+-   🧹 **80 fewer lines** of polling code
+-   🔌 **Universal** - any plugin can use it
 
-1. When a task is added, register its executor function but **don't start it**
-2. The polling mechanism detects new idle tasks
-3. After the task is rendered (idle state shown), the polling mechanism **triggers execution**
+### Idle State Guarantee
 
-This eliminates the race condition because execution only starts **after** the polling mechanism has picked up the task.
+With the context-based system:
 
-```typescript
-// In addDynamicTask() - register executor but don't start it
-const executor = async () => {
-    updateTaskStateInStore(taskListId, taskId, { status: "running" });
-    if (task.action) await task.action();
-    updateTaskStateInStore(taskListId, taskId, { status: "success" });
-};
+1. Task added → Context notified → Instant re-render
+2. Idle state (□) rendered
+3. After 400ms delay → Task execution begins
+4. Running state (spinner) shown
 
-// Register for later execution by polling mechanism
-registerTaskExecutor(taskId, executor);
+The idle state is **always** visible because React re-renders immediately when the task is added, before the execution timer starts.
 
-// In polling mechanism - start pending tasks after they're detected
-const pendingTaskIds = getPendingTaskIds(taskListId);
-if (pendingTaskIds.length > 0) {
-    setTimeout(() => {
-        pendingTaskIds.forEach((taskId) => startPendingTask(taskId));
-    }, 0);
-}
-```
+## Files
 
-### How This Works
+For details on the current implementation, see:
 
-```
-Timeline (AFTER FIX):
-T+0ms:     Dynamic task added with status="idle", executor registered
-T+0-100ms: First poll detects new idle task
-T+0-100ms: Poll schedules executor to start (after current render)
-T+0-100ms: Render completes, idle state is visible ✓
-T+0-100ms: Executor starts, task transitions to "running"
+-   `PLUGIN_STATE_CONTEXT_IMPLEMENTATION.md` - Complete implementation guide
+-   `src/core/plugin-state-context.tsx` - Context implementation
+-   `src/built-ins/tasks/Tasks.tsx` - Updated to use context (no polling)
+-   `src/built-ins/tasks/task-store.ts` - Triggers context updates
 
-Result: Idle state is ALWAYS rendered before execution begins!
-```
+## Migration Timeline
 
-The key insight: Instead of using a fixed delay and hoping the polling catches it, **wait for the polling to detect the task, then start execution**.
+1. ✅ Initial fix: Polling-based with pending executors (this document)
+2. ✅ Investigation: Explored alternatives to polling
+3. ✅ Final implementation: React Context system (current)
 
-## Changes Made
+## Historical Reference
 
-### File: `src/built-ins/tasks/task-store.ts`
+The polling-based fix worked by:
 
-1. **Added pending task executor storage**:
+-   Registering task executors but not starting them
+-   Polling mechanism detected pending tasks
+-   Started tasks after idle state was rendered
+-   400ms delay ensured visibility
 
-    ```typescript
-    let pendingTaskExecutors: Map<string, () => Promise<void>> = new Map();
-    ```
-
-2. **New functions**:
-    - `registerTaskExecutor()` - Register a task's executor for later execution
-    - `startPendingTask()` - Start a previously registered task
-    - `isTaskPending()` - Check if a task is pending execution
-    - `getPendingTaskIds()` - Get all pending task IDs for a task list
-
-### File: `src/built-ins/tasks/Tasks.tsx`
-
-1. **Updated `addDynamicTask()`**:
-
-    - Removed fixed `setTimeout()` delay
-    - Created executor function but don't call it
-    - Register executor using `registerTaskExecutor()`
-
-2. **Updated polling mechanism**:
-    - After detecting state changes, check for pending tasks
-    - Start pending tasks using `setTimeout(..., 0)` to ensure current render completes first
-    - This guarantees idle state is visible before execution begins
-
-## Testing
-
-Test file: `tests/test-dynamic-task-idle-state.ts`
-
-This test adds multiple dynamic tasks in quick succession. With the fix:
-
--   Each task reliably shows the idle state (□) before transitioning to running (spinner)
--   No race condition - idle state is always visible
--   Execution starts only after the task is rendered
-
-To run:
-
-```bash
-npm run build
-node dist/tests/test-dynamic-task-idle-state.js
-```
-
-## Comparison with Regular Tasks
-
-Regular tasks (added at initialization) use a **400ms** delay before execution:
-
-```typescript
-// In TasksDisplay component initialization:
-setTimeout(() => {
-    executeAllTasks();
-}, 400);
-```
-
-This is different because:
-
--   Regular tasks are initialized all at once when component mounts
--   The 400ms delay gives users time to read the full task list
--   No polling is involved - tasks are in component state from the start
-
-Dynamic tasks now use the same principle but coordinated with polling:
-
--   Wait for UI to detect and render the idle state
--   Then start execution immediately after render completes
--   More responsive than a fixed delay, and 100% reliable
-
-## Advantages of This Approach
-
-1. **No race condition**: Execution starts only after task is rendered
-2. **No arbitrary delays**: Task starts as soon as it's safely rendered
-3. **More responsive**: Tasks start faster than with a long fixed delay
-4. **Deterministic**: Behavior is predictable and testable
-5. **Minimal changes**: Works within existing polling architecture
-
-## Future Improvements
-
-While this fix is robust, the ideal solution would eliminate polling entirely:
-
-1. **Reactive state management**: Pass dynamic tasks as props from PromptApp
-2. **Event-driven updates**: Use an event emitter pattern for task state changes
-3. **Context-based state**: Use React Context to share task state reactively
-
-However, those would require significant architectural changes. The current fix is minimal, effective, and maintains backward compatibility while solving the core issue.
+This approach solved the race condition but introduced other issues (polling overhead, latency). The context-based approach eliminates those issues entirely.

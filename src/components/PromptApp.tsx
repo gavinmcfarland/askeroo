@@ -13,6 +13,10 @@ import { PromptTreeManager, PromptNode } from "../core/prompt-tree.js";
 import { setTreeManager } from "../built-ins/completed-fields/completed-fields-store.js";
 import { PromptRequest } from "../types/index.js";
 import { applyInkRenderingFix } from "../utils/ink-rendering-fix.js";
+import {
+	usePluginState,
+	setPluginStateNotifier,
+} from "../core/plugin-state-context.js";
 
 // Type declaration for debug utilities
 declare global {
@@ -59,10 +63,21 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		return treeManagerRef.current.getTree();
 	}, [treeRevision]);
 
+	// Get plugin state context
+	const { notifyChange } = usePluginState();
+
 	// Set tree manager for CompletedFields plugin (once on mount)
 	useEffect(() => {
 		setTreeManager(treeManagerRef.current);
 	}, []);
+
+	// Register the plugin state notifier globally so plugins can access it
+	useEffect(() => {
+		setPluginStateNotifier(notifyChange);
+		return () => {
+			setPluginStateNotifier(null);
+		};
+	}, [notifyChange]);
 
 	// Handler for when fields provide hint text - stores per prompt ID
 	const handleHintChange = useCallback(

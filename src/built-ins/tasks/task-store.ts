@@ -1,5 +1,7 @@
-// Task store to manage dynamic tasks at the PromptApp level
-// Similar to how completed fields are managed
+// Task store to manage dynamic tasks using the generic plugin state system
+// Uses PluginStateContext for reactive updates instead of polling
+
+import { getPluginStateNotifier } from "../../core/plugin-state-context.js";
 
 export interface TaskStoreState {
 	taskListDynamicTasks: Map<string, Array<any>>;
@@ -18,23 +20,6 @@ let allTaskStates: Map<string, Map<string, any>> = new Map();
 // Store pending task executors (functions that will execute the task)
 // These are stored when task is added, but only executed after UI picks up the idle state
 let pendingTaskExecutors: Map<string, () => Promise<void>> = new Map();
-
-let updateTaskStoreCallback: ((state: TaskStoreState) => void) | null = null;
-let updateAllStatesCallback:
-	| ((states: Map<string, Map<string, any>>) => void)
-	| null = null;
-
-// Initialize the store with PromptApp's state updater
-export function initializeTaskStore(updater: (state: TaskStoreState) => void) {
-	updateTaskStoreCallback = updater;
-}
-
-// Initialize all task states updater
-export function initializeAllTaskStates(
-	updater: (states: Map<string, Map<string, any>>) => void
-) {
-	updateAllStatesCallback = updater;
-}
 
 // Add a dynamic task to a specific task list
 export function addDynamicTaskToList(taskListId: string, task: any): string {
@@ -56,9 +41,10 @@ export function addDynamicTaskToList(taskListId: string, task: any): string {
 	existingStates.set(taskId, { status: "idle" });
 	globalTaskStore.taskListStates.set(taskListId, existingStates);
 
-	// Notify PromptApp
-	if (updateTaskStoreCallback) {
-		updateTaskStoreCallback({ ...globalTaskStore });
+	// Notify all subscribed plugins to update via PluginStateContext
+	const notifyChange = getPluginStateNotifier();
+	if (notifyChange) {
+		notifyChange();
 	}
 
 	return taskId;
@@ -77,11 +63,6 @@ export function updateTaskState(
 		const currentState = existingStates.get(taskId) || { status: "idle" };
 		existingStates.set(taskId, { ...currentState, ...state });
 		globalTaskStore.taskListStates.set(taskListId, existingStates);
-
-		// Notify PromptApp
-		if (updateTaskStoreCallback) {
-			updateTaskStoreCallback({ ...globalTaskStore });
-		}
 	}
 
 	// Also update in all task states for comprehensive tracking
@@ -90,9 +71,10 @@ export function updateTaskState(
 	listStates.set(taskId, { ...currentState, ...state });
 	allTaskStates.set(taskListId, listStates);
 
-	// Notify PromptApp
-	if (updateAllStatesCallback) {
-		updateAllStatesCallback(new Map(allTaskStates));
+	// Notify all subscribed plugins to update via PluginStateContext
+	const notifyChange = getPluginStateNotifier();
+	if (notifyChange) {
+		notifyChange();
 	}
 }
 
@@ -216,7 +198,9 @@ export function clearTaskStore() {
 	globalTaskStore.taskListStates.clear();
 	pendingTaskExecutors.clear();
 
-	if (updateTaskStoreCallback) {
-		updateTaskStoreCallback({ ...globalTaskStore });
+	// Notify all subscribed plugins to update via PluginStateContext
+	const notifyChange = getPluginStateNotifier();
+	if (notifyChange) {
+		notifyChange();
 	}
 }

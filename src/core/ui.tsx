@@ -1,6 +1,7 @@
 import React from "react";
 import { render } from "ink";
 import { PromptApp } from "../components/PromptApp.js";
+import { PluginStateProvider } from "./plugin-state-context.js";
 import { debugLogger } from "../utils/logging.js";
 import { globalRegistry } from "./registry.js";
 import { BackToken, PromptRequest } from "../types/index.js";
@@ -26,13 +27,15 @@ function ensureApp(): Promise<(request: PromptRequest) => Promise<any>> {
 		}
 
 		const { unmount } = render(
-			<PromptApp
-				onReady={(promptFn) => {
-					appInstance.promptFn = promptFn;
-					appInstance.unmount = unmount;
-					resolve(promptFn);
-				}}
-			/>
+			<PluginStateProvider>
+				<PromptApp
+					onReady={(promptFn) => {
+						appInstance.promptFn = promptFn;
+						appInstance.unmount = unmount;
+						resolve(promptFn);
+					}}
+				/>
+			</PluginStateProvider>
 		);
 	});
 }
@@ -64,7 +67,13 @@ function createUI() {
 			appInstance.currentGroup = groupId;
 			const promptFn = await ensureApp();
 			// Extract additional options while preserving core properties
-			const { label: _, flow: __, id: ___, enableArrowNavigation: ____, ...additionalOptions } = groupOptions || {};
+			const {
+				label: _,
+				flow: __,
+				id: ___,
+				enableArrowNavigation: ____,
+				...additionalOptions
+			} = groupOptions || {};
 
 			await promptFn({
 				type: "group",
@@ -122,7 +131,7 @@ function createUI() {
 
 		onGroupCompleted(groupId: string): void {
 			// Trigger a re-render by sending a UI update event
-			ensureApp().then(promptFn => {
+			ensureApp().then((promptFn) => {
 				promptFn({
 					type: "groupCompleted",
 					id: groupId,

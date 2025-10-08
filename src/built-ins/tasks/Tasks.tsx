@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { TaskWarning } from "./index.js";
 import { PluginComponentProps } from "../../types/index.js";
+import { usePluginState } from "../../core/plugin-state-context.js";
 
 export interface TaskLabel {
 	idle?: string;
@@ -175,6 +176,9 @@ export const TasksDisplay = ({
 		return `tasklist_${Math.abs(hash)}`;
 	});
 
+	// Subscribe to plugin state context for reactive updates (no polling!)
+	const { revision } = usePluginState();
+
 	// Use the existing local task state system for regular tasks
 	const [taskStates, setTaskStates] = useState<Map<string, TaskState>>(
 		new Map()
@@ -183,102 +187,38 @@ export const TasksDisplay = ({
 	// Get dynamic tasks for this specific task list only
 	const [dynamicTasks, setDynamicTasks] = useState<Array<any>>([]);
 
-	// Load existing states from centralized store and keep dynamic tasks updated
+	// Register this task list as active
 	useEffect(() => {
-		// Register this task list as active
 		activeTaskLists.add(taskListId);
 		mostRecentTaskListId = taskListId;
 
-		// Load existing task states from centralized store
-		const existingStates = getAllTaskStatesForList(taskListId);
-		if (existingStates.size > 0) {
-			setTaskStates(new Map(existingStates));
-		}
-
-		// Update dynamic tasks from centralized store
-		const updateDynamicTasks = () => {
-			setDynamicTasks(getDynamicTasksForList(taskListId));
+		return () => {
+			endTaskList(taskListId);
 		};
-
-		// Initial load of dynamic tasks
-		updateDynamicTasks();
-
-		// Set up optimized polling with dynamic intervals based on activity
-		let pollInterval = 100; // Start with fast polling
-		const maxInterval = 1000; // Cap at 1 second
-		let consecutiveNoChanges = 0;
-		let timeoutId: NodeJS.Timeout;
-
-		const poll = () => {
-			const newDynamicTasks = getDynamicTasksForList(taskListId);
-			const latestStates = getAllTaskStatesForList(taskListId);
-			let hasChanges = false;
-
-			// Only update if there are actual changes
-			setDynamicTasks((prevTasks) => {
-				if (
-					JSON.stringify(prevTasks) !==
-					JSON.stringify(newDynamicTasks)
-				) {
-					hasChanges = true;
-					return newDynamicTasks;
-				}
-				return prevTasks;
-			});
-
-			setTaskStates((prevStates) => {
-				const latestStatesMap = new Map(latestStates);
-				// Compare state maps to avoid unnecessary updates
-				if (prevStates.size !== latestStatesMap.size) {
-					hasChanges = true;
-					return latestStatesMap;
-				}
-				for (const [key, value] of prevStates) {
-					const latestValue = latestStatesMap.get(key);
-					if (
-						!latestValue ||
-						JSON.stringify(value) !== JSON.stringify(latestValue)
-					) {
-						hasChanges = true;
-						return latestStatesMap;
-					}
-				}
-				return prevStates;
-			});
-
-			// Check for pending tasks and start them after they've been rendered
-			// This ensures the idle state is visible before execution begins
-			const pendingTaskIds = getPendingTaskIds(taskListId);
-			if (pendingTaskIds.length > 0) {
-				// Use setTimeout to ensure the current render completes first
-				setTimeout(() => {
-					pendingTaskIds.forEach((taskId) => {
-						startPendingTask(taskId);
-					});
-				}, 400);
-			}
-
-			// Adjust polling interval based on activity
-			if (hasChanges) {
-				consecutiveNoChanges = 0;
-				pollInterval = 100; // Reset to fast polling on activity
-			} else {
-				consecutiveNoChanges++;
-				// Gradually increase interval if no changes (exponential backoff)
-				if (consecutiveNoChanges > 3) {
-					pollInterval = Math.min(pollInterval * 1.5, maxInterval);
-				}
-			}
-
-			// Schedule next poll
-			timeoutId = setTimeout(poll, pollInterval);
-		};
-
-		// Start initial poll
-		timeoutId = setTimeout(poll, pollInterval);
-
-		return () => clearTimeout(timeoutId);
 	}, [taskListId]);
+
+	// Update state when plugin state revision changes (reactive, no polling!)
+	useEffect(() => {
+		// Load task states from centralized store
+		const latestStates = getAllTaskStatesForList(taskListId);
+		setTaskStates(new Map(latestStates));
+
+		// Load dynamic tasks
+		const latestDynamicTasks = getDynamicTasksForList(taskListId);
+		setDynamicTasks(latestDynamicTasks);
+
+		// Check for pending tasks and start them after they've been rendered
+		// This ensures the idle state is visible before execution begins
+		const pendingTaskIds = getPendingTaskIds(taskListId);
+		if (pendingTaskIds.length > 0) {
+			// Use setTimeout to ensure the current render completes first
+			setTimeout(() => {
+				pendingTaskIds.forEach((taskId) => {
+					startPendingTask(taskId);
+				});
+			}, 400); // 400ms to show idle state, consistent with initial task delay
+		}
+	}, [revision, taskListId]);
 
 	// Animated spinner frames
 	const spinnerFrames = ["⠂", "-", "–", "—", "–", "-"];
@@ -323,15 +263,6 @@ export const TasksDisplay = ({
 
 		return () => clearInterval(interval);
 	}, [taskStates, dynamicTasks, taskListId]);
-
-	// Cleanup task list when component unmounts
-	useEffect(() => {
-		return () => {
-			// Don't remove the task list from active tracking, but don't clean up data
-			// This ensures task states persist even after component unmounts
-			endTaskList(taskListId);
-		};
-	}, [taskListId]);
 
 	const getTaskId = (_task: Task, index: number, parentId = ""): string => {
 		return `${taskListId}_${parentId}${index}`;
