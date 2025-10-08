@@ -230,8 +230,9 @@ export class PromptRuntime {
 			const completedGroupId = this.state.getCurrentGroupId();
 
 			if (completedGroupId) {
-				// Always notify UI about group completion - let UI handle the tree updates
-				// since UI has the correct tree instance
+				// Groups are stored in UI tree, not runtime tree
+				// Runtime and UI maintain separate tree instances
+				// So we need to notify UI to handle the completion
 				this.ui.onGroupCompleted?.(completedGroupId);
 			}
 
