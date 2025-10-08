@@ -68,15 +68,27 @@ export const group = (
 							</Text>
 						</Box>
 					)}
-					{node.children && (
-						<Box
-							flexDirection="column"
-							gap={1}
-							marginLeft={options.label ? 3 : 0}
-						>
-							{node.children}
+
+					{/* Show custom completion message for completed phased groups */}
+					{node.flow === "phased" && node.state === "completed" && (
+						<Box marginLeft={options.label ? 3 : 0}>
+							<Text color="blue">Group completed</Text>
 						</Box>
 					)}
+
+					{/* Show children for active groups or non-phased completed groups */}
+					{node.children &&
+						!(
+							node.flow === "phased" && node.state === "completed"
+						) && (
+							<Box
+								flexDirection="column"
+								gap={1}
+								marginLeft={options.label ? 3 : 0}
+							>
+								{node.children}
+							</Box>
+						)}
 				</Box>
 			);
 		},
