@@ -233,7 +233,7 @@ const flow = async () => {
 			{ value: "deno", label: "deno" },
 		],
 		hideOnCompletion: true,
-		allowBack: false,
+		// allowBack: false,
 	});
 
 	if (pkgManager !== "skip") {

@@ -124,7 +124,11 @@ export function RecursiveGroupContainer({
 				// Phased flow: show only the active field during execution
 				// The last completed field will be shown only after group completion
 				// For groups inside phased groups, also hide completed groups
-				if (child.type === "group" && child.completed && !child.active) {
+				if (
+					child.type === "group" &&
+					child.completed &&
+					!child.active
+				) {
 					return false;
 				}
 				return child.active;
@@ -141,7 +145,6 @@ export function RecursiveGroupContainer({
 				? "active"
 				: "disabled";
 
-
 		// Handle completed groups differently based on flow type
 		// This logic must come BEFORE the visibleChildren.length === 0 check
 		const childrenToRender =
@@ -152,20 +155,30 @@ export function RecursiveGroupContainer({
 						? [] // Hide all if nested inside another phased group
 						: (() => {
 								// Find the last completed field from all children (not just visibleChildren)
-								const allCompletedFields = item.children
-									.filter((c) => c.type === "field" && c.completed && !c.hideOnCompletion);
-								const lastCompletedField = allCompletedFields[allCompletedFields.length - 1];
+								const allCompletedFields = item.children.filter(
+									(c) =>
+										c.type === "field" &&
+										c.completed &&
+										!c.hideOnCompletion
+								);
+								const lastCompletedField =
+									allCompletedFields[
+										allCompletedFields.length - 1
+									];
 
 								// Return the last completed field directly, don't rely on visibleChildren
 								// because visibleChildren was filtered for active state during execution
-								return lastCompletedField ? [lastCompletedField] : [];
+								return lastCompletedField
+									? [lastCompletedField]
+									: [];
 						  })()
 					: visibleChildren.filter(
 							(child) =>
 								// Progressive: show completed fields and completed groups
 								child.completed &&
 								(child.type === "group" ||
-								 (child.type === "field" && !child.hideOnCompletion))
+									(child.type === "field" &&
+										!child.hideOnCompletion))
 					  )
 				: visibleChildren;
 
@@ -252,7 +265,6 @@ export function RecursiveGroupContainer({
 		const isActive = item.active;
 		const isCompleted = item.completed && !isActive;
 		const isVisited = item.visited;
-
 
 		// Skip rendering if field should be hidden after submit
 		if (isCompleted && item.hideOnCompletion) {
@@ -364,9 +376,29 @@ export function RecursiveGroupContainer({
 			? "disabled"
 			: "active";
 
-		// Compute effective allowBack - false if it's the first user-interactive prompt
-		const effectiveAllowBack =
-			item.allowBack !== false && !isFirstRootPrompt;
+		// Compute effective allowBack based on:
+		// 1. Node's explicit allowBack setting
+		// 2. First root prompt check
+		// 3. Previous node's submission type
+		const computeEffectiveAllowBack = (): boolean => {
+			// If explicitly set to false, respect it
+			if (item.allowBack === false) return false;
+
+			// First interactive prompt can't go back
+			if (isFirstRootPrompt) return false;
+
+			// Check if back navigation should be allowed based on previous node's submission type
+			const canGoBackBasedOnHistory =
+				treeManager.canGoBackBasedOnSubmissionType();
+
+			// If previous node was auto-submitted (and doesn't explicitly allow back), prevent navigation
+			if (!canGoBackBasedOnHistory) return false;
+
+			// Default: allow back (node.allowBack is either true or undefined)
+			return true;
+		};
+
+		const effectiveAllowBack = computeEffectiveAllowBack();
 
 		// Special handling for completedFields plugin to avoid Box wrapper when empty
 		if (item.fieldType === "completedFields") {

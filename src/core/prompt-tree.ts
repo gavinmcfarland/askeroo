@@ -36,6 +36,10 @@ export interface PromptNode {
 	// Navigation properties
 	allowBack?: boolean;
 	groupName?: string; // For field nodes, which group they belong to
+
+	// Submission tracking
+	submissionType?: "manual" | "auto" | "skipped" | "programmatic"; // How this prompt was submitted
+	autoSubmit?: boolean; // Whether this specific prompt instance should auto-submit
 }
 
 export interface PromptTree {
@@ -667,6 +671,7 @@ export class PromptTreeManager {
 			enableArrowNavigation: request.enableArrowNavigation,
 			discoveredFields: request.discoveredFields,
 			allowBack: request.allowBack,
+			autoSubmit: request.autoSubmit,
 			properties: { ...request },
 		};
 
@@ -723,6 +728,7 @@ export class PromptTreeManager {
 				hideOnCompletion: request.hideOnCompletion,
 				excludeFromCompleted: request.excludeFromCompleted,
 				allowBack: request.allowBack,
+				autoSubmit: request.autoSubmit,
 				groupName: request.groupName,
 				properties: { ...request },
 			},
@@ -749,4 +755,79 @@ export class PromptTreeManager {
 
 	// syncToLegacyState() has been removed - use direct tree access instead
 	// Use treeManager.traverseDepthFirst() and node properties to access state
+
+	// ========== Submission Type Tracking ==========
+
+	/**
+	 * Mark a node as submitted with a specific submission type
+	 * @param nodeId - The node ID to mark
+	 * @param submissionType - How the node was submitted
+	 */
+	markNodeSubmitted(
+		nodeId: string,
+		submissionType: "manual" | "auto" | "skipped" | "programmatic"
+	): boolean {
+		const node = this.getNode(nodeId);
+		if (!node) return false;
+
+		node.submissionType = submissionType;
+		node.completed = true;
+		return true;
+	}
+
+	/**
+	 * Get the submission type of a node
+	 * @param nodeId - The node ID to query
+	 * @returns The submission type, or undefined if not set
+	 */
+	getNodeSubmissionType(
+		nodeId: string
+	): "manual" | "auto" | "skipped" | "programmatic" | undefined {
+		return this.getNode(nodeId)?.submissionType;
+	}
+
+	/**
+	 * Get the previous node in history (before the current active node)
+	 * @returns The previous node, or null if there is none
+	 */
+	getPreviousNode(): PromptNode | null {
+		if (this.tree.history.length < 2) return null;
+		return this.tree.history[this.tree.history.length - 2];
+	}
+
+	/**
+	 * Check if back navigation should be allowed based on previous node's submission type
+	 * @returns true if back navigation is allowed, false otherwise
+	 */
+	canGoBackBasedOnSubmissionType(): boolean {
+		const previousNode = this.getPreviousNode();
+		if (!previousNode) return false;
+
+		// If previous node has no submission type, allow back navigation (backward compatible)
+		if (!previousNode.submissionType) return true;
+
+		// Auto-submitted prompts should NOT allow going back to them by default
+		// (going back would just trigger them to auto-submit again)
+		// Only allow if explicitly set to true
+		if (previousNode.submissionType === "auto") {
+			return previousNode.allowBack === true;
+		}
+
+		// All other submission types allow back navigation by default
+		return previousNode.allowBack !== false;
+	}
+
+	/**
+	 * Enhanced canGoBack that considers submission types
+	 * @returns true if back navigation is allowed
+	 */
+	canGoBackEnhanced(): boolean {
+		if (this.tree.history.length <= 1) return false;
+
+		const currentNode = this.getActiveNode();
+		if (currentNode?.allowBack === false) return false;
+
+		// Check previous node's submission type
+		return this.canGoBackBasedOnSubmissionType();
+	}
 }

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Text, Box } from "ink";
 import { createPrompt } from "../../core/registry.js";
 import { getCompletedFieldsData } from "./completed-fields-store.js";
@@ -16,13 +16,22 @@ export type { CompletedField } from "./completed-fields-store.js";
 // Completed fields display plugin
 export const completedFields = createPrompt<CompletedFieldsOptions, void>({
 	type: "completedFields",
-	autoSubmit: true,
 
 	component: ({ node, options, events }: any) => {
 		const allFields = getCompletedFieldsData();
 		const completedFields = options.maxFields
 			? allFields.slice(0, options.maxFields)
 			: allFields;
+
+		// Auto-submit when component becomes active
+		useEffect(() => {
+			if (node.state === "active" && events.onSubmit) {
+				const timer = setTimeout(() => {
+					events.onSubmit("__auto");
+				}, 10);
+				return () => clearTimeout(timer);
+			}
+		}, [node.state, events.onSubmit]);
 
 		if (completedFields.length === 0) return null;
 

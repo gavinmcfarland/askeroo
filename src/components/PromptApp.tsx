@@ -101,10 +101,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				if (request.type === "completeFlow") {
 					// Handle flow completion - mark all fields with values as completed
 					treeManagerRef.current.traverseDepthFirst((node) => {
-						if (
-							node.type === "field" &&
-							node.value !== undefined
-						) {
+						if (node.type === "field" && node.value !== undefined) {
 							node.completed = true;
 							// excludeFromCompleted only affects completedFields component, not completion state
 						}
@@ -130,16 +127,22 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				// Handle group completion event (to trigger re-render)
 				if (request.type === "groupCompleted") {
 					// Mark the group as completed in the UI tree (since runtime tree is separate)
-					const groupNode = treeManagerRef.current.getNode(request.id);
+					const groupNode = treeManagerRef.current.getNode(
+						request.id
+					);
 					if (groupNode) {
 						groupNode.completed = true;
 						groupNode.active = false;
 
 						// For phased groups, ensure the last field is marked as completed
 						if (groupNode.flow === "phased") {
-							const allFields = groupNode.children.filter((child) => child.type === "field");
+							const allFields = groupNode.children.filter(
+								(child) => child.type === "field"
+							);
 							const lastField = allFields[allFields.length - 1];
-							const activeField = allFields.find((field) => field.active);
+							const activeField = allFields.find(
+								(field) => field.active
+							);
 
 							// Deactivate any currently active field
 							if (activeField) {
@@ -160,7 +163,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							const currentIndex = siblings.indexOf(groupNode);
 							const nextSibling = siblings[currentIndex + 1];
 
-							if (nextSibling && !nextSibling.active && !nextSibling.completed) {
+							if (
+								nextSibling &&
+								!nextSibling.active &&
+								!nextSibling.completed
+							) {
 								nextSibling.active = true;
 								nextSibling.visited = true;
 							}
@@ -302,10 +309,38 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					// excludeFromCompleted only affects completedFields component, not the field's own completion state
 
 					try {
+						// Determine submission type based on submitted value
+						// Components can submit special values to indicate submission type:
+						// "__auto" = auto-submitted
+						// "__skip" = skipped
+						// "__programmatic" = programmatic
+						let submissionType:
+							| "manual"
+							| "auto"
+							| "skipped"
+							| "programmatic" = "manual";
+						let actualValue = action.value;
+
+						if (action.value === "__auto") {
+							submissionType = "auto";
+							actualValue = undefined; // Auto-submitted prompts typically don't have a value
+						} else if (action.value === "__skip") {
+							submissionType = "skipped";
+							actualValue = undefined;
+						} else if (
+							typeof action.value === "object" &&
+							action.value?.__submissionType
+						) {
+							// Allow passing { value: actualValue, __submissionType: "auto" }
+							submissionType = action.value.__submissionType;
+							actualValue = action.value.value;
+						}
+
 						treeManagerRef.current.updateNode(nodeId, {
-							value: action.value,
+							value: actualValue,
 							visited: true,
 							completed: true, // Always mark as completed when submitted
+							submissionType: submissionType,
 						});
 					} catch (error) {
 						console.warn(
@@ -314,7 +349,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						);
 					}
 					internalRefs.current.isNavigatingBack = false;
-					resolveValue = action.value;
+					resolveValue =
+						action.value === "__auto" || action.value === "__skip"
+							? undefined
+							: action.value?.__submissionType
+							? action.value.value
+							: action.value;
 					break;
 				}
 
@@ -338,6 +378,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						node.value = action.value;
 						node.visited = true;
 						node.completed = true; // Mark as completed when preserving
+						// Mark as manual since user is explicitly preserving
+						node.submissionType = "manual";
 					}
 					performTreeBackNavigation();
 					internalRefs.current.isNavigatingBack = true;

@@ -1,6 +1,5 @@
 import React from "react";
 import { globalRegistry } from "../core/registry.js";
-import { useAutoSubmit } from "../hooks/use-auto-submit.js";
 
 interface PluginWrapperProps {
 	pluginType: string;
@@ -8,17 +7,21 @@ interface PluginWrapperProps {
 }
 
 /**
- * Wrapper component that automatically handles auto-submission for plugins.
- * Plugins with autoSubmit=true get auto-submit behavior, while others wait for user interaction.
+ * Wrapper component that transforms flat props into structured format.
  *
  * This wrapper transforms flat props into a structured format with:
  * - `options`: User-provided configuration (label, shortLabel, initialValue, etc.)
  * - `node`: Library flow node properties (state, flow, isFirstInGroup, etc.)
  * - `events`: Event handlers (onSubmit, onBack, onHintChange, etc.)
+ *
+ * Note: Auto-submit behavior is now controlled within each plugin component.
+ * Components can submit with special values to indicate submission type:
+ * - "__auto" for auto-submission
+ * - "__skip" for skipped submission
+ * - { value: actualValue, __submissionType: "auto" } for auto-submission with value
  */
 export function PluginWrapper({ pluginType, ...props }: PluginWrapperProps) {
 	const PluginComponent = globalRegistry.getComponent(pluginType);
-	const shouldAutoSubmit = globalRegistry.shouldAutoSubmit(pluginType);
 
 	if (!PluginComponent) {
 		return null;
@@ -27,17 +30,7 @@ export function PluginWrapper({ pluginType, ...props }: PluginWrapperProps) {
 	// Transform flat props into structured format
 	const transformedProps = transformPropsToStructure(props);
 
-	// For auto-submit plugins, wrap with auto-submit logic
-	if (shouldAutoSubmit) {
-		return (
-			<AutoSubmitWrapper
-				PluginComponent={PluginComponent}
-				{...transformedProps}
-			/>
-		);
-	}
-
-	// For interactive plugins (default), render directly
+	// Render plugin component directly
 	return <PluginComponent {...transformedProps} />;
 }
 
@@ -84,34 +77,4 @@ function transformPropsToStructure(props: Record<string, any>) {
 	}
 
 	return { node, options, events };
-}
-
-/**
- * Inner wrapper that applies auto-submit behavior to plugins with autoSubmit=true
- */
-function AutoSubmitWrapper({
-	PluginComponent,
-	node,
-	options,
-	events,
-}: {
-	PluginComponent: React.ComponentType<any>;
-	node: Record<string, any>;
-	options: Record<string, any>;
-	events: Record<string, any>;
-}) {
-	// Auto-submit for plugins with autoSubmit=true with minimal delay
-	useAutoSubmit(events.onSubmit, node.state || "active", 10);
-
-	// Render the plugin component
-	const pluginResult = (
-		<PluginComponent node={node} options={options} events={events} />
-	);
-
-	// If the plugin component returns null, return null to avoid taking up space
-	if (pluginResult === null) {
-		return null;
-	}
-
-	return pluginResult;
 }

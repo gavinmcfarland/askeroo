@@ -25,6 +25,7 @@ export type PromptRequest = {
 	hideOnCompletion?: boolean;
 	allowBack?: boolean;
 	depth?: number;
+	autoSubmit?: boolean; // Instance-level auto-submit control (overrides plugin-level)
 	[key: string]: any; // Allow any additional properties for plugin-specific options
 };
 
@@ -232,6 +233,7 @@ export type PluginOptionsWithBuiltins<
 	excludeFromCompleted?: boolean;
 	hideOnCompletion?: boolean;
 	allowBack?: boolean;
+	autoSubmit?: boolean; // Instance-level auto-submit control
 	// Event handlers (can be provided by user)
 	onValidate?: ValidatorFunction<TValue>;
 	// Meta

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { createPrompt } from "../../core/registry.js";
 import {
 	MarkdownString,
@@ -19,11 +19,21 @@ export interface NoteOptions {
 // Internal plugin implementation
 const noteInternal = createPrompt<NoteOptions, void>({
 	type: "note",
-	autoSubmit: true, // Notes auto-submit without user interaction
 
 	component: ({ node, options, events }: any) => {
 		const msg = options.message;
 		const isMarkdown = isMarkdownString(msg);
+
+		// Auto-submit when component becomes active
+		useEffect(() => {
+			if (node.state === "active" && events.onSubmit) {
+				// Use a small delay to allow rendering before submitting
+				const timer = setTimeout(() => {
+					events.onSubmit("__auto");
+				}, 10);
+				return () => clearTimeout(timer);
+			}
+		}, [node.state, events.onSubmit]);
 
 		return (
 			<Box flexDirection="column">
@@ -36,7 +46,10 @@ const noteInternal = createPrompt<NoteOptions, void>({
 	},
 });
 
-// Public API function
-export function note(message: string | MarkdownString): Promise<void> {
-	return noteInternal({ message });
+// Public API function - supports both simple string and options
+export function note(
+	message: string | MarkdownString,
+	options?: { allowBack?: boolean }
+): Promise<void> {
+	return noteInternal({ message, ...options });
 }
