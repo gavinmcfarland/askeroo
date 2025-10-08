@@ -156,15 +156,18 @@ export function RecursiveGroupContainer({
 				? "active"
 				: "disabled";
 
-		// Handle completed groups differently - only show completed fields
+		// Handle completed groups differently based on flow type
 		const childrenToRender =
 			item.completed && !item.active
-				? visibleChildren.filter(
-						(child) =>
-							child.type === "field" &&
-							child.completed &&
-							!child.hideAfterSubmit
-				  )
+				? item.flow === "phased"
+					? [] // Phased: hide all children when group completes
+					: visibleChildren.filter(
+							(child) =>
+								// Progressive: show completed fields and completed groups
+								child.completed &&
+								(child.type === "group" ||
+								 (child.type === "field" && !child.hideAfterSubmit))
+					  )
 				: visibleChildren;
 
 		// If no children to render and no label, return null
