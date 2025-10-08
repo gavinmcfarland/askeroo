@@ -23,7 +23,7 @@ export interface CompletedFieldsStoreState {
 			id: string;
 			label: string;
 			type: string;
-			hideAfterSubmit?: boolean;
+			hideOnCompletion?: boolean;
 		}>;
 		groupFieldHistory: Map<
 			string,
@@ -31,7 +31,7 @@ export interface CompletedFieldsStoreState {
 				id: string;
 				label: string;
 				type: string;
-				hideAfterSubmit?: boolean;
+				hideOnCompletion?: boolean;
 			}>
 		>;
 	};
@@ -283,7 +283,7 @@ export function getCompletedFieldsData(): Array<{
 			node.type === "field" &&
 			node.completed &&
 			!node.excludeFromCompleted &&
-			!node.hideAfterSubmit &&
+			!node.hideOnCompletion &&
 			node.value !== undefined
 		) {
 			const fieldProperties = node.properties || {};

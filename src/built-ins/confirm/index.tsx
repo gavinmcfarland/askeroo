@@ -23,7 +23,7 @@ export interface ConfirmOptions {
 	hintPosition?: "bottom" | "inline" | "side";
 	initialValue?: any;
 	// Built-ins are automatically added via PluginOptionsWithBuiltins:
-	// id?, excludeFromCompleted?, hideAfterSubmit?, allowBack?, onValidate?, meta?
+	// id?, excludeFromCompleted?, hideOnCompletion?, allowBack?, onValidate?, meta?
 }
 
 // Enhanced confirm input plugin with custom options support

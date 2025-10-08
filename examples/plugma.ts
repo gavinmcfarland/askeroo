@@ -237,7 +237,7 @@ const flow = async () => {
 			{ value: "bun", label: "bun" },
 			{ value: "deno", label: "deno" },
 		],
-		hideAfterSubmit: true,
+		hideOnCompletion: true,
 		allowBack: false,
 	});
 

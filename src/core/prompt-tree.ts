@@ -17,7 +17,7 @@ export interface PromptNode {
 	active: boolean;
 
 	// Display properties
-	hideAfterSubmit?: boolean;
+	hideOnCompletion?: boolean;
 	excludeFromCompleted?: boolean;
 	depth: number;
 
@@ -720,7 +720,7 @@ export class PromptTreeManager {
 				visited: false,
 				active: false,
 				depth: calculatedDepth,
-				hideAfterSubmit: request.hideAfterSubmit,
+				hideOnCompletion: request.hideOnCompletion,
 				excludeFromCompleted: request.excludeFromCompleted,
 				allowBack: request.allowBack,
 				groupName: request.groupName,

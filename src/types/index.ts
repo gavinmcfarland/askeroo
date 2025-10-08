@@ -22,7 +22,7 @@ export type PromptRequest = {
 	discoveredFields?: Array<{ id: string; label: string; type: string }>;
 	enableArrowNavigation?: boolean;
 	excludeFromCompleted?: boolean;
-	hideAfterSubmit?: boolean;
+	hideOnCompletion?: boolean;
 	allowBack?: boolean;
 	depth?: number;
 	[key: string]: any; // Allow any additional properties for plugin-specific options
@@ -89,7 +89,7 @@ export interface PromptOrderState {
 		id: string;
 		label: string;
 		type: string;
-		hideAfterSubmit?: boolean;
+		hideOnCompletion?: boolean;
 	}>;
 	staticGroupFields: Map<
 		string,
@@ -97,7 +97,7 @@ export interface PromptOrderState {
 			id: string;
 			label: string;
 			type: string;
-			hideAfterSubmit?: boolean;
+			hideOnCompletion?: boolean;
 		}>
 	>;
 	groupFieldHistory: Map<
@@ -106,7 +106,7 @@ export interface PromptOrderState {
 			id: string;
 			label: string;
 			type: string;
-			hideAfterSubmit?: boolean;
+			hideOnCompletion?: boolean;
 		}>
 	>;
 }
@@ -230,7 +230,7 @@ export type PluginOptionsWithBuiltins<
 	// Node built-ins (can be provided by user)
 	id?: string;
 	excludeFromCompleted?: boolean;
-	hideAfterSubmit?: boolean;
+	hideOnCompletion?: boolean;
 	allowBack?: boolean;
 	// Event handlers (can be provided by user)
 	onValidate?: ValidatorFunction<TValue>;

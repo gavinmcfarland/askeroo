@@ -28,7 +28,7 @@ export interface MultiOptions {
 	maxVisible?: number;
 	searchQuery?: string;
 	// Built-ins are automatically added via PluginOptionsWithBuiltins:
-	// id?, excludeFromCompleted?, hideAfterSubmit?, allowBack?, onValidate?, meta?
+	// id?, excludeFromCompleted?, hideOnCompletion?, allowBack?, onValidate?, meta?
 }
 
 export const MultiField = ({

@@ -153,7 +153,7 @@ export function RecursiveGroupContainer({
 						: (() => {
 								// Find the last completed field from all children (not just visibleChildren)
 								const allCompletedFields = item.children
-									.filter((c) => c.type === "field" && c.completed && !c.hideAfterSubmit);
+									.filter((c) => c.type === "field" && c.completed && !c.hideOnCompletion);
 								const lastCompletedField = allCompletedFields[allCompletedFields.length - 1];
 
 								// Return the last completed field directly, don't rely on visibleChildren
@@ -165,7 +165,7 @@ export function RecursiveGroupContainer({
 								// Progressive: show completed fields and completed groups
 								child.completed &&
 								(child.type === "group" ||
-								 (child.type === "field" && !child.hideAfterSubmit))
+								 (child.type === "field" && !child.hideOnCompletion))
 					  )
 				: visibleChildren;
 
@@ -255,7 +255,7 @@ export function RecursiveGroupContainer({
 
 
 		// Skip rendering if field should be hidden after submit
-		if (isCompleted && item.hideAfterSubmit) {
+		if (isCompleted && item.hideOnCompletion) {
 			return null;
 		}
 

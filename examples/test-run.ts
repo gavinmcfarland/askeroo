@@ -340,7 +340,7 @@ const flow = async () => {
 				},
 			],
 			excludeFromCompleted: true,
-			hideAfterSubmit: true,
+			hideOnCompletion: true,
 			allowBack: false,
 		});
 

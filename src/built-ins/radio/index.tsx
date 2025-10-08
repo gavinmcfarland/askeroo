@@ -24,7 +24,7 @@ export interface RadioOptions {
 	maxVisible?: number;
 	initialValue?: string;
 	// Built-ins are automatically added via PluginOptionsWithBuiltins:
-	// id?, excludeFromCompleted?, hideAfterSubmit?, allowBack?, onValidate?, meta?
+	// id?, excludeFromCompleted?, hideOnCompletion?, allowBack?, onValidate?, meta?
 }
 
 // Core radio input plugin
