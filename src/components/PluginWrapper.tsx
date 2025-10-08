@@ -15,10 +15,8 @@ interface PluginWrapperProps {
  * - `events`: Event handlers (onSubmit, onBack, onHintChange, etc.)
  *
  * Note: Auto-submit behavior is now controlled within each plugin component.
- * Components can submit with special values to indicate submission type:
- * - "__auto" for auto-submission
- * - "__skip" for skipped submission
- * - { value: actualValue, __submissionType: "auto" } for auto-submission with value
+ * Components submit with consistent format: { type: "auto" | "skip" | "programmatic", value?: any }
+ * Regular values (non-objects or objects without type property) are treated as manual submissions
  */
 export function PluginWrapper({ pluginType, ...props }: PluginWrapperProps) {
 	const PluginComponent = globalRegistry.getComponent(pluginType);

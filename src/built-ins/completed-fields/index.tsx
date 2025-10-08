@@ -27,7 +27,7 @@ export const completedFields = createPrompt<CompletedFieldsOptions, void>({
 		useEffect(() => {
 			if (node.state === "active" && events.onSubmit) {
 				const timer = setTimeout(() => {
-					events.onSubmit("__auto");
+					events.onSubmit({ type: "auto" });
 				}, 10);
 				return () => clearTimeout(timer);
 			}

@@ -29,7 +29,7 @@ const noteInternal = createPrompt<NoteOptions, void>({
 			if (node.state === "active" && events.onSubmit) {
 				// Use a small delay to allow rendering before submitting
 				const timer = setTimeout(() => {
-					events.onSubmit("__auto");
+					events.onSubmit({ type: "auto" });
 				}, 10);
 				return () => clearTimeout(timer);
 			}

@@ -29,7 +29,7 @@ export const note = createPrompt<NoteOptions, void>({
         useEffect(() => {
             if (node.state === "active" && events.onSubmit) {
                 const timer = setTimeout(() => {
-                    events.onSubmit("__auto"); // Special value indicates auto-submission
+                    events.onSubmit({ type: "auto" }); // Consistent format
                 }, 10);
                 return () => clearTimeout(timer);
             }
@@ -40,22 +40,25 @@ export const note = createPrompt<NoteOptions, void>({
 });
 ```
 
-### Special Submission Values
+### Submission Format
 
-Components can submit with special values to indicate submission type:
+Components use a consistent object format to indicate submission type:
 
 ```typescript
 // Auto-submission (no value)
-events.onSubmit("__auto");
-
-// Skip submission
-events.onSubmit("__skip");
+events.onSubmit({ type: "auto" });
 
 // Auto-submission with a value
-events.onSubmit({ value: actualValue, __submissionType: "auto" });
+events.onSubmit({ type: "auto", value: data });
+
+// Skip submission
+events.onSubmit({ type: "skip" });
+
+// Programmatic submission
+events.onSubmit({ type: "programmatic", value: result });
 
 // Manual submission (default)
-events.onSubmit(value);
+events.onSubmit(value); // Any non-object or object without 'type' property
 ```
 
 ## Back Navigation Control

@@ -16,7 +16,7 @@ export const note = createPrompt({
         useEffect(() => {
             if (node.state === "active" && events.onSubmit) {
                 const timer = setTimeout(() => {
-                    events.onSubmit("__auto"); // Special value
+                    events.onSubmit({ type: "auto" }); // Consistent format
                 }, 10);
                 return () => clearTimeout(timer);
             }
@@ -49,19 +49,20 @@ await text({
 
 ## How It Works
 
-### Special Submit Values
+### Submission Format
 
-| Value                                   | Type        | Stored Value |
-| --------------------------------------- | ----------- | ------------ |
-| `"__auto"`                              | `"auto"`    | `undefined`  |
-| `"__skip"`                              | `"skipped"` | `undefined`  |
-| `{ value: X, __submissionType: "auto"}` | `"auto"`    | `X`          |
-| Normal value                            | `"manual"`  | That value   |
+| Submit Value                         | Type             | Stored Value |
+| ------------------------------------ | ---------------- | ------------ |
+| `{ type: "auto" }`                   | `"auto"`         | `undefined`  |
+| `{ type: "auto", value: X }`         | `"auto"`         | `X`          |
+| `{ type: "skip" }`                   | `"skipped"`      | `undefined`  |
+| `{ type: "programmatic", value: X }` | `"programmatic"` | `X`          |
+| Normal value                         | `"manual"`       | That value   |
 
 ### Submission Flow
 
-1. **Component submits**: `events.onSubmit("__auto")`
-2. **System detects**: Special value → sets `submissionType: "auto"`
+1. **Component submits**: `events.onSubmit({ type: "auto" })`
+2. **System detects**: Object with `type` property → sets `submissionType: "auto"`
 3. **Navigation considers**: Auto-submitted prompts can't be navigated back to
 
 ## Common Patterns
@@ -71,7 +72,7 @@ await text({
 ```typescript
 useEffect(() => {
     if (node.state === "active" && events.onSubmit) {
-        const timer = setTimeout(() => events.onSubmit("__auto"), 10);
+        const timer = setTimeout(() => events.onSubmit({ type: "auto" }), 10);
         return () => clearTimeout(timer);
     }
 }, [node.state, events.onSubmit]);
@@ -83,8 +84,8 @@ useEffect(() => {
 useEffect(() => {
     if (node.state === "active" && events.onSubmit && data) {
         events.onSubmit({
+            type: "auto",
             value: data,
-            __submissionType: "auto",
         });
     }
 }, [node.state, events.onSubmit, data]);
@@ -95,7 +96,7 @@ useEffect(() => {
 ```typescript
 useEffect(() => {
     if (node.state === "active" && events.onSubmit && options.autoMode) {
-        const timer = setTimeout(() => events.onSubmit("__auto"), 10);
+        const timer = setTimeout(() => events.onSubmit({ type: "auto" }), 10);
         return () => clearTimeout(timer);
     }
 }, [node.state, events.onSubmit, options.autoMode]);
@@ -107,7 +108,7 @@ useEffect(() => {
 useInput(
     (input, key) => {
         if (key.escape) {
-            events.onSubmit("__skip");
+            events.onSubmit({ type: "skip" });
         } else if (key.return) {
             events.onSubmit(value);
         }
@@ -172,11 +173,12 @@ treeManager.canGoBackEnhanced(); // Can user go back?
 
 ## Best Practices
 
-1. **Use ~10ms delay**: `setTimeout(() => events.onSubmit("__auto"), 10)`
-2. **Clean up timers**: Always return cleanup function
-3. **Check node.state**: Only submit when `"active"`
-4. **Use dependency arrays**: Include all deps in useEffect
-5. **Set allowBack: false**: For prompts users shouldn't return to
+1. **Use ~10ms delay**: `setTimeout(() => events.onSubmit({ type: "auto" }), 10)`
+2. **Consistent format**: Always use `{ type, value? }` for special submissions
+3. **Clean up timers**: Always return cleanup function
+4. **Check node.state**: Only submit when `"active"`
+5. **Use dependency arrays**: Include all deps in useEffect
+6. **Set allowBack: false**: For prompts users shouldn't return to
 
 ## Examples
 

@@ -47,35 +47,39 @@ await note("Message"); // Auto-submits based on component logic
 
 ## How It Works
 
-### 1. Special Submission Values
+### 1. Consistent Submission Format
 
-Components indicate submission type by the value they pass to `onSubmit`:
+Components indicate submission type using a consistent object format:
 
-| Submit Value                             | Submission Type | Result Value |
-| ---------------------------------------- | --------------- | ------------ |
-| `"__auto"`                               | `"auto"`        | `undefined`  |
-| `"__skip"`                               | `"skipped"`     | `undefined`  |
-| `{ value: X, __submissionType: "auto" }` | `"auto"`        | `X`          |
-| Any other value                          | `"manual"`      | That value   |
+| Submit Value                         | Submission Type  | Result Value |
+| ------------------------------------ | ---------------- | ------------ |
+| `{ type: "auto" }`                   | `"auto"`         | `undefined`  |
+| `{ type: "auto", value: X }`         | `"auto"`         | `X`          |
+| `{ type: "skip" }`                   | `"skipped"`      | `undefined`  |
+| `{ type: "programmatic", value: X }` | `"programmatic"` | `X`          |
+| Any other value                      | `"manual"`       | That value   |
 
 ### 2. Detection in PromptApp
 
-The `handleFieldAction` function in `PromptApp.tsx` detects these special values:
+The `handleFieldAction` function in `PromptApp.tsx` detects the submission format:
 
 ```typescript
 case "submit": {
     let submissionType: "manual" | "auto" | "skipped" | "programmatic" = "manual";
     let actualValue = action.value;
 
-    if (action.value === "__auto") {
-        submissionType = "auto";
-        actualValue = undefined;
-    } else if (action.value === "__skip") {
-        submissionType = "skipped";
-        actualValue = undefined;
-    } else if (typeof action.value === "object" && action.value?.__submissionType) {
-        submissionType = action.value.__submissionType;
+    if (
+        typeof action.value === "object" &&
+        action.value !== null &&
+        "type" in action.value
+    ) {
+        // Consistent format: { type: "auto", value?: any }
+        submissionType = action.value.type;
         actualValue = action.value.value;
+    } else {
+        // Regular value = manual submission
+        submissionType = "manual";
+        actualValue = action.value;
     }
 
     // Store submission type on the node
@@ -117,7 +121,7 @@ export const note = createPrompt<NoteOptions, void>({
         useEffect(() => {
             if (node.state === "active" && events.onSubmit) {
                 const timer = setTimeout(() => {
-                    events.onSubmit("__auto");
+                    events.onSubmit({ type: "auto" });
                 }, 10);
                 return () => clearTimeout(timer);
             }
@@ -139,7 +143,7 @@ export const smartPrompt = createPrompt({
         useEffect(() => {
             if (node.state === "active" && events.onSubmit && shouldAuto) {
                 const timer = setTimeout(() => {
-                    events.onSubmit("__auto");
+                    events.onSubmit({ type: "auto" });
                 }, 10);
                 return () => clearTimeout(timer);
             }
@@ -180,8 +184,8 @@ export const asyncLoader = createPrompt({
             if (node.state === "active" && events.onSubmit && data) {
                 // Auto-submit with the loaded data
                 events.onSubmit({
+                    type: "auto",
                     value: data,
-                    __submissionType: "auto",
                 });
             }
         }, [node.state, events.onSubmit, data]);
@@ -201,7 +205,7 @@ export const skipablePrompt = createPrompt({
             (input, key) => {
                 if (key.escape) {
                     // Skip submission
-                    events.onSubmit("__skip");
+                    events.onSubmit({ type: "skip" });
                 } else if (key.return) {
                     // Manual submission
                     events.onSubmit(value);
@@ -223,7 +227,7 @@ export const skipablePrompt = createPrompt({
 // Auto-submits with no value
 useEffect(() => {
     if (node.state === "active" && events.onSubmit) {
-        const timer = setTimeout(() => events.onSubmit("__auto"), 10);
+        const timer = setTimeout(() => events.onSubmit({ type: "auto" }), 10);
         return () => clearTimeout(timer);
     }
 }, [node.state, events.onSubmit]);
@@ -235,7 +239,7 @@ useEffect(() => {
 // Auto-submits after rendering completed fields
 useEffect(() => {
     if (node.state === "active" && events.onSubmit) {
-        const timer = setTimeout(() => events.onSubmit("__auto"), 10);
+        const timer = setTimeout(() => events.onSubmit({ type: "auto" }), 10);
         return () => clearTimeout(timer);
     }
 }, [node.state, events.onSubmit]);

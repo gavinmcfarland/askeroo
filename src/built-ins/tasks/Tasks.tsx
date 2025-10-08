@@ -549,7 +549,7 @@ export const TasksDisplay = ({
 
 			// Only submit after we know everything is done
 			if (events.onSubmit && node.state === "active") {
-				events.onSubmit("__auto");
+				events.onSubmit({ type: "auto" });
 			}
 		}
 	};

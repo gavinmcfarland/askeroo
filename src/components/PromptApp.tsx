@@ -310,10 +310,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					try {
 						// Determine submission type based on submitted value
-						// Components can submit special values to indicate submission type:
-						// "__auto" = auto-submitted
-						// "__skip" = skipped
-						// "__programmatic" = programmatic
+						// Components submit with format: { type: "auto" | "skip" | "programmatic", value?: any }
+						// Regular values (non-objects or objects without type) are treated as manual submissions
 						let submissionType:
 							| "manual"
 							| "auto"
@@ -321,19 +319,18 @@ export function PromptApp({ onReady }: PromptAppProps) {
 							| "programmatic" = "manual";
 						let actualValue = action.value;
 
-						if (action.value === "__auto") {
-							submissionType = "auto";
-							actualValue = undefined; // Auto-submitted prompts typically don't have a value
-						} else if (action.value === "__skip") {
-							submissionType = "skipped";
-							actualValue = undefined;
-						} else if (
+						if (
 							typeof action.value === "object" &&
-							action.value?.__submissionType
+							action.value !== null &&
+							"type" in action.value
 						) {
-							// Allow passing { value: actualValue, __submissionType: "auto" }
-							submissionType = action.value.__submissionType;
+							// New consistent format: { type: "auto", value?: any }
+							submissionType = action.value.type;
 							actualValue = action.value.value;
+						} else {
+							// Regular value = manual submission
+							submissionType = "manual";
+							actualValue = action.value;
 						}
 
 						treeManagerRef.current.updateNode(nodeId, {
@@ -349,10 +346,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						);
 					}
 					internalRefs.current.isNavigatingBack = false;
+					// Extract actual value from submission object or use as-is
 					resolveValue =
-						action.value === "__auto" || action.value === "__skip"
-							? undefined
-							: action.value?.__submissionType
+						typeof action.value === "object" &&
+						action.value !== null &&
+						"type" in action.value
 							? action.value.value
 							: action.value;
 					break;
