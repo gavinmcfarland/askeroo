@@ -57,11 +57,15 @@ function createUI() {
 			}>,
 			enableArrowNavigation?: boolean,
 			depth?: number,
-			parentGroup?: string
+			parentGroup?: string,
+			groupOptions?: any // Accept all group options including hideOnCompletion
 		): Promise<void> {
 			const groupId = id || generatePromptId("group", label || "group");
 			appInstance.currentGroup = groupId;
 			const promptFn = await ensureApp();
+			// Extract additional options while preserving core properties
+			const { label: _, flow: __, id: ___, enableArrowNavigation: ____, ...additionalOptions } = groupOptions || {};
+
 			await promptFn({
 				type: "group",
 				id: groupId,
@@ -71,6 +75,7 @@ function createUI() {
 				enableArrowNavigation,
 				depth,
 				groupName: parentGroup, // Pass parent group for proper nesting
+				...additionalOptions, // Spread additional options like hideOnCompletion
 			});
 		},
 

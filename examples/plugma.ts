@@ -189,7 +189,7 @@ const flow = async () => {
 
 			return answers;
 		},
-		{ flow: "phased" }
+		{ flow: "phased", hideOnCompletion: true }
 	);
 
 	// Example of sequential execution using the new API with completeOn setting

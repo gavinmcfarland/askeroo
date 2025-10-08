@@ -257,6 +257,7 @@ export class PromptRuntime {
 		const groupOpts: GroupOpts = {
 			flow: opts.flow,
 			enableArrowNavigation: opts.enableArrowNavigation,
+			hideOnCompletion: opts.hideOnCompletion,
 		};
 
 		return this.createGroup(meta, body, groupOpts);
@@ -340,7 +341,8 @@ export class PromptRuntime {
 				fields,
 				groupOpts.enableArrowNavigation,
 				groupDepth,
-				currentGroup
+				currentGroup,
+				groupOpts // Pass all group options including hideOnCompletion
 			);
 
 			this.state.markGroupAsProcessed(groupId);

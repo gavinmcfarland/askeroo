@@ -1,10 +1,33 @@
 import React from "react";
 import { Text, Box } from "ink";
 import { createPrompt } from "../../core/registry.js";
-import type { GroupMeta, GroupOpts } from "../../types/index.js";
+import type { GroupMeta } from "../../types/index.js";
+
+// Group-specific types
+export type GroupOpts =
+	| {
+			flow?: "progressive";
+			enableArrowNavigation?: never;
+			hideOnCompletion?: boolean;
+	  }
+	| {
+			flow: "phased";
+			enableArrowNavigation?: never;
+			hideOnCompletion?: boolean;
+	  }
+	| {
+			flow: "static";
+			enableArrowNavigation?: boolean;
+			hideOnCompletion?: boolean;
+	  }
+	| {
+			flow?: undefined;
+			enableArrowNavigation?: never;
+			hideOnCompletion?: boolean;
+	  };
 
 // Re-export types
-export type { GroupMeta, GroupOpts };
+export type { GroupMeta };
 
 /**
  * User-provided options for the group plugin
@@ -16,6 +39,7 @@ export interface GroupOptions extends GroupMeta {
 	depth?: number;
 	parentGroup?: string;
 	discoveredFields?: Array<{ id: string; label: string; type: string }>;
+	hideOnCompletion?: boolean;
 }
 
 /**
@@ -47,6 +71,18 @@ export interface GroupOptions extends GroupMeta {
  *   { label: "User Info", flow: "static", enableArrowNavigation: true }
  * );
  * ```
+ *
+ * @example Group that hides after completion
+ * ```typescript
+ * const answers = await group(
+ *   async () => {
+ *     const name = await text({ label: "Name" });
+ *     const email = await text({ label: "Email" });
+ *     return { name, email };
+ *   },
+ *   { label: "User Info", hideOnCompletion: true }
+ * );
+ * ```
  */
 export const group = (
 	(plugin) =>
@@ -59,6 +95,11 @@ export const group = (
 		isContainer: true,
 
 		component: ({ node, options, events }: any) => {
+			// Hide entirely if hideOnCompletion is true and group is completed
+			if (options.hideOnCompletion && node.state === "completed") {
+				return null;
+			}
+
 			return (
 				<Box flexDirection="column">
 					{options.label && (
@@ -72,7 +113,7 @@ export const group = (
 					{/* Show custom completion message for completed phased groups */}
 					{node.flow === "phased" && node.state === "completed" && (
 						<Box marginLeft={options.label ? 3 : 0}>
-							<Text color="blue">Group completed</Text>
+							<Text color="blue">Completed</Text>
 						</Box>
 					)}
 
@@ -96,7 +137,7 @@ export const group = (
 		execute: async (runtime, opts, body) =>
 			await runtime.executeGroupBody(opts, body),
 
-		transform: (opts, context, id) => ({
+		transform: (opts, context) => ({
 			...opts,
 			groupName: context.currentGroup,
 		}),

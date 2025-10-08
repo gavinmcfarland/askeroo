@@ -59,6 +59,7 @@ export function RecursiveGroupContainer({
 				<PluginWrapper
 					pluginType="group"
 					key={`group-${item.id}-empty`}
+					{...item.properties} // Spread all properties including hideOnCompletion
 					label={item.label}
 					flow={item.flow}
 					depth={item.depth}
@@ -176,6 +177,7 @@ export function RecursiveGroupContainer({
 					<PluginWrapper
 						pluginType="group"
 						key={`group-${item.id}-no-visible`}
+						{...item.properties} // Spread all properties including hideOnCompletion
 						label={item.label}
 						flow={item.flow}
 						depth={item.depth}
@@ -229,6 +231,7 @@ export function RecursiveGroupContainer({
 			<PluginWrapper
 				pluginType="group"
 				key={`group-${item.id}-${groupState}`}
+				{...item.properties} // Spread all properties including hideOnCompletion
 				label={item.label}
 				flow={item.flow}
 				depth={item.depth}

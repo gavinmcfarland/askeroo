@@ -2,6 +2,10 @@
 // This eliminates duplicate type definitions across multiple files
 
 import * as React from "react";
+import type { GroupOpts } from "../built-ins/group/index.js";
+
+// Re-export group types
+export type { GroupOpts };
 
 // Core runtime types
 export type Answers = Record<string, unknown>;
@@ -26,11 +30,6 @@ export type PromptRequest = {
 
 // Group-related types (kept for backward compatibility with FlowFunction type)
 export type GroupMeta = { label?: string; id?: string };
-export type GroupOpts =
-	| { flow?: "progressive"; enableArrowNavigation?: never }
-	| { flow: "phased"; enableArrowNavigation?: never }
-	| { flow: "static"; enableArrowNavigation?: boolean }
-	| { flow?: undefined; enableArrowNavigation?: never };
 
 // Prompt options type
 export type PromptOpts = { message: string; id?: string };
@@ -44,7 +43,8 @@ export type UI = {
 		discoveredFields?: Array<{ id: string; label: string; type: string }>,
 		enableArrowNavigation?: boolean,
 		depth?: number,
-		parentGroup?: string
+		parentGroup?: string,
+		groupOptions?: any
 	): Promise<void> | void;
 	clearGroup?(): void;
 	cleanup?(): void;
