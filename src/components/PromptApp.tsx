@@ -191,6 +191,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					// Trigger re-render to show updated tree state
 					setTreeRevision((prev) => prev + 1);
+
+					// Notify plugin state context (for completedFields and other plugins)
+					notifyChange();
+
 					resolve(undefined);
 					return;
 				}
@@ -294,6 +298,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						// Force a complete remount to prevent duplication issues
 						// when Ink has to redraw the entire terminal (e.g., in short terminals)
 						setRenderKey((prev) => prev + 1);
+						// Notify plugin state context inside flushSync to prevent flicker
+						notifyChange();
 					});
 				}
 			}
@@ -415,6 +421,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						setTreeRevision((prev) => prev + 1);
 						// Force a complete remount to prevent duplication issues
 						setRenderKey((prev) => prev + 1);
+						// Notify plugin state context inside flushSync to prevent flicker
+						notifyChange();
 					});
 
 					internalRefs.current.isNavigatingBack = true;
@@ -429,6 +437,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 			// Trigger re-render for submit actions only
 			setTreeRevision((prev) => prev + 1);
+
+			// Notify plugin state context (for completedFields and other plugins)
+			notifyChange();
 
 			// Resolve the promise
 			const resolver = internalRefs.current.resolver;

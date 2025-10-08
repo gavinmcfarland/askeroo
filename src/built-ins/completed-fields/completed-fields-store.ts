@@ -1,8 +1,9 @@
-// Completed fields store to manage state at the PromptApp level
-// Following the same pattern as TaskStore
+// Completed fields store using the generic plugin state system
+// Uses PluginStateContext for reactive updates
 
 import { FieldState } from "../../types/index.js";
 import { PromptTreeManager, PromptNode } from "../../core/prompt-tree.js";
+import { getPluginStateNotifier } from "../../core/plugin-state-context.js";
 
 export interface CompletedField {
 	id: string;
@@ -37,7 +38,7 @@ export interface CompletedFieldsStoreState {
 	};
 }
 
-// Global store for completed fields state
+// Global store for completed fields state (legacy - kept for backward compatibility)
 let globalCompletedFieldsStore: CompletedFieldsStoreState = {
 	fieldState: {
 		values: {},
@@ -54,11 +55,7 @@ let globalCompletedFieldsStore: CompletedFieldsStoreState = {
 	},
 };
 
-let updateCompletedFieldsStoreCallback:
-	| ((state: CompletedFieldsStoreState) => void)
-	| null = null;
-
-// Tree manager reference (new tree-based approach)
+// Tree manager reference (primary data source)
 let treeManager: PromptTreeManager | null = null;
 
 // Set the tree manager (called from PromptApp)
@@ -66,22 +63,7 @@ export function setTreeManager(manager: PromptTreeManager) {
 	treeManager = manager;
 }
 
-// Initialize the store with PromptApp's state updater (legacy support)
-export function initializeCompletedFieldsStore(
-	updater: (state: CompletedFieldsStoreState) => void
-) {
-	updateCompletedFieldsStoreCallback = updater;
-}
-
-// Update the completed fields state (called from tree-based state management)
-export function updateCompletedFieldsState(state: CompletedFieldsStoreState) {
-	globalCompletedFieldsStore = { ...state };
-	if (updateCompletedFieldsStoreCallback) {
-		updateCompletedFieldsStoreCallback({ ...globalCompletedFieldsStore });
-	}
-}
-
-// Get current completed fields state
+// Get current completed fields state (legacy support)
 export function getCompletedFieldsState(): CompletedFieldsStoreState {
 	return { ...globalCompletedFieldsStore };
 }
@@ -330,7 +312,9 @@ export function clearCompletedFieldsStore() {
 		},
 	};
 
-	if (updateCompletedFieldsStoreCallback) {
-		updateCompletedFieldsStoreCallback({ ...globalCompletedFieldsStore });
+	// Notify all subscribed plugins to update via PluginStateContext
+	const notifyChange = getPluginStateNotifier();
+	if (notifyChange) {
+		notifyChange();
 	}
 }
