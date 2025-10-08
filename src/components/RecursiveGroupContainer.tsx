@@ -120,7 +120,8 @@ export function RecursiveGroupContainer({
 			}
 
 			if (item.flow === "phased") {
-				// Phased flow: show only the active field, not completed ones
+				// Phased flow: show only the active field during execution
+				// The last completed field will be shown only after group completion
 				// For groups inside phased groups, also hide completed groups
 				if (child.type === "group" && child.completed && !child.active) {
 					return false;
@@ -131,7 +132,44 @@ export function RecursiveGroupContainer({
 			return false;
 		});
 
-		if (visibleChildren.length === 0) {
+		// Determine group state BEFORE checking visibleChildren
+		const groupState =
+			item.completed && !item.active
+				? "completed"
+				: item.active
+				? "active"
+				: "disabled";
+
+
+		// Handle completed groups differently based on flow type
+		// This logic must come BEFORE the visibleChildren.length === 0 check
+		const childrenToRender =
+			item.completed && !item.active
+				? item.flow === "phased"
+					? // Phased: show only the last prompt, unless this group is inside another phased group
+					  item.parent?.flow === "phased"
+						? [] // Hide all if nested inside another phased group
+						: (() => {
+								// Find the last completed field from all children (not just visibleChildren)
+								const allCompletedFields = item.children
+									.filter((c) => c.type === "field" && c.completed && !c.hideAfterSubmit);
+								const lastCompletedField = allCompletedFields[allCompletedFields.length - 1];
+
+								// Return the last completed field directly, don't rely on visibleChildren
+								// because visibleChildren was filtered for active state during execution
+								return lastCompletedField ? [lastCompletedField] : [];
+						  })()
+					: visibleChildren.filter(
+							(child) =>
+								// Progressive: show completed fields and completed groups
+								child.completed &&
+								(child.type === "group" ||
+								 (child.type === "field" && !child.hideAfterSubmit))
+					  )
+				: visibleChildren;
+
+		// Handle case where active/pending groups have no visible children
+		if (!item.completed && visibleChildren.length === 0) {
 			// If group has a label, show it even without visible children
 			if (item.label) {
 				return (
@@ -147,28 +185,6 @@ export function RecursiveGroupContainer({
 			}
 			return null;
 		}
-
-		// Determine group state
-		const groupState =
-			item.completed && !item.active
-				? "completed"
-				: item.active
-				? "active"
-				: "disabled";
-
-		// Handle completed groups differently based on flow type
-		const childrenToRender =
-			item.completed && !item.active
-				? item.flow === "phased"
-					? [] // Phased: hide all children when group completes
-					: visibleChildren.filter(
-							(child) =>
-								// Progressive: show completed fields and completed groups
-								child.completed &&
-								(child.type === "group" ||
-								 (child.type === "field" && !child.hideAfterSubmit))
-					  )
-				: visibleChildren;
 
 		// If no children to render and no label, return null
 		if (childrenToRender.length === 0 && !item.label) {
@@ -233,6 +249,7 @@ export function RecursiveGroupContainer({
 		const isActive = item.active;
 		const isCompleted = item.completed && !isActive;
 		const isVisited = item.visited;
+
 
 		// Skip rendering if field should be hidden after submit
 		if (isCompleted && item.hideAfterSubmit) {

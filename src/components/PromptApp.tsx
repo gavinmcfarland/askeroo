@@ -99,15 +99,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			return new Promise((resolve) => {
 				// Handle flow completion first
 				if (request.type === "completeFlow") {
-					// Handle flow completion - mark all fields as completed
+					// Handle flow completion - mark all fields with values as completed
 					treeManagerRef.current.traverseDepthFirst((node) => {
 						if (
 							node.type === "field" &&
-							node.value !== undefined &&
-							!node.excludeFromCompleted
+							node.value !== undefined
 						) {
 							node.completed = true;
-							// completionHistoryRef removed - tree tracks completion
+							// excludeFromCompleted only affects completedFields component, not completion state
 						}
 					});
 
@@ -135,6 +134,24 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					if (groupNode) {
 						groupNode.completed = true;
 						groupNode.active = false;
+
+						// For phased groups, ensure the last field is marked as completed
+						if (groupNode.flow === "phased") {
+							const allFields = groupNode.children.filter((child) => child.type === "field");
+							const lastField = allFields[allFields.length - 1];
+							const activeField = allFields.find((field) => field.active);
+
+							// Deactivate any currently active field
+							if (activeField) {
+								activeField.active = false;
+							}
+
+							// Mark the last field as completed
+							if (lastField && !lastField.completed) {
+								lastField.completed = true;
+								lastField.active = false;
+							}
+						}
 
 						// In phased flows, activate the next sibling when this group completes
 						const parent = groupNode.parent;
@@ -281,11 +298,14 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			switch (action.type) {
 				case "submit": {
 					// Regular submit - update tree with value
+					// All submitted fields should be marked as completed
+					// excludeFromCompleted only affects completedFields component, not the field's own completion state
+
 					try {
 						treeManagerRef.current.updateNode(nodeId, {
 							value: action.value,
 							visited: true,
-							completed: !currentPrompt.excludeFromCompleted,
+							completed: true, // Always mark as completed when submitted
 						});
 					} catch (error) {
 						console.warn(
