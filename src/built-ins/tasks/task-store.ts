@@ -15,6 +15,10 @@ let globalTaskStore: TaskStoreState = {
 // Store all task list states (including regular tasks, not just dynamic)
 let allTaskStates: Map<string, Map<string, any>> = new Map();
 
+// Store pending task executors (functions that will execute the task)
+// These are stored when task is added, but only executed after UI picks up the idle state
+let pendingTaskExecutors: Map<string, () => Promise<void>> = new Map();
+
 let updateTaskStoreCallback: ((state: TaskStoreState) => void) | null = null;
 let updateAllStatesCallback:
 	| ((states: Map<string, Map<string, any>>) => void)
@@ -173,10 +177,44 @@ export function hasAnyTaskLists(): boolean {
 	return globalTaskStore.taskListDynamicTasks.size > 0;
 }
 
+// Register a task executor (to be called later by polling mechanism)
+export function registerTaskExecutor(
+	taskId: string,
+	executor: () => Promise<void>
+) {
+	pendingTaskExecutors.set(taskId, executor);
+}
+
+// Start a pending task (called by polling after idle state is rendered)
+export function startPendingTask(taskId: string) {
+	const executor = pendingTaskExecutors.get(taskId);
+	if (executor) {
+		pendingTaskExecutors.delete(taskId);
+		executor(); // Start execution
+	}
+}
+
+// Check if a task is pending execution
+export function isTaskPending(taskId: string): boolean {
+	return pendingTaskExecutors.has(taskId);
+}
+
+// Get all pending task IDs for a task list
+export function getPendingTaskIds(taskListId: string): string[] {
+	const pendingIds: string[] = [];
+	for (const taskId of pendingTaskExecutors.keys()) {
+		if (taskId.startsWith(taskListId)) {
+			pendingIds.push(taskId);
+		}
+	}
+	return pendingIds;
+}
+
 // Clear all task data (for testing/reset)
 export function clearTaskStore() {
 	globalTaskStore.taskListDynamicTasks.clear();
 	globalTaskStore.taskListStates.clear();
+	pendingTaskExecutors.clear();
 
 	if (updateTaskStoreCallback) {
 		updateTaskStoreCallback({ ...globalTaskStore });

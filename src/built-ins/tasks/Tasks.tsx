@@ -46,6 +46,9 @@ import {
 	getTaskStatesForList,
 	getAllTaskStatesForList,
 	hasAnyTaskLists,
+	registerTaskExecutor,
+	getPendingTaskIds,
+	startPendingTask,
 } from "./task-store.js";
 
 // Track active task lists for tasks.add() functionality
@@ -94,8 +97,8 @@ export function addDynamicTask(task: Task): Promise<void> {
 
 	// Create a promise that will resolve when this task completes
 	const taskPromise = new Promise<void>((resolve, reject) => {
-		// Execute the task after a short delay to show in UI
-		setTimeout(async () => {
+		// Create the executor function that will run the task
+		const executor = async () => {
 			try {
 				updateTaskStateInStore(taskListId, taskId, {
 					status: "running",
@@ -127,7 +130,11 @@ export function addDynamicTask(task: Task): Promise<void> {
 					reject(error);
 				}
 			}
-		}, 100);
+		};
+
+		// Register the executor to be started by the polling mechanism
+		// This ensures the idle state is rendered before execution begins
+		registerTaskExecutor(taskId, executor);
 	});
 
 	return taskPromise;
@@ -238,6 +245,18 @@ export const TasksDisplay = ({
 				}
 				return prevStates;
 			});
+
+			// Check for pending tasks and start them after they've been rendered
+			// This ensures the idle state is visible before execution begins
+			const pendingTaskIds = getPendingTaskIds(taskListId);
+			if (pendingTaskIds.length > 0) {
+				// Use setTimeout to ensure the current render completes first
+				setTimeout(() => {
+					pendingTaskIds.forEach((taskId) => {
+						startPendingTask(taskId);
+					});
+				}, 400);
+			}
 
 			// Adjust polling interval based on activity
 			if (hasChanges) {
