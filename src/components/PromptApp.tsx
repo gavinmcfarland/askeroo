@@ -128,6 +128,34 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					return;
 				}
 
+				// Handle group completion event (to trigger re-render)
+				if (request.type === "groupCompleted") {
+					// Mark the group as completed in the UI tree (since runtime tree is separate)
+					const groupNode = treeManagerRef.current.getNode(request.id);
+					if (groupNode) {
+						groupNode.completed = true;
+						groupNode.active = false;
+
+						// In phased flows, activate the next sibling when this group completes
+						const parent = groupNode.parent;
+						if (parent && parent.flow === "phased") {
+							const siblings = parent.children;
+							const currentIndex = siblings.indexOf(groupNode);
+							const nextSibling = siblings[currentIndex + 1];
+
+							if (nextSibling && !nextSibling.active && !nextSibling.completed) {
+								nextSibling.active = true;
+								nextSibling.visited = true;
+							}
+						}
+					}
+
+					// Trigger re-render to show updated tree state
+					setTreeRevision((prev) => prev + 1);
+					resolve(undefined);
+					return;
+				}
+
 				if (
 					request.type !== "group" &&
 					internalRefs.current.firstFieldId === null &&

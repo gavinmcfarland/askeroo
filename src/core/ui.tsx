@@ -114,6 +114,16 @@ function createUI() {
 				id: "flow-completion",
 			});
 		},
+
+		onGroupCompleted(groupId: string): void {
+			// Trigger a re-render by sending a UI update event
+			ensureApp().then(promptFn => {
+				promptFn({
+					type: "groupCompleted",
+					id: groupId,
+				});
+			});
+		},
 	};
 
 	// Create plugin handlers upfront (no Proxy)

@@ -194,6 +194,8 @@ export class PromptRuntime {
 		body: () => Promise<any>,
 		opts?: GroupOpts
 	): Promise<any> {
+		// Group creation logic
+
 		if (!this.state.isExecutingFlow()) {
 			throw new Error("group() must be called inside executeFlow()");
 		}
@@ -221,7 +223,19 @@ export class PromptRuntime {
 		await this.engine.step("group", combinedOpts, async () => undefined);
 
 		try {
-			return await body();
+			const result = await body();
+
+			// Mark the group as completed when body finishes successfully
+			// We need to get the current group ID before we exit it
+			const completedGroupId = this.state.getCurrentGroupId();
+
+			if (completedGroupId) {
+				// Always notify UI about group completion - let UI handle the tree updates
+				// since UI has the correct tree instance
+				this.ui.onGroupCompleted?.(completedGroupId);
+			}
+
+			return result;
 		} finally {
 			// Exit the group when the group body completes
 			this.state.exitGroup();

@@ -73,6 +73,9 @@ export function RecursiveGroupContainer({
 			);
 		}
 
+		// Note: Removed auto-completion logic as it was triggering too early
+		// Groups are completed in the runtime when their body function finishes
+
 		// Filter children based on visibility rules
 		const visibleChildren = item.children.filter((child) => {
 			if (showOnlyActiveAndCompleted) {
@@ -118,6 +121,10 @@ export function RecursiveGroupContainer({
 
 			if (item.flow === "phased") {
 				// Phased flow: show only the active field, not completed ones
+				// For groups inside phased groups, also hide completed groups
+				if (child.type === "group" && child.completed && !child.active) {
+					return false;
+				}
 				return child.active;
 			}
 
