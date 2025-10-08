@@ -45,7 +45,7 @@ Use the `createPrompt` helper to create plugins that auto-register when imported
 ```typescript
 import { useState } from "react";
 import { Text, useInput } from "ink";
-import { createPrompt } from "askeroo";
+import { createPrompt } from "askeroo/core";
 
 interface MyOptions {
     label: string;
@@ -131,7 +131,7 @@ See the [Custom Ask Plugin README](./custom-ask/README.md) for detailed document
 For advanced use cases, you can manually register plugins:
 
 ```typescript
-import { registerPlugin, globalRegistry } from "askeroo";
+import { registerPlugin, globalRegistry } from "askeroo/core";
 
 // Define your plugin
 const myPlugin = {
@@ -169,6 +169,157 @@ Your component will receive:
 -   `disabled`: Boolean indicating if this field should be disabled
 -   Plus other standard props like `flow`, `allowBack`, etc.
 
+## Prompt State Context
+
+For prompts that need to update state externally (stored outside the component), use the **Prompt State Context** system.
+
+### When to Use It
+
+Use Prompt State Context when your prompt has:
+
+-   ✅ **External/global state** - State lives outside the component (in a store, service, or global variable)
+-   ✅ **State updates from elsewhere** - State changes from outside the component (e.g., `tasks.add()`, `clearStore()`)
+-   ✅ **Shared state** - Multiple instances or external code need to read/write the same state
+-   ✅ **Dynamic content** - Content added/removed programmatically from outside the component
+
+Don't use it for:
+
+-   ❌ **Component-local state** - State lives inside the component with `useState` (like `text`, `confirm`)
+-   ❌ **Self-contained inputs** - Component manages its own state without external updates
+
+### Example 1: Tasks (External Updates)
+
+For prompts that **add content dynamically**:
+
+```typescript
+import {
+    createPrompt,
+    usePromptState,
+    getPromptStateNotifier,
+} from "askeroo/core";
+
+// Store
+export function addDynamicTask(task: Task) {
+    // Add to global store
+    globalTaskStore.tasks.push(task);
+
+    // Notify React to re-render
+    const notifyChange = getPluginStateNotifier();
+    if (notifyChange) {
+        notifyChange();
+    }
+}
+
+// Component
+export const TasksDisplay = ({ node, options, events }) => {
+    // Subscribe to updates
+    const { revision } = usePromptState();
+
+    // Read fresh data when revision changes
+    const [tasks, setTasks] = useState([]);
+    useEffect(() => {
+        setTasks(getTasksFromStore());
+    }, [revision]);
+
+    return <Box>...</Box>;
+};
+```
+
+### Example 2: Completed Fields (Read External Data)
+
+For prompts that **read from external sources**:
+
+```typescript
+import { createPrompt, usePromptState, getPromptStateNotifier } from "askeroo/core";
+
+// PromptApp - Notify when tree changes (fields added/removed)
+function handleFieldAction(action) {
+    // Update tree
+    treeManagerRef.current.updateNode(nodeId, { completed: true });
+
+    // Notify both systems atomically
+    flushSync(() => {
+        setTreeRevision(prev => prev + 1);  // Tree consumers
+        notifyChange();                      // Prompt consumers
+    });
+}
+
+// Store - Notify when programmatic changes occur
+export function clearCompletedFieldsStore() {
+    // Clear data
+    globalStore = { ... };
+
+    // Notify prompts to update
+    const notifyChange = getPromptStateNotifier();
+    if (notifyChange) {
+        notifyChange();
+    }
+}
+
+// Component
+export const completedFields = createPrompt({
+    type: "completedFields",
+    component: ({ node, options, events }) => {
+        // Subscribe to updates
+        const { revision } = usePromptState();
+
+        // Read data DURING RENDER (not in effect) to prevent flicker
+        const allFields = getCompletedFieldsData();
+        const displayFields = options.maxFields
+            ? allFields.slice(0, options.maxFields)
+            : allFields;
+
+        // revision is used above to trigger re-renders
+        void revision;
+
+        return (
+            <Box flexDirection="column">
+                {displayFields.map((field) => (
+                    <Text key={field.id}>...</Text>
+                ))}
+            </Box>
+        );
+    },
+});
+```
+
+**Key differences:**
+
+-   **When to use each pattern:**
+
+    -   Tasks: Uses `useEffect` when managing internal component state that updates based on external changes
+    -   CompletedFields: Reads during render when you just need to display external data (prevents flicker)
+
+-   **Where state lives:**
+    -   Both read from external stores (task-store, tree manager)
+    -   Both use Prompt State Context to know when to re-read
+    -   The difference is HOW they handle the updates (effect vs render-time read)
+
+### API Reference
+
+```typescript
+// In your prompt component
+import { usePromptState } from "askeroo/core";
+
+const { revision } = usePromptState();
+// Re-renders when any prompt calls notifyChange()
+
+// In your store/service
+import { getPromptStateNotifier } from "askeroo/core";
+
+const notifyChange = getPromptStateNotifier();
+if (notifyChange) {
+    notifyChange(); // Triggers instant re-render
+}
+```
+
+**Benefits:**
+
+-   ⚡ 0ms latency (instant updates)
+-   🚀 Zero polling overhead
+-   🎯 Atomic updates with `flushSync`
+-   🔌 Works for any prompt
+
 ## Best Practices
 
 1. **Use `createPrompt`**: It handles auto-registration and provides type safety
@@ -177,13 +328,15 @@ Your component will receive:
 4. **Type safety**: Define TypeScript interfaces for options and return types
 5. **Export the function**: Export the result of `createPrompt` for use in flows
 6. **Test in isolation**: Plugins can be tested independently since they're self-contained
+7. **Use Prompt State Context**: For external state updates, use the reactive context system
+8. **Read during render**: To prevent flicker, read external data during render, not in effects
 
 ## Example: Custom Slider Plugin
 
 ```typescript
 import React, { useState } from "react";
 import { Text, useInput } from "ink";
-import { createPrompt } from "../registry.js";
+import { createPrompt } from "askeroo/core";
 
 interface SliderProps {
     label: string;

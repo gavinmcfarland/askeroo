@@ -54,17 +54,18 @@ useEffect(() => {
 
 **Why Not:**
 
--   These manage their own internal state (user input)
--   State changes happen internally (typing, selection)
--   No external state to update from
--   React already handles their re-renders naturally
+-   State lives **inside the component** (local `useState`)
+-   No external/global state to manage
+-   State changes happen internally (user typing, selections)
+-   No external code needs to update their state
 
 **Example:**
 
 ```typescript
-// text/index.tsx - manages its own input value
+// text/index.tsx - component-local state
 const [value, setValue] = useState(initialValue);
-// User types -> setValue -> re-render (native React)
+// User types -> setValue -> re-render
+// No external store, no Plugin State Context needed
 ```
 
 **Recommendation:** No changes needed
@@ -286,19 +287,19 @@ Use Plugin State Context when your plugin has:
 
 ### ✅ Use It If:
 
-1. **External state updates** - State changes from outside React
-2. **Real-time requirements** - Updates need to be immediate
-3. **Global store pattern** - State stored outside component
-4. **Dynamic content** - Content added/removed programmatically
-5. **Fire-and-forget APIs** - Trigger updates from anywhere
+1. **External/global state** - State lives outside the component (store, service, global variable)
+2. **External updates** - State changes from code outside the component
+3. **Shared state** - Multiple components or external code access the same state
+4. **Dynamic content** - Content added/removed programmatically from outside
+5. **Fire-and-forget APIs** - Trigger updates from anywhere (e.g., `tasks.add()`)
 
 ### ❌ Don't Use It If:
 
-1. **Pure UI components** - All state is internal
-2. **Form inputs** - React handles naturally
+1. **Component-local state** - State lives inside component with `useState`
+2. **Self-contained** - Component manages its own state without external updates
 3. **Static content** - No updates needed
 4. **One-time render** - Doesn't persist
-5. **Tree-managed state** - Tree updates trigger re-renders
+5. **Tree-managed only** - Tree updates are sufficient (though you can use both)
 
 ## Migration Checklist
 
@@ -361,15 +362,15 @@ Both major plugins now use Plugin State Context:
 
 When creating a new plugin, ask:
 
-**"Will this plugin's state ever be updated from outside React?"**
+**"Does this plugin's state live outside the component?"**
 
--   **Yes** → Use Plugin State Context
--   **No** → Use regular React state
+-   **Yes** (global store, service, external variable) → Use Plugin State Context
+-   **No** (local `useState` in component) → Don't use it
 
-**"Does this plugin manage external/global state?"**
+**"Will this plugin's state be updated from outside the component?"**
 
--   **Yes** → Use Plugin State Context
--   **No** → Use props/local state
+-   **Yes** (e.g., `tasks.add()`, external API calls) → Use Plugin State Context
+-   **No** (only internal events like user input) → Don't use it
 
 ## Example: Good vs Bad Use Cases
 
@@ -392,11 +393,12 @@ useEffect(() => {
 ### ❌ Bad Use Case
 
 ```typescript
-// Regular input field
+// Input field with component-local state
 const [value, setValue] = useState("");
 
-// User types -> setValue -> React handles naturally
-// No need for Plugin State Context!
+// User types -> setValue -> re-render
+// State lives IN the component
+// No external state, no Plugin State Context needed!
 ```
 
 ## Conclusion

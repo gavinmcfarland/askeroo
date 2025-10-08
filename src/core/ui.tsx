@@ -1,7 +1,7 @@
 import React from "react";
 import { render } from "ink";
 import { PromptApp } from "../components/PromptApp.js";
-import { PluginStateProvider } from "./plugin-state-context.js";
+import { PromptStateProvider } from "./plugin-state-context.js";
 import { debugLogger } from "../utils/logging.js";
 import { globalRegistry } from "./registry.js";
 import { BackToken, PromptRequest } from "../types/index.js";
@@ -27,7 +27,7 @@ function ensureApp(): Promise<(request: PromptRequest) => Promise<any>> {
 		}
 
 		const { unmount } = render(
-			<PluginStateProvider>
+			<PromptStateProvider>
 				<PromptApp
 					onReady={(promptFn) => {
 						appInstance.promptFn = promptFn;
@@ -35,7 +35,7 @@ function ensureApp(): Promise<(request: PromptRequest) => Promise<any>> {
 						resolve(promptFn);
 					}}
 				/>
-			</PluginStateProvider>
+			</PromptStateProvider>
 		);
 	});
 }

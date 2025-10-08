@@ -14,8 +14,8 @@ import { setTreeManager } from "../built-ins/completed-fields/completed-fields-s
 import { PromptRequest } from "../types/index.js";
 import { applyInkRenderingFix } from "../utils/ink-rendering-fix.js";
 import {
-	usePluginState,
-	setPluginStateNotifier,
+	usePromptState,
+	setPromptStateNotifier,
 } from "../core/plugin-state-context.js";
 
 // Type declaration for debug utilities
@@ -63,19 +63,19 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		return treeManagerRef.current.getTree();
 	}, [treeRevision]);
 
-	// Get plugin state context
-	const { notifyChange } = usePluginState();
+	// Get prompt state context
+	const { notifyChange } = usePromptState();
 
 	// Set tree manager for CompletedFields plugin (once on mount)
 	useEffect(() => {
 		setTreeManager(treeManagerRef.current);
 	}, []);
 
-	// Register the plugin state notifier globally so plugins can access it
+	// Register the prompt state notifier globally so prompts can access it
 	useEffect(() => {
-		setPluginStateNotifier(notifyChange);
+		setPromptStateNotifier(notifyChange);
 		return () => {
-			setPluginStateNotifier(null);
+			setPromptStateNotifier(null);
 		};
 	}, [notifyChange]);
 
@@ -192,7 +192,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					// Trigger re-render to show updated tree state
 					setTreeRevision((prev) => prev + 1);
 
-					// Notify plugin state context (for completedFields and other plugins)
+					// Notify prompt state context (for completedFields and other prompts)
 					notifyChange();
 
 					resolve(undefined);
@@ -298,7 +298,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						// Force a complete remount to prevent duplication issues
 						// when Ink has to redraw the entire terminal (e.g., in short terminals)
 						setRenderKey((prev) => prev + 1);
-						// Notify plugin state context inside flushSync to prevent flicker
+						// Notify prompt state context inside flushSync to prevent flicker
 						notifyChange();
 					});
 				}
@@ -421,7 +421,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						setTreeRevision((prev) => prev + 1);
 						// Force a complete remount to prevent duplication issues
 						setRenderKey((prev) => prev + 1);
-						// Notify plugin state context inside flushSync to prevent flicker
+						// Notify prompt state context inside flushSync to prevent flicker
 						notifyChange();
 					});
 
@@ -438,7 +438,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			// Trigger re-render for submit actions only
 			setTreeRevision((prev) => prev + 1);
 
-			// Notify plugin state context (for completedFields and other plugins)
+			// Notify prompt state context (for completedFields and other prompts)
 			notifyChange();
 
 			// Resolve the promise

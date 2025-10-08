@@ -1,9 +1,9 @@
-// Completed fields store using the generic plugin state system
-// Uses PluginStateContext for reactive updates
+// Completed fields store using the generic prompt state system
+// Uses PromptStateContext for reactive updates
 
 import { FieldState } from "../../types/index.js";
 import { PromptTreeManager, PromptNode } from "../../core/prompt-tree.js";
-import { getPluginStateNotifier } from "../../core/plugin-state-context.js";
+import { getPromptStateNotifier } from "../../core/plugin-state-context.js";
 
 export interface CompletedField {
 	id: string;
@@ -312,8 +312,8 @@ export function clearCompletedFieldsStore() {
 		},
 	};
 
-	// Notify all subscribed plugins to update via PluginStateContext
-	const notifyChange = getPluginStateNotifier();
+	// Notify all subscribed prompts to update via PromptStateContext
+	const notifyChange = getPromptStateNotifier();
 	if (notifyChange) {
 		notifyChange();
 	}

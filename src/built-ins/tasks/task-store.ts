@@ -1,7 +1,7 @@
-// Task store to manage dynamic tasks using the generic plugin state system
-// Uses PluginStateContext for reactive updates instead of polling
+// Task store to manage dynamic tasks using the generic prompt state system
+// Uses PromptStateContext for reactive updates instead of polling
 
-import { getPluginStateNotifier } from "../../core/plugin-state-context.js";
+import { getPromptStateNotifier } from "../../core/plugin-state-context.js";
 
 export interface TaskStoreState {
 	taskListDynamicTasks: Map<string, Array<any>>;
@@ -41,8 +41,8 @@ export function addDynamicTaskToList(taskListId: string, task: any): string {
 	existingStates.set(taskId, { status: "idle" });
 	globalTaskStore.taskListStates.set(taskListId, existingStates);
 
-	// Notify all subscribed plugins to update via PluginStateContext
-	const notifyChange = getPluginStateNotifier();
+	// Notify all subscribed prompts to update via PromptStateContext
+	const notifyChange = getPromptStateNotifier();
 	if (notifyChange) {
 		notifyChange();
 	}
@@ -71,8 +71,8 @@ export function updateTaskState(
 	listStates.set(taskId, { ...currentState, ...state });
 	allTaskStates.set(taskListId, listStates);
 
-	// Notify all subscribed plugins to update via PluginStateContext
-	const notifyChange = getPluginStateNotifier();
+	// Notify all subscribed prompts to update via PromptStateContext
+	const notifyChange = getPromptStateNotifier();
 	if (notifyChange) {
 		notifyChange();
 	}
@@ -198,8 +198,8 @@ export function clearTaskStore() {
 	globalTaskStore.taskListStates.clear();
 	pendingTaskExecutors.clear();
 
-	// Notify all subscribed plugins to update via PluginStateContext
-	const notifyChange = getPluginStateNotifier();
+	// Notify all subscribed prompts to update via PromptStateContext
+	const notifyChange = getPromptStateNotifier();
 	if (notifyChange) {
 		notifyChange();
 	}

@@ -3,16 +3,16 @@
     "version": "1.0.0",
     "description": "A modern CLI prompt library with flow control, history navigation, and conditional fields",
     "type": "module",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "main": "./dist/src/index.js",
+    "types": "./dist/src/index.d.ts",
     "exports": {
         ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js"
+            "types": "./dist/src/index.d.ts",
+            "import": "./dist/src/index.js"
         },
         "./core": {
-            "types": "./dist/core.d.ts",
-            "import": "./dist/core.js"
+            "types": "./dist/src/core.d.ts",
+            "import": "./dist/src/core.js"
         },
         "./plugin": {
             "types": "./dist/plugin.d.ts",

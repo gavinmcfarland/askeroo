@@ -156,6 +156,6 @@ export async function addTasks(
 // Add the dynamic task addition method to the tasks function
 tasks.add = addTasks;
 
-// NOTE: Task state updates now use the generic PluginStateContext system
-// No initialization needed - plugins automatically get reactive updates
+// NOTE: Task state updates now use the generic PromptStateContext system
+// No initialization needed - prompts automatically get reactive updates
 // See src/core/plugin-state-context.tsx for details

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Text, Box } from "ink";
 import { createPrompt } from "../../core/registry.js";
 import { getCompletedFieldsData } from "./completed-fields-store.js";
-import { usePluginState } from "../../core/plugin-state-context.js";
+import { usePromptState } from "../../core/plugin-state-context.js";
 
 // Type for completed field data (matches getCompletedFieldsData return type)
 type CompletedFieldData = {
@@ -28,8 +28,8 @@ export const completedFields = createPrompt<CompletedFieldsOptions, void>({
 	type: "completedFields",
 
 	component: ({ node, options, events }: any) => {
-		// Subscribe to plugin state context for reactive updates
-		const { revision } = usePluginState();
+		// Subscribe to prompt state context for reactive updates
+		const { revision } = usePromptState();
 
 		// Read data during render (not in effect) to prevent flicker
 		// When revision changes, this component re-renders and fetches fresh data

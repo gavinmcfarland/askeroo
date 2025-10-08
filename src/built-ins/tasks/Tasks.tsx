@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { TaskWarning } from "./index.js";
 import { PluginComponentProps } from "../../types/index.js";
-import { usePluginState } from "../../core/plugin-state-context.js";
+import { usePromptState } from "../../core/plugin-state-context.js";
 
 export interface TaskLabel {
 	idle?: string;
@@ -176,8 +176,8 @@ export const TasksDisplay = ({
 		return `tasklist_${Math.abs(hash)}`;
 	});
 
-	// Subscribe to plugin state context for reactive updates (no polling!)
-	const { revision } = usePluginState();
+	// Subscribe to prompt state context for reactive updates (no polling!)
+	const { revision } = usePromptState();
 
 	// Use the existing local task state system for regular tasks
 	const [taskStates, setTaskStates] = useState<Map<string, TaskState>>(
@@ -197,7 +197,7 @@ export const TasksDisplay = ({
 		};
 	}, [taskListId]);
 
-	// Update state when plugin state revision changes (reactive, no polling!)
+	// Update state when prompt state revision changes (reactive, no polling!)
 	useEffect(() => {
 		// Load task states from centralized store
 		const latestStates = getAllTaskStatesForList(taskListId);
