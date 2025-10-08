@@ -220,11 +220,6 @@ const flow = async () => {
 		}
 	);
 
-	const name2 = await text({
-		label: "Name",
-		initialValue: "my-plugin",
-	});
-
 	const pkgManager = await radio({
 		label: "Install dependencies?",
 		shortLabel: "Dependencies",
@@ -251,20 +246,6 @@ const flow = async () => {
 			},
 		]);
 	}
-
-	const multi2 = await multi({
-		label: "Multi",
-		options: [
-			{ value: "1", label: "1" },
-			{ value: "2", label: "2" },
-			{ value: "3", label: "3" },
-		],
-	});
-
-	const name = await text({
-		label: "Name",
-		initialValue: "my-plugin",
-	});
 
 	await note(`**Plugged in and ready to go!**
 
