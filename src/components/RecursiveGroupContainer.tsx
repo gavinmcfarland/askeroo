@@ -1,21 +1,9 @@
 import React from "react";
-import { Text, Box, Newline } from "ink";
+import { Box } from "ink";
 import { PromptNode, PromptTreeManager } from "../core/prompt-tree.js";
 import { globalRegistry } from "../core/registry.js";
 import { PluginWrapper } from "./PluginWrapper.js";
 
-interface HintTextProps {
-	children: React.ReactNode;
-}
-
-function HintText({ children }: HintTextProps) {
-	return (
-		<>
-			<Text> </Text>
-			<Text dimColor>{children}</Text>
-		</>
-	);
-}
 
 interface RecursiveGroupContainerProps {
 	item: PromptNode;
@@ -40,9 +28,6 @@ export function RecursiveGroupContainer({
 	isFrozen = false,
 	hintsByPromptId,
 }: RecursiveGroupContainerProps) {
-	// Calculate indentation based on depth
-	// Depth 0 = root, depth 1 = root children (0 indent), depth 2 = first nesting level (3 spaces), etc.
-	const baseIndent = Math.max(0, (item.depth - 1) * 3);
 
 	// For group nodes, render through the plugin system
 	if (item.type === "group") {
@@ -210,6 +195,26 @@ export function RecursiveGroupContainer({
 			return null;
 		}
 
+		// Determine if group should show hint and what hint to show
+		// Show hint if there's an active field that should display a hint
+		let shouldShowHint = false;
+		let groupHint: React.ReactNode = null;
+
+		childrenToRender.forEach((child) => {
+			if (child.active && child.type === "field") {
+				// Apply the same logic as the original hint rendering:
+				// Don't show hint for note fields or auto-submitting fields
+				if (child.fieldType !== "note" && !globalRegistry.shouldAutoSubmit(child.fieldType || '')) {
+					const childHintText = hintsByPromptId?.get(child.id) || (child.id === item.id ? hintText : null);
+					if (childHintText) {
+						shouldShowHint = true;
+						groupHint = childHintText;
+					}
+				}
+			}
+		});
+
+
 		// Render children recursively
 		// Pass down hints map and let each child determine its own hint
 		const renderedChildren = childrenToRender.map((child, index) => {
@@ -268,7 +273,7 @@ export function RecursiveGroupContainer({
 		}
 
 		// Otherwise, render group through plugin system
-		// Hint text is displayed by the active field itself, not at group level
+		// Pass simplified hint information to the group component
 		return (
 			<PluginWrapper
 				pluginType="group"
@@ -279,6 +284,8 @@ export function RecursiveGroupContainer({
 				depth={item.depth}
 				state={groupState}
 				children={renderedChildren}
+				hint={groupHint}
+				shouldShowHint={shouldShowHint}
 			/>
 		);
 	}
@@ -293,7 +300,6 @@ export function RecursiveGroupContainer({
 
 		const isActive = item.active;
 		const isCompleted = item.completed && !isActive;
-		const isVisited = item.visited;
 
 		// Skip rendering if field should be hidden after submit
 		if (isCompleted && item.hideOnCompletion) {
@@ -305,10 +311,6 @@ export function RecursiveGroupContainer({
 			return null;
 		}
 
-		// Determine hint text for this specific field node
-		const fieldHintText = item.active
-			? (hintsByPromptId?.get(item.id) || hintText)
-			: null;
 
 		// Get initial value
 		const getInitialValue = () => {
@@ -400,8 +402,6 @@ export function RecursiveGroupContainer({
 		// Determine flow type
 		const flowType = parent?.flow || "progressive";
 
-		// CompletedFields and other display-only plugins should not be indented
-		const shouldIndent = item.fieldType !== "completedFields";
 
 		// Determine plugin state
 		const pluginState = isCompleted
@@ -480,10 +480,7 @@ export function RecursiveGroupContainer({
 					enableArrowNavigation={parent?.enableArrowNavigation}
 					{...(isActive && !isFrozen && !item.frozen && onHintChange && { onHintChange })}
 				/>
-				{/* Always render hint area for active fields to prevent layout shift */}
-				{/* Show hint text for active fields, including frozen ones that should preserve their hint */}
-				{/* Don't show hint text for note and other auto-submitting fields since they don't need navigation hints */}
-				{isActive && item.fieldType !== "note" && !globalRegistry.shouldAutoSubmit(item.fieldType || '') && <HintText>{fieldHintText || " "}</HintText>}
+				{/* Hint text is now rendered by the group component */}
 			</Box>
 		);
 	}

@@ -3,6 +3,19 @@ import { Text, Box } from "ink";
 import { createPrompt } from "../../core/registry.js";
 import type { GroupMeta } from "../../types/index.js";
 
+// Helper component for rendering hint text
+interface HintTextProps {
+	children: React.ReactNode;
+}
+
+function HintText({ children }: HintTextProps) {
+	return (
+		<Box marginTop={1}>
+			<Text dimColor>{children}</Text>
+		</Box>
+	);
+}
+
 // Group-specific types
 export type GroupOpts =
 	| {
@@ -95,6 +108,7 @@ export const group = (
 		isContainer: true,
 
 		component: ({ node, options, events }: any) => {
+			const { hint, shouldShowHint } = options;
 			// Hide entirely if hideOnCompletion is true and group is completed
 			if (options.hideOnCompletion && node.state === "completed") {
 				return null;
@@ -107,14 +121,12 @@ export const group = (
 							<Text color="green">{options.label}</Text>
 						</Box>
 					)}
-
 					{/* Show custom completion message for completed phased groups */}
 					{node.flow === "phased" && node.state === "completed" && (
 						<Box marginLeft={options.label ? 3 : 0}>
 							<Text color="blue">Completed</Text>
 						</Box>
 					)}
-
 					{/* Show children for active groups or non-phased completed groups */}
 					{node.children &&
 						!(
@@ -127,6 +139,12 @@ export const group = (
 								{node.children}
 							</Box>
 						)}
+					{/* Simple hint rendering as requested */}
+					{shouldShowHint && (
+						<Box>
+							<HintText>{hint}</HintText>
+						</Box>
+					)}
 				</Box>
 			);
 		},
