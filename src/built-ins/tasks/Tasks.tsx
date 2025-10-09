@@ -56,19 +56,19 @@ export function getTaskLabel(taskId: string): string | undefined {
 
 // Helper to update task state in the store
 function setTaskState(taskListId: string, taskId: string, state: TaskState) {
-	taskStore.update((store) => {
-		const allStates = new Map(
-			store.allTaskStates.get(taskListId) || new Map()
-		);
-		allStates.set(taskId, state);
-		store.allTaskStates.set(taskListId, allStates);
+	taskStore.update((s) => {
+		// Update allTaskStates
+		const all = new Map(s.allTaskStates.get(taskListId) || new Map());
+		all.set(taskId, state);
+		s.allTaskStates.set(taskListId, all);
 
+		// Update taskListStates for dynamic tasks
 		if (taskId.includes("_dynamic_")) {
-			const dynamicStates =
-				store.taskListStates.get(taskListId) || new Map();
-			dynamicStates.set(taskId, state);
+			const dyn = s.taskListStates.get(taskListId) || new Map();
+			dyn.set(taskId, state);
+			s.taskListStates.set(taskListId, dyn);
 		}
-		store.revision++;
+		s.revision++;
 	});
 }
 
@@ -89,32 +89,43 @@ export function addDynamicTask(task: Task): Promise<void> {
 				setTaskState(taskListId, taskId, { status: "success" });
 				resolve();
 			} catch (error) {
-				const isWarning = error instanceof TaskWarning;
-				setTaskState(taskListId, taskId, {
-					status: isWarning ? "warning" : "error",
-					[isWarning ? "warning" : "error"]:
-						error instanceof Error ? error.message : String(error),
-				});
-				isWarning ? resolve() : reject(error);
+				if (error instanceof TaskWarning) {
+					setTaskState(taskListId, taskId, {
+						status: "warning",
+						warning: error.message,
+					});
+					resolve();
+				} else {
+					setTaskState(taskListId, taskId, {
+						status: "error",
+						error:
+							error instanceof Error
+								? error.message
+								: String(error),
+					});
+					reject(error);
+				}
 			}
 		};
 
-		taskStore.update((store) => {
-			store.taskListDynamicTasks.set(taskListId, [
-				...(store.taskListDynamicTasks.get(taskListId) || []),
+		// Add task to store
+		taskStore.update((s) => {
+			s.taskListDynamicTasks.set(taskListId, [
+				...(s.taskListDynamicTasks.get(taskListId) || []),
 				task,
 			]);
-			store.pendingTaskExecutors.set(taskId, executor);
-			store.revision++;
+			s.pendingTaskExecutors.set(taskId, executor);
+			s.revision++;
 		});
 
 		setTaskState(taskListId, taskId, { status: "idle" });
 
+		// Fallback: start if component doesn't
 		setTimeout(() => {
 			if (taskStore.get().pendingTaskExecutors.has(taskId)) {
-				taskStore.update((store) => {
-					store.pendingTaskExecutors.delete(taskId);
-					store.revision++;
+				taskStore.update((s) => {
+					s.pendingTaskExecutors.delete(taskId);
+					s.revision++;
 				});
 				executor();
 			}
@@ -128,8 +139,8 @@ export async function waitForPendingTasks(): Promise<void> {
 		let timeout: NodeJS.Timeout | null = null;
 
 		const isComplete = () => {
-			const store = taskStore.get();
-			for (const states of store.allTaskStates.values()) {
+			const s = taskStore.get();
+			for (const states of s.allTaskStates.values()) {
 				for (const state of states.values()) {
 					if (state.status === "idle" || state.status === "running")
 						return false;
@@ -212,26 +223,26 @@ export const TasksDisplay = ({
 
 	// Start pending tasks after showing idle state
 	useEffect(() => {
-		const pendingTaskIds = [...pendingExecutors.keys()].filter((id) =>
+		const pending = [...pendingExecutors.keys()].filter((id) =>
 			id.startsWith(taskListId)
 		);
 
-		if (pendingTaskIds.length > 0) {
-			const timeoutId = setTimeout(() => {
-				pendingTaskIds.forEach((taskId) => {
+		if (pending.length > 0) {
+			const tid = setTimeout(() => {
+				pending.forEach((taskId) => {
 					const executor = taskStore
 						.get()
 						.pendingTaskExecutors.get(taskId);
 					if (executor) {
-						taskStore.update((store) => {
-							store.pendingTaskExecutors.delete(taskId);
-							store.revision++;
+						taskStore.update((s) => {
+							s.pendingTaskExecutors.delete(taskId);
+							s.revision++;
 						});
 						executor();
 					}
 				});
 			}, 400);
-			return () => clearTimeout(timeoutId);
+			return () => clearTimeout(tid);
 		}
 	}, [pendingExecutors, taskListId]);
 
@@ -277,91 +288,194 @@ export const TasksDisplay = ({
 
 	const getLabel = (task: Task, status: TaskStatus): string => {
 		if (typeof task.label === "string") return task.label;
+
 		const labelObj = task.label as TaskLabel;
 		const fallback = labelObj.idle || "Task";
+
 		return (
 			{
-				running: labelObj.running,
-				success: labelObj.success,
-				error: labelObj.error,
-				warning: labelObj.success,
+				running: labelObj.running || fallback || "Running...",
+				success: labelObj.success || fallback || "Success",
+				error: labelObj.error || fallback || "Error",
+				warning:
+					labelObj.success || fallback || "Success (with warnings)",
 				idle: fallback,
 			}[status] || fallback
 		);
 	};
 
-	const getSymbol = (status: TaskStatus) =>
-		({
-			idle: "□",
-			running: spinnerFrames[spinnerFrame],
-			success: "■",
-			warning: "▲",
-			error: "✗",
-		}[status] || "□");
+	const getSymbol = (status: TaskStatus): string => {
+		return (
+			{
+				idle: "□",
+				running: spinnerFrames[spinnerFrame],
+				success: "■",
+				warning: "▲",
+				error: "✗",
+			}[status] || "□"
+		);
+	};
 
-	const getColor = (status: TaskStatus) =>
-		({
-			idle: "gray",
-			running: "blue",
-			success: "green",
-			warning: "yellow",
-			error: "red",
-		}[status] || "gray");
+	const getColor = (status: TaskStatus): string => {
+		return (
+			{
+				idle: "gray",
+				running: "blue",
+				success: "green",
+				warning: "yellow",
+				error: "red",
+			}[status] || "gray"
+		);
+	};
 
 	const updateTaskState = (taskId: string, newState: Partial<TaskState>) => {
-		taskStore.update((store) => {
-			const allStates = new Map(
-				store.allTaskStates.get(taskListId) || new Map()
-			);
-			allStates.set(taskId, {
-				...(allStates.get(taskId) || { status: "idle" }),
-				...newState,
-			});
-			store.allTaskStates.set(taskListId, allStates);
+		taskStore.update((s) => {
+			const states = s.allTaskStates.get(taskListId) || new Map();
+			const current = states.get(taskId) || { status: "idle" };
+			const updated = new Map(states);
+			updated.set(taskId, { ...current, ...newState });
+			s.allTaskStates.set(taskListId, updated);
 
+			// Update dynamic states if needed
 			if (taskId.includes("_dynamic_")) {
-				const dynamicStates =
-					store.taskListStates.get(taskListId) || new Map();
-				dynamicStates.set(taskId, {
-					...(dynamicStates.get(taskId) || { status: "idle" }),
-					...newState,
-				});
+				const dynStates = s.taskListStates.get(taskListId) || new Map();
+				dynStates.set(taskId, { ...current, ...newState });
+				s.taskListStates.set(taskListId, dynStates);
 			}
-			store.revision++;
+			s.revision++;
 		});
 	};
 
 	const executeTask = async (task: Task, taskId: string): Promise<void> => {
 		updateTaskState(taskId, { status: "running" });
 
-		const executeChildren = async () => {
-			if (!task.tasks) return;
-			const promises = task.tasks.map((subtask, subIndex) =>
-				executeTask(subtask, getTaskId(subtask, subIndex, `${taskId}.`))
-			);
-			return task.concurrent
-				? Promise.all(promises)
-				: promises.reduce(
-						(prev, current) => prev.then(() => current),
-						Promise.resolve()
-				  );
-		};
-
 		try {
-			const action = task.action?.() || Promise.resolve();
-			const completeOn = task.completeOn || "children";
+			const completeOn = task.completeOn || "children"; // Default to 'children'
+			let actionCompleted = false;
+			let childrenCompleted = false;
 
+			// Execute action if present
+			const actionPromise = task.action
+				? task.action().then(() => {
+						actionCompleted = true;
+				  })
+				: Promise.resolve().then(() => {
+						actionCompleted = true;
+				  });
+
+			// Handle different completion modes
 			if (completeOn === "self") {
-				await action;
+				// Complete after action, let children run in background
+				await actionPromise;
 				updateTaskState(taskId, { status: "success" });
-				executeChildren(); // Background
+
+				// Start children in background (don't await)
+				if (task.tasks && task.tasks.length > 0) {
+					const tasks = task.tasks; // Store reference to avoid undefined issues
+					if (task.concurrent) {
+						// Execute subtasks concurrently in background
+						const promises = tasks.map((subtask, index) => {
+							const subtaskId = getTaskId(
+								subtask,
+								index,
+								`${taskId}.`
+							);
+							return executeTask(subtask, subtaskId);
+						});
+						Promise.allSettled(promises); // Don't await
+					} else {
+						// Execute subtasks sequentially in background
+						(async () => {
+							for (let i = 0; i < tasks.length; i++) {
+								const subtask = tasks[i];
+								const subtaskId = getTaskId(
+									subtask,
+									i,
+									`${taskId}.`
+								);
+								await executeTask(subtask, subtaskId);
+							}
+						})(); // Don't await
+					}
+				}
 			} else if (completeOn === "either") {
-				await Promise.race([action, executeChildren()]);
+				// Complete when either action or all children finish first
+				const childrenPromise =
+					task.tasks && task.tasks.length > 0
+						? (async () => {
+								const tasks = task.tasks!; // Store reference to avoid undefined issues
+								if (task.concurrent) {
+									// Execute subtasks concurrently
+									const promises = tasks.map(
+										(subtask, index) => {
+											const subtaskId = getTaskId(
+												subtask,
+												index,
+												`${taskId}.`
+											);
+											return executeTask(
+												subtask,
+												subtaskId
+											);
+										}
+									);
+									await Promise.all(promises);
+								} else {
+									// Execute subtasks sequentially
+									for (let i = 0; i < tasks.length; i++) {
+										const subtask = tasks[i];
+										const subtaskId = getTaskId(
+											subtask,
+											i,
+											`${taskId}.`
+										);
+										await executeTask(subtask, subtaskId);
+									}
+								}
+								childrenCompleted = true;
+						  })()
+						: Promise.resolve().then(() => {
+								childrenCompleted = true;
+						  });
+
+				// Wait for whichever completes first
+				await Promise.race([actionPromise, childrenPromise]);
 				updateTaskState(taskId, { status: "success" });
-				Promise.allSettled([action, executeChildren()]); // Continue others
+
+				// Continue other tasks in background if needed
+				if (!actionCompleted || !childrenCompleted) {
+					Promise.allSettled([actionPromise, childrenPromise]); // Don't await
+				}
 			} else {
-				await action;
-				await executeChildren();
+				// Default 'children' mode: complete after action + all children
+				await actionPromise;
+
+				if (task.tasks && task.tasks.length > 0) {
+					if (task.concurrent) {
+						// Execute subtasks concurrently
+						const promises = task.tasks.map((subtask, index) => {
+							const subtaskId = getTaskId(
+								subtask,
+								index,
+								`${taskId}.`
+							);
+							return executeTask(subtask, subtaskId);
+						});
+						await Promise.all(promises);
+					} else {
+						// Execute subtasks sequentially
+						for (let i = 0; i < task.tasks.length; i++) {
+							const subtask = task.tasks[i];
+							const subtaskId = getTaskId(
+								subtask,
+								i,
+								`${taskId}.`
+							);
+							await executeTask(subtask, subtaskId);
+						}
+					}
+				}
+
 				updateTaskState(taskId, { status: "success" });
 			}
 		} catch (error) {
@@ -376,30 +490,37 @@ export const TasksDisplay = ({
 					error:
 						error instanceof Error ? error.message : String(error),
 				});
-				if (!task.continueOnError) throw error;
+
+				if (!task.continueOnError) {
+					throw error;
+				}
 			}
 		}
 	};
 
 	const executeAllTasks = async () => {
 		setIsExecuting(true);
+
 		try {
+			// Execute tasks based on concurrent setting (default: parallel)
 			if (options.concurrent === false) {
-				for (let index = 0; index < options.tasks.length; index++) {
-					await executeTask(
-						options.tasks[index],
-						getTaskId(options.tasks[index], index)
-					);
+				// Sequential execution
+				for (let i = 0; i < options.tasks.length; i++) {
+					const task = options.tasks[i];
+					await executeTask(task, getTaskId(task, i));
 				}
 			} else {
+				// Parallel execution (default behavior)
 				await Promise.allSettled(
-					options.tasks.map((task, index) =>
-						executeTask(task, getTaskId(task, index))
+					options.tasks.map((task: Task, i: number) =>
+						executeTask(task, getTaskId(task, i))
 					)
 				);
 			}
 		} finally {
 			setIsExecuting(false);
+			// Don't auto-submit here - let dynamic tasks be added
+			// Submission will happen when component detects all tasks complete
 		}
 	};
 
@@ -411,14 +532,18 @@ export const TasksDisplay = ({
 	): React.ReactNode => {
 		const taskId = getTaskId(task, index, parentId);
 		const state = taskStates.get(taskId) || { status: "idle" };
+		const label = getLabel(task, state.status);
+		const symbol = getSymbol(state.status);
 		const indent = "  ".repeat(level);
 
 		return (
 			<Box key={taskId} flexDirection="column">
-				<Text color={getColor(state.status)}>
-					{indent}
-					{getSymbol(state.status)} {getLabel(task, state.status)}
-				</Text>
+				<Box>
+					<Text color={getColor(state.status)}>
+						{indent}
+						{symbol} {label}
+					</Text>
+				</Box>
 				{state.warning && (
 					<Box marginLeft={indent.length + 2}>
 						<Text color="yellow">{state.warning}</Text>
@@ -440,42 +565,57 @@ export const TasksDisplay = ({
 		tasks.forEach((task, index) => {
 			const taskId = getTaskId(task, index, parentId);
 			updateTaskState(taskId, { status: "idle" });
-			if (task.tasks) initializeTasksAsIdle(task.tasks, `${taskId}.`);
+
+			// Recursively initialize subtasks
+			if (task.tasks) {
+				initializeTasksAsIdle(task.tasks, `${taskId}.`);
+			}
 		});
 	};
 
-	// Initialize and execute tasks
+	// Initialize all tasks as idle, then start execution after a brief delay
 	useEffect(() => {
 		if (node.state === "active" && !isExecuting) {
+			// Initialize all tasks as idle for this task list
 			initializeTasksAsIdle(options.tasks);
-			setTimeout(executeAllTasks, 400);
+
+			// Start execution after a brief delay to show idle state
+			setTimeout(() => {
+				executeAllTasks();
+			}, 400);
 		}
 	}, [node.state]);
 
 	// Auto-submit when all tasks complete
 	useEffect(() => {
 		if (node.state !== "active" || isExecuting) return;
+
 		const states = Array.from(taskStates.values());
-		if (
-			states.length > 0 &&
-			states.every((state) =>
-				["success", "error", "warning"].includes(state.status)
-			)
-		) {
-			events.onSubmit?.({ type: "auto" });
+		if (states.length === 0) return;
+
+		const allDone = states.every(
+			(s) =>
+				s.status === "success" ||
+				s.status === "error" ||
+				s.status === "warning"
+		);
+
+		if (allDone && events.onSubmit) {
+			events.onSubmit({ type: "auto" });
 		}
 	}, [taskStates, node.state, isExecuting, events.onSubmit]);
 
 	const renderDynamicTasks = () => {
-		const dynamicStates = store.taskListStates.get(taskListId) || new Map();
-		const taskIds = [...dynamicStates.keys()];
+		const dynStates = store.taskListStates.get(taskListId) || new Map();
+		const taskIds = [...dynStates.keys()];
 
 		return dynamicTasks
-			.map((task, index) => {
-				const state = dynamicStates.get(taskIds[index]);
+			.map((task, i) => {
+				const state = dynStates.get(taskIds[i]);
 				if (!state) return null;
+
 				return (
-					<Box key={taskIds[index]} flexDirection="column">
+					<Box key={taskIds[i]} flexDirection="column">
 						<Text color={getColor(state.status)}>
 							{getSymbol(state.status)}{" "}
 							{getLabel(task, state.status)}
@@ -498,7 +638,9 @@ export const TasksDisplay = ({
 
 	return (
 		<Box flexDirection="column">
-			{options.tasks.map((task, index) => renderTask(task, index))}
+			{options.tasks.map((task: Task, index: number) =>
+				renderTask(task, index)
+			)}
 			{renderDynamicTasks()}
 		</Box>
 	);
