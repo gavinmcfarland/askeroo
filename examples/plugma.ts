@@ -264,8 +264,18 @@ const flow = async () => {
 	try {
 		const result = await ask(flow, {
 			onCancel: async ({ results, cleanup }) => {
+				await tasks([
+					{
+						label: "Canceling",
+						action: async () => {
+							await sleep(1000);
+						},
+					},
+				]);
 				await note("[Canceling...]{red}");
-				cleanup(); // Clean up UI first
+
+				// cleanup(); // Clean up UI first
+				// console.log("Results:", results);
 				process.exit(0); // User controls exit
 			},
 		});
