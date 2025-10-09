@@ -8,13 +8,13 @@ interface HintTextProps {
 	children: React.ReactNode;
 }
 
-function HintText({ children }: HintTextProps) {
-	return (
-		<Box marginTop={1}>
-			<Text dimColor>{children}</Text>
-		</Box>
-	);
-}
+// function HintText({ children }: HintTextProps) {
+// 	return (
+// 		<Box marginTop={1}>
+// 			<Text dimColor>{children}</Text>
+// 		</Box>
+// 	);
+// }
 
 // Group-specific types
 export type GroupOpts =
@@ -141,8 +141,8 @@ export const group = (
 						)}
 					{/* Simple hint rendering as requested */}
 					{shouldShowHint && (
-						<Box>
-							<HintText>{hint}</HintText>
+						<Box marginTop={1}>
+							<Text dimColor>{hint}</Text>
 						</Box>
 					)}
 				</Box>
