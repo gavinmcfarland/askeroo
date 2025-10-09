@@ -135,16 +135,16 @@ export const group = (
 							<Box
 								flexDirection="column"
 								marginLeft={options.label ? 3 : 0}
+								gap={1}
 							>
 								{node.children}
+								{shouldShowHint && (
+									<Box>
+										<Text dimColor>{hint}</Text>
+									</Box>
+								)}
 							</Box>
 						)}
-					{/* Simple hint rendering as requested */}
-					{shouldShowHint && (
-						<Box marginTop={1}>
-							<Text dimColor>{hint}</Text>
-						</Box>
-					)}
 				</Box>
 			);
 		},
