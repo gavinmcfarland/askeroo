@@ -687,7 +687,8 @@ export class PromptRuntime {
 				callback();
 			} catch (error) {
 				debugLogger.log("CANCEL_CALLBACK_ERROR", {
-					error: error instanceof Error ? error.message : String(error),
+					error:
+						error instanceof Error ? error.message : String(error),
 				});
 			}
 		}
