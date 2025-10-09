@@ -19,7 +19,7 @@ export const ask = createAsk<AskOptions, any>({
 			<Box flexDirection="column" gap={1}>
 				{children}
 			</Box>
-			{onCancelNodes && <Box>
+			{onCancelNodes && onCancelNodes.length > 0 && <Box flexDirection="column">
 					{onCancelNodes}
 				</Box>}
 			</>

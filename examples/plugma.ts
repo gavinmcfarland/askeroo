@@ -264,15 +264,8 @@ const flow = async () => {
 	try {
 		const result = await ask(flow, {
 			onCancel: async ({ results, cleanup }) => {
-				await tasks([
-					{
-						label: "Canceling",
-						action: async () => {
-							await sleep(1000);
-						},
-					},
-				]);
 				await note("[Canceling...]{red}");
+				await text({ label: "Are you sure you want to cancel?" });
 
 				// cleanup(); // Clean up UI first
 				// console.log("Results:", results);
