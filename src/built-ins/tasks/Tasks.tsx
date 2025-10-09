@@ -2,44 +2,24 @@ import React, { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { TaskWarning } from "./index.js";
 import { PluginComponentProps } from "../../types/index.js";
-
-export interface TaskLabel {
-	idle?: string;
-	running?: string;
-	success?: string;
-	error?: string;
-}
-
-export type CompleteOn = "children" | "self" | "either";
-
-export interface Task {
-	label: string | TaskLabel;
-	action?: () => Promise<void>;
-	tasks?: Task[];
-	concurrent?: boolean;
-	continueOnError?: boolean;
-	completeOn?: CompleteOn;
-}
-
-/**
- * User-provided options for the tasks plugin
- */
-export interface TasksOptions {
-	tasks: Task[];
-	concurrent?: boolean;
-	// Built-ins are automatically added via PluginOptionsWithBuiltins:
-	// meta?
-}
-
-type TaskStatus = "idle" | "running" | "success" | "error" | "warning";
-
-interface TaskState {
-	status: TaskStatus;
-	error?: string;
-	warning?: string;
-}
-
 import { taskStore, hasAnyTaskLists } from "./task-store.js";
+import type {
+	Task,
+	TaskLabel,
+	TasksOptions,
+	TaskStatus,
+	TaskState,
+	CompleteOn,
+} from "./types.js";
+
+export type {
+	Task,
+	TaskLabel,
+	CompleteOn,
+	TasksOptions,
+	TaskStatus,
+	TaskState,
+};
 
 // Track active task lists for tasks.add() functionality
 let activeTaskLists: Set<string> = new Set();
@@ -74,206 +54,123 @@ export function getTaskLabel(taskId: string): string | undefined {
 	return `Task ${taskId}`;
 }
 
+// Helper to update task state in the store
+function setTaskState(taskListId: string, taskId: string, state: TaskState) {
+	taskStore.update((s) => {
+		// Update allTaskStates
+		const all = new Map(s.allTaskStates.get(taskListId) || new Map());
+		all.set(taskId, state);
+		s.allTaskStates.set(taskListId, all);
+
+		// Update taskListStates for dynamic tasks
+		if (taskId.includes("_dynamic_")) {
+			const dyn = s.taskListStates.get(taskListId) || new Map();
+			dyn.set(taskId, state);
+			s.taskListStates.set(taskListId, dyn);
+		}
+		s.revision++;
+	});
+}
+
 // Function to add a task dynamically
 export function addDynamicTask(task: Task): Promise<void> {
-	if (!mostRecentTaskListId) {
-		return Promise.resolve(); // Silently fail if no active task list
-	}
+	if (!mostRecentTaskListId) return Promise.resolve();
 
 	const taskListId = mostRecentTaskListId;
 	const taskId = `${taskListId}_dynamic_${Date.now()}_${Math.random()
 		.toString(36)
 		.substring(2, 11)}`;
 
-	// Create executor and promise
-	const taskPromise = new Promise<void>((resolve, reject) => {
+	return new Promise<void>((resolve, reject) => {
 		const executor = async () => {
 			try {
-				// Update to running
-				taskStore.update((store) => {
-					const states =
-						store.allTaskStates.get(taskListId) || new Map();
-					const newStates = new Map(states);
-					newStates.set(taskId, { status: "running" });
-					store.allTaskStates.set(taskListId, newStates);
-
-					const dynamicStates =
-						store.taskListStates.get(taskListId) || new Map();
-					dynamicStates.set(taskId, { status: "running" });
-					store.taskListStates.set(taskListId, dynamicStates);
-
-					store.revision += 1;
-				});
-
-				if (task.action) {
-					await task.action();
-				}
-
-				// Update to success
-				taskStore.update((store) => {
-					const states =
-						store.allTaskStates.get(taskListId) || new Map();
-					const newStates = new Map(states);
-					newStates.set(taskId, { status: "success" });
-					store.allTaskStates.set(taskListId, newStates);
-
-					const dynamicStates =
-						store.taskListStates.get(taskListId) || new Map();
-					dynamicStates.set(taskId, { status: "success" });
-					store.taskListStates.set(taskListId, dynamicStates);
-
-					store.revision += 1;
-				});
+				setTaskState(taskListId, taskId, { status: "running" });
+				await task.action?.();
+				setTaskState(taskListId, taskId, { status: "success" });
 				resolve();
 			} catch (error) {
 				if (error instanceof TaskWarning) {
-					taskStore.update((store) => {
-						const states =
-							store.allTaskStates.get(taskListId) || new Map();
-						const newStates = new Map(states);
-						newStates.set(taskId, {
-							status: "warning",
-							warning: error.message,
-						});
-						store.allTaskStates.set(taskListId, newStates);
-
-						const dynamicStates =
-							store.taskListStates.get(taskListId) || new Map();
-						dynamicStates.set(taskId, {
-							status: "warning",
-							warning: error.message,
-						});
-						store.taskListStates.set(taskListId, dynamicStates);
-
-						store.revision += 1;
+					setTaskState(taskListId, taskId, {
+						status: "warning",
+						warning: error.message,
 					});
 					resolve();
 				} else {
-					taskStore.update((store) => {
-						const states =
-							store.allTaskStates.get(taskListId) || new Map();
-						const newStates = new Map(states);
-						newStates.set(taskId, {
-							status: "error",
-							error:
-								error instanceof Error
-									? error.message
-									: String(error),
-						});
-						store.allTaskStates.set(taskListId, newStates);
-
-						const dynamicStates =
-							store.taskListStates.get(taskListId) || new Map();
-						dynamicStates.set(taskId, {
-							status: "error",
-							error:
-								error instanceof Error
-									? error.message
-									: String(error),
-						});
-						store.taskListStates.set(taskListId, dynamicStates);
-
-						store.revision += 1;
+					setTaskState(taskListId, taskId, {
+						status: "error",
+						error:
+							error instanceof Error
+								? error.message
+								: String(error),
 					});
 					reject(error);
 				}
 			}
 		};
 
-		// Add task to store with idle state
-		taskStore.update((store) => {
-			const tasks = store.taskListDynamicTasks.get(taskListId) || [];
-			store.taskListDynamicTasks.set(taskListId, [...tasks, task]);
-
-			const states = store.allTaskStates.get(taskListId) || new Map();
-			const newStates = new Map(states);
-			newStates.set(taskId, { status: "idle" });
-			store.allTaskStates.set(taskListId, newStates);
-
-			const dynamicStates =
-				store.taskListStates.get(taskListId) || new Map();
-			dynamicStates.set(taskId, { status: "idle" });
-			store.taskListStates.set(taskListId, dynamicStates);
-
-			// Register executor
-			store.pendingTaskExecutors.set(taskId, executor);
-
-			store.revision += 1;
+		// Add task to store
+		taskStore.update((s) => {
+			s.taskListDynamicTasks.set(taskListId, [
+				...(s.taskListDynamicTasks.get(taskListId) || []),
+				task,
+			]);
+			s.pendingTaskExecutors.set(taskId, executor);
+			s.revision++;
 		});
 
-		// Fallback: start if component doesn't pick it up
+		setTaskState(taskListId, taskId, { status: "idle" });
+
+		// Fallback: start if component doesn't
 		setTimeout(() => {
 			if (taskStore.get().pendingTaskExecutors.has(taskId)) {
-				taskStore.update((store) => {
-					store.pendingTaskExecutors.delete(taskId);
-					store.revision += 1;
+				taskStore.update((s) => {
+					s.pendingTaskExecutors.delete(taskId);
+					s.revision++;
 				});
 				executor();
 			}
 		}, 500);
 	});
-
-	return taskPromise;
 }
 
 // Function to wait for all pending tasks to complete
 export async function waitForPendingTasks(): Promise<void> {
 	return new Promise((resolve) => {
-		let completionTimeout: NodeJS.Timeout | null = null;
+		let timeout: NodeJS.Timeout | null = null;
 
-		// Check if all tasks are complete
-		const checkCompletion = () => {
-			const store = taskStore.get();
-			let hasRunningTasks = false;
-
-			// Check if any tasks are still running or idle across all task lists
-			for (const taskStates of store.allTaskStates.values()) {
-				for (const state of taskStates.values()) {
-					if (state.status === "idle" || state.status === "running") {
-						hasRunningTasks = true;
-						break;
-					}
+		const isComplete = () => {
+			const s = taskStore.get();
+			for (const states of s.allTaskStates.values()) {
+				for (const state of states.values()) {
+					if (state.status === "idle" || state.status === "running")
+						return false;
 				}
-				if (hasRunningTasks) break;
 			}
-
-			return !hasRunningTasks;
+			return true;
 		};
 
-		// Handle completion with debounce to allow for tasks.add() calls
-		const handleCompletion = () => {
-			// Clear any existing timeout
-			if (completionTimeout) {
-				clearTimeout(completionTimeout);
-			}
-
-			// Wait a bit to see if new tasks are added
-			completionTimeout = setTimeout(() => {
-				// Re-check completion after delay
-				if (checkCompletion()) {
-					unsubscribe();
-					resolve();
-				}
-				// If not complete anymore, the subscription will catch the next completion
-			}, 100); // 100ms grace period for tasks.add() calls
-		};
-
-		// Subscribe to store updates and check on each change
 		const unsubscribe = taskStore.subscribe(() => {
-			if (checkCompletion()) {
-				handleCompletion();
-			} else {
-				// Tasks are running again, clear the timeout
-				if (completionTimeout) {
-					clearTimeout(completionTimeout);
-					completionTimeout = null;
-				}
+			if (timeout) clearTimeout(timeout);
+
+			if (isComplete()) {
+				timeout = setTimeout(() => {
+					if (isComplete()) {
+						// Re-check after grace period
+						unsubscribe();
+						resolve();
+					}
+				}, 100);
 			}
 		});
 
 		// Initial check
-		if (checkCompletion()) {
-			handleCompletion();
+		if (isComplete()) {
+			timeout = setTimeout(() => {
+				if (isComplete()) {
+					unsubscribe();
+					resolve();
+				}
+			}, 100);
 		}
 	});
 }
@@ -324,34 +221,28 @@ export const TasksDisplay = ({
 		};
 	}, [taskListId]);
 
-	// Check for pending tasks and start them after they've been rendered
-	// This ensures the idle state is visible before execution begins
+	// Start pending tasks after showing idle state
 	useEffect(() => {
-		// Find pending tasks for this task list
-		const pendingTaskIds: string[] = [];
-		for (const taskId of pendingExecutors.keys()) {
-			if (taskId.startsWith(taskListId)) {
-				pendingTaskIds.push(taskId);
-			}
-		}
+		const pending = [...pendingExecutors.keys()].filter((id) =>
+			id.startsWith(taskListId)
+		);
 
-		if (pendingTaskIds.length > 0) {
-			const timeoutId = setTimeout(() => {
-				pendingTaskIds.forEach((taskId) => {
+		if (pending.length > 0) {
+			const tid = setTimeout(() => {
+				pending.forEach((taskId) => {
 					const executor = taskStore
 						.get()
 						.pendingTaskExecutors.get(taskId);
 					if (executor) {
-						taskStore.update((store) => {
-							store.pendingTaskExecutors.delete(taskId);
-							store.revision += 1;
+						taskStore.update((s) => {
+							s.pendingTaskExecutors.delete(taskId);
+							s.revision++;
 						});
 						executor();
 					}
 				});
 			}, 400);
-
-			return () => clearTimeout(timeoutId);
+			return () => clearTimeout(tid);
 		}
 	}, [pendingExecutors, taskListId]);
 
@@ -438,23 +329,20 @@ export const TasksDisplay = ({
 	};
 
 	const updateTaskState = (taskId: string, newState: Partial<TaskState>) => {
-		taskStore.update((store) => {
-			// Update in allTaskStates
-			const listStates = store.allTaskStates.get(taskListId) || new Map();
-			const currentState = listStates.get(taskId) || { status: "idle" };
-			const updatedStates = new Map(listStates);
-			updatedStates.set(taskId, { ...currentState, ...newState });
-			store.allTaskStates.set(taskListId, updatedStates);
+		taskStore.update((s) => {
+			const states = s.allTaskStates.get(taskListId) || new Map();
+			const current = states.get(taskId) || { status: "idle" };
+			const updated = new Map(states);
+			updated.set(taskId, { ...current, ...newState });
+			s.allTaskStates.set(taskListId, updated);
 
-			// Also update in taskListStates if it's a dynamic task
+			// Update dynamic states if needed
 			if (taskId.includes("_dynamic_")) {
-				const dynamicStates =
-					store.taskListStates.get(taskListId) || new Map();
-				dynamicStates.set(taskId, { ...currentState, ...newState });
-				store.taskListStates.set(taskListId, dynamicStates);
+				const dynStates = s.taskListStates.get(taskListId) || new Map();
+				dynStates.set(taskId, { ...current, ...newState });
+				s.taskListStates.set(taskListId, dynStates);
 			}
-
-			store.revision += 1;
+			s.revision++;
 		});
 	};
 
@@ -698,54 +586,40 @@ export const TasksDisplay = ({
 		}
 	}, [node.state]);
 
-	// Watch task states and auto-submit when all tasks complete
+	// Auto-submit when all tasks complete
 	useEffect(() => {
 		if (node.state !== "active" || isExecuting) return;
 
-		// Get all task states for this task list
-		const allStates = Array.from(taskStates.values());
+		const states = Array.from(taskStates.values());
+		if (states.length === 0) return;
 
-		// Need at least one task to check completion
-		if (allStates.length === 0) return;
-
-		// Check if all tasks are in a terminal state
-		const allComplete = allStates.every(
-			(state) =>
-				state.status === "success" ||
-				state.status === "error" ||
-				state.status === "warning"
+		const allDone = states.every(
+			(s) =>
+				s.status === "success" ||
+				s.status === "error" ||
+				s.status === "warning"
 		);
 
-		// Auto-submit when all tasks complete
-		// Store reactivity ensures we'll see new tasks immediately via subscription
-		if (allComplete && events.onSubmit) {
+		if (allDone && events.onSubmit) {
 			events.onSubmit({ type: "auto" });
 		}
 	}, [taskStates, node.state, isExecuting, events.onSubmit]);
 
-	const renderDynamicTasks = (): React.ReactNode[] => {
-		// Get dynamic tasks and their states for this task list
-		const dynamicTaskStates =
-			store.taskListStates.get(taskListId) || new Map();
-		const taskIds = [...dynamicTaskStates.keys()];
+	const renderDynamicTasks = () => {
+		const dynStates = store.taskListStates.get(taskListId) || new Map();
+		const taskIds = [...dynStates.keys()];
 
 		return dynamicTasks
-			.map((task, index) => {
-				const taskId = taskIds[index];
-				const state = taskId ? dynamicTaskStates.get(taskId) : null;
-
-				if (!state || !task) return null;
-
-				const label = getLabel(task, state.status);
-				const symbol = getSymbol(state.status);
+			.map((task, i) => {
+				const state = dynStates.get(taskIds[i]);
+				if (!state) return null;
 
 				return (
-					<Box key={taskId} flexDirection="column">
-						<Box>
-							<Text color={getColor(state.status)}>
-								{symbol} {label}
-							</Text>
-						</Box>
+					<Box key={taskIds[i]} flexDirection="column">
+						<Text color={getColor(state.status)}>
+							{getSymbol(state.status)}{" "}
+							{getLabel(task, state.status)}
+						</Text>
 						{state.warning && (
 							<Box marginLeft={2}>
 								<Text color="yellow">⚠ {state.warning}</Text>

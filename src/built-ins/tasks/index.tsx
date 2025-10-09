@@ -1,8 +1,9 @@
 import { createPrompt } from "../../core/registry.js";
-import { TasksDisplay, TasksOptions, Task } from "./Tasks.js";
+import { TasksDisplay } from "./Tasks.js";
+import type { Task, TasksOptions } from "./types.js";
 
 // Re-export types
-export type { Task, TaskLabel, CompleteOn } from "./Tasks.js";
+export type { Task, TaskLabel, CompleteOn } from "./types.js";
 
 // Result types for task execution
 export interface TaskResult {
