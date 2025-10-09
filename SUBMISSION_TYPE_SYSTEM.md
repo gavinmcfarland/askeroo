@@ -28,10 +28,9 @@ export const note = createPrompt<NoteOptions, void>({
         // Auto-submit when component becomes active
         useEffect(() => {
             if (node.state === "active" && events.onSubmit) {
-                const timer = setTimeout(() => {
-                    events.onSubmit({ type: "auto" }); // Consistent format
-                }, 10);
-                return () => clearTimeout(timer);
+                // setTimeout is automatically applied for auto/skip/programmatic submissions
+                // Default delay is 100ms
+                events.onSubmit({ type: "auto" }); // Consistent format
             }
         }, [node.state, events.onSubmit]);
 
@@ -45,19 +44,31 @@ export const note = createPrompt<NoteOptions, void>({
 Components use a consistent object format to indicate submission type:
 
 ```typescript
-// Auto-submission (no value)
+// Auto-submission (no value, default 100ms delay)
 events.onSubmit({ type: "auto" });
+
+// Auto-submission with custom delay
+events.onSubmit({ type: "auto", delay: 2000 }); // 2 second delay
 
 // Auto-submission with a value
 events.onSubmit({ type: "auto", value: data });
 
-// Skip submission
+// Auto-submission with value and custom delay
+events.onSubmit({ type: "auto", value: data, delay: 500 });
+
+// Skip submission (default 100ms delay)
 events.onSubmit({ type: "skip" });
 
-// Programmatic submission
+// Skip with custom delay
+events.onSubmit({ type: "skip", delay: 200 });
+
+// Programmatic submission (default 100ms delay)
 events.onSubmit({ type: "programmatic", value: result });
 
-// Manual submission (default)
+// Programmatic submission with custom delay
+events.onSubmit({ type: "programmatic", value: result, delay: 300 });
+
+// Manual submission (immediate, no delay)
 events.onSubmit(value); // Any non-object or object without 'type' property
 ```
 

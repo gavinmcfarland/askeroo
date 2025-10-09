@@ -28,12 +28,10 @@ export const note = createPrompt({
     type: "note",
     component: ({ node, options, events }) => {
         // ✅ Auto-submit logic embedded in component
+        // setTimeout is automatically applied (default 100ms)
         useEffect(() => {
             if (node.state === "active" && events.onSubmit) {
-                const timer = setTimeout(() => {
-                    events.onSubmit("__auto"); // Special value indicates type
-                }, 10);
-                return () => clearTimeout(timer);
+                events.onSubmit({ type: "auto" }); // Special value indicates type
             }
         }, [node.state, events.onSubmit]);
 

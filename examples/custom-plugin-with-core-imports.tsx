@@ -53,13 +53,10 @@ export const messageBoard = createPrompt<MessageBoardOptions, void>({
 		// Force re-render when revision changes
 		void revision;
 
-		// Auto-submit
+		// Auto-submit (setTimeout is automatically applied with 100ms default delay)
 		useEffect(() => {
 			if (node.state === "active" && events.onSubmit) {
-				const timer = setTimeout(() => {
-					events.onSubmit({ type: "auto" });
-				}, 10);
-				return () => clearTimeout(timer);
+				events.onSubmit({ type: "auto" });
 			}
 		}, [node.state, events.onSubmit]);
 

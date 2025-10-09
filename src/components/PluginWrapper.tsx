@@ -74,5 +74,34 @@ function transformPropsToStructure(props: Record<string, any>) {
 		}
 	}
 
+	// Wrap onSubmit to automatically apply setTimeout for auto/skip/programmatic submissions
+	if (events.onSubmit) {
+		const originalOnSubmit = events.onSubmit;
+		events.onSubmit = (value: any) => {
+			// Check if this is an auto/skip/programmatic submission
+			const isSpecialSubmission =
+				typeof value === "object" &&
+				value !== null &&
+				"type" in value &&
+				(value.type === "auto" ||
+					value.type === "skip" ||
+					value.type === "programmatic");
+
+			if (isSpecialSubmission) {
+				// Get delay from submission object, default to 100ms
+				const delay =
+					typeof value.delay === "number" ? value.delay : 100;
+
+				// Apply setTimeout with the specified delay
+				setTimeout(() => {
+					originalOnSubmit(value);
+				}, delay);
+			} else {
+				// Regular submission - call immediately
+				originalOnSubmit(value);
+			}
+		};
+	}
+
 	return { node, options, events };
 }

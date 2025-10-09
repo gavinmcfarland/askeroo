@@ -24,16 +24,18 @@ events.onSubmit(value);
 
 ### After (Consistent)
 
-Single, consistent format:
+Single, consistent format with automatic setTimeout handling:
 
 ```typescript
 // Consistent object format with type property
+// Auto/skip/programmatic types automatically use setTimeout with 100ms default delay
 events.onSubmit({ type: "auto" });
 events.onSubmit({ type: "auto", value: data });
+events.onSubmit({ type: "auto", delay: 2000 }); // Custom delay
 events.onSubmit({ type: "skip" });
 events.onSubmit({ type: "programmatic", value: result });
 
-// Regular value (backward compatible)
+// Regular value (backward compatible, no delay)
 events.onSubmit(value); // Treated as manual submission
 ```
 
@@ -155,10 +157,8 @@ export const note = createPrompt({
     component: ({ node, events }) => {
         useEffect(() => {
             if (node.state === "active" && events.onSubmit) {
-                const timer = setTimeout(() => {
-                    events.onSubmit({ type: "auto" });
-                }, 10);
-                return () => clearTimeout(timer);
+                // setTimeout is automatically applied (default 100ms)
+                events.onSubmit({ type: "auto" });
             }
         }, [node.state, events.onSubmit]);
 
@@ -180,6 +180,8 @@ export const asyncLoader = createPrompt({
 
         useEffect(() => {
             if (node.state === "active" && events.onSubmit && data) {
+                // setTimeout is automatically applied (default 100ms)
+                // Can customize delay: { type: "auto", value: data, delay: 500 }
                 events.onSubmit({
                     type: "auto",
                     value: data,

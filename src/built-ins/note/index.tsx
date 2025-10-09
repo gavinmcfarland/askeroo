@@ -27,11 +27,8 @@ const noteInternal = createPrompt<NoteOptions, void>({
 		// Auto-submit when component becomes active
 		useEffect(() => {
 			if (node.state === "active" && events.onSubmit) {
-				// Use a small delay to allow rendering before submitting
-				const timer = setTimeout(() => {
-					events.onSubmit({ type: "auto" });
-				}, 10);
-				return () => clearTimeout(timer);
+				// setTimeout is now baked into onSubmit for auto submissions
+				events.onSubmit({ type: "auto" });
 			}
 		}, [node.state, events.onSubmit]);
 
