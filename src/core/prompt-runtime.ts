@@ -655,6 +655,13 @@ export class PromptRuntime {
 	}
 
 	/**
+	 * Check if any cancel callbacks are registered
+	 */
+	hasCancelCallbacks(): boolean {
+		return this.cancelCallbacks.length > 0;
+	}
+
+	/**
 	 * Handle Ctrl+C from UI (called by useInput hook in PromptApp)
 	 */
 	handleCtrlC(): void {
@@ -676,6 +683,13 @@ export class PromptRuntime {
 				// Ignore cleanup errors
 			}
 		};
+
+		// If no cancel callbacks, exit immediately
+		if (this.cancelCallbacks.length === 0) {
+			cleanup();
+			process.exit(0);
+			return;
+		}
 
 		// Call cancel callbacks with context - user controls cleanup and exit
 		for (const callback of this.cancelCallbacks) {

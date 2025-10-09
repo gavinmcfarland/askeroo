@@ -121,8 +121,11 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 	// Global Ctrl+C handler
 	useInput((input, key) => {
 		if (key.ctrl && input === 'c') {
-			// Freeze current prompt first
-			freezeCurrentPrompt();
+			// Only freeze current prompt if there are cancel callbacks
+			// If no onCancel is defined, let the CLI exit immediately
+			if (runtime && runtime.hasCancelCallbacks && runtime.hasCancelCallbacks()) {
+				freezeCurrentPrompt();
+			}
 
 			// Then call the runtime's cancel handler
 			if (runtime && runtime.handleCtrlC) {
