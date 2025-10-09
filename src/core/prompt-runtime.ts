@@ -40,6 +40,7 @@ export class PromptRuntime {
 	// Cancel handling
 	private cancelCallbacks: Array<(context: { results: Record<string, any>; cleanup: () => void; }) => void> = [];
 	private sigintHandler: (() => void) | null = null;
+	private cancelModeActive: boolean = false;
 
 	// Public BACK token
 	public readonly BACK = BACK;
@@ -662,6 +663,13 @@ export class PromptRuntime {
 	}
 
 	/**
+	 * Check if we're currently in cancel mode
+	 */
+	isInCancelMode(): boolean {
+		return this.cancelModeActive;
+	}
+
+	/**
 	 * Handle Ctrl+C from UI (called by useInput hook in PromptApp)
 	 */
 	handleCtrlC(): void {
@@ -690,6 +698,9 @@ export class PromptRuntime {
 			process.exit(0);
 			return;
 		}
+
+		// Set cancel mode before executing callbacks so new prompts go to root
+		this.cancelModeActive = true;
 
 		// Call cancel callbacks with context - user controls cleanup and exit
 		for (const callback of this.cancelCallbacks) {

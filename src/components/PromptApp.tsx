@@ -322,7 +322,9 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 				try {
 					// SIMPLIFIED: Runtime provides explicit parent via request.groupName
 					// This is the groupStack context from the runtime (which knows the exact parent)
-					const explicitParent = request.groupName || null;
+					// However, if we're in cancel mode, force all prompts to root level
+					const isInCancelMode = runtime && runtime.isInCancelMode && runtime.isInCancelMode();
+					const explicitParent = isInCancelMode ? null : (request.groupName || null);
 
 					treeManagerRef.current.addPromptRequest(
 						request,
