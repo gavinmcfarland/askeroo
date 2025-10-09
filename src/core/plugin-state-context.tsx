@@ -1,4 +1,4 @@
-import React, { ReactNode, useSyncExternalStore } from "react";
+import React, { ReactNode, useSyncExternalStore, useRef } from "react";
 import { flushSync } from "react-dom";
 
 /**
@@ -70,8 +70,8 @@ export function PromptStateProvider({ children }: PromptStateProviderProps) {
 /**
  * Hook for prompts to read and subscribe to external data.
  *
- * Uses React's useSyncExternalStore for optimal performance and automatic
- * re-rendering when external state changes.
+ * Automatically handles caching and comparison to prevent infinite loops.
+ * Plugin developers don't need to implement their own caching!
  *
  * @example
  * // Single line - reads data and auto-subscribes!
@@ -82,10 +82,49 @@ export function PromptStateProvider({ children }: PromptStateProviderProps) {
  * @returns The current data, automatically updated when notifyPromptStateChange is called
  */
 export function usePromptData<T>(getSnapshot: () => T): T {
+	// Use ref to persist cache across renders
+	const cacheRef = useRef<{ value: T; json: string } | null>(null);
+
+	const getSnapshotWithCache = () => {
+		const newValue = getSnapshot();
+
+		// Deep comparison using JSON (works for most data types)
+		// Only return new instance if data actually changed
+		try {
+			// Custom serializer to handle Maps, Sets, and other non-JSON types
+			const serialize = (obj: any): string => {
+				if (obj instanceof Map) {
+					// Convert Map to array of entries for proper serialization
+					return JSON.stringify(Array.from(obj.entries()));
+				} else if (obj instanceof Set) {
+					// Convert Set to array for proper serialization
+					return JSON.stringify(Array.from(obj));
+				} else {
+					return JSON.stringify(obj);
+				}
+			};
+
+			const newJson = serialize(newValue);
+
+			// If cache exists and data hasn't changed, return cached instance
+			if (cacheRef.current && cacheRef.current.json === newJson) {
+				return cacheRef.current.value;
+			}
+
+			// Data changed (or no cache) - cache new value
+			cacheRef.current = { value: newValue, json: newJson };
+			return newValue;
+		} catch (e) {
+			// If serialization fails (circular refs, etc), always return new value
+			// This may cause extra re-renders but won't break
+			return newValue;
+		}
+	};
+
 	return useSyncExternalStore(
 		promptStateManager.subscribe,
-		getSnapshot,
-		getSnapshot
+		getSnapshotWithCache,
+		getSnapshotWithCache
 	);
 }
 

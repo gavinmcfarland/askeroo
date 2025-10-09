@@ -10,10 +10,7 @@ import { RecursiveGroupContainer } from "./RecursiveGroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../core/registry.js";
 import { PromptTreeManager, PromptNode } from "../core/prompt-tree.js";
-import {
-	setTreeManager,
-	invalidateCompletedFieldsCache,
-} from "../built-ins/completed-fields/completed-fields-store.js";
+import { setTreeManager } from "../built-ins/completed-fields/completed-fields-store.js";
 import { PromptRequest } from "../types/index.js";
 import { applyInkRenderingFix } from "../utils/ink-rendering-fix.js";
 import { notifyPromptStateChange } from "../core/plugin-state-context.js";
@@ -181,8 +178,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					// Trigger re-render to show updated tree state
 					setTreeRevision((prev) => prev + 1);
 
-					// Invalidate completedFields cache and notify prompt state context
-					invalidateCompletedFieldsCache();
+					// Notify prompt state context (usePromptData handles caching)
 					notifyPromptStateChange();
 
 					resolve(undefined);
@@ -290,8 +286,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						setRenderKey((prev) => prev + 1);
 					});
 
-					// Invalidate completedFields cache and notify (after flushSync)
-					invalidateCompletedFieldsCache();
+					// Notify prompt state context (usePromptData handles caching)
 					notifyPromptStateChange();
 				}
 			}
@@ -415,8 +410,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						setRenderKey((prev) => prev + 1);
 					});
 
-					// Invalidate completedFields cache and notify (after flushSync)
-					invalidateCompletedFieldsCache();
+					// Notify prompt state context (usePromptData handles caching)
 					notifyPromptStateChange();
 
 					internalRefs.current.isNavigatingBack = true;
@@ -432,8 +426,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			// Trigger re-render for submit actions only
 			setTreeRevision((prev) => prev + 1);
 
-			// Invalidate completedFields cache and notify prompt state context
-			invalidateCompletedFieldsCache();
+			// Notify prompt state context (usePromptData handles caching)
 			notifyPromptStateChange();
 
 			// Resolve the promise

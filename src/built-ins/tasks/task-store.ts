@@ -21,19 +21,6 @@ let allTaskStates: Map<string, Map<string, any>> = new Map();
 // These are stored when task is added, but only executed after UI picks up the idle state
 let pendingTaskExecutors: Map<string, () => Promise<void>> = new Map();
 
-// Cache for preventing infinite re-renders with useSyncExternalStore
-// Each taskListId gets its own cache
-let dynamicTasksCache: Map<string, Array<any>> = new Map();
-let taskStatesCache: Map<string, Map<string, any>> = new Map();
-let cacheInvalidated = new Set<string>(); // Track which taskLists need cache refresh
-
-// Invalidate cache for a specific task list
-function invalidateTaskListCache(taskListId: string) {
-	cacheInvalidated.add(taskListId);
-	dynamicTasksCache.delete(taskListId);
-	taskStatesCache.delete(taskListId);
-}
-
 // Add a dynamic task to a specific task list
 export function addDynamicTaskToList(taskListId: string, task: any): string {
 	const taskId = `${taskListId}_dynamic_${Date.now()}_${Math.random()
@@ -54,10 +41,8 @@ export function addDynamicTaskToList(taskListId: string, task: any): string {
 	existingStates.set(taskId, { status: "idle" });
 	globalTaskStore.taskListStates.set(taskListId, existingStates);
 
-	// Invalidate cache for this task list
-	invalidateTaskListCache(taskListId);
-
 	// Notify all subscribed prompts to update via PromptStateContext
+	// usePromptData handles caching automatically - no manual cache invalidation needed!
 	notifyPromptStateChange();
 
 	return taskId;
@@ -79,36 +64,22 @@ export function updateTaskState(
 	}
 
 	// Also update in all task states for comprehensive tracking
-	const listStates = allTaskStates.get(taskListId) || new Map();
-	const currentState = listStates.get(taskId) || { status: "idle" };
-	listStates.set(taskId, { ...currentState, ...state });
-	allTaskStates.set(taskListId, listStates);
-
-	// Invalidate cache for this task list
-	invalidateTaskListCache(taskListId);
+	// IMPORTANT: Create a new Map to ensure reference changes for React re-renders
+	const oldListStates = allTaskStates.get(taskListId) || new Map();
+	const currentState = oldListStates.get(taskId) || { status: "idle" };
+	const newListStates = new Map(oldListStates); // Create new Map from old one
+	newListStates.set(taskId, { ...currentState, ...state });
+	allTaskStates.set(taskListId, newListStates);
 
 	// Notify all subscribed prompts to update via PromptStateContext
+	// usePromptData handles caching automatically - no manual cache invalidation needed!
 	notifyPromptStateChange();
 }
 
-// Get dynamic tasks for a task list (with caching for useSyncExternalStore)
+// Get dynamic tasks for a task list
+// No caching needed - usePromptData handles it automatically!
 export function getDynamicTasksForList(taskListId: string): Array<any> {
-	// Return cached value if still valid
-	if (
-		!cacheInvalidated.has(taskListId) &&
-		dynamicTasksCache.has(taskListId)
-	) {
-		return dynamicTasksCache.get(taskListId)!;
-	}
-
-	// Generate fresh data
-	const tasks = globalTaskStore.taskListDynamicTasks.get(taskListId) || [];
-
-	// Cache it
-	dynamicTasksCache.set(taskListId, tasks);
-	cacheInvalidated.delete(taskListId);
-
-	return tasks;
+	return globalTaskStore.taskListDynamicTasks.get(taskListId) || [];
 }
 
 // Get task states for a task list (dynamic tasks only)
@@ -116,21 +87,10 @@ export function getTaskStatesForList(taskListId: string): Map<string, any> {
 	return globalTaskStore.taskListStates.get(taskListId) || new Map();
 }
 
-// Get all task states for a task list (with caching for useSyncExternalStore)
+// Get all task states for a task list
+// No caching needed - usePromptData handles it automatically!
 export function getAllTaskStatesForList(taskListId: string): Map<string, any> {
-	// Return cached value if still valid
-	if (!cacheInvalidated.has(taskListId) && taskStatesCache.has(taskListId)) {
-		return taskStatesCache.get(taskListId)!;
-	}
-
-	// Generate fresh data
-	const states = allTaskStates.get(taskListId) || new Map();
-
-	// Cache it
-	taskStatesCache.set(taskListId, states);
-	cacheInvalidated.delete(taskListId);
-
-	return states;
+	return allTaskStates.get(taskListId) || new Map();
 }
 
 // Get all completed dynamic tasks from all task lists
@@ -238,11 +198,7 @@ export function clearTaskStore() {
 	globalTaskStore.taskListStates.clear();
 	pendingTaskExecutors.clear();
 
-	// Invalidate all caches
-	dynamicTasksCache.clear();
-	taskStatesCache.clear();
-	cacheInvalidated.clear();
-
 	// Notify all subscribed prompts to update via PromptStateContext
+	// usePromptData handles caching automatically - no manual cache clearing needed!
 	notifyPromptStateChange();
 }

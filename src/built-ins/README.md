@@ -173,6 +173,8 @@ Your component will receive:
 
 For prompts that need to update state externally (stored outside the component), use the **Prompt State Context** system.
 
+**✨ NEW: Automatic Caching** - `usePromptData` now handles caching automatically! Just return your data directly from your getter function - no need for manual caching, memoization, or cache invalidation. The system uses JSON comparison internally to only trigger re-renders when data actually changes, preventing infinite loops even when your getters return new instances (arrays, objects, Maps).
+
 ### When to Use It
 
 Use Prompt State Context when your prompt has:
@@ -275,6 +277,7 @@ import { usePromptData } from "askeroo/core";
 
 // Single line - reads data and auto-updates!
 const data = usePromptData(() => getMyExternalData());
+// ✅ Works even if getMyExternalData() returns new instances each time!
 
 // In your store/service
 import { notifyPromptStateChange } from "askeroo/core";
@@ -283,6 +286,50 @@ import { notifyPromptStateChange } from "askeroo/core";
 globalState.data = newData;
 notifyPromptStateChange();
 ```
+
+### How Automatic Caching Works
+
+**No manual caching needed!** Here's what happens behind the scenes:
+
+1. **Your getter returns data** - Can be a new array, object, Map, Set, etc. each time
+2. **Smart serialization** - `usePromptData` handles Maps/Sets/arrays/objects correctly
+3. **Content comparison** - Compares serialized content with the previous call
+4. **Smart re-render** - Only triggers re-render if data content actually changed
+5. **Stable instance** - Returns the same instance if content matches, preventing infinite loops
+
+```typescript
+// ✅ This works perfectly (no manual caching needed!)
+const tasks = usePromptData(() => {
+    return globalTaskStore.tasks; // Returns new array reference each time
+});
+
+// ✅ This also works (complex objects, nested data)
+const fields = usePromptData(() => {
+    const result = [];
+    treeManager.traverseDepthFirst((node) => {
+        if (node.completed) result.push({ ...node }); // New objects!
+    });
+    return result; // New array!
+});
+
+// ✅ Even Maps work (properly serialized for comparison)
+const taskStates = usePromptData(() => {
+    return allTaskStates.get(taskListId) || new Map(); // New Map each time!
+});
+
+// ✅ Sets also work
+const activeIds = usePromptData(() => {
+    return new Set(globalStore.activeIds); // New Set each time!
+});
+```
+
+**Key Benefits:**
+
+-   🚀 Write simple, direct getters without worrying about caching
+-   🎯 No `useMemo`, `useRef`, or manual cache invalidation needed
+-   ✨ Prevents infinite re-render loops automatically
+-   📦 Works with arrays, objects, Maps, Sets, and nested structures
+-   🗺️ Special handling for Map/Set serialization (proper content comparison)
 
 **Benefits:**
 
@@ -302,7 +349,7 @@ notifyPromptStateChange();
 5. **Export the function**: Export the result of `createPrompt` for use in flows
 6. **Test in isolation**: Plugins can be tested independently since they're self-contained
 7. **Use Prompt State Context**: For external state updates, use `usePromptData` and `notifyPromptStateChange`
-8. **Cache data**: When using `usePromptData`, ensure your getter returns stable instances (cache arrays/objects/Maps to prevent infinite loops)
+8. **Just return data**: When using `usePromptData`, simply return your data - automatic caching prevents infinite loops!
 
 ## Example: Custom Slider Plugin
 
