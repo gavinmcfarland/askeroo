@@ -42,6 +42,11 @@ export function createAsk<T = any, R = any>(config: {
 			// Create a runtime with the standard UI (which will now use our custom root container)
 			const runtime = createRuntime(ui);
 
+			// Register onCancel callback if provided in options
+			if (opts && typeof opts === "object" && "onCancel" in opts && opts.onCancel) {
+				runtime.registerCancelCallback(opts.onCancel);
+			}
+
 			// Execute the flow with the custom runtime
 			return await runtime.executeFlow(flow);
 		} finally {

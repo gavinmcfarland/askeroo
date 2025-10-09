@@ -24,6 +24,8 @@ export class RuntimeFactory {
 			rescanStaticGroupFields:
 				runtime.rescanStaticGroupFields.bind(runtime),
 			executeGroupBody: runtime.executeGroupBody.bind(runtime),
+			handleCtrlC: runtime.handleCtrlC.bind(runtime),
+			registerCancelCallback: runtime.registerCancelCallback.bind(runtime),
 			// Expose plugin prompts dynamically (including group plugin)
 			...runtime.getPluginPrompts(),
 		};

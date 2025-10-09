@@ -15,6 +15,7 @@ A modern CLI prompt library with flow control, back navigation, and conditional 
 -   Write dynamic branching with groups and conditionals
 -   Run tasks with progress tracking, parallel or sequential execution, and error handling
 -   Display notes with support for markdown and chalk syntax
+-   Cancel event listeners for cleanup when users exit with Ctrl+C
 
 ## Installation
 
@@ -143,6 +144,49 @@ The flow replays automatically when the user navigates back, clearing subsequent
     interface FlowOpts {
         allowBack?: boolean;
     }
+    ```
+
+    **Flow API**
+
+    The flow function receives an API object with the following properties:
+
+    -   `onCancel(callback: () => void)`: Register a callback to be called when the flow is cancelled (e.g., via Ctrl+C)
+
+    ```ts
+    const result = await ask(async ({ text, confirm, onCancel }) => {
+        // Register cleanup callback
+        onCancel(() => {
+            console.log("Flow cancelled! Cleaning up...");
+            // Close connections, remove temp files, etc.
+        });
+
+        const name = await text({ label: "Name" });
+        const confirmed = await confirm({ label: "Confirm?" });
+        return { name, confirmed };
+    });
+    ```
+
+    Multiple cancel callbacks can be registered, and they will all be called when the flow is cancelled:
+
+    ```ts
+    await ask(async ({ onCancel }) => {
+        // Create temp file
+        const tempFile = "temp.json";
+        fs.writeFileSync(tempFile, "{}");
+
+        // Register multiple cleanup callbacks
+        onCancel(() => {
+            console.log("Removing temp file...");
+            fs.unlinkSync(tempFile);
+        });
+
+        onCancel(() => {
+            console.log("Closing database connection...");
+            db.close();
+        });
+
+        // ... rest of flow
+    });
     ```
 
 -   ### Group prompts

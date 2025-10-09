@@ -37,6 +37,10 @@ export class PromptRuntime {
 	// Plugin prompt functions
 	private pluginPrompts: Record<string, any> = {};
 
+	// Cancel handling
+	private cancelCallbacks: Array<() => void> = [];
+	private sigintHandler: (() => void) | null = null;
+
 	// Public BACK token
 	public readonly BACK = BACK;
 
@@ -60,6 +64,9 @@ export class PromptRuntime {
 
 		// Set runtime reference in UI for re-discovery
 		this.ui.setRuntime?.(this);
+
+		// Set up SIGINT handler immediately so Ctrl+C always works
+		this.setupCancelHandler();
 	}
 
 	// ========== PUBLIC API ==========
@@ -79,71 +86,78 @@ export class PromptRuntime {
 			answersCount: this.state.getAnswerCount(),
 		});
 
-		while (true) {
-			// Prepare for replay
-			this.state.prepareForReplay();
-			this.idGenerator.reset();
+		try {
+			while (true) {
+				// Prepare for replay
+				this.state.prepareForReplay();
+				this.idGenerator.reset();
 
-			try {
-				this.state.beginFlowExecution();
-				debugLogger.log("FLOW_EXECUTING", {
-					isReplaying: this.state.isReplayingAnswers(),
-					currentIndex: this.state.getCurrentPromptIndex(),
-				});
-
-				const result = await flowDefinition({
-					BACK,
-					...this.pluginPrompts,
-				});
-
-				this.state.endFlowExecution();
-
-				// If we've reached the end, we're done
-				if (this.state.hasReachedEndOfFlow()) {
-					debugLogger.log("FLOW_COMPLETE", {
-						result,
-						totalPrompts: this.state.getTotalPromptCount(),
-					});
-
-					// Notify UI that the flow is complete
-					this.ui.completeFlow?.();
-
-					// Add a small delay to allow the completion state to update
-					await new Promise((resolve) => setTimeout(resolve, 100));
-
-					this.ui.cleanup?.();
-					return result;
-				}
-			} catch (e) {
-				this.state.endFlowExecution();
-
-				if (e === BACK) {
-					debugLogger.log("NAVIGATION_BACK", {
+				try {
+					this.state.beginFlowExecution();
+					debugLogger.log("FLOW_EXECUTING", {
+						isReplaying: this.state.isReplayingAnswers(),
 						currentIndex: this.state.getCurrentPromptIndex(),
-						totalPrompts: this.state.getTotalPromptCount(),
 					});
 
-					// Go back one step
-					if (this.state.getCurrentPromptIndex() > 0) {
-						this.state.returnToPreviousPrompt();
-						this.state.clearAnswersAfterCurrentPosition();
-						this.tree.clearFutureAnswers(
-							this.state.getCurrentPromptIndex()
+					const result = await flowDefinition({
+						BACK,
+						...this.pluginPrompts,
+					});
+
+					this.state.endFlowExecution();
+
+					// If we've reached the end, we're done
+					if (this.state.hasReachedEndOfFlow()) {
+						debugLogger.log("FLOW_COMPLETE", {
+							result,
+							totalPrompts: this.state.getTotalPromptCount(),
+						});
+
+						// Notify UI that the flow is complete
+						this.ui.completeFlow?.();
+
+						// Add a small delay to allow the completion state to update
+						await new Promise((resolve) =>
+							setTimeout(resolve, 100)
 						);
 
-						debugLogger.log("BACK_NAVIGATION_STATE", {
-							newIndex: this.state.getCurrentPromptIndex(),
-							remainingAnswers: this.state.getAnswerCount(),
-						});
+						this.ui.cleanup?.();
+						return result;
 					}
-				} else {
-					throw e;
-				}
-			}
+				} catch (e) {
+					this.state.endFlowExecution();
 
-			// Clean up answers for prompts that were not reached in this replay
-			this.state.clearUnreachableAnswers();
-			this.tree.clearUnreachableAnswers();
+					if (e === BACK) {
+						debugLogger.log("NAVIGATION_BACK", {
+							currentIndex: this.state.getCurrentPromptIndex(),
+							totalPrompts: this.state.getTotalPromptCount(),
+						});
+
+						// Go back one step
+						if (this.state.getCurrentPromptIndex() > 0) {
+							this.state.returnToPreviousPrompt();
+							this.state.clearAnswersAfterCurrentPosition();
+							this.tree.clearFutureAnswers(
+								this.state.getCurrentPromptIndex()
+							);
+
+							debugLogger.log("BACK_NAVIGATION_STATE", {
+								newIndex: this.state.getCurrentPromptIndex(),
+								remainingAnswers: this.state.getAnswerCount(),
+							});
+						}
+					} else {
+						throw e;
+					}
+				}
+
+				// Clean up answers for prompts that were not reached in this replay
+				this.state.clearUnreachableAnswers();
+				this.tree.clearUnreachableAnswers();
+			}
+		} finally {
+			// Always clean up the SIGINT handler when flow ends
+			this.cleanupCancelHandler();
 		}
 	}
 
@@ -598,5 +612,96 @@ export class PromptRuntime {
 				groupCount: this.idGenerator.getGroupCount(),
 			},
 		};
+	}
+
+	/**
+	 * Set up SIGINT handler to call cancel callbacks when Ctrl+C is pressed
+	 */
+	private setupCancelHandler(): void {
+		// Only set up if not already registered
+		if (this.sigintHandler) {
+			return;
+		}
+
+		this.sigintHandler = () => {
+			debugLogger.log("FLOW_CANCELLED", {
+				callbackCount: this.cancelCallbacks.length,
+			});
+
+			// Call all registered cancel callbacks
+			for (const callback of this.cancelCallbacks) {
+				try {
+					callback();
+				} catch (error) {
+					debugLogger.log("CANCEL_CALLBACK_ERROR", {
+						error:
+							error instanceof Error
+								? error.message
+								: String(error),
+					});
+				}
+			}
+
+			// Clean up UI
+			try {
+				this.ui.cleanup?.();
+			} catch (cleanupError) {
+				// Ignore cleanup errors
+			}
+
+			// Force exit after a brief delay to allow console output to flush
+			setTimeout(() => {
+				process.exit(0);
+			}, 50);
+		};
+
+		// Register SIGINT handler - use prependListener to run BEFORE Ink's handler
+		process.prependListener("SIGINT", this.sigintHandler);
+	}
+
+	/**
+	 * Clean up SIGINT handler and cancel callbacks
+	 */
+	private cleanupCancelHandler(): void {
+		if (this.sigintHandler) {
+			process.off("SIGINT", this.sigintHandler);
+			this.sigintHandler = null;
+		}
+		this.cancelCallbacks = [];
+	}
+
+	/**
+	 * Register a cancel callback
+	 */
+	registerCancelCallback(callback: () => void): void {
+		this.cancelCallbacks.push(callback);
+	}
+
+	/**
+	 * Handle Ctrl+C from UI (called by useInput hook in PromptApp)
+	 */
+	handleCtrlC(): void {
+		// Call all registered cancel callbacks
+		for (const callback of this.cancelCallbacks) {
+			try {
+				callback();
+			} catch (error) {
+				debugLogger.log("CANCEL_CALLBACK_ERROR", {
+					error: error instanceof Error ? error.message : String(error),
+				});
+			}
+		}
+
+		// Clean up UI
+		try {
+			this.ui.cleanup?.();
+		} catch (cleanupError) {
+			// Ignore cleanup errors
+		}
+
+		// Force exit after a brief delay to allow console output to flush
+		setTimeout(() => {
+			process.exit(0);
+		}, 50);
 	}
 }

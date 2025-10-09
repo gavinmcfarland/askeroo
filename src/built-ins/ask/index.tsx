@@ -1,7 +1,9 @@
 import { createAsk } from "../../core/ask-factory.js";
 import { Box } from "ink";
 
-export interface AskOptions {}
+export interface AskOptions {
+	onCancel?: () => void;
+}
 
 export const ask = createAsk<AskOptions, any>({
 	type: "flow",

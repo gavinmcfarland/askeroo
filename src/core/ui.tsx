@@ -34,8 +34,12 @@ function ensureApp(): Promise<(request: PromptRequest) => Promise<any>> {
 						appInstance.unmount = unmount;
 						resolve(promptFn);
 					}}
+					runtime={currentRuntime}
 				/>
-			</PromptStateProvider>
+			</PromptStateProvider>,
+			{
+				exitOnCtrlC: false, // Prevent Ink from exiting immediately on Ctrl+C
+			}
 		);
 	});
 }

@@ -11,6 +11,8 @@ export interface RuntimeAPI {
 	BACK: any;
 	rescanStaticGroupFields: Function;
 	executeGroupBody: Function; // For group plugin
+	handleCtrlC: Function; // For cancel handling
+	registerCancelCallback: Function; // For registering cancel callbacks
 	[key: string]: any; // For plugin prompts (including group)
 }
 

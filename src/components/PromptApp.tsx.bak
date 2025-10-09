@@ -6,7 +6,6 @@ import React, {
 	useMemo,
 } from "react";
 import { flushSync } from "react-dom";
-import { useInput } from "ink";
 import { RecursiveGroupContainer } from "./RecursiveGroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../core/registry.js";
@@ -29,7 +28,6 @@ declare global {
 
 interface PromptAppProps {
 	onReady: (promptFn: (request: PromptRequest) => Promise<any>) => void;
-	runtime?: any; // Optional runtime instance for cancel handling
 }
 
 // Action types for unified field handler
@@ -41,23 +39,13 @@ type FieldAction =
 
 // Tree-based state management
 
-export function PromptApp({ onReady, runtime }: PromptAppProps) {
+export function PromptApp({ onReady }: PromptAppProps) {
 	// Core UI state
 	const [currentPrompt, setCurrentPrompt] = useState<PromptRequest | null>(
 		null
 	);
 	const [treeRevision, setTreeRevision] = useState(0);
 	const [renderKey, setRenderKey] = useState(0); // Force complete remount on back navigation
-
-	// Global Ctrl+C handler
-	useInput((input, key) => {
-		if (key.ctrl && input === 'c') {
-			// Call the runtime's cancel handler if available
-			if (runtime && runtime.handleCtrlC) {
-				runtime.handleCtrlC();
-			}
-		}
-	});
 
 	// Tree management
 	const treeManagerRef = useRef<PromptTreeManager>(new PromptTreeManager());
@@ -80,6 +68,16 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 	useEffect(() => {
 		setTreeManager(treeManagerRef.current);
 	}, []);
+
+	// Handle Ctrl+C for graceful cancellation
+	useInput((input, key) => {
+		if (key.ctrl && input === "c") {
+			const handler = ui.getCancelHandler();
+			if (handler) {
+				handler();
+			}
+		}
+	});
 
 	// Handler for when fields provide hint text - stores per prompt ID
 	const handleHintChange = useCallback(
