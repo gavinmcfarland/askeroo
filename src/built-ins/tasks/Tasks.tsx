@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { TaskWarning } from "./index.js";
 import { PluginComponentProps } from "../../types/index.js";
-import { taskStore } from "./task-store.js";
 
 export interface TaskLabel {
 	idle?: string;
@@ -40,17 +39,7 @@ interface TaskState {
 	warning?: string;
 }
 
-import {
-	addDynamicTaskToList,
-	updateTaskState as updateTaskStateInStore,
-	getDynamicTasksForList,
-	getTaskStatesForList,
-	getAllTaskStatesForList,
-	hasAnyTaskLists,
-	registerTaskExecutor,
-	getPendingTaskIds,
-	startPendingTask,
-} from "./task-store.js";
+import { taskStore, hasAnyTaskLists } from "./task-store.js";
 
 // Track active task lists for tasks.add() functionality
 let activeTaskLists: Set<string> = new Set();
@@ -92,59 +81,136 @@ export function addDynamicTask(task: Task): Promise<void> {
 	}
 
 	const taskListId = mostRecentTaskListId;
+	const taskId = `${taskListId}_dynamic_${Date.now()}_${Math.random()
+		.toString(36)
+		.substring(2, 11)}`;
 
-	// Add task to the centralized store and get the generated task ID
-	const taskId = addDynamicTaskToList(taskListId, task);
-
-	// Create a promise that will resolve when this task completes
+	// Create executor and promise
 	const taskPromise = new Promise<void>((resolve, reject) => {
-		// Create the executor function that will run the task
 		const executor = async () => {
 			try {
-				updateTaskStateInStore(taskListId, taskId, {
-					status: "running",
+				// Update to running
+				taskStore.update((store) => {
+					const states =
+						store.allTaskStates.get(taskListId) || new Map();
+					const newStates = new Map(states);
+					newStates.set(taskId, { status: "running" });
+					store.allTaskStates.set(taskListId, newStates);
+
+					const dynamicStates =
+						store.taskListStates.get(taskListId) || new Map();
+					dynamicStates.set(taskId, { status: "running" });
+					store.taskListStates.set(taskListId, dynamicStates);
+
+					store.revision += 1;
 				});
 
 				if (task.action) {
 					await task.action();
 				}
 
-				updateTaskStateInStore(taskListId, taskId, {
-					status: "success",
+				// Update to success
+				taskStore.update((store) => {
+					const states =
+						store.allTaskStates.get(taskListId) || new Map();
+					const newStates = new Map(states);
+					newStates.set(taskId, { status: "success" });
+					store.allTaskStates.set(taskListId, newStates);
+
+					const dynamicStates =
+						store.taskListStates.get(taskListId) || new Map();
+					dynamicStates.set(taskId, { status: "success" });
+					store.taskListStates.set(taskListId, dynamicStates);
+
+					store.revision += 1;
 				});
 				resolve();
 			} catch (error) {
 				if (error instanceof TaskWarning) {
-					updateTaskStateInStore(taskListId, taskId, {
-						status: "warning",
-						warning: error.message,
+					taskStore.update((store) => {
+						const states =
+							store.allTaskStates.get(taskListId) || new Map();
+						const newStates = new Map(states);
+						newStates.set(taskId, {
+							status: "warning",
+							warning: error.message,
+						});
+						store.allTaskStates.set(taskListId, newStates);
+
+						const dynamicStates =
+							store.taskListStates.get(taskListId) || new Map();
+						dynamicStates.set(taskId, {
+							status: "warning",
+							warning: error.message,
+						});
+						store.taskListStates.set(taskListId, dynamicStates);
+
+						store.revision += 1;
 					});
-					resolve(); // Warnings don't reject
+					resolve();
 				} else {
-					updateTaskStateInStore(taskListId, taskId, {
-						status: "error",
-						error:
-							error instanceof Error
-								? error.message
-								: String(error),
+					taskStore.update((store) => {
+						const states =
+							store.allTaskStates.get(taskListId) || new Map();
+						const newStates = new Map(states);
+						newStates.set(taskId, {
+							status: "error",
+							error:
+								error instanceof Error
+									? error.message
+									: String(error),
+						});
+						store.allTaskStates.set(taskListId, newStates);
+
+						const dynamicStates =
+							store.taskListStates.get(taskListId) || new Map();
+						dynamicStates.set(taskId, {
+							status: "error",
+							error:
+								error instanceof Error
+									? error.message
+									: String(error),
+						});
+						store.taskListStates.set(taskListId, dynamicStates);
+
+						store.revision += 1;
 					});
 					reject(error);
 				}
 			}
 		};
 
-		// Register the executor to be started by the polling mechanism
-		// This ensures the idle state is rendered before execution begins
-		registerTaskExecutor(taskId, executor);
+		// Add task to store with idle state
+		taskStore.update((store) => {
+			const tasks = store.taskListDynamicTasks.get(taskListId) || [];
+			store.taskListDynamicTasks.set(taskListId, [...tasks, task]);
 
-		// If added while no component is active, start after a delay
-		// Otherwise the component's useEffect will start it after rendering idle state (400ms)
+			const states = store.allTaskStates.get(taskListId) || new Map();
+			const newStates = new Map(states);
+			newStates.set(taskId, { status: "idle" });
+			store.allTaskStates.set(taskListId, newStates);
+
+			const dynamicStates =
+				store.taskListStates.get(taskListId) || new Map();
+			dynamicStates.set(taskId, { status: "idle" });
+			store.taskListStates.set(taskListId, dynamicStates);
+
+			// Register executor
+			store.pendingTaskExecutors.set(taskId, executor);
+
+			store.revision += 1;
+		});
+
+		// Fallback: start if component doesn't pick it up
 		setTimeout(() => {
-			// Check if still pending (component didn't start it)
 			if (taskStore.get().pendingTaskExecutors.has(taskId)) {
-				startPendingTask(taskId);
+				taskStore.update((store) => {
+					store.pendingTaskExecutors.delete(taskId);
+					store.revision += 1;
+				});
+				executor();
 			}
-		}, 500); // Wait longer than component's 400ms delay
+		}, 500);
 	});
 
 	return taskPromise;
@@ -240,19 +306,13 @@ export const TasksDisplay = ({
 		return `tasklist_${Math.abs(hash)}`;
 	});
 
-	// Subscribe to the task store and extract data for this task list
+	// Subscribe to the task store - auto-updates on any store change
 	const store = taskStore.use();
 
-	// Extract the data for this specific task list
-	// Include store.revision in dependencies to ensure re-renders when Maps change
-	const taskStates = useMemo(
-		() => store.allTaskStates.get(taskListId) || new Map(),
-		[store.allTaskStates, store.revision, taskListId]
-	);
-	const dynamicTasks = useMemo(
-		() => store.taskListDynamicTasks.get(taskListId) || [],
-		[store.taskListDynamicTasks, store.revision, taskListId]
-	);
+	// Extract data for this task list (no useMemo needed - store already handles caching)
+	const taskStates = store.allTaskStates.get(taskListId) || new Map();
+	const dynamicTasks = store.taskListDynamicTasks.get(taskListId) || [];
+	const pendingExecutors = store.pendingTaskExecutors;
 
 	// Register this task list as active
 	useEffect(() => {
@@ -267,16 +327,33 @@ export const TasksDisplay = ({
 	// Check for pending tasks and start them after they've been rendered
 	// This ensures the idle state is visible before execution begins
 	useEffect(() => {
-		const pendingTaskIds = getPendingTaskIds(taskListId);
-		if (pendingTaskIds.length > 0) {
-			// Use setTimeout to ensure the current render completes first
-			setTimeout(() => {
-				pendingTaskIds.forEach((taskId) => {
-					startPendingTask(taskId);
-				});
-			}, 400); // 400ms to show idle state, consistent with initial task delay
+		// Find pending tasks for this task list
+		const pendingTaskIds: string[] = [];
+		for (const taskId of pendingExecutors.keys()) {
+			if (taskId.startsWith(taskListId)) {
+				pendingTaskIds.push(taskId);
+			}
 		}
-	}, [dynamicTasks, taskListId]);
+
+		if (pendingTaskIds.length > 0) {
+			const timeoutId = setTimeout(() => {
+				pendingTaskIds.forEach((taskId) => {
+					const executor = taskStore
+						.get()
+						.pendingTaskExecutors.get(taskId);
+					if (executor) {
+						taskStore.update((store) => {
+							store.pendingTaskExecutors.delete(taskId);
+							store.revision += 1;
+						});
+						executor();
+					}
+				});
+			}, 400);
+
+			return () => clearTimeout(timeoutId);
+		}
+	}, [pendingExecutors, taskListId]);
 
 	// Animated spinner frames
 	const spinnerFrames = ["⠂", "-", "–", "—", "–", "-"];
@@ -299,17 +376,9 @@ export const TasksDisplay = ({
 	// Animate spinner only when tasks are running
 	useEffect(() => {
 		// Check if any tasks are currently running
-		const hasRunningTasks =
-			[...taskStates.values()].some(
-				(state) => state.status === "running"
-			) ||
-			getDynamicTasksForList(taskListId).some((_, index) => {
-				const currentListStates = getTaskStatesForList(taskListId);
-				const taskIds = [...currentListStates.keys()];
-				const taskId = taskIds[index];
-				const state = taskId ? currentListStates.get(taskId) : null;
-				return state?.status === "running";
-			});
+		const hasRunningTasks = [...taskStates.values()].some(
+			(state) => state.status === "running"
+		);
 
 		if (!hasRunningTasks) {
 			return; // Don't start animation if no tasks are running
@@ -317,10 +386,10 @@ export const TasksDisplay = ({
 
 		const interval = setInterval(() => {
 			setSpinnerFrame((prev) => (prev + 1) % spinnerFrames.length);
-		}, 150); // Reduced frequency from 100ms to 150ms for better performance
+		}, 150);
 
 		return () => clearInterval(interval);
-	}, [taskStates, dynamicTasks, taskListId]);
+	}, [taskStates]);
 
 	const getTaskId = (_task: Task, index: number, parentId = ""): string => {
 		return `${taskListId}_${parentId}${index}`;
@@ -368,9 +437,25 @@ export const TasksDisplay = ({
 		);
 	};
 
-	const updateTaskState = (taskId: string, state: Partial<TaskState>) => {
-		// Update centralized store - component will auto-update via store subscription
-		updateTaskStateInStore(taskListId, taskId, state);
+	const updateTaskState = (taskId: string, newState: Partial<TaskState>) => {
+		taskStore.update((store) => {
+			// Update in allTaskStates
+			const listStates = store.allTaskStates.get(taskListId) || new Map();
+			const currentState = listStates.get(taskId) || { status: "idle" };
+			const updatedStates = new Map(listStates);
+			updatedStates.set(taskId, { ...currentState, ...newState });
+			store.allTaskStates.set(taskListId, updatedStates);
+
+			// Also update in taskListStates if it's a dynamic task
+			if (taskId.includes("_dynamic_")) {
+				const dynamicStates =
+					store.taskListStates.get(taskListId) || new Map();
+				dynamicStates.set(taskId, { ...currentState, ...newState });
+				store.taskListStates.set(taskListId, dynamicStates);
+			}
+
+			store.revision += 1;
+		});
 	};
 
 	const executeTask = async (task: Task, taskId: string): Promise<void> => {
@@ -639,22 +724,23 @@ export const TasksDisplay = ({
 	}, [taskStates, node.state, isExecuting, events.onSubmit]);
 
 	const renderDynamicTasks = (): React.ReactNode[] => {
-		const dynamicTaskNodes: React.ReactNode[] = [];
+		// Get dynamic tasks and their states for this task list
+		const dynamicTaskStates =
+			store.taskListStates.get(taskListId) || new Map();
+		const taskIds = [...dynamicTaskStates.keys()];
 
-		// Show only THIS task list's dynamic tasks
-		const currentListStates = getTaskStatesForList(taskListId);
-		dynamicTasks.forEach((task, index) => {
-			// Find the corresponding task state
-			const taskIds = [...currentListStates.keys()];
-			const taskId = taskIds[index];
-			const state = taskId ? currentListStates.get(taskId) : null;
+		return dynamicTasks
+			.map((task, index) => {
+				const taskId = taskIds[index];
+				const state = taskId ? dynamicTaskStates.get(taskId) : null;
 
-			if (state && task) {
+				if (!state || !task) return null;
+
 				const label = getLabel(task, state.status);
 				const symbol = getSymbol(state.status);
 
-				dynamicTaskNodes.push(
-					<Box key={`current-${taskId}`} flexDirection="column">
+				return (
+					<Box key={taskId} flexDirection="column">
 						<Box>
 							<Text color={getColor(state.status)}>
 								{symbol} {label}
@@ -672,10 +758,8 @@ export const TasksDisplay = ({
 						)}
 					</Box>
 				);
-			}
-		});
-
-		return dynamicTaskNodes;
+			})
+			.filter(Boolean);
 	};
 
 	return (
