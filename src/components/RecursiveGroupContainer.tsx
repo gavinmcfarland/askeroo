@@ -480,10 +480,9 @@ export function RecursiveGroupContainer({
 					enableArrowNavigation={parent?.enableArrowNavigation}
 					{...(isActive && !isFrozen && !item.frozen && onHintChange && { onHintChange })}
 				/>
-				{/* Always render hint area for active fields to prevent layout shift */}
-				{/* Show hint text for active fields, including frozen ones that should preserve their hint */}
+				{/* Show hint text for active fields only when hint text exists */}
 				{/* Don't show hint text for note and other auto-submitting fields since they don't need navigation hints */}
-				{isActive && item.fieldType !== "note" && !globalRegistry.shouldAutoSubmit(item.fieldType || '') && <HintText>{fieldHintText || " "}</HintText>}
+				{isActive && fieldHintText && item.fieldType !== "note" && !globalRegistry.shouldAutoSubmit(item.fieldType || '') && <HintText>{fieldHintText}</HintText>}
 			</Box>
 		);
 	}
