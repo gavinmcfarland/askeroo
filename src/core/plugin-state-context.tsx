@@ -11,24 +11,24 @@ import { flushSync } from "react-dom";
  *
  * @example
  * // In your prompt component
- * import { usePromptData } from 'askeroo/core';
+ * import { useExternalState } from 'askeroo/core';
  *
  * export const MyPrompt = ({ node, options, events }) => {
  *     // Single line - reads data and auto-updates!
- *     const data = usePromptData(() => getMyExternalData());
+ *     const data = useExternalState(() => getMyExternalData());
  *
  *     return <Box>{data.map(...)}</Box>;
  * };
  *
  * // In your prompt's store/service
- * import { notifyPromptStateChange } from 'askeroo/core';
+ * import { notifyExternalStateChange } from 'askeroo/core';
  *
  * export function updateExternalState(data: any) {
  *     // Update your state
  *     globalState.data = data;
  *
  *     // Notify React to re-render subscribed prompts (simple!)
- *     notifyPromptStateChange();
+ *     notifyExternalStateChange();
  * }
  */
 
@@ -68,20 +68,14 @@ export function PromptStateProvider({ children }: PromptStateProviderProps) {
 }
 
 /**
- * Hook for prompts to read and subscribe to external data.
+ * Hook for consuming external state in prompt components.
  *
- * Automatically handles caching and comparison to prevent infinite loops.
- * Plugin developers don't need to implement their own caching!
+ * Use this when your prompt needs to display data from global stores,
+ * services, or other external sources that can update independently.
  *
- * @example
- * // Single line - reads data and auto-subscribes!
- * const tasks = usePromptData(() => getTasksFromStore());
- * const fields = usePromptData(() => getCompletedFieldsData());
- *
- * @param getSnapshot - Function that returns the current data
- * @returns The current data, automatically updated when notifyPromptStateChange is called
+ * Built on React's useSyncExternalStore for safe concurrent rendering.
  */
-export function usePromptData<T>(getSnapshot: () => T): T {
+export function useExternalState<T>(getSnapshot: () => T): T {
 	// Use ref to persist cache across renders
 	const cacheRef = useRef<{ value: T; json: string } | null>(null);
 
@@ -129,22 +123,16 @@ export function usePromptData<T>(getSnapshot: () => T): T {
 }
 
 /**
- * Notify all subscribed prompts that state has changed.
- * Call this from stores/services after updating external state.
- *
- * @example
- * export function addTask(task: Task) {
- *     globalStore.tasks.push(task);
- *     notifyPromptStateChange(); // Triggers re-render
- * }
+ * Notify all prompts subscribed to external state that data has changed.
+ * Call this from your store/service after updating state.
  */
-export function notifyPromptStateChange(): void {
+export function notifyExternalStateChange(): void {
 	promptStateManager.notify();
 }
 
 // Legacy compatibility exports
 export function getPromptStateNotifier(): (() => void) | null {
-	return notifyPromptStateChange;
+	return notifyExternalStateChange;
 }
 
 export function setPromptStateNotifier(_notifier: (() => void) | null) {
@@ -157,9 +145,9 @@ export function usePromptState() {
 	// Return a dummy revision that changes when manager notifies
 	// This allows old code to still work during migration
 	let revision = 0;
-	usePromptData(() => {
+	useExternalState(() => {
 		revision++;
 		return revision;
 	});
-	return { revision, notifyChange: notifyPromptStateChange };
+	return { revision, notifyChange: notifyExternalStateChange };
 }

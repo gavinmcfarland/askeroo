@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { TaskWarning } from "./index.js";
 import { PluginComponentProps } from "../../types/index.js";
-import { usePromptData } from "../../core/plugin-state-context.js";
+import { useExternalState } from "../../core/plugin-state-context.js";
 
 export interface TaskLabel {
 	idle?: string;
@@ -178,8 +178,10 @@ export const TasksDisplay = ({
 
 	// Subscribe to prompt state and read data in one line!
 	// Note: Don't wrap with new Map() - the cached instance is already a Map
-	const taskStates = usePromptData(() => getAllTaskStatesForList(taskListId));
-	const dynamicTasks = usePromptData(() =>
+	const taskStates = useExternalState(() =>
+		getAllTaskStatesForList(taskListId)
+	);
+	const dynamicTasks = useExternalState(() =>
 		getDynamicTasksForList(taskListId)
 	);
 
@@ -298,7 +300,7 @@ export const TasksDisplay = ({
 	};
 
 	const updateTaskState = (taskId: string, state: Partial<TaskState>) => {
-		// Update centralized store - component will auto-update via usePromptData
+		// Update centralized store - component will auto-update via useExternalState
 		updateTaskStateInStore(taskListId, taskId, state);
 	};
 

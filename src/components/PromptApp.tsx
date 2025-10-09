@@ -13,7 +13,7 @@ import { PromptTreeManager, PromptNode } from "../core/prompt-tree.js";
 import { setTreeManager } from "../built-ins/completed-fields/completed-fields-store.js";
 import { PromptRequest } from "../types/index.js";
 import { applyInkRenderingFix } from "../utils/ink-rendering-fix.js";
-import { notifyPromptStateChange } from "../core/plugin-state-context.js";
+import { notifyExternalStateChange } from "../core/plugin-state-context.js";
 
 // Type declaration for debug utilities
 declare global {
@@ -179,8 +179,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					// Trigger re-render to show updated tree state
 					setTreeRevision((prev) => prev + 1);
 
-					// Notify prompt state context (usePromptData handles caching)
-					notifyPromptStateChange();
+					// Notify prompt state context (useExternalState handles caching)
+					notifyExternalStateChange();
 
 					resolve(undefined);
 					return;
@@ -292,8 +292,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						setRenderKey((prev) => prev + 1);
 					});
 
-					// Notify prompt state context (usePromptData handles caching)
-					notifyPromptStateChange();
+					// Notify prompt state context (useExternalState handles caching)
+					notifyExternalStateChange();
 				}
 			}
 		} catch (error) {
@@ -422,8 +422,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						setRenderKey((prev) => prev + 1);
 					});
 
-					// Notify prompt state context (usePromptData handles caching)
-					notifyPromptStateChange();
+					// Notify prompt state context (useExternalState handles caching)
+					notifyExternalStateChange();
 
 					internalRefs.current.isNavigatingBack = true;
 					resolveValue = { __back: true };
@@ -438,8 +438,8 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			// Trigger re-render for submit actions only
 			setTreeRevision((prev) => prev + 1);
 
-			// Notify prompt state context (usePromptData handles caching)
-			notifyPromptStateChange();
+			// Notify prompt state context (useExternalState handles caching)
+			notifyExternalStateChange();
 
 			// Resolve the promise
 			// For async auto-submissions, use the resolver from the map

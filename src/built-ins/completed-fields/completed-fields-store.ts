@@ -3,7 +3,7 @@
 
 import { FieldState } from "../../types/index.js";
 import { PromptTreeManager, PromptNode } from "../../core/prompt-tree.js";
-import { notifyPromptStateChange } from "../../core/plugin-state-context.js";
+import { notifyExternalStateChange } from "../../core/plugin-state-context.js";
 
 export interface CompletedField {
 	id: string;
@@ -244,7 +244,7 @@ export function getCompletedFields(): CompletedField[] {
 }
 
 // NEW TREE-BASED APPROACH: Get completed fields directly from tree
-// No caching needed - usePromptData handles it automatically!
+// No caching needed - useExternalState handles it automatically!
 export function getCompletedFieldsData(): Array<{
 	id: string;
 	label: string;
@@ -314,6 +314,6 @@ export function clearCompletedFieldsStore() {
 	};
 
 	// Notify all subscribed prompts to update via PromptStateContext
-	// usePromptData handles caching automatically - no manual cache invalidation needed!
-	notifyPromptStateChange();
+	// useExternalState handles caching automatically - no manual cache invalidation needed!
+	notifyExternalStateChange();
 }

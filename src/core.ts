@@ -4,7 +4,7 @@
  * Import from: askeroo/core
  *
  * @example
- * import { createPrompt, usePromptState, getPromptStateNotifier } from "askeroo/core";
+ * import { createPrompt, useExternalState, notifyExternalStateChange } from "askeroo/core";
  */
 
 // Prompt creation and registration
@@ -17,8 +17,8 @@ export {
 
 // Prompt State Context system for reactive updates
 export {
-	usePromptData,
-	notifyPromptStateChange,
+	useExternalState,
+	notifyExternalStateChange,
 	PromptStateProvider,
 	// Legacy compatibility
 	usePromptState,

@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Text, Box } from "ink";
 import { createPrompt } from "../../core/registry.js";
 import { getCompletedFieldsData } from "./completed-fields-store.js";
-import { usePromptData } from "../../core/plugin-state-context.js";
+import { useExternalState } from "../../core/plugin-state-context.js";
 
 // Type for completed field data (matches getCompletedFieldsData return type)
 type CompletedFieldData = {
@@ -29,7 +29,7 @@ export const completedFields = createPrompt<CompletedFieldsOptions, void>({
 
 	component: ({ node, options, events }: any) => {
 		// Subscribe to prompt state and read data in one line!
-		const allFields = usePromptData(() => getCompletedFieldsData());
+		const allFields = useExternalState(() => getCompletedFieldsData());
 		const completedFieldsList = options.maxFields
 			? allFields.slice(0, options.maxFields)
 			: allFields;

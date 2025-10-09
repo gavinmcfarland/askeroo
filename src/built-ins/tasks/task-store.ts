@@ -1,7 +1,7 @@
 // Task store to manage dynamic tasks using the generic prompt state system
 // Uses PromptStateContext for reactive updates instead of polling
 
-import { notifyPromptStateChange } from "../../core/plugin-state-context.js";
+import { notifyExternalStateChange } from "../../core/plugin-state-context.js";
 
 export interface TaskStoreState {
 	taskListDynamicTasks: Map<string, Array<any>>;
@@ -42,8 +42,8 @@ export function addDynamicTaskToList(taskListId: string, task: any): string {
 	globalTaskStore.taskListStates.set(taskListId, existingStates);
 
 	// Notify all subscribed prompts to update via PromptStateContext
-	// usePromptData handles caching automatically - no manual cache invalidation needed!
-	notifyPromptStateChange();
+	// useExternalState handles caching automatically - no manual cache invalidation needed!
+	notifyExternalStateChange();
 
 	return taskId;
 }
@@ -72,12 +72,12 @@ export function updateTaskState(
 	allTaskStates.set(taskListId, newListStates);
 
 	// Notify all subscribed prompts to update via PromptStateContext
-	// usePromptData handles caching automatically - no manual cache invalidation needed!
-	notifyPromptStateChange();
+	// useExternalState handles caching automatically - no manual cache invalidation needed!
+	notifyExternalStateChange();
 }
 
 // Get dynamic tasks for a task list
-// No caching needed - usePromptData handles it automatically!
+// No caching needed - useExternalState handles it automatically!
 export function getDynamicTasksForList(taskListId: string): Array<any> {
 	return globalTaskStore.taskListDynamicTasks.get(taskListId) || [];
 }
@@ -88,7 +88,7 @@ export function getTaskStatesForList(taskListId: string): Map<string, any> {
 }
 
 // Get all task states for a task list
-// No caching needed - usePromptData handles it automatically!
+// No caching needed - useExternalState handles it automatically!
 export function getAllTaskStatesForList(taskListId: string): Map<string, any> {
 	return allTaskStates.get(taskListId) || new Map();
 }
@@ -199,6 +199,6 @@ export function clearTaskStore() {
 	pendingTaskExecutors.clear();
 
 	// Notify all subscribed prompts to update via PromptStateContext
-	// usePromptData handles caching automatically - no manual cache clearing needed!
-	notifyPromptStateChange();
+	// useExternalState handles caching automatically - no manual cache clearing needed!
+	notifyExternalStateChange();
 }

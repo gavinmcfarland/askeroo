@@ -173,7 +173,7 @@ Your component will receive:
 
 For prompts that need to update state externally (stored outside the component), use the **Prompt State Context** system.
 
-**✨ NEW: Automatic Caching** - `usePromptData` now handles caching automatically! Just return your data directly from your getter function - no need for manual caching, memoization, or cache invalidation. The system uses JSON comparison internally to only trigger re-renders when data actually changes, preventing infinite loops even when your getters return new instances (arrays, objects, Maps).
+**✨ NEW: Automatic Caching** - `useExternalState` now handles caching automatically! Just return your data directly from your getter function - no need for manual caching, memoization, or cache invalidation. The system uses JSON comparison internally to only trigger re-renders when data actually changes, preventing infinite loops even when your getters return new instances (arrays, objects, Maps).
 
 ### When to Use It
 
@@ -196,8 +196,8 @@ For prompts that **add content dynamically**:
 ```typescript
 import {
     createPrompt,
-    usePromptData,
-    notifyPromptStateChange,
+    useExternalState,
+    notifyExternalStateChange,
 } from "askeroo/core";
 
 // Store
@@ -206,13 +206,13 @@ export function addDynamicTask(task: Task) {
     globalTaskStore.tasks.push(task);
 
     // Notify React to re-render (one line!)
-    notifyPromptStateChange();
+    notifyExternalStateChange();
 }
 
 // Component
 export const TasksDisplay = ({ node, options, events }) => {
     // Subscribe to updates and read data in one line!
-    const tasks = usePromptData(() => getTasksFromStore());
+    const tasks = useExternalState(() => getTasksFromStore());
 
     return <Box>...</Box>;
 };
@@ -223,7 +223,7 @@ export const TasksDisplay = ({ node, options, events }) => {
 For prompts that **read from external sources**:
 
 ```typescript
-import { createPrompt, usePromptData, notifyPromptStateChange } from "askeroo/core";
+import { createPrompt, useExternalState, notifyExternalStateChange } from "askeroo/core";
 
 // PromptApp - Notify when tree changes (fields added/removed)
 function handleFieldAction(action) {
@@ -233,7 +233,7 @@ function handleFieldAction(action) {
     // Notify both systems atomically
     flushSync(() => {
         setTreeRevision(prev => prev + 1);  // Tree consumers
-        notifyPromptStateChange();          // Prompt consumers
+        notifyExternalStateChange();          // Prompt consumers
     });
 }
 
@@ -243,7 +243,7 @@ export function clearCompletedFieldsStore() {
     globalStore = { ... };
 
     // Notify prompts to update (one line!)
-    notifyPromptStateChange();
+    notifyExternalStateChange();
 }
 
 // Component
@@ -251,7 +251,7 @@ export const completedFields = createPrompt({
     type: "completedFields",
     component: ({ node, options, events }) => {
         // Subscribe and read data in one line!
-        const allFields = usePromptData(() => getCompletedFieldsData());
+        const allFields = useExternalState(() => getCompletedFieldsData());
         const displayFields = options.maxFields
             ? allFields.slice(0, options.maxFields)
             : allFields;
@@ -267,24 +267,24 @@ export const completedFields = createPrompt({
 });
 ```
 
-**Note:** Both examples use the same pattern now! `usePromptData` works for all cases - no need to choose between different patterns.
+**Note:** Both examples use the same pattern now! `useExternalState` works for all cases - no need to choose between different patterns.
 
 ### API Reference
 
 ```typescript
 // In your prompt component
-import { usePromptData } from "askeroo/core";
+import { useExternalState } from "askeroo/core";
 
 // Single line - reads data and auto-updates!
-const data = usePromptData(() => getMyExternalData());
+const data = useExternalState(() => getMyExternalData());
 // ✅ Works even if getMyExternalData() returns new instances each time!
 
 // In your store/service
-import { notifyPromptStateChange } from "askeroo/core";
+import { notifyExternalStateChange } from "askeroo/core";
 
 // Update state, then notify (one line!)
 globalState.data = newData;
-notifyPromptStateChange();
+notifyExternalStateChange();
 ```
 
 ### How Automatic Caching Works
@@ -292,19 +292,19 @@ notifyPromptStateChange();
 **No manual caching needed!** Here's what happens behind the scenes:
 
 1. **Your getter returns data** - Can be a new array, object, Map, Set, etc. each time
-2. **Smart serialization** - `usePromptData` handles Maps/Sets/arrays/objects correctly
+2. **Smart serialization** - `useExternalState` handles Maps/Sets/arrays/objects correctly
 3. **Content comparison** - Compares serialized content with the previous call
 4. **Smart re-render** - Only triggers re-render if data content actually changed
 5. **Stable instance** - Returns the same instance if content matches, preventing infinite loops
 
 ```typescript
 // ✅ This works perfectly (no manual caching needed!)
-const tasks = usePromptData(() => {
+const tasks = useExternalState(() => {
     return globalTaskStore.tasks; // Returns new array reference each time
 });
 
 // ✅ This also works (complex objects, nested data)
-const fields = usePromptData(() => {
+const fields = useExternalState(() => {
     const result = [];
     treeManager.traverseDepthFirst((node) => {
         if (node.completed) result.push({ ...node }); // New objects!
@@ -313,12 +313,12 @@ const fields = usePromptData(() => {
 });
 
 // ✅ Even Maps work (properly serialized for comparison)
-const taskStates = usePromptData(() => {
+const taskStates = useExternalState(() => {
     return allTaskStates.get(taskListId) || new Map(); // New Map each time!
 });
 
 // ✅ Sets also work
-const activeIds = usePromptData(() => {
+const activeIds = useExternalState(() => {
     return new Set(globalStore.activeIds); // New Set each time!
 });
 ```
@@ -348,8 +348,8 @@ const activeIds = usePromptData(() => {
 4. **Type safety**: Define TypeScript interfaces for options and return types
 5. **Export the function**: Export the result of `createPrompt` for use in flows
 6. **Test in isolation**: Plugins can be tested independently since they're self-contained
-7. **Use Prompt State Context**: For external state updates, use `usePromptData` and `notifyPromptStateChange`
-8. **Just return data**: When using `usePromptData`, simply return your data - automatic caching prevents infinite loops!
+7. **Use Prompt State Context**: For external state updates, use `useExternalState` and `notifyExternalStateChange`
+8. **Just return data**: When using `useExternalState`, simply return your data - automatic caching prevents infinite loops!
 
 ## Example: Custom Slider Plugin
 
