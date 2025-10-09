@@ -189,6 +189,131 @@ Don't use it for:
 -   ❌ **Component-local state** - State lives inside the component with `useState` (like `text`, `confirm`)
 -   ❌ **Self-contained inputs** - Component manages its own state without external updates
 
+### Two Approaches
+
+There are two ways to manage external state in prompts:
+
+1. **Store Factory Pattern (Recommended)** - Simple, ergonomic API with `createStore`
+2. **Manual API** - Lower-level control with `useExternalState` + `notifyExternalStateChange`
+
+## Store Factory Pattern (Recommended)
+
+The store factory pattern provides the simplest API for managing external state. It automatically handles notifications and provides a clean interface.
+
+### Quick Example
+
+```typescript
+import { createPrompt, createStore } from "askeroo/core";
+
+// 1. Create a typed store (one line!)
+export const taskStore = createStore({
+  tasks: [] as Task[],
+  activeTaskId: null as string | null,
+});
+
+// 2. Update anywhere - notifications are automatic!
+export function addTask(task: Task) {
+  taskStore.update(state => {
+    state.tasks.push(task);
+  });
+  // No manual notify call needed! ✨
+}
+
+// 3. Use in components - clean and simple
+export const TasksDisplay = ({ node, options, events }) => {
+  const { tasks, activeTaskId } = taskStore.use();
+  // Automatically subscribes and re-renders on changes!
+
+  return <Box>{tasks.map(...)}</Box>;
+};
+```
+
+### Store API Reference
+
+```typescript
+const store = createStore(initialState);
+
+// Get current state (doesn't subscribe)
+const state = store.get();
+
+// Update state with a function (auto-notifies)
+store.update((state) => {
+    state.tasks.push(newTask);
+});
+
+// Set state directly (auto-notifies)
+store.set({ tasks: [], activeTaskId: null });
+
+// Use in React components (auto-subscribes)
+const state = store.use();
+
+// Subscribe manually (advanced)
+const unsubscribe = store.subscribe(() => {
+    console.log("State changed!", store.get());
+});
+
+// Reset to initial state
+store.reset();
+```
+
+### Advanced: Multiple Stores
+
+You can compose multiple stores for complex state:
+
+```typescript
+export const taskListStore = createStore({
+    lists: new Map<string, TaskList>(),
+});
+
+export const taskStore = createStore({
+    tasks: new Map<string, Task>(),
+});
+
+// Cross-store operations
+export function deleteTaskList(listId: string) {
+    // Update multiple stores in one operation
+    taskListStore.update((state) => {
+        state.lists.delete(listId);
+    });
+
+    taskStore.update((state) => {
+        // Remove all tasks in this list
+        for (const [id, task] of state.tasks) {
+            if (task.listId === listId) {
+                state.tasks.delete(id);
+            }
+        }
+    });
+}
+```
+
+### Advanced: Computed Values
+
+```typescript
+import { useMemo } from "react";
+
+export const taskStore = createStore({
+  tasks: [] as Task[],
+  filter: 'all' as 'all' | 'active' | 'completed',
+});
+
+// Memoized selector in component
+export const TasksDisplay = ({ node, options, events }) => {
+  const { tasks, filter } = taskStore.use();
+
+  const filteredTasks = useMemo(() => {
+    if (filter === 'all') return tasks;
+    return tasks.filter(t => t.status === filter);
+  }, [tasks, filter]);
+
+  return <Box>{filteredTasks.map(...)}</Box>;
+};
+```
+
+## Manual API (Advanced)
+
+For lower-level control, you can use the manual API with `useExternalState` and `notifyExternalStateChange`.
+
 ### Example 1: Tasks (External Updates)
 
 For prompts that **add content dynamically**:
@@ -348,8 +473,8 @@ const activeIds = useExternalState(() => {
 4. **Type safety**: Define TypeScript interfaces for options and return types
 5. **Export the function**: Export the result of `createPrompt` for use in flows
 6. **Test in isolation**: Plugins can be tested independently since they're self-contained
-7. **Use Prompt State Context**: For external state updates, use `useExternalState` and `notifyExternalStateChange`
-8. **Just return data**: When using `useExternalState`, simply return your data - automatic caching prevents infinite loops!
+7. **External State Management**: Use `createStore` for the simplest API (recommended), or `useExternalState` + `notifyExternalStateChange` for lower-level control
+8. **Store Factory Benefits**: With `createStore`, notifications are automatic and the API is cleaner - no manual notify calls needed!
 
 ## Example: Custom Slider Plugin
 

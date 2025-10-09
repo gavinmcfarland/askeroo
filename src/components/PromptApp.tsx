@@ -10,7 +10,10 @@ import { RecursiveGroupContainer } from "./RecursiveGroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../core/registry.js";
 import { PromptTreeManager, PromptNode } from "../core/prompt-tree.js";
-import { setTreeManager } from "../built-ins/completed-fields/completed-fields-store.js";
+import {
+	setTreeManager,
+	notifyTreeChanged,
+} from "../built-ins/completed-fields/completed-fields-store.js";
 import { PromptRequest } from "../types/index.js";
 import { applyInkRenderingFix } from "../utils/ink-rendering-fix.js";
 import { notifyExternalStateChange } from "../core/plugin-state-context.js";
@@ -81,6 +84,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					// Use flushSync to make hint update synchronous and prevent blinking
 					flushSync(() => {
 						setTreeRevision((prev) => prev + 1);
+						notifyTreeChanged();
 					});
 				}
 			}
@@ -117,6 +121,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					// Trigger re-render
 					setTreeRevision((prev) => prev + 1);
+					notifyTreeChanged();
 
 					// Clear the current prompt so the active field transitions to completed state
 					setCurrentPrompt(null);
@@ -253,6 +258,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 					// Force re-render to reflect tree changes
 					setTreeRevision((prev) => prev + 1);
+					notifyTreeChanged();
 				} catch (error) {
 					console.warn(
 						"Tree management error (non-critical during migration):",
@@ -292,8 +298,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						setRenderKey((prev) => prev + 1);
 					});
 
-					// Notify prompt state context (useExternalState handles caching)
-					notifyExternalStateChange();
+					// Notify stores about tree changes
+					notifyTreeChanged();
+					notifyExternalStateChange(); // Legacy compatibility
 				}
 			}
 		} catch (error) {
@@ -422,8 +429,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						setRenderKey((prev) => prev + 1);
 					});
 
-					// Notify prompt state context (useExternalState handles caching)
-					notifyExternalStateChange();
+					// Notify stores about tree changes
+					notifyTreeChanged();
+					notifyExternalStateChange(); // Legacy compatibility
 
 					internalRefs.current.isNavigatingBack = true;
 					resolveValue = { __back: true };
@@ -438,8 +446,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			// Trigger re-render for submit actions only
 			setTreeRevision((prev) => prev + 1);
 
-			// Notify prompt state context (useExternalState handles caching)
-			notifyExternalStateChange();
+			// Notify stores about tree changes
+			notifyTreeChanged();
+			notifyExternalStateChange(); // Legacy compatibility
 
 			// Resolve the promise
 			// For async auto-submissions, use the resolver from the map

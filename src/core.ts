@@ -4,6 +4,10 @@
  * Import from: askeroo/core
  *
  * @example
+ * // Modern approach with store factory
+ * import { createPrompt, createStore } from "askeroo/core";
+ *
+ * // Or manual state management
  * import { createPrompt, useExternalState, notifyExternalStateChange } from "askeroo/core";
  */
 
@@ -14,6 +18,9 @@ export {
 	globalRegistry,
 	type PromptPlugin,
 } from "./core/registry.js";
+
+// Store factory for external state management
+export { createStore, type Store } from "./core/store.js";
 
 // Prompt State Context system for reactive updates
 export {

@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Box, Text, useInput } from "ink";
 import { TaskWarning } from "./index.js";
 import { PluginComponentProps } from "../../types/index.js";
-import { useExternalState } from "../../core/plugin-state-context.js";
+import { taskStore } from "./task-store.js";
 
 export interface TaskLabel {
 	idle?: string;
@@ -136,6 +136,15 @@ export function addDynamicTask(task: Task): Promise<void> {
 		// Register the executor to be started by the polling mechanism
 		// This ensures the idle state is rendered before execution begins
 		registerTaskExecutor(taskId, executor);
+
+		// If added while no component is active, start after a delay
+		// Otherwise the component's useEffect will start it after rendering idle state (400ms)
+		setTimeout(() => {
+			// Check if still pending (component didn't start it)
+			if (taskStore.get().pendingTaskExecutors.has(taskId)) {
+				startPendingTask(taskId);
+			}
+		}, 500); // Wait longer than component's 400ms delay
 	});
 
 	return taskPromise;
@@ -143,9 +152,64 @@ export function addDynamicTask(task: Task): Promise<void> {
 
 // Function to wait for all pending tasks to complete
 export async function waitForPendingTasks(): Promise<void> {
-	// With the new centralized approach, this function is simplified
-	// Dynamic tasks are now managed at the PromptApp level
-	return Promise.resolve();
+	return new Promise((resolve) => {
+		let completionTimeout: NodeJS.Timeout | null = null;
+
+		// Check if all tasks are complete
+		const checkCompletion = () => {
+			const store = taskStore.get();
+			let hasRunningTasks = false;
+
+			// Check if any tasks are still running or idle across all task lists
+			for (const taskStates of store.allTaskStates.values()) {
+				for (const state of taskStates.values()) {
+					if (state.status === "idle" || state.status === "running") {
+						hasRunningTasks = true;
+						break;
+					}
+				}
+				if (hasRunningTasks) break;
+			}
+
+			return !hasRunningTasks;
+		};
+
+		// Handle completion with debounce to allow for tasks.add() calls
+		const handleCompletion = () => {
+			// Clear any existing timeout
+			if (completionTimeout) {
+				clearTimeout(completionTimeout);
+			}
+
+			// Wait a bit to see if new tasks are added
+			completionTimeout = setTimeout(() => {
+				// Re-check completion after delay
+				if (checkCompletion()) {
+					unsubscribe();
+					resolve();
+				}
+				// If not complete anymore, the subscription will catch the next completion
+			}, 100); // 100ms grace period for tasks.add() calls
+		};
+
+		// Subscribe to store updates and check on each change
+		const unsubscribe = taskStore.subscribe(() => {
+			if (checkCompletion()) {
+				handleCompletion();
+			} else {
+				// Tasks are running again, clear the timeout
+				if (completionTimeout) {
+					clearTimeout(completionTimeout);
+					completionTimeout = null;
+				}
+			}
+		});
+
+		// Initial check
+		if (checkCompletion()) {
+			handleCompletion();
+		}
+	});
 }
 
 // Main component for the plugin
@@ -176,13 +240,18 @@ export const TasksDisplay = ({
 		return `tasklist_${Math.abs(hash)}`;
 	});
 
-	// Subscribe to prompt state and read data in one line!
-	// Note: Don't wrap with new Map() - the cached instance is already a Map
-	const taskStates = useExternalState(() =>
-		getAllTaskStatesForList(taskListId)
+	// Subscribe to the task store and extract data for this task list
+	const store = taskStore.use();
+
+	// Extract the data for this specific task list
+	// Include store.revision in dependencies to ensure re-renders when Maps change
+	const taskStates = useMemo(
+		() => store.allTaskStates.get(taskListId) || new Map(),
+		[store.allTaskStates, store.revision, taskListId]
 	);
-	const dynamicTasks = useExternalState(() =>
-		getDynamicTasksForList(taskListId)
+	const dynamicTasks = useMemo(
+		() => store.taskListDynamicTasks.get(taskListId) || [],
+		[store.taskListDynamicTasks, store.revision, taskListId]
 	);
 
 	// Register this task list as active
@@ -300,7 +369,7 @@ export const TasksDisplay = ({
 	};
 
 	const updateTaskState = (taskId: string, state: Partial<TaskState>) => {
-		// Update centralized store - component will auto-update via useExternalState
+		// Update centralized store - component will auto-update via store subscription
 		updateTaskStateInStore(taskListId, taskId, state);
 	};
 
@@ -477,11 +546,8 @@ export const TasksDisplay = ({
 			}
 		} finally {
 			setIsExecuting(false);
-
-			// Only submit after we know everything is done
-			if (events.onSubmit && node.state === "active") {
-				events.onSubmit({ type: "auto" });
-			}
+			// Don't auto-submit here - let dynamic tasks be added
+			// Submission will happen when component detects all tasks complete
 		}
 	};
 
@@ -546,6 +612,31 @@ export const TasksDisplay = ({
 			}, 400);
 		}
 	}, [node.state]);
+
+	// Watch task states and auto-submit when all tasks complete
+	useEffect(() => {
+		if (node.state !== "active" || isExecuting) return;
+
+		// Get all task states for this task list
+		const allStates = Array.from(taskStates.values());
+
+		// Need at least one task to check completion
+		if (allStates.length === 0) return;
+
+		// Check if all tasks are in a terminal state
+		const allComplete = allStates.every(
+			(state) =>
+				state.status === "success" ||
+				state.status === "error" ||
+				state.status === "warning"
+		);
+
+		// Auto-submit when all tasks complete
+		// Store reactivity ensures we'll see new tasks immediately via subscription
+		if (allComplete && events.onSubmit) {
+			events.onSubmit({ type: "auto" });
+		}
+	}, [taskStates, node.state, isExecuting, events.onSubmit]);
 
 	const renderDynamicTasks = (): React.ReactNode[] => {
 		const dynamicTaskNodes: React.ReactNode[] = [];

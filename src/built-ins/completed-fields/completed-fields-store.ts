@@ -1,9 +1,9 @@
-// Completed fields store using the generic prompt state system
-// Uses PromptStateContext for reactive updates
+// Completed fields store using the store factory pattern
+// Uses createStore for automatic reactive updates
 
 import { FieldState } from "../../types/index.js";
 import { PromptTreeManager, PromptNode } from "../../core/prompt-tree.js";
-import { notifyExternalStateChange } from "../../core/plugin-state-context.js";
+import { createStore } from "../../core/store.js";
 
 export interface CompletedField {
 	id: string;
@@ -36,10 +36,12 @@ export interface CompletedFieldsStoreState {
 			}>
 		>;
 	};
+	treeManager: PromptTreeManager | null;
+	revision: number; // Used to trigger updates when tree changes
 }
 
-// Global store for completed fields state (legacy - kept for backward compatibility)
-let globalCompletedFieldsStore: CompletedFieldsStoreState = {
+// Create the completed fields store
+export const completedFieldsStore = createStore<CompletedFieldsStoreState>({
 	fieldState: {
 		values: {},
 		visited: new Set(),
@@ -53,19 +55,33 @@ let globalCompletedFieldsStore: CompletedFieldsStoreState = {
 		rootFieldHistory: [],
 		groupFieldHistory: new Map(),
 	},
-};
-
-// Tree manager reference (primary data source)
-let treeManager: PromptTreeManager | null = null;
+	treeManager: null,
+	revision: 0,
+});
 
 // Set the tree manager (called from PromptApp)
 export function setTreeManager(manager: PromptTreeManager) {
-	treeManager = manager;
+	completedFieldsStore.update((state) => {
+		state.treeManager = manager;
+	});
+}
+
+// Notify that tree has changed (called from PromptApp after tree updates)
+export function notifyTreeChanged() {
+	completedFieldsStore.update((state) => {
+		state.revision += 1;
+	});
 }
 
 // Get current completed fields state (legacy support)
 export function getCompletedFieldsState(): CompletedFieldsStoreState {
-	return { ...globalCompletedFieldsStore };
+	const store = completedFieldsStore.get();
+	return {
+		fieldState: store.fieldState,
+		promptOrderState: store.promptOrderState,
+		treeManager: store.treeManager,
+		revision: store.revision,
+	};
 }
 
 // Helper functions for formatting values and extracting field messages
@@ -138,7 +154,7 @@ function formatValue(value: any, fieldProperties: any): string {
 // Get completed fields as formatted objects
 export function getCompletedFields(): CompletedField[] {
 	const fields: CompletedField[] = [];
-	const { fieldState, promptOrderState } = globalCompletedFieldsStore;
+	const { fieldState, promptOrderState } = completedFieldsStore.get();
 
 	// Helper function to create field object
 	const createField = (
@@ -196,7 +212,7 @@ export function getCompletedFields(): CompletedField[] {
 		}> = [];
 
 		// Add root fields with their position markers
-		promptOrderState.rootFieldHistory.forEach((fieldInfo) => {
+		promptOrderState.rootFieldHistory.forEach((fieldInfo: any) => {
 			allFieldsInOrder.push({ id: fieldInfo.id, type: "root" });
 		});
 
@@ -205,7 +221,7 @@ export function getCompletedFields(): CompletedField[] {
 			groupId,
 			groupFields,
 		] of promptOrderState.groupFieldHistory) {
-			groupFields.forEach((fieldInfo) => {
+			groupFields.forEach((fieldInfo: any) => {
 				allFieldsInOrder.push({
 					id: fieldInfo.id,
 					type: "group",
@@ -244,7 +260,6 @@ export function getCompletedFields(): CompletedField[] {
 }
 
 // NEW TREE-BASED APPROACH: Get completed fields directly from tree
-// No caching needed - useExternalState handles it automatically!
 export function getCompletedFieldsData(): Array<{
 	id: string;
 	label: string;
@@ -254,6 +269,8 @@ export function getCompletedFieldsData(): Array<{
 	shortLabel?: string;
 	meta?: Record<string, any>;
 }> {
+	const treeManager = completedFieldsStore.get().treeManager;
+
 	if (!treeManager) {
 		// Fallback to legacy approach if tree manager not set yet
 		return getCompletedFields();
@@ -297,23 +314,5 @@ export function getCompletedFieldsData(): Array<{
 
 // Clear all completed fields data (for testing/reset)
 export function clearCompletedFieldsStore() {
-	globalCompletedFieldsStore = {
-		fieldState: {
-			values: {},
-			visited: new Set(),
-			completed: new Set(),
-			properties: new Map(),
-			messages: {},
-			groupNames: {},
-			groupIds: {},
-		},
-		promptOrderState: {
-			rootFieldHistory: [],
-			groupFieldHistory: new Map(),
-		},
-	};
-
-	// Notify all subscribed prompts to update via PromptStateContext
-	// useExternalState handles caching automatically - no manual cache invalidation needed!
-	notifyExternalStateChange();
+	completedFieldsStore.reset();
 }
