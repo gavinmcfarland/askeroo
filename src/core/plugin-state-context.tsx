@@ -1,55 +1,56 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { ReactNode, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
 
 /**
- * Generic Prompt State Context
+ * Prompt State Manager - Subscription-based state management
  *
- * This context provides a reactive state system that ANY prompt can use
- * to trigger UI updates when external state changes.
+ * Provides a simple way for prompts to subscribe to external state changes
+ * using React's built-in useSyncExternalStore hook.
  *
  * Usage in prompts:
  *
  * @example
  * // In your prompt component
- * import { usePromptState } from '../core/plugin-state-context';
+ * import { usePromptData } from 'askeroo/core';
  *
  * export const MyPrompt = ({ node, options, events }) => {
- *     const { revision } = usePromptState();
+ *     // Single line - reads data and auto-updates!
+ *     const data = usePromptData(() => getMyExternalData());
  *
- *     useEffect(() => {
- *         // Refresh state when revision changes
- *         setMyState(getMyExternalState());
- *     }, [revision]);
+ *     return <Box>{data.map(...)}</Box>;
  * };
  *
  * // In your prompt's store/service
- * import { getPromptStateNotifier } from '../core/plugin-state-context';
+ * import { notifyPromptStateChange } from 'askeroo/core';
  *
  * export function updateExternalState(data: any) {
  *     // Update your state
  *     globalState.data = data;
  *
- *     // Notify React to re-render subscribed prompts
- *     const notifyChange = getPromptStateNotifier();
- *     if (notifyChange) {
- *         notifyChange();
- *     }
+ *     // Notify React to re-render subscribed prompts (simple!)
+ *     notifyPromptStateChange();
  * }
  */
 
-interface PromptStateContextValue {
-	revision: number;
-	notifyChange: () => void;
+class PromptStateManager {
+	private listeners = new Set<() => void>();
+
+	subscribe = (callback: () => void) => {
+		this.listeners.add(callback);
+		return () => {
+			this.listeners.delete(callback);
+		};
+	};
+
+	notify = () => {
+		// Use flushSync to make updates synchronous and prevent visual glitches
+		flushSync(() => {
+			this.listeners.forEach((cb) => cb());
+		});
+	};
 }
 
-const PromptStateContext = createContext<PromptStateContextValue>({
-	revision: 0,
-	notifyChange: () => {
-		console.warn(
-			"PromptStateContext: notifyChange called outside of provider"
-		);
-	},
-});
+const promptStateManager = new PromptStateManager();
 
 interface PromptStateProviderProps {
 	children: ReactNode;
@@ -57,61 +58,69 @@ interface PromptStateProviderProps {
 
 /**
  * Provider component that manages prompt state updates.
- * Should be placed high in the component tree (e.g., in PromptApp or ui.tsx)
+ * Should be placed high in the component tree (e.g., in ui.tsx)
+ *
+ * Note: This provider is required for prompt state management to work.
  */
 export function PromptStateProvider({ children }: PromptStateProviderProps) {
-	const [revision, setRevision] = useState(0);
+	// The provider just wraps children - the manager handles subscriptions
+	return <>{children}</>;
+}
 
-	const notifyChange = () => {
-		// Use flushSync to make updates synchronous and prevent visual glitches
-		// This follows the same pattern as hint updates in PromptApp
-		flushSync(() => {
-			setRevision((prev) => prev + 1);
-		});
-	};
-
-	return (
-		<PromptStateContext.Provider value={{ revision, notifyChange }}>
-			{children}
-		</PromptStateContext.Provider>
+/**
+ * Hook for prompts to read and subscribe to external data.
+ *
+ * Uses React's useSyncExternalStore for optimal performance and automatic
+ * re-rendering when external state changes.
+ *
+ * @example
+ * // Single line - reads data and auto-subscribes!
+ * const tasks = usePromptData(() => getTasksFromStore());
+ * const fields = usePromptData(() => getCompletedFieldsData());
+ *
+ * @param getSnapshot - Function that returns the current data
+ * @returns The current data, automatically updated when notifyPromptStateChange is called
+ */
+export function usePromptData<T>(getSnapshot: () => T): T {
+	return useSyncExternalStore(
+		promptStateManager.subscribe,
+		getSnapshot,
+		getSnapshot
 	);
 }
 
 /**
- * Hook for prompts to subscribe to state changes.
- * Returns the current revision number - when it changes, your prompt should re-render.
+ * Notify all subscribed prompts that state has changed.
+ * Call this from stores/services after updating external state.
  *
  * @example
- * const { revision } = usePromptState();
- *
- * useEffect(() => {
- *     // Update local state when revision changes
- *     setMyState(getMyExternalState());
- * }, [revision]);
- */
-export function usePromptState() {
-	return useContext(PromptStateContext);
-}
-
-/**
- * Get the notifyChange function to use in prompt stores/services.
- * This is a convenience function for non-React code that needs to trigger updates.
- *
- * Note: This only works after the provider is mounted. For robustness,
- * always check if the return value exists before calling.
- *
- * @example
- * const notifyChange = getPromptStateNotifier();
- * if (notifyChange) {
- *     notifyChange();
+ * export function addTask(task: Task) {
+ *     globalStore.tasks.push(task);
+ *     notifyPromptStateChange(); // Triggers re-render
  * }
  */
-let globalNotifier: (() => void) | null = null;
-
-export function getPromptStateNotifier(): (() => void) | null {
-	return globalNotifier;
+export function notifyPromptStateChange(): void {
+	promptStateManager.notify();
 }
 
-export function setPromptStateNotifier(notifier: (() => void) | null) {
-	globalNotifier = notifier;
+// Legacy compatibility exports
+export function getPromptStateNotifier(): (() => void) | null {
+	return notifyPromptStateChange;
+}
+
+export function setPromptStateNotifier(_notifier: (() => void) | null) {
+	// No-op for backward compatibility
+	// The manager handles subscriptions directly now
+}
+
+// Legacy hook for backward compatibility
+export function usePromptState() {
+	// Return a dummy revision that changes when manager notifies
+	// This allows old code to still work during migration
+	let revision = 0;
+	usePromptData(() => {
+		revision++;
+		return revision;
+	});
+	return { revision, notifyChange: notifyPromptStateChange };
 }

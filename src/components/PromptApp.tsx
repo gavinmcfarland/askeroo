@@ -10,13 +10,13 @@ import { RecursiveGroupContainer } from "./RecursiveGroupContainer.js";
 import { RootContainer } from "./RootContainer.js";
 import { globalRegistry } from "../core/registry.js";
 import { PromptTreeManager, PromptNode } from "../core/prompt-tree.js";
-import { setTreeManager } from "../built-ins/completed-fields/completed-fields-store.js";
+import {
+	setTreeManager,
+	invalidateCompletedFieldsCache,
+} from "../built-ins/completed-fields/completed-fields-store.js";
 import { PromptRequest } from "../types/index.js";
 import { applyInkRenderingFix } from "../utils/ink-rendering-fix.js";
-import {
-	usePromptState,
-	setPromptStateNotifier,
-} from "../core/plugin-state-context.js";
+import { notifyPromptStateChange } from "../core/plugin-state-context.js";
 
 // Type declaration for debug utilities
 declare global {
@@ -63,21 +63,10 @@ export function PromptApp({ onReady }: PromptAppProps) {
 		return treeManagerRef.current.getTree();
 	}, [treeRevision]);
 
-	// Get prompt state context
-	const { notifyChange } = usePromptState();
-
 	// Set tree manager for CompletedFields plugin (once on mount)
 	useEffect(() => {
 		setTreeManager(treeManagerRef.current);
 	}, []);
-
-	// Register the prompt state notifier globally so prompts can access it
-	useEffect(() => {
-		setPromptStateNotifier(notifyChange);
-		return () => {
-			setPromptStateNotifier(null);
-		};
-	}, [notifyChange]);
 
 	// Handler for when fields provide hint text - stores per prompt ID
 	const handleHintChange = useCallback(
@@ -192,8 +181,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 					// Trigger re-render to show updated tree state
 					setTreeRevision((prev) => prev + 1);
 
-					// Notify prompt state context (for completedFields and other prompts)
-					notifyChange();
+					// Invalidate completedFields cache and notify prompt state context
+					invalidateCompletedFieldsCache();
+					notifyPromptStateChange();
 
 					resolve(undefined);
 					return;
@@ -298,9 +288,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						// Force a complete remount to prevent duplication issues
 						// when Ink has to redraw the entire terminal (e.g., in short terminals)
 						setRenderKey((prev) => prev + 1);
-						// Notify prompt state context inside flushSync to prevent flicker
-						notifyChange();
 					});
+
+					// Invalidate completedFields cache and notify (after flushSync)
+					invalidateCompletedFieldsCache();
+					notifyPromptStateChange();
 				}
 			}
 		} catch (error) {
@@ -421,9 +413,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 						setTreeRevision((prev) => prev + 1);
 						// Force a complete remount to prevent duplication issues
 						setRenderKey((prev) => prev + 1);
-						// Notify prompt state context inside flushSync to prevent flicker
-						notifyChange();
 					});
+
+					// Invalidate completedFields cache and notify (after flushSync)
+					invalidateCompletedFieldsCache();
+					notifyPromptStateChange();
 
 					internalRefs.current.isNavigatingBack = true;
 					resolveValue = { __back: true };
@@ -438,8 +432,9 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			// Trigger re-render for submit actions only
 			setTreeRevision((prev) => prev + 1);
 
-			// Notify prompt state context (for completedFields and other prompts)
-			notifyChange();
+			// Invalidate completedFields cache and notify prompt state context
+			invalidateCompletedFieldsCache();
+			notifyPromptStateChange();
 
 			// Resolve the promise
 			const resolver = internalRefs.current.resolver;

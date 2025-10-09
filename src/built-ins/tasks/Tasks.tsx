@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { TaskWarning } from "./index.js";
 import { PluginComponentProps } from "../../types/index.js";
-import { usePromptState } from "../../core/plugin-state-context.js";
+import { usePromptData } from "../../core/plugin-state-context.js";
 
 export interface TaskLabel {
 	idle?: string;
@@ -176,16 +176,12 @@ export const TasksDisplay = ({
 		return `tasklist_${Math.abs(hash)}`;
 	});
 
-	// Subscribe to prompt state context for reactive updates (no polling!)
-	const { revision } = usePromptState();
-
-	// Use the existing local task state system for regular tasks
-	const [taskStates, setTaskStates] = useState<Map<string, TaskState>>(
-		new Map()
+	// Subscribe to prompt state and read data in one line!
+	// Note: Don't wrap with new Map() - the cached instance is already a Map
+	const taskStates = usePromptData(() => getAllTaskStatesForList(taskListId));
+	const dynamicTasks = usePromptData(() =>
+		getDynamicTasksForList(taskListId)
 	);
-
-	// Get dynamic tasks for this specific task list only
-	const [dynamicTasks, setDynamicTasks] = useState<Array<any>>([]);
 
 	// Register this task list as active
 	useEffect(() => {
@@ -197,18 +193,9 @@ export const TasksDisplay = ({
 		};
 	}, [taskListId]);
 
-	// Update state when prompt state revision changes (reactive, no polling!)
+	// Check for pending tasks and start them after they've been rendered
+	// This ensures the idle state is visible before execution begins
 	useEffect(() => {
-		// Load task states from centralized store
-		const latestStates = getAllTaskStatesForList(taskListId);
-		setTaskStates(new Map(latestStates));
-
-		// Load dynamic tasks
-		const latestDynamicTasks = getDynamicTasksForList(taskListId);
-		setDynamicTasks(latestDynamicTasks);
-
-		// Check for pending tasks and start them after they've been rendered
-		// This ensures the idle state is visible before execution begins
 		const pendingTaskIds = getPendingTaskIds(taskListId);
 		if (pendingTaskIds.length > 0) {
 			// Use setTimeout to ensure the current render completes first
@@ -218,7 +205,7 @@ export const TasksDisplay = ({
 				});
 			}, 400); // 400ms to show idle state, consistent with initial task delay
 		}
-	}, [revision, taskListId]);
+	}, [dynamicTasks, taskListId]);
 
 	// Animated spinner frames
 	const spinnerFrames = ["⠂", "-", "–", "—", "–", "-"];
@@ -311,15 +298,7 @@ export const TasksDisplay = ({
 	};
 
 	const updateTaskState = (taskId: string, state: Partial<TaskState>) => {
-		// Update both local state (for immediate UI updates) and centralized store (for persistence)
-		setTaskStates((prev) => {
-			const newMap = new Map(prev);
-			const currentState = newMap.get(taskId) || { status: "idle" };
-			newMap.set(taskId, { ...currentState, ...state });
-			return newMap;
-		});
-
-		// Also update centralized store for persistence
+		// Update centralized store - component will auto-update via usePromptData
 		updateTaskStateInStore(taskListId, taskId, state);
 	};
 

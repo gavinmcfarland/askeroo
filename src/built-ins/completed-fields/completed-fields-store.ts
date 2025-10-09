@@ -3,7 +3,7 @@
 
 import { FieldState } from "../../types/index.js";
 import { PromptTreeManager, PromptNode } from "../../core/prompt-tree.js";
-import { getPromptStateNotifier } from "../../core/plugin-state-context.js";
+import { notifyPromptStateChange } from "../../core/plugin-state-context.js";
 
 export interface CompletedField {
 	id: string;
@@ -58,9 +58,20 @@ let globalCompletedFieldsStore: CompletedFieldsStoreState = {
 // Tree manager reference (primary data source)
 let treeManager: PromptTreeManager | null = null;
 
+// Cache for getCompletedFieldsData to prevent infinite re-renders with useSyncExternalStore
+let cachedCompletedFields: Array<any> | null = null;
+let cacheInvalidated = true;
+
 // Set the tree manager (called from PromptApp)
 export function setTreeManager(manager: PromptTreeManager) {
 	treeManager = manager;
+	cacheInvalidated = true;
+}
+
+// Invalidate cache when data changes (exported for PromptApp to use)
+export function invalidateCompletedFieldsCache() {
+	cacheInvalidated = true;
+	cachedCompletedFields = null;
 }
 
 // Get current completed fields state (legacy support)
@@ -244,6 +255,7 @@ export function getCompletedFields(): CompletedField[] {
 }
 
 // NEW TREE-BASED APPROACH: Get completed fields directly from tree
+// Uses caching to prevent infinite re-renders with useSyncExternalStore
 export function getCompletedFieldsData(): Array<{
 	id: string;
 	label: string;
@@ -253,9 +265,17 @@ export function getCompletedFieldsData(): Array<{
 	shortLabel?: string;
 	meta?: Record<string, any>;
 }> {
+	// Return cached value if still valid
+	if (!cacheInvalidated && cachedCompletedFields !== null) {
+		return cachedCompletedFields;
+	}
+
 	if (!treeManager) {
 		// Fallback to legacy approach if tree manager not set yet
-		return getCompletedFields();
+		const result = getCompletedFields();
+		cachedCompletedFields = result;
+		cacheInvalidated = false;
+		return result;
 	}
 
 	const completedFields: Array<any> = [];
@@ -291,6 +311,10 @@ export function getCompletedFieldsData(): Array<{
 		}
 	});
 
+	// Cache the result
+	cachedCompletedFields = completedFields;
+	cacheInvalidated = false;
+
 	return completedFields;
 }
 
@@ -312,9 +336,9 @@ export function clearCompletedFieldsStore() {
 		},
 	};
 
+	// Invalidate cache
+	invalidateCompletedFieldsCache();
+
 	// Notify all subscribed prompts to update via PromptStateContext
-	const notifyChange = getPromptStateNotifier();
-	if (notifyChange) {
-		notifyChange();
-	}
+	notifyPromptStateChange();
 }

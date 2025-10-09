@@ -194,8 +194,8 @@ For prompts that **add content dynamically**:
 ```typescript
 import {
     createPrompt,
-    usePromptState,
-    getPromptStateNotifier,
+    usePromptData,
+    notifyPromptStateChange,
 } from "askeroo/core";
 
 // Store
@@ -203,23 +203,14 @@ export function addDynamicTask(task: Task) {
     // Add to global store
     globalTaskStore.tasks.push(task);
 
-    // Notify React to re-render
-    const notifyChange = getPluginStateNotifier();
-    if (notifyChange) {
-        notifyChange();
-    }
+    // Notify React to re-render (one line!)
+    notifyPromptStateChange();
 }
 
 // Component
 export const TasksDisplay = ({ node, options, events }) => {
-    // Subscribe to updates
-    const { revision } = usePromptState();
-
-    // Read fresh data when revision changes
-    const [tasks, setTasks] = useState([]);
-    useEffect(() => {
-        setTasks(getTasksFromStore());
-    }, [revision]);
+    // Subscribe to updates and read data in one line!
+    const tasks = usePromptData(() => getTasksFromStore());
 
     return <Box>...</Box>;
 };
@@ -230,7 +221,7 @@ export const TasksDisplay = ({ node, options, events }) => {
 For prompts that **read from external sources**:
 
 ```typescript
-import { createPrompt, usePromptState, getPromptStateNotifier } from "askeroo/core";
+import { createPrompt, usePromptData, notifyPromptStateChange } from "askeroo/core";
 
 // PromptApp - Notify when tree changes (fields added/removed)
 function handleFieldAction(action) {
@@ -240,7 +231,7 @@ function handleFieldAction(action) {
     // Notify both systems atomically
     flushSync(() => {
         setTreeRevision(prev => prev + 1);  // Tree consumers
-        notifyChange();                      // Prompt consumers
+        notifyPromptStateChange();          // Prompt consumers
     });
 }
 
@@ -249,28 +240,19 @@ export function clearCompletedFieldsStore() {
     // Clear data
     globalStore = { ... };
 
-    // Notify prompts to update
-    const notifyChange = getPromptStateNotifier();
-    if (notifyChange) {
-        notifyChange();
-    }
+    // Notify prompts to update (one line!)
+    notifyPromptStateChange();
 }
 
 // Component
 export const completedFields = createPrompt({
     type: "completedFields",
     component: ({ node, options, events }) => {
-        // Subscribe to updates
-        const { revision } = usePromptState();
-
-        // Read data DURING RENDER (not in effect) to prevent flicker
-        const allFields = getCompletedFieldsData();
+        // Subscribe and read data in one line!
+        const allFields = usePromptData(() => getCompletedFieldsData());
         const displayFields = options.maxFields
             ? allFields.slice(0, options.maxFields)
             : allFields;
-
-        // revision is used above to trigger re-renders
-        void revision;
 
         return (
             <Box flexDirection="column">
@@ -283,34 +265,23 @@ export const completedFields = createPrompt({
 });
 ```
 
-**Key differences:**
-
--   **When to use each pattern:**
-
-    -   Tasks: Uses `useEffect` when managing internal component state that updates based on external changes
-    -   CompletedFields: Reads during render when you just need to display external data (prevents flicker)
-
--   **Where state lives:**
-    -   Both read from external stores (task-store, tree manager)
-    -   Both use Prompt State Context to know when to re-read
-    -   The difference is HOW they handle the updates (effect vs render-time read)
+**Note:** Both examples use the same pattern now! `usePromptData` works for all cases - no need to choose between different patterns.
 
 ### API Reference
 
 ```typescript
 // In your prompt component
-import { usePromptState } from "askeroo/core";
+import { usePromptData } from "askeroo/core";
 
-const { revision } = usePromptState();
-// Re-renders when any prompt calls notifyChange()
+// Single line - reads data and auto-updates!
+const data = usePromptData(() => getMyExternalData());
 
 // In your store/service
-import { getPromptStateNotifier } from "askeroo/core";
+import { notifyPromptStateChange } from "askeroo/core";
 
-const notifyChange = getPromptStateNotifier();
-if (notifyChange) {
-    notifyChange(); // Triggers instant re-render
-}
+// Update state, then notify (one line!)
+globalState.data = newData;
+notifyPromptStateChange();
 ```
 
 **Benefits:**
@@ -319,6 +290,8 @@ if (notifyChange) {
 -   🚀 Zero polling overhead
 -   🎯 Atomic updates with `flushSync`
 -   🔌 Works for any prompt
+-   ✨ Single pattern for all cases
+-   📦 Built on React's `useSyncExternalStore`
 
 ## Best Practices
 
@@ -328,8 +301,8 @@ if (notifyChange) {
 4. **Type safety**: Define TypeScript interfaces for options and return types
 5. **Export the function**: Export the result of `createPrompt` for use in flows
 6. **Test in isolation**: Plugins can be tested independently since they're self-contained
-7. **Use Prompt State Context**: For external state updates, use the reactive context system
-8. **Read during render**: To prevent flicker, read external data during render, not in effects
+7. **Use Prompt State Context**: For external state updates, use `usePromptData` and `notifyPromptStateChange`
+8. **Cache data**: When using `usePromptData`, ensure your getter returns stable instances (cache arrays/objects/Maps to prevent infinite loops)
 
 ## Example: Custom Slider Plugin
 

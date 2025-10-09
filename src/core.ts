@@ -17,9 +17,12 @@ export {
 
 // Prompt State Context system for reactive updates
 export {
+	usePromptData,
+	notifyPromptStateChange,
+	PromptStateProvider,
+	// Legacy compatibility
 	usePromptState,
 	getPromptStateNotifier,
-	PromptStateProvider,
 	setPromptStateNotifier,
 } from "./core/plugin-state-context.js";
 

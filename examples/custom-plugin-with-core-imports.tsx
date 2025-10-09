@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 /**
- * Example: Creating a custom plugin using askeroo/core imports
+ * Example: Creating a custom prompt using askeroo/core imports
  *
  * Demonstrates:
  * - Importing from askeroo/core (cleaner than relative paths)
- * - Using Plugin State Context for external state updates
- * - Creating a custom plugin with createPrompt
+ * - Using Prompt State Context for external state updates
+ * - Creating a custom prompt with createPrompt
+ * - Using the simplified usePromptData hook
  */
 import React, { useState, useEffect } from "react";
 import { Box, Text, useInput } from "ink";

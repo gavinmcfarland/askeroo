@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Text, Box } from "ink";
 import { createPrompt } from "../../core/registry.js";
 import { getCompletedFieldsData } from "./completed-fields-store.js";
-import { usePromptState } from "../../core/plugin-state-context.js";
+import { usePromptData } from "../../core/plugin-state-context.js";
 
 // Type for completed field data (matches getCompletedFieldsData return type)
 type CompletedFieldData = {
@@ -28,19 +28,11 @@ export const completedFields = createPrompt<CompletedFieldsOptions, void>({
 	type: "completedFields",
 
 	component: ({ node, options, events }: any) => {
-		// Subscribe to prompt state context for reactive updates
-		const { revision } = usePromptState();
-
-		// Read data during render (not in effect) to prevent flicker
-		// When revision changes, this component re-renders and fetches fresh data
-		// This eliminates the timing gap that causes fields to briefly disappear
-		const allFields = getCompletedFieldsData();
+		// Subscribe to prompt state and read data in one line!
+		const allFields = usePromptData(() => getCompletedFieldsData());
 		const completedFieldsList = options.maxFields
 			? allFields.slice(0, options.maxFields)
 			: allFields;
-
-		// Force re-render when revision changes (revision is used above)
-		void revision;
 
 		// Auto-submit when component becomes active
 		useEffect(() => {
