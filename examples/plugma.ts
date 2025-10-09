@@ -265,8 +265,6 @@ const flow = async () => {
 		const result = await ask(flow, {
 			onCancel: async ({ results, cleanup }) => {
 				await note("[Canceling...]{red}");
-				await text({ label: "Are you sure you want to cancel?" });
-
 				// cleanup(); // Clean up UI first
 				// console.log("Results:", results);
 				process.exit(0); // User controls exit

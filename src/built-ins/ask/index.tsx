@@ -5,7 +5,7 @@ export interface AskOptions {
 	onCancel?: (context: {
 		results: Record<string, any>;
 		cleanup: () => void;
-	}) => void;
+	}) => void | Promise<void>;
 }
 
 export const ask = createAsk<AskOptions, any>({

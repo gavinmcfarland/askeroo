@@ -38,7 +38,12 @@ export class PromptRuntime {
 	private pluginPrompts: Record<string, any> = {};
 
 	// Cancel handling
-	private cancelCallbacks: Array<(context: { results: Record<string, any>; cleanup: () => void; }) => void> = [];
+	private cancelCallbacks: Array<
+		(context: {
+			results: Record<string, any>;
+			cleanup: () => void;
+		}) => void | Promise<void>
+	> = [];
 	private sigintHandler: (() => void) | null = null;
 	private cancelModeActive: boolean = false;
 
@@ -651,7 +656,12 @@ export class PromptRuntime {
 	/**
 	 * Register a cancel callback
 	 */
-	registerCancelCallback(callback: (context: { results: Record<string, any>; cleanup: () => void; }) => void): void {
+	registerCancelCallback(
+		callback: (context: {
+			results: Record<string, any>;
+			cleanup: () => void;
+		}) => void
+	): void {
 		this.cancelCallbacks.push(callback);
 	}
 
@@ -679,7 +689,7 @@ export class PromptRuntime {
 
 		for (const [promptId, answer] of Object.entries(allAnswers)) {
 			// Use a simplified key (remove group prefixes for cleaner results)
-			const key = promptId.split('|').pop() || promptId;
+			const key = promptId.split("|").pop() || promptId;
 			results[key] = answer;
 		}
 
@@ -703,22 +713,26 @@ export class PromptRuntime {
 		this.cancelModeActive = true;
 
 		// Call cancel callbacks with context - user controls cleanup and exit
-		for (const callback of this.cancelCallbacks) {
-			try {
-				callback({ results, cleanup });
-			} catch (error) {
-				debugLogger.log("CANCEL_CALLBACK_ERROR", {
-					error:
-						error instanceof Error ? error.message : String(error),
-				});
+		(async () => {
+			for (const callback of this.cancelCallbacks) {
+				try {
+					await callback({ results, cleanup });
+				} catch (error) {
+					debugLogger.log("CANCEL_CALLBACK_ERROR", {
+						error:
+							error instanceof Error
+								? error.message
+								: String(error),
+					});
+				}
 			}
-		}
 
-		// Don't automatically exit - let user control exit timing
-		// If user doesn't exit, fallback after a delay
-		setTimeout(() => {
-			cleanup();
-			process.exit(0);
-		}, 5000); // 5 second fallback
+			// Don't automatically exit - let user control exit timing
+			// If user doesn't exit, fallback after a delay
+			setTimeout(() => {
+				cleanup();
+				process.exit(0);
+			}, 60000); // 5 second fallback
+		})();
 	}
 }

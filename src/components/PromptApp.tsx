@@ -429,10 +429,19 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 		(action: FieldAction) => {
 			// Extract prompt ID from action if available (for async auto-submissions)
 			const promptId = (action as any).__promptId;
-			const effectivePrompt = promptId
+			let effectivePrompt = promptId
 				? { id: promptId, type: currentPrompt?.type }
 				: currentPrompt;
 
+			// If we have a promptId but no current prompt (e.g., during cancel), look up the node in the tree
+			if (promptId && !currentPrompt) {
+				const node = treeManagerRef.current.getNode(promptId);
+				if (node) {
+					effectivePrompt = { id: promptId, type: node.type };
+				}
+			}
+
+			// Skip if no effective prompt or if it's a group
 			if (!effectivePrompt || effectivePrompt.type === "group") {
 				return;
 			}
@@ -594,10 +603,10 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 				  internalRefs.current.resolver
 				: internalRefs.current.resolver;
 
-			if (!resolver || !currentPrompt) return;
+			if (!resolver) return;
 
 			// Groups resolve immediately without going through field action
-			if (currentPrompt.type === "group") {
+			if (currentPrompt && currentPrompt.type === "group") {
 				const r = internalRefs.current.resolver;
 				internalRefs.current.resolver = null;
 				r?.(value);
