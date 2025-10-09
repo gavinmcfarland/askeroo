@@ -35,49 +35,16 @@ export class TaskWarning extends Error {
 
 // Function to get results from global task state
 async function getTaskResults(): Promise<TasksResult> {
-	// Import the global state from Tasks.tsx
-	const { getGlobalTaskStates, getTaskLabel } = await import("./Tasks.js");
-	const globalTaskStates = getGlobalTaskStates();
-
-	const results: TaskResult[] = [];
-	let totalTasks = 0;
-	let completedTasks = 0;
-	let failedTasks = 0;
-	let warningTasks = 0;
-
-	// Convert global task states to results
-	for (const [taskId, taskState] of globalTaskStates) {
-		// Include completed tasks (not idle/running) and top-level tasks, plus dynamic tasks
-		if (
-			(!taskId.includes(".") || taskId.startsWith("dynamic.")) &&
-			["success", "error", "warning"].includes(taskState.status)
-		) {
-			totalTasks++;
-
-			const result: TaskResult = {
-				id: taskId,
-				label: getTaskLabel(taskId) || `Task ${taskId}`,
-				status: taskState.status as "success" | "error" | "warning",
-				error: taskState.error,
-				warning: taskState.warning,
-			};
-
-			// Count task outcomes
-			if (taskState.status === "success") completedTasks++;
-			else if (taskState.status === "error") failedTasks++;
-			else if (taskState.status === "warning") warningTasks++;
-
-			results.push(result);
-		}
-	}
-
+	// TODO: Implement proper task results collection from taskStore
+	// The previous implementation was non-functional (returned empty data)
+	// For now, return empty results
 	return {
-		success: failedTasks === 0,
-		totalTasks,
-		completedTasks,
-		failedTasks,
-		warningTasks,
-		results,
+		success: true,
+		totalTasks: 0,
+		completedTasks: 0,
+		failedTasks: 0,
+		warningTasks: 0,
+		results: [],
 	};
 }
 

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { TaskWarning } from "./index.js";
-import { PluginComponentProps } from "../../types/index.js";
 import { taskStore, hasAnyTaskLists } from "./task-store.js";
 import type {
 	Task,
@@ -36,22 +35,9 @@ function endTaskList(taskListId: string) {
 	}
 }
 
-// Export functions for accessing global state
-export function getGlobalTaskStates(): Map<string, TaskState> {
-	// This function is still used by the results generation, but now we need to collect
-	// states from all task lists. For now, return empty map since results will be handled differently
-	return new Map();
-}
-
 // Function to check if any tasks exist (initial tasks or dynamic tasks)
 export function hasExistingTasks(): boolean {
 	return mostRecentTaskListId !== null || hasAnyTaskLists();
-}
-
-export function getTaskLabel(taskId: string): string | undefined {
-	// This function is used by the results generation, but with the new centralized approach,
-	// task labels will be handled differently. For now, return a simple label
-	return `Task ${taskId}`;
 }
 
 // Helper to update task state in the store
