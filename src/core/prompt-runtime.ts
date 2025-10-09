@@ -681,7 +681,14 @@ export class PromptRuntime {
 	 * Handle Ctrl+C from UI (called by useInput hook in PromptApp)
 	 */
 	handleCtrlC(): void {
-		// Call all registered cancel callbacks
+		// Clean up UI first to clear the screen
+		try {
+			this.ui.cleanup?.();
+		} catch (cleanupError) {
+			// Ignore cleanup errors
+		}
+
+		// Then call cancel callbacks so their output appears after cleanup
 		for (const callback of this.cancelCallbacks) {
 			try {
 				callback();
@@ -691,13 +698,6 @@ export class PromptRuntime {
 						error instanceof Error ? error.message : String(error),
 				});
 			}
-		}
-
-		// Clean up UI
-		try {
-			this.ui.cleanup?.();
-		} catch (cleanupError) {
-			// Ignore cleanup errors
 		}
 
 		// Force exit after a brief delay to allow console output to flush
