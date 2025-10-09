@@ -38,7 +38,7 @@ export class PromptRuntime {
 	private pluginPrompts: Record<string, any> = {};
 
 	// Cancel handling
-	private cancelCallbacks: Array<() => void> = [];
+	private cancelCallbacks: Array<(context: { results: Record<string, any>; cleanup: () => void; }) => void> = [];
 	private sigintHandler: (() => void) | null = null;
 
 	// Public BACK token
@@ -628,31 +628,8 @@ export class PromptRuntime {
 				callbackCount: this.cancelCallbacks.length,
 			});
 
-			// Call all registered cancel callbacks
-			for (const callback of this.cancelCallbacks) {
-				try {
-					callback();
-				} catch (error) {
-					debugLogger.log("CANCEL_CALLBACK_ERROR", {
-						error:
-							error instanceof Error
-								? error.message
-								: String(error),
-					});
-				}
-			}
-
-			// Clean up UI
-			try {
-				this.ui.cleanup?.();
-			} catch (cleanupError) {
-				// Ignore cleanup errors
-			}
-
-			// Force exit after a brief delay to allow console output to flush
-			setTimeout(() => {
-				process.exit(0);
-			}, 50);
+			// Use the same logic as handleCtrlC
+			this.handleCtrlC();
 		};
 
 		// Register SIGINT handler - use prependListener to run BEFORE Ink's handler
@@ -673,7 +650,7 @@ export class PromptRuntime {
 	/**
 	 * Register a cancel callback
 	 */
-	registerCancelCallback(callback: () => void): void {
+	registerCancelCallback(callback: (context: { results: Record<string, any>; cleanup: () => void; }) => void): void {
 		this.cancelCallbacks.push(callback);
 	}
 
@@ -681,17 +658,29 @@ export class PromptRuntime {
 	 * Handle Ctrl+C from UI (called by useInput hook in PromptApp)
 	 */
 	handleCtrlC(): void {
-		// Clean up UI first to clear the screen
-		try {
-			this.ui.cleanup?.();
-		} catch (cleanupError) {
-			// Ignore cleanup errors
+		// Prepare results from collected answers
+		const allAnswers = this.state.getAllAnswers();
+		const results: Record<string, any> = {};
+
+		for (const [promptId, answer] of Object.entries(allAnswers)) {
+			// Use a simplified key (remove group prefixes for cleaner results)
+			const key = promptId.split('|').pop() || promptId;
+			results[key] = answer;
 		}
 
-		// Then call cancel callbacks so their output appears after cleanup
+		// Create cleanup function that user can call
+		const cleanup = () => {
+			try {
+				this.ui.cleanup?.();
+			} catch (cleanupError) {
+				// Ignore cleanup errors
+			}
+		};
+
+		// Call cancel callbacks with context - user controls cleanup and exit
 		for (const callback of this.cancelCallbacks) {
 			try {
-				callback();
+				callback({ results, cleanup });
 			} catch (error) {
 				debugLogger.log("CANCEL_CALLBACK_ERROR", {
 					error:
@@ -700,9 +689,11 @@ export class PromptRuntime {
 			}
 		}
 
-		// Force exit after a brief delay to allow console output to flush
+		// Don't automatically exit - let user control exit timing
+		// If user doesn't exit, fallback after a delay
 		setTimeout(() => {
+			cleanup();
 			process.exit(0);
-		}, 50);
+		}, 5000); // 5 second fallback
 	}
 }

@@ -2,7 +2,10 @@ import { createAsk } from "../../core/ask-factory.js";
 import { Box } from "ink";
 
 export interface AskOptions {
-	onCancel?: () => void;
+	onCancel?: (context: {
+		results: Record<string, any>;
+		cleanup: () => void;
+	}) => void;
 }
 
 export const ask = createAsk<AskOptions, any>({

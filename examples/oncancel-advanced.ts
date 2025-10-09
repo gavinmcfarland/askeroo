@@ -41,7 +41,12 @@ async function demonstrateAdvancedOnCancel() {
 
 		return { projectName, description, confirmed };
 	}, {
-		onCancel: () => {
+		onCancel: ({ results, cleanup }) => {
+			cleanup(); // Clean up UI first
+
+			console.log("\n🚫 Advanced cancellation demo");
+			console.log("📋 Collected answers:", results);
+
 			console.log("\n🧹 Cleanup callback 1: Removing temporary file...");
 			if (fs.existsSync(tempFile)) {
 				fs.unlinkSync(tempFile);
@@ -53,6 +58,8 @@ async function demonstrateAdvancedOnCancel() {
 
 			console.log("💾 Cleanup callback 3: Saving partial data...");
 			console.log("   ✓ Partial data saved");
+
+			process.exit(0); // User controls exit
 		}
 	});
 
