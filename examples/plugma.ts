@@ -17,6 +17,9 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const flow = async () => {
 	await note("[ Plugma ]{bgMagenta} [v2.1.0]{dim}");
+	await note("[ Plugma ]{bgMagenta} [v2.1.0]{dim}");
+	await note("[ Plugma ]{bgMagenta} [v2.1.0]{dim}");
+	await note("[ Plugma ]{bgMagenta} [v2.1.0]{dim}");
 
 	await completedFields();
 

@@ -89,8 +89,7 @@ function transformPropsToStructure(props: Record<string, any>) {
 
 			if (isSpecialSubmission) {
 				// Get delay from submission object, default to 100ms
-				const delay =
-					typeof value.delay === "number" ? value.delay : 100;
+				const delay = typeof value.delay === "number" ? value.delay : 0;
 
 				// Apply setTimeout with the specified delay
 				setTimeout(() => {
