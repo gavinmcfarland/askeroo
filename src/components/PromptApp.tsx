@@ -50,6 +50,7 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// Consolidated refs - grouped by purpose
 	const internalRefs = useRef({
 		resolver: null as ((value: any) => void) | null,
+		resolversByPromptId: new Map<string, (value: any) => void>(), // Store resolvers by prompt ID to handle async auto-submissions
 		isNavigatingBack: false,
 		firstFieldId: null as string | null,
 		hintsByPromptId: new Map<string, React.ReactNode>(),
@@ -196,6 +197,11 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				// IMPORTANT: Assign resolver BEFORE updating state
 				// This ensures the useEffect can access the resolver immediately
 				internalRefs.current.resolver = resolve;
+				// Also store by prompt ID to handle async auto-submissions correctly
+				internalRefs.current.resolversByPromptId.set(
+					request.id,
+					resolve
+				);
 
 				// Use flushSync to ensure both updates happen atomically in a single render
 				flushSync(() => {
@@ -302,11 +308,17 @@ export function PromptApp({ onReady }: PromptAppProps) {
 	// Consolidates all field actions (submit, back, preserve-back, clear-group-back)
 	const handleFieldAction = useCallback(
 		(action: FieldAction) => {
-			if (!currentPrompt || currentPrompt.type === "group") {
+			// Extract prompt ID from action if available (for async auto-submissions)
+			const promptId = (action as any).__promptId;
+			const effectivePrompt = promptId
+				? { id: promptId, type: currentPrompt?.type }
+				: currentPrompt;
+
+			if (!effectivePrompt || effectivePrompt.type === "group") {
 				return;
 			}
 
-			const nodeId = currentPrompt.id;
+			const nodeId = effectivePrompt.id;
 			let resolveValue: any;
 
 			// Update tree based on action type
@@ -430,8 +442,19 @@ export function PromptApp({ onReady }: PromptAppProps) {
 			notifyPromptStateChange();
 
 			// Resolve the promise
-			const resolver = internalRefs.current.resolver;
-			internalRefs.current.resolver = null;
+			// For async auto-submissions, use the resolver from the map
+			const resolver =
+				nodeId && internalRefs.current.resolversByPromptId.has(nodeId)
+					? internalRefs.current.resolversByPromptId.get(nodeId)
+					: internalRefs.current.resolver;
+
+			// Clean up
+			if (internalRefs.current.resolver === resolver) {
+				internalRefs.current.resolver = null;
+			}
+			if (nodeId) {
+				internalRefs.current.resolversByPromptId.delete(nodeId);
+			}
 			resolver?.(resolveValue);
 		},
 		[currentPrompt, performTreeBackNavigation]
@@ -441,13 +464,22 @@ export function PromptApp({ onReady }: PromptAppProps) {
 
 	const handleSubmit = useCallback(
 		(value: any) => {
-			if (!internalRefs.current.resolver || !currentPrompt) return;
+			// Check if submission includes a captured prompt ID (for async auto-submissions)
+			const promptId = value?.__promptId || currentPrompt?.id;
+
+			// Use the resolver from the map if available, otherwise fall back to current resolver
+			const resolver = promptId
+				? internalRefs.current.resolversByPromptId.get(promptId) ||
+				  internalRefs.current.resolver
+				: internalRefs.current.resolver;
+
+			if (!resolver || !currentPrompt) return;
 
 			// Groups resolve immediately without going through field action
 			if (currentPrompt.type === "group") {
 				const r = internalRefs.current.resolver;
 				internalRefs.current.resolver = null;
-				r(value);
+				r?.(value);
 				return;
 			}
 
@@ -465,8 +497,12 @@ export function PromptApp({ onReady }: PromptAppProps) {
 				return;
 			}
 
-			// Regular submit
-			handleFieldAction({ type: "submit", value });
+			// Regular submit - pass along the captured prompt ID if available
+			handleFieldAction({
+				type: "submit",
+				value,
+				__promptId: value?.__promptId, // Pass the captured prompt ID for async auto-submissions
+			} as any);
 		},
 		[currentPrompt, handleFieldAction]
 	);

@@ -38,7 +38,7 @@ export const completedFields = createPrompt<CompletedFieldsOptions, void>({
 		useEffect(() => {
 			if (node.state === "active" && events.onSubmit) {
 				// setTimeout is now baked into onSubmit for auto submissions
-				events.onSubmit({ type: "auto", delay: 0 });
+				events.onSubmit({ type: "auto" });
 			}
 		}, [node.state, events.onSubmit]);
 

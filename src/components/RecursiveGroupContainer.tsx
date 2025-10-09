@@ -405,6 +405,7 @@ export function RecursiveGroupContainer({
 			return (
 				<PluginWrapper
 					pluginType={item.fieldType}
+					promptId={item.id} // Pass the prompt ID so auto-submissions can capture it
 					key={`plugin-${item.id}-${item.depth}-${pluginState}`}
 					{...item.properties} // Spread all plugin properties
 					message={item.properties.message || item.label || ""}
@@ -428,6 +429,7 @@ export function RecursiveGroupContainer({
 			<Box flexDirection="column">
 				<PluginWrapper
 					pluginType={item.fieldType}
+					promptId={item.id} // Pass the prompt ID so auto-submissions can capture it
 					key={`plugin-${item.id}-${item.depth}-${pluginState}`}
 					{...item.properties} // Spread all plugin properties
 					message={item.properties.message || item.label || ""}
