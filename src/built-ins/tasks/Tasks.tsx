@@ -69,28 +69,25 @@ export function addDynamicTask(task: Task): Promise<void> {
 
 	return new Promise<void>((resolve, reject) => {
 		const executor = async () => {
+			setTaskState(taskListId, taskId, { status: "running" });
 			try {
-				setTaskState(taskListId, taskId, { status: "running" });
 				await task.action?.();
 				setTaskState(taskListId, taskId, { status: "success" });
 				resolve();
 			} catch (error) {
-				if (error instanceof TaskWarning) {
-					setTaskState(taskListId, taskId, {
-						status: "warning",
-						warning: error.message,
-					});
-					resolve();
-				} else {
-					setTaskState(taskListId, taskId, {
-						status: "error",
-						error:
-							error instanceof Error
-								? error.message
-								: String(error),
-					});
-					reject(error);
-				}
+				const isWarning = error instanceof TaskWarning;
+				setTaskState(taskListId, taskId, {
+					status: isWarning ? "warning" : "error",
+					...(isWarning
+						? { warning: error.message }
+						: {
+								error:
+									error instanceof Error
+										? error.message
+										: String(error),
+						  }),
+				});
+				isWarning ? resolve() : reject(error);
 			}
 		};
 
@@ -135,29 +132,22 @@ export async function waitForPendingTasks(): Promise<void> {
 			return true;
 		};
 
-		const unsubscribe = taskStore.subscribe(() => {
+		const checkComplete = (unsubscribe: () => void) => {
 			if (timeout) clearTimeout(timeout);
-
 			if (isComplete()) {
 				timeout = setTimeout(() => {
 					if (isComplete()) {
-						// Re-check after grace period
 						unsubscribe();
 						resolve();
 					}
 				}, 100);
 			}
-		});
+		};
 
-		// Initial check
-		if (isComplete()) {
-			timeout = setTimeout(() => {
-				if (isComplete()) {
-					unsubscribe();
-					resolve();
-				}
-			}, 100);
-		}
+		const unsubscribe = taskStore.subscribe(() =>
+			checkComplete(unsubscribe)
+		);
+		checkComplete(unsubscribe); // Initial check
 	});
 }
 
@@ -236,19 +226,7 @@ export const TasksDisplay = ({
 	const spinnerFrames = ["⠂", "-", "–", "—", "–", "-"];
 
 	// Block all input during task execution to prevent escape sequences from showing
-	useInput(
-		(_input, _key) => {
-			// Consume and discard all input during execution to prevent it from appearing on screen
-			if (isExecuting) {
-				return; // Silently consume all input
-			}
-		},
-		{
-			// Only register input listener when tasks are executing
-			// This prevents memory leaks from accumulating event listeners
-			isActive: isExecuting,
-		}
-	);
+	useInput(() => {}, { isActive: isExecuting });
 
 	// Animate spinner only when tasks are running
 	useEffect(() => {
@@ -332,15 +310,59 @@ export const TasksDisplay = ({
 		});
 	};
 
+	// Helper to execute subtasks (concurrent or sequential)
+	const executeSubtasks = async (
+		tasks: Task[],
+		taskId: string,
+		concurrent?: boolean
+	): Promise<void> => {
+		if (concurrent) {
+			await Promise.all(
+				tasks.map((subtask, index) =>
+					executeTask(
+						subtask,
+						getTaskId(subtask, index, `${taskId}.`)
+					)
+				)
+			);
+		} else {
+			for (let i = 0; i < tasks.length; i++) {
+				await executeTask(
+					tasks[i],
+					getTaskId(tasks[i], i, `${taskId}.`)
+				);
+			}
+		}
+	};
+
+	// Helper to handle task errors
+	const handleTaskError = (
+		taskId: string,
+		error: unknown,
+		continueOnError?: boolean
+	) => {
+		if (error instanceof TaskWarning) {
+			updateTaskState(taskId, {
+				status: "warning",
+				warning: error.message,
+			});
+		} else {
+			updateTaskState(taskId, {
+				status: "error",
+				error: error instanceof Error ? error.message : String(error),
+			});
+			if (!continueOnError) throw error;
+		}
+	};
+
 	const executeTask = async (task: Task, taskId: string): Promise<void> => {
 		updateTaskState(taskId, { status: "running" });
 
 		try {
-			const completeOn = task.completeOn || "children"; // Default to 'children'
+			const completeOn = task.completeOn || "children";
 			let actionCompleted = false;
 			let childrenCompleted = false;
 
-			// Execute action if present
 			const actionPromise = task.action
 				? task.action().then(() => {
 						actionCompleted = true;
@@ -349,138 +371,42 @@ export const TasksDisplay = ({
 						actionCompleted = true;
 				  });
 
+			const createChildrenPromise = () =>
+				task.tasks && task.tasks.length > 0
+					? executeSubtasks(task.tasks, taskId, task.concurrent).then(
+							() => {
+								childrenCompleted = true;
+							}
+					  )
+					: Promise.resolve().then(() => {
+							childrenCompleted = true;
+					  });
+
 			// Handle different completion modes
 			if (completeOn === "self") {
-				// Complete after action, let children run in background
 				await actionPromise;
 				updateTaskState(taskId, { status: "success" });
-
-				// Start children in background (don't await)
-				if (task.tasks && task.tasks.length > 0) {
-					const tasks = task.tasks; // Store reference to avoid undefined issues
-					if (task.concurrent) {
-						// Execute subtasks concurrently in background
-						const promises = tasks.map((subtask, index) => {
-							const subtaskId = getTaskId(
-								subtask,
-								index,
-								`${taskId}.`
-							);
-							return executeTask(subtask, subtaskId);
-						});
-						Promise.allSettled(promises); // Don't await
-					} else {
-						// Execute subtasks sequentially in background
-						(async () => {
-							for (let i = 0; i < tasks.length; i++) {
-								const subtask = tasks[i];
-								const subtaskId = getTaskId(
-									subtask,
-									i,
-									`${taskId}.`
-								);
-								await executeTask(subtask, subtaskId);
-							}
-						})(); // Don't await
-					}
-				}
+				// Run children in background (don't await)
+				if (task.tasks?.length) createChildrenPromise();
 			} else if (completeOn === "either") {
-				// Complete when either action or all children finish first
-				const childrenPromise =
-					task.tasks && task.tasks.length > 0
-						? (async () => {
-								const tasks = task.tasks!; // Store reference to avoid undefined issues
-								if (task.concurrent) {
-									// Execute subtasks concurrently
-									const promises = tasks.map(
-										(subtask, index) => {
-											const subtaskId = getTaskId(
-												subtask,
-												index,
-												`${taskId}.`
-											);
-											return executeTask(
-												subtask,
-												subtaskId
-											);
-										}
-									);
-									await Promise.all(promises);
-								} else {
-									// Execute subtasks sequentially
-									for (let i = 0; i < tasks.length; i++) {
-										const subtask = tasks[i];
-										const subtaskId = getTaskId(
-											subtask,
-											i,
-											`${taskId}.`
-										);
-										await executeTask(subtask, subtaskId);
-									}
-								}
-								childrenCompleted = true;
-						  })()
-						: Promise.resolve().then(() => {
-								childrenCompleted = true;
-						  });
-
-				// Wait for whichever completes first
-				await Promise.race([actionPromise, childrenPromise]);
+				await Promise.race([actionPromise, createChildrenPromise()]);
 				updateTaskState(taskId, { status: "success" });
-
-				// Continue other tasks in background if needed
+				// Continue unfinished work in background
 				if (!actionCompleted || !childrenCompleted) {
-					Promise.allSettled([actionPromise, childrenPromise]); // Don't await
+					Promise.allSettled([
+						actionPromise,
+						createChildrenPromise(),
+					]);
 				}
 			} else {
-				// Default 'children' mode: complete after action + all children
+				// Default 'children' mode
 				await actionPromise;
-
-				if (task.tasks && task.tasks.length > 0) {
-					if (task.concurrent) {
-						// Execute subtasks concurrently
-						const promises = task.tasks.map((subtask, index) => {
-							const subtaskId = getTaskId(
-								subtask,
-								index,
-								`${taskId}.`
-							);
-							return executeTask(subtask, subtaskId);
-						});
-						await Promise.all(promises);
-					} else {
-						// Execute subtasks sequentially
-						for (let i = 0; i < task.tasks.length; i++) {
-							const subtask = task.tasks[i];
-							const subtaskId = getTaskId(
-								subtask,
-								i,
-								`${taskId}.`
-							);
-							await executeTask(subtask, subtaskId);
-						}
-					}
-				}
-
+				if (task.tasks?.length)
+					await executeSubtasks(task.tasks, taskId, task.concurrent);
 				updateTaskState(taskId, { status: "success" });
 			}
 		} catch (error) {
-			if (error instanceof TaskWarning) {
-				updateTaskState(taskId, {
-					status: "warning",
-					warning: error.message,
-				});
-			} else {
-				updateTaskState(taskId, {
-					status: "error",
-					error:
-						error instanceof Error ? error.message : String(error),
-				});
-
-				if (!task.continueOnError) {
-					throw error;
-				}
-			}
+			handleTaskError(taskId, error, task.continueOnError);
 		}
 	};
 
@@ -510,6 +436,22 @@ export const TasksDisplay = ({
 		}
 	};
 
+	// Helper to render error/warning messages
+	const renderMessages = (state: TaskState, marginLeft: number) => (
+		<>
+			{state.warning && (
+				<Box marginLeft={marginLeft}>
+					<Text color="yellow">{state.warning}</Text>
+				</Box>
+			)}
+			{state.error && (
+				<Box marginLeft={marginLeft}>
+					<Text color="red">{state.error}</Text>
+				</Box>
+			)}
+		</>
+	);
+
 	const renderTask = (
 		task: Task,
 		index: number,
@@ -518,28 +460,15 @@ export const TasksDisplay = ({
 	): React.ReactNode => {
 		const taskId = getTaskId(task, index, parentId);
 		const state = taskStates.get(taskId) || { status: "idle" };
-		const label = getLabel(task, state.status);
-		const symbol = getSymbol(state.status);
 		const indent = "  ".repeat(level);
 
 		return (
 			<Box key={taskId} flexDirection="column">
-				<Box>
-					<Text color={getColor(state.status)}>
-						{indent}
-						{symbol} {label}
-					</Text>
-				</Box>
-				{state.warning && (
-					<Box marginLeft={indent.length + 2}>
-						<Text color="yellow">{state.warning}</Text>
-					</Box>
-				)}
-				{state.error && (
-					<Box marginLeft={indent.length + 2}>
-						<Text color="red">{state.error}</Text>
-					</Box>
-				)}
+				<Text color={getColor(state.status)}>
+					{indent}
+					{getSymbol(state.status)} {getLabel(task, state.status)}
+				</Text>
+				{renderMessages(state, indent.length + 2)}
 				{task.tasks?.map((subtask, subIndex) =>
 					renderTask(subtask, subIndex, `${taskId}.`, level + 1)
 				)}
@@ -551,39 +480,24 @@ export const TasksDisplay = ({
 		tasks.forEach((task, index) => {
 			const taskId = getTaskId(task, index, parentId);
 			updateTaskState(taskId, { status: "idle" });
-
-			// Recursively initialize subtasks
-			if (task.tasks) {
-				initializeTasksAsIdle(task.tasks, `${taskId}.`);
-			}
+			if (task.tasks) initializeTasksAsIdle(task.tasks, `${taskId}.`);
 		});
 	};
 
 	// Initialize all tasks as idle, then start execution after a brief delay
 	useEffect(() => {
 		if (node.state === "active" && !isExecuting) {
-			// Initialize all tasks as idle for this task list
 			initializeTasksAsIdle(options.tasks);
-
-			// Start execution after a brief delay to show idle state
-			setTimeout(() => {
-				executeAllTasks();
-			}, 400);
+			setTimeout(executeAllTasks, 400);
 		}
 	}, [node.state]);
 
 	// Auto-submit when all tasks complete
 	useEffect(() => {
-		if (node.state !== "active" || isExecuting) return;
+		if (node.state !== "active" || isExecuting || !taskStates.size) return;
 
-		const states = Array.from(taskStates.values());
-		if (states.length === 0) return;
-
-		const allDone = states.every(
-			(s) =>
-				s.status === "success" ||
-				s.status === "error" ||
-				s.status === "warning"
+		const allDone = [...taskStates.values()].every((s) =>
+			["success", "error", "warning"].includes(s.status)
 		);
 
 		if (allDone && events.onSubmit) {
@@ -606,16 +520,7 @@ export const TasksDisplay = ({
 							{getSymbol(state.status)}{" "}
 							{getLabel(task, state.status)}
 						</Text>
-						{state.warning && (
-							<Box marginLeft={2}>
-								<Text color="yellow">⚠ {state.warning}</Text>
-							</Box>
-						)}
-						{state.error && (
-							<Box marginLeft={2}>
-								<Text color="red">✗ {state.error}</Text>
-							</Box>
-						)}
+						{renderMessages(state, 2)}
 					</Box>
 				);
 			})
