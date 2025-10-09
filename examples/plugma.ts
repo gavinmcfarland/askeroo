@@ -262,7 +262,13 @@ const flow = async () => {
 
 (async () => {
 	try {
-		const result = await ask(flow);
+		const result = await ask(flow, {
+			onCancel: ({ results, cleanup }) => {
+				cleanup(); // Clean up UI first
+				console.log("Exiting...");
+				process.exit(0); // User controls exit
+			},
+		});
 
 		// console.log("\nResult:", JSON.stringify(result, null, 2));
 	} catch (error) {

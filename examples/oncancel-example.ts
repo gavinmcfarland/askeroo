@@ -24,7 +24,7 @@ async function demonstrateOnCancel() {
 				console.log(
 					"This is where you would clean up resources, close connections, etc."
 				);
-				// process.exit(0); // User controls exit
+				process.exit(0); // User controls exit
 			},
 		}
 	);
