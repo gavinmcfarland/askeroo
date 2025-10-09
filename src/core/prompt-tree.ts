@@ -40,6 +40,9 @@ export interface PromptNode {
 	// Submission tracking
 	submissionType?: "manual" | "auto" | "skipped" | "programmatic"; // How this prompt was submitted
 	autoSubmit?: boolean; // Whether this specific prompt instance should auto-submit
+
+	// Frozen state (for onCancel functionality)
+	frozen?: boolean; // Whether this node is frozen in its active state
 }
 
 export interface PromptTree {
@@ -82,6 +85,10 @@ export class PromptTreeManager {
 	// Tree access
 	getTree(): PromptTree {
 		return this.tree;
+	}
+
+	setTree(tree: PromptTree): void {
+		this.tree = tree;
 	}
 
 	getActiveNode(): PromptNode | null {

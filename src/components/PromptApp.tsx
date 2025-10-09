@@ -49,10 +49,82 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 	const [treeRevision, setTreeRevision] = useState(0);
 	const [renderKey, setRenderKey] = useState(0); // Force complete remount on back navigation
 
+	// Helper function to clone tree structure without circular references
+	const cloneTreeForFreezing = useCallback((tree: any) => {
+		const clonedNodeIndex = new Map();
+
+		// First pass: clone all nodes without parent/children references
+		const cloneNode = (node: any) => {
+			if (clonedNodeIndex.has(node.id)) {
+				return clonedNodeIndex.get(node.id);
+			}
+
+			const clonedNode = {
+				...node,
+				children: [], // Will be populated in second pass
+				parent: undefined, // Will be set in second pass
+			};
+
+			clonedNodeIndex.set(node.id, clonedNode);
+			return clonedNode;
+		};
+
+		// Clone all nodes
+		tree.nodeIndex.forEach((node: any) => {
+			cloneNode(node);
+		});
+
+		// Second pass: restore relationships
+		tree.nodeIndex.forEach((originalNode: any) => {
+			const clonedNode = clonedNodeIndex.get(originalNode.id);
+
+			// Restore children
+			clonedNode.children = originalNode.children.map((child: any) =>
+				clonedNodeIndex.get(child.id)
+			);
+
+			// Restore parent
+			if (originalNode.parent) {
+				clonedNode.parent = clonedNodeIndex.get(originalNode.parent.id);
+			}
+		});
+
+		// Clone the tree structure
+		return {
+			root: clonedNodeIndex.get(tree.root.id),
+			nodeIndex: clonedNodeIndex,
+			history: tree.history.map((node: any) => clonedNodeIndex.get(node.id)),
+		};
+	}, []);
+
+	// Function to freeze the current prompt
+	const freezeCurrentPrompt = useCallback(() => {
+		if (currentPrompt) {
+			// Get the current active node
+			const activeNode = treeManagerRef.current.getActiveNode();
+
+			if (activeNode) {
+				// Mark the node as frozen (keeping it active but frozen)
+				activeNode.frozen = true;
+				// Keep it active so it renders in its active state
+				// activeNode.active remains true
+			}
+
+			// Clear current prompt to allow new prompts to be displayed after the frozen one
+			setCurrentPrompt(null);
+
+			// Trigger re-render to reflect the frozen state
+			setTreeRevision((prev) => prev + 1);
+		}
+	}, [currentPrompt]);
+
 	// Global Ctrl+C handler
 	useInput((input, key) => {
 		if (key.ctrl && input === 'c') {
-			// Call the runtime's cancel handler if available
+			// Freeze current prompt first
+			freezeCurrentPrompt();
+
+			// Then call the runtime's cancel handler
 			if (runtime && runtime.handleCtrlC) {
 				runtime.handleCtrlC();
 			}
@@ -256,7 +328,25 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 
 					// Activate the prompt in the tree (crucial for rendering)
 					if (request.type !== "group") {
-						treeManagerRef.current.navigateTo(request.id);
+						// Special handling: if there's a frozen prompt, don't deactivate it
+						// Let both the frozen prompt and new prompt be active
+						const activeNode = treeManagerRef.current.getActiveNode();
+						if (activeNode && activeNode.frozen) {
+							// Don't navigate away from frozen prompt, just add the new prompt as active too
+							const newNode = treeManagerRef.current.getNode(request.id);
+							if (newNode) {
+								newNode.active = true;
+								newNode.visited = true;
+								// Add to history without deactivating the frozen node
+								const currentHistory = treeManagerRef.current.getNavigationPath();
+								if (!currentHistory.includes(newNode)) {
+									// Manually add to history without using navigateTo
+									treeManagerRef.current.getTree().history.push(newNode);
+								}
+							}
+						} else {
+							treeManagerRef.current.navigateTo(request.id);
+						}
 					} else {
 						// Mark group as visited and active so it shows up in the tree
 						const groupNode = treeManagerRef.current.getNode(
@@ -544,39 +634,39 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 	// Note: Hints are now stored per prompt ID, so they don't leak between prompts
 	// Auto-submit prompts simply won't set a hint, so currentHintText will be null for them
 
-	// Primary rendering: Tree-based recursive rendering
+	// Primary rendering: Tree-based recursive rendering with support for frozen prompts
 
 	// When custom root container exists, RecursiveGroupContainer will use it internally for the root node
+	// Main content - renders both frozen prompt (if any) and current tree
+	const content = (
+		<>
+			{/* Render the current tree - frozen nodes will render with isFrozen=true based on node.frozen property */}
+			{currentTree.root && (
+				<RecursiveGroupContainer
+					key={renderKey}
+					item={currentTree.root}
+					treeManager={treeManagerRef.current}
+					onSubmit={handleSubmit}
+					onBack={handleBack}
+					onHintChange={handleHintChange}
+					hintText={currentHintText}
+					hintsByPromptId={internalRefs.current.hintsByPromptId}
+				/>
+			)}
+		</>
+	);
+
 	// Otherwise, wrap in the default RootContainer
 	const hasCustomContainer = !!(globalThis as any).__customRootContainer;
 
 	if (hasCustomContainer) {
-		// Custom container will be applied at the root node level inside RecursiveGroupContainer
-		return (
-			<RecursiveGroupContainer
-				key={renderKey}
-				item={currentTree.root}
-				treeManager={treeManagerRef.current}
-				onSubmit={handleSubmit}
-				onBack={handleBack}
-				onHintChange={handleHintChange}
-				hintText={currentHintText}
-			/>
-		);
+		return content;
 	}
 
 	// Default rendering with RootContainer wrapper
 	return (
 		<RootContainer>
-			<RecursiveGroupContainer
-				key={renderKey}
-				item={currentTree.root}
-				treeManager={treeManagerRef.current}
-				onSubmit={handleSubmit}
-				onBack={handleBack}
-				onHintChange={handleHintChange}
-				hintText={currentHintText}
-			/>
+			{content}
 		</RootContainer>
 	);
 }

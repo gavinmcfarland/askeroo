@@ -25,6 +25,8 @@ interface RecursiveGroupContainerProps {
 	onHintChange?: (hint: React.ReactNode) => void;
 	hintText?: React.ReactNode; // Hint text for the currently active field
 	showOnlyActiveAndCompleted?: boolean; // Control visibility of pending fields
+	isFrozen?: boolean; // Indicates this is a frozen prompt that should not be interactive
+	hintsByPromptId?: Map<string, React.ReactNode>; // Map of hint text by prompt ID
 }
 
 export function RecursiveGroupContainer({
@@ -35,6 +37,8 @@ export function RecursiveGroupContainer({
 	onHintChange,
 	hintText,
 	showOnlyActiveAndCompleted = false,
+	isFrozen = false,
+	hintsByPromptId,
 }: RecursiveGroupContainerProps) {
 	// Calculate indentation based on depth
 	// Depth 0 = root, depth 1 = root children (0 indent), depth 2 = first nesting level (3 spaces), etc.
@@ -207,22 +211,31 @@ export function RecursiveGroupContainer({
 		}
 
 		// Render children recursively
-		// Always pass hintText down - components decide whether to display it
-		const renderedChildren = childrenToRender.map((child, index) => (
-			<RecursiveGroupContainer
-				key={`${item.id}-child-${child.id}-${index}`}
-				item={child}
-				treeManager={treeManager}
-				onSubmit={onSubmit}
-				onBack={onBack}
-				onHintChange={onHintChange}
-				hintText={hintText}
-				showOnlyActiveAndCompleted={
-					showOnlyActiveAndCompleted ||
-					(item.completed && !item.active)
-				}
-			/>
-		));
+		// Pass down hints map and let each child determine its own hint
+		const renderedChildren = childrenToRender.map((child, index) => {
+			// Determine hint text for this specific child
+			const childHintText = child.active
+				? (hintsByPromptId?.get(child.id) || (child.id === item.id ? hintText : null))
+				: null;
+
+			return (
+				<RecursiveGroupContainer
+					key={`${item.id}-child-${child.id}-${index}`}
+					item={child}
+					treeManager={treeManager}
+					onSubmit={isFrozen || child.frozen ? undefined : onSubmit}
+					onBack={isFrozen || child.frozen ? undefined : onBack}
+					onHintChange={isFrozen || child.frozen ? undefined : onHintChange}
+					hintText={childHintText}
+					showOnlyActiveAndCompleted={
+						showOnlyActiveAndCompleted ||
+						(item.completed && !item.active)
+					}
+					isFrozen={isFrozen || child.frozen}
+					hintsByPromptId={hintsByPromptId}
+				/>
+			);
+		});
 
 		// For root node, check if there's a custom root container
 		// If so, use it instead of the group plugin (to allow ask component to control layout)
@@ -275,6 +288,11 @@ export function RecursiveGroupContainer({
 		if (showOnlyActiveAndCompleted && !isActive && !isCompleted) {
 			return null;
 		}
+
+		// Determine hint text for this specific field node
+		const fieldHintText = item.active
+			? (hintsByPromptId?.get(item.id) || hintText)
+			: null;
 
 		// Get initial value
 		const getInitialValue = () => {
@@ -412,15 +430,15 @@ export function RecursiveGroupContainer({
 					initialValue={getInitialValue()}
 					state={pluginState}
 					completedValue={isCompleted ? item.value : undefined}
-					onSubmit={isActive ? onSubmit : () => {}}
-					onBack={isActive ? onBack : undefined}
+					onSubmit={isActive && !isFrozen && !item.frozen ? onSubmit : () => {}}
+					onBack={isActive && !isFrozen && !item.frozen ? onBack : undefined}
 					allowBack={effectiveAllowBack}
 					flow={flowType}
 					isFirstInGroup={isFirstInGroup}
 					isLastInGroup={isLastInGroup}
 					isFirstRootPrompt={isFirstRootPrompt}
 					enableArrowNavigation={parent?.enableArrowNavigation}
-					{...(isActive && onHintChange && { onHintChange })}
+					{...(isActive && !isFrozen && !item.frozen && onHintChange && { onHintChange })}
 				/>
 			);
 		}
@@ -436,18 +454,20 @@ export function RecursiveGroupContainer({
 					initialValue={getInitialValue()}
 					state={pluginState}
 					completedValue={isCompleted ? item.value : undefined}
-					onSubmit={isActive ? onSubmit : () => {}}
-					onBack={isActive ? onBack : undefined}
+					onSubmit={isActive && !isFrozen && !item.frozen ? onSubmit : () => {}}
+					onBack={isActive && !isFrozen && !item.frozen ? onBack : undefined}
 					allowBack={effectiveAllowBack}
 					flow={flowType}
 					isFirstInGroup={isFirstInGroup}
 					isLastInGroup={isLastInGroup}
 					isFirstRootPrompt={isFirstRootPrompt}
 					enableArrowNavigation={parent?.enableArrowNavigation}
-					{...(isActive && onHintChange && { onHintChange })}
+					{...(isActive && !isFrozen && !item.frozen && onHintChange && { onHintChange })}
 				/>
 				{/* Always render hint area for active fields to prevent layout shift */}
-				{isActive && <HintText>{hintText || " "}</HintText>}
+				{/* Show hint text for active fields, including frozen ones that should preserve their hint */}
+				{/* Don't show hint text for note and other auto-submitting fields since they don't need navigation hints */}
+				{isActive && item.fieldType !== "note" && !globalRegistry.shouldAutoSubmit(item.fieldType || '') && <HintText>{fieldHintText || " "}</HintText>}
 			</Box>
 		);
 	}

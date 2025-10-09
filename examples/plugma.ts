@@ -263,9 +263,9 @@ const flow = async () => {
 (async () => {
 	try {
 		const result = await ask(flow, {
-			onCancel: ({ results, cleanup }) => {
+			onCancel: async ({ results, cleanup }) => {
+				await note("[ Exiting... ]{bgRed}");
 				cleanup(); // Clean up UI first
-				console.log("Exiting...");
 				process.exit(0); // User controls exit
 			},
 		});
