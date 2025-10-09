@@ -326,10 +326,15 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 					const isInCancelMode = runtime && runtime.isInCancelMode && runtime.isInCancelMode();
 					const explicitParent = isInCancelMode ? null : (request.groupName || null);
 
-					treeManagerRef.current.addPromptRequest(
+					const addedNode = treeManagerRef.current.addPromptRequest(
 						request,
 						explicitParent
 					);
+
+					// Mark the node as a cancel prompt if we're in cancel mode
+					if (isInCancelMode && addedNode) {
+						addedNode.isCancelPrompt = true;
+					}
 
 					// Activate the prompt in the tree (crucial for rendering)
 					if (request.type !== "group") {

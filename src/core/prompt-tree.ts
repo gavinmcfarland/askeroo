@@ -43,6 +43,9 @@ export interface PromptNode {
 
 	// Frozen state (for onCancel functionality)
 	frozen?: boolean; // Whether this node is frozen in its active state
+
+	// Cancel mode tracking
+	isCancelPrompt?: boolean; // Whether this prompt was created during cancel mode
 }
 
 export interface PromptTree {

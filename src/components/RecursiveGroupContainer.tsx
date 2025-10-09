@@ -246,8 +246,24 @@ export function RecursiveGroupContainer({
 
 		// If custom root container exists for root node, use it directly
 		if (CustomRootContainer && isRootNode) {
+			// Separate regular children from cancel prompts
+			const regularChildren: React.ReactNode[] = [];
+			const cancelChildren: React.ReactNode[] = [];
+
+			// Split rendered children based on whether they are cancel prompts
+			renderedChildren.forEach((renderedChild, index) => {
+				const correspondingChild = childrenToRender[index];
+				if (correspondingChild?.isCancelPrompt) {
+					cancelChildren.push(renderedChild);
+				} else {
+					regularChildren.push(renderedChild);
+				}
+			});
+
 			return (
-				<CustomRootContainer>{renderedChildren}</CustomRootContainer>
+				<CustomRootContainer onCancelNodes={cancelChildren}>
+					{regularChildren}
+				</CustomRootContainer>
 			);
 		}
 
