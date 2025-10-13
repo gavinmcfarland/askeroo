@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import chalk from "chalk";
 import {
 	ask,
 	group,
@@ -11,6 +10,7 @@ import {
 	note,
 	spinner,
 	completedFields,
+	type Task,
 } from "../src/index.js";
 
 // Sleep helper function
@@ -194,32 +194,35 @@ const flow = async () => {
 	);
 
 	// Example of sequential execution using the new API with completeOn setting
-	const tasksResult = await tasks(
-		[
-			{
-				label: `Creating ${answers.type} from template`,
-				action: async () => {
-					await sleep(1000);
-				},
-			},
-			{
-				label: `Integrating chosen add-ons`,
-				action: async () => {
-					await sleep(1000);
-				},
-				concurrent: true,
-				tasks: answers.addons.map((addon: string) => ({
-					label: `${addon}`,
-					action: async () => {
-						await sleep(Math.random() * 4000 + 1000);
-					},
-				})),
-			},
-		],
+	const tasksList: Task[] = [
 		{
-			concurrent: false,
-		}
-	);
+			label: `Creating ${answers.type} from template`,
+			action: async () => {
+				await sleep(1000);
+			},
+		},
+	];
+
+	// Add the add-ons task if there are any addons selected
+	if (answers.addons.length > 0) {
+		tasksList.push({
+			label: `Integrating chosen add-ons`,
+			action: async () => {
+				await sleep(1000);
+			},
+			concurrent: true,
+			tasks: answers.addons.map((addon: string) => ({
+				label: `${addon}`,
+				action: async () => {
+					await sleep(Math.random() * 4000 + 1000);
+				},
+			})),
+		});
+	}
+
+	const tasksResult = await tasks(tasksList, {
+		concurrent: false,
+	});
 
 	const pkgManager = await radio({
 		label: "Install dependencies?",
