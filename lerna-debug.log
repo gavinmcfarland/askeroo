@@ -1,54 +1,10 @@
-0 silly argv {
-0 silly argv   _: [ 'version' ],
-0 silly argv   lernaVersion: '9.0.0',
-0 silly argv   '$0': '/Users/gavinmcfarland/Developer/repos/askeroo/node_modules/.bin/lerna'
-0 silly argv }
-1 notice cli v9.0.0
-2 verbose packageConfigs Explicit "packages" configuration found in lerna.json. Resolving packages using the configured glob(s): ["."]
-3 verbose rootPath /Users/gavinmcfarland/Developer/repos/askeroo
-4 info current version 1.0.0
-5 silly isAnythingCommitted
-6 verbose isAnythingCommitted 1
-7 silly getCurrentBranch
-8 verbose currentBranch main
-9 silly remoteBranchExists
-10 silly isBehindUpstream
-11 silly isBehindUpstream main is behind origin/main by 0 commit(s) and ahead by 0
-12 silly hasTags
-13 verbose hasTags false
-14 info Assuming all packages changed
-15 verbose updated askeroo
-16 info version rooted leaf detected, skipping synthetic root lifecycles
-17 verbose git-describe undefined => "21b50bf"
-18 silly git-describe parsed => {"refCount":"416","sha":"21b50bf","isDirty":false}
-19 silly fixed for askeroo at /Users/gavinmcfarland/Developer/repos/askeroo
-20 verbose getChangelogConfig using preset "conventional-changelog-angular"
-21 silly npa Result {
-21 silly npa   type: 'range',
-21 silly npa   registry: true,
-21 silly npa   where: undefined,
-21 silly npa   raw: 'conventional-changelog-angular',
-21 silly npa   name: 'conventional-changelog-angular',
-21 silly npa   escapedName: 'conventional-changelog-angular',
-21 silly npa   scope: undefined,
-21 silly npa   rawSpec: '*',
-21 silly npa   saveSpec: null,
-21 silly npa   fetchSpec: '*',
-21 silly npa   gitRange: undefined,
-21 silly npa   gitCommittish: undefined,
-21 silly npa   gitSubdir: undefined,
-21 silly npa   hosted: undefined
-21 silly npa }
-22 verbose getChangelogConfig Attempting to resolve preset "conventional-changelog-angular"
-23 info getChangelogConfig Successfully resolved preset "conventional-changelog-angular"
-24 verbose fixed increment 1.0.0 by patch
-25 error ExitPromptError: User force closed the prompt with SIGINT
-25 error     at Interface.sigint (/Users/gavinmcfarland/Developer/repos/askeroo/node_modules/@inquirer/core/dist/commonjs/lib/create-prompt.js:101:37)
-25 error     at Interface.emit (node:events:518:28)
-25 error     at [_ttyWrite] [as _ttyWrite] (node:internal/readline/interface:1124:18)
-25 error     at ReadStream.onkeypress (node:internal/readline/interface:263:20)
-25 error     at ReadStream.emit (node:events:530:35)
-25 error     at emitKeys (node:internal/readline/utils:370:14)
-25 error     at emitKeys.next (<anonymous>)
-25 error     at ReadStream.onData (node:internal/readline/emitKeypressEvents:64:36)
-25 error     at ReadStream.emit (node:events:518:28)
+32 error ExitPromptError: User force closed the prompt with SIGINT
+32 error     at Interface.sigint (/Users/gavinmcfarland/Developer/repos/askeroo/node_modules/@inquirer/core/dist/commonjs/lib/create-prompt.js:101:37)
+32 error     at Interface.emit (node:events:518:28)
+32 error     at [_ttyWrite] [as _ttyWrite] (node:internal/readline/interface:1124:18)
+32 error     at ReadStream.onkeypress (node:internal/readline/interface:263:20)
+32 error     at ReadStream.emit (node:events:530:35)
+32 error     at emitKeys (node:internal/readline/utils:370:14)
+32 error     at emitKeys.next (<anonymous>)
+32 error     at ReadStream.onData (node:internal/readline/emitKeypressEvents:64:36)
+32 error     at ReadStream.emit (node:events:518:28)

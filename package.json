@@ -29,7 +29,8 @@
         "prepublishOnly": "npm run build",
         "release": "lerna publish",
         "release:from-package": "lerna publish from-package",
-        "release:ci": "lerna publish from-package --yes"
+        "release:ci": "lerna publish from-package --yes",
+        "release:conventional": "lerna publish --conventional-commits"
     },
     "keywords": [
         "cli",
