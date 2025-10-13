@@ -100,7 +100,7 @@ export const SpinnerDisplay = ({
 				running: spinnerFrames[spinnerFrame],
 				paused: "●",
 				stopped: "■",
-			}[status] || "□"
+			}[status] || " "
 		);
 	};
 

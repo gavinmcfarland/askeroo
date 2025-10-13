@@ -33,7 +33,7 @@ const flow = async () => {
 		stopped: "Data fetched successfully",
 	});
 
-	await sleep(500);
+	// await sleep(500);
 	await job2.start();
 
 	await sleep(2000);
