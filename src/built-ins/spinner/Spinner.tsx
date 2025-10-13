@@ -47,7 +47,7 @@ export const SpinnerDisplay = ({
 		// For idle state, add a small delay before showing symbol
 		const timer = setTimeout(() => {
 			setShouldShowSymbol(true);
-		}, 100);
+		}, 1000);
 
 		return () => clearTimeout(timer);
 	}, [spinnerState.status]);
