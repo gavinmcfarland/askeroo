@@ -1,7 +1,7 @@
 {
     "name": "askeroo",
     "version": "1.0.0",
-    "description": "A modern CLI prompt library with flow control, history navigation, and conditional fields",
+    "description": "A modern CLI prompt library with flow control, history navigation, and conditional prompts",
     "type": "module",
     "main": "./dist/src/index.js",
     "types": "./dist/src/index.d.ts",
@@ -13,14 +13,6 @@
         "./core": {
             "types": "./dist/src/core.d.ts",
             "import": "./dist/src/core.js"
-        },
-        "./plugin": {
-            "types": "./dist/plugin.d.ts",
-            "import": "./dist/plugin.js"
-        },
-        "./fields": {
-            "types": "./dist/fields/index.d.ts",
-            "import": "./dist/fields/index.js"
         }
     },
     "files": [
