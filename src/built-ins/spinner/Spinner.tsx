@@ -70,6 +70,12 @@ export const SpinnerDisplay = ({
 	}, [spinnerState.status]);
 
 	const getLabel = (status: SpinnerStatus): string => {
+		// If currentLabel is set in state, use it
+		if (spinnerState.currentLabel) {
+			return spinnerState.currentLabel;
+		}
+
+		// Otherwise use the original label logic
 		if (typeof options.label === "string") return options.label;
 
 		const labelObj = options.label as SpinnerLabel;

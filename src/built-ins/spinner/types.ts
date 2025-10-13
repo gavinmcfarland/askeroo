@@ -14,11 +14,12 @@ export type SpinnerStatus = "idle" | "running" | "paused" | "stopped";
 
 export interface SpinnerState {
 	status: SpinnerStatus;
+	currentLabel?: string;
 }
 
 export interface SpinnerController {
-	start: () => Promise<void>;
-	pause: () => Promise<void>;
-	resume: () => Promise<void>;
-	stop: () => Promise<void>;
+	start: (text?: string) => Promise<void>;
+	pause: (text?: string) => Promise<void>;
+	resume: (text?: string) => Promise<void>;
+	stop: (text?: string) => Promise<void>;
 }

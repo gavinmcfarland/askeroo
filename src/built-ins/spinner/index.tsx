@@ -18,10 +18,18 @@ const spinnerInternal = createPrompt<SpinnerOptions, void>({
 // Function to update spinner state
 function updateSpinnerState(
 	spinnerId: string,
-	status: "idle" | "running" | "paused" | "stopped"
+	status: "idle" | "running" | "paused" | "stopped",
+	currentLabel?: string
 ) {
 	spinnerStore.update((s) => {
-		s.spinners.set(spinnerId, { status });
+		const currentState = s.spinners.get(spinnerId) || { status: "idle" };
+		s.spinners.set(spinnerId, {
+			status,
+			currentLabel:
+				currentLabel !== undefined
+					? currentLabel
+					: currentState.currentLabel,
+		});
 		s.revision++;
 	});
 }
@@ -51,17 +59,17 @@ export async function spinner(
 
 	// Create controller object with async methods
 	const controller: SpinnerController = {
-		start: async () => {
-			updateSpinnerState(spinnerId, "running");
+		start: async (text?: string) => {
+			updateSpinnerState(spinnerId, "running", text);
 		},
-		pause: async () => {
-			updateSpinnerState(spinnerId, "paused");
+		pause: async (text?: string) => {
+			updateSpinnerState(spinnerId, "paused", text);
 		},
-		resume: async () => {
-			updateSpinnerState(spinnerId, "running");
+		resume: async (text?: string) => {
+			updateSpinnerState(spinnerId, "running", text);
 		},
-		stop: async () => {
-			updateSpinnerState(spinnerId, "stopped");
+		stop: async (text?: string) => {
+			updateSpinnerState(spinnerId, "stopped", text);
 			// Wait for the prompt to complete
 			await promptPromise;
 		},
