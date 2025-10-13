@@ -1,6 +1,6 @@
 {
     "name": "askeroo",
-    "version": "0.0.0-alpha.5",
+    "version": "0.0.0-alpha.4",
     "description": "A modern CLI prompt library with flow control, history navigation, and conditional prompts",
     "type": "module",
     "main": "./dist/src/index.js",
@@ -27,9 +27,9 @@
         "example": "node scripts/run-example.js",
         "test": "npm run build && node dist/test.js --",
         "prepublishOnly": "npm run build",
-        "version": "lerna version",
-        "publish": "lerna publish from-package",
-        "publish:ci": "lerna publish from-package --yes"
+        "release": "lerna publish",
+        "release:from-package": "lerna publish from-package",
+        "release:ci": "lerna publish from-package --yes"
     },
     "keywords": [
         "cli",
@@ -61,5 +61,6 @@
     },
     "engines": {
         "node": ">=18.0.0"
-    }
+    },
+    "gitHead": "5bb52c8f2d6d8e91ee5c1210299c5c6c3bef39f1"
 }
