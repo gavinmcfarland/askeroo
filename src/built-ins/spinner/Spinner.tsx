@@ -21,6 +21,8 @@ export const SpinnerDisplay = ({
 	events: any;
 }) => {
 	const [spinnerFrame, setSpinnerFrame] = useState(0);
+	const [shouldShow, setShouldShow] = useState(false);
+
 	// Use the spinner ID from options
 	const spinnerId =
 		options.spinnerId ||
@@ -31,6 +33,22 @@ export const SpinnerDisplay = ({
 
 	// Extract data for this spinner
 	const spinnerState = store.spinners.get(spinnerId) || { status: "idle" };
+
+	// Delay showing the idle state to avoid flicker if start() is called immediately
+	useEffect(() => {
+		// If not idle, show immediately
+		if (spinnerState.status !== "idle") {
+			setShouldShow(true);
+			return;
+		}
+
+		// For idle state, add a small delay before showing
+		const timer = setTimeout(() => {
+			setShouldShow(true);
+		}, 100);
+
+		return () => clearTimeout(timer);
+	}, [spinnerState.status]);
 
 	// Animated spinner frames
 	const spinnerFrames = ["⠂", "-", "–", "—", "–", "-"];
@@ -97,6 +115,11 @@ export const SpinnerDisplay = ({
 			events.onSubmit({ type: "auto" });
 		}
 	}, [spinnerState.status, node.state, events.onSubmit]);
+
+	// Don't render until we're ready to show
+	if (!shouldShow) {
+		return null;
+	}
 
 	return (
 		<Box>
