@@ -70,11 +70,11 @@ export const SpinnerDisplay = ({
 	const getSymbol = (status: SpinnerStatus): string => {
 		return (
 			{
-				idle: "○",
+				idle: "□",
 				running: spinnerFrames[spinnerFrame],
-				paused: "‖",
-				stopped: "●",
-			}[status] || "○"
+				paused: "▲",
+				stopped: "■",
+			}[status] || "□"
 		);
 	};
 
