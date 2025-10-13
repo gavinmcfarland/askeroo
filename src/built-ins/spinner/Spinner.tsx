@@ -72,7 +72,7 @@ export const SpinnerDisplay = ({
 			{
 				idle: "□",
 				running: spinnerFrames[spinnerFrame],
-				paused: "▲",
+				paused: "⋯",
 				stopped: "■",
 			}[status] || "□"
 		);
@@ -82,8 +82,8 @@ export const SpinnerDisplay = ({
 		return (
 			{
 				idle: "gray",
-				running: "blue",
-				paused: "yellow",
+				running: "grey",
+				paused: "grey",
 				stopped: "green",
 			}[status] || "gray"
 		);

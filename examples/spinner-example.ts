@@ -9,7 +9,6 @@ const flow = async () => {
 	// Example 1: Basic spinner with simple label
 	const job1 = await spinner("Loading data");
 
-	await sleep(800);
 	job1.start();
 
 	await sleep(800);
