@@ -163,7 +163,7 @@ const job = await spinner("Loading");
 await job.start(); // Symbol goes straight to running animation, no idle symbol flash
 ```
 
-**Note:** Only the spinner symbol is delayed - the text appears immediately. This provides instant feedback to users while avoiding symbol flicker when `start()` is called quickly.
+**Note:** The spinner uses a store-level grace period to prevent symbol flicker. During this grace period (100ms after creation), the idle symbol is hidden. If `start()` is called during this time, the spinner transitions directly to the running animation without showing the idle symbol. The text appears immediately, providing instant feedback to users while avoiding visual flicker.
 
 ### 6. Hide on Completion
 

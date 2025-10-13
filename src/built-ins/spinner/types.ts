@@ -27,6 +27,7 @@ export interface SpinnerState {
 	status: SpinnerStatus;
 	currentLabel?: string;
 	currentStyle?: SpinnerStyle;
+	gracePeriodActive?: boolean;
 }
 
 export interface SpinnerController {

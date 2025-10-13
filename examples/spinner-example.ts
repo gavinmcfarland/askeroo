@@ -6,6 +6,28 @@ function sleep(ms: number) {
 }
 
 const flow = async () => {
+	const job3 = await spinner({
+		idle: "Ready to process files",
+		running: "Processing files...",
+		paused: "Paused (waiting for user input)",
+		stopped: "All files processed!",
+	});
+
+	await job3.start();
+
+	await sleep(1500);
+	await job3.pause();
+	await sleep(800);
+	await job3.resume();
+
+	await sleep(1000);
+	await job3.pause();
+	await sleep(600);
+	await job3.resume();
+
+	await sleep(1200);
+	await job3.stop();
+
 	// Example 1: Basic spinner with simple label
 	const job1 = await spinner("Cancelling...", {
 		color: "red",
@@ -46,28 +68,6 @@ const flow = async () => {
 	await job2.stop();
 
 	// Example 3: Simulating a long-running process
-	const job3 = await spinner({
-		idle: "Ready to process files",
-		running: "Processing files...",
-		paused: "Paused (waiting for user input)",
-		stopped: "All files processed!",
-	});
-
-	await sleep(300);
-	await job3.start();
-
-	await sleep(1500);
-	await job3.pause();
-	await sleep(800);
-	await job3.resume();
-
-	await sleep(1000);
-	await job3.pause();
-	await sleep(600);
-	await job3.resume();
-
-	await sleep(1200);
-	await job3.stop();
 
 	return "All examples completed!";
 };

@@ -46,6 +46,7 @@ function updateSpinnerState(
 					? currentLabel
 					: currentState.currentLabel,
 			currentStyle: mergedStyle,
+			gracePeriodActive: false, // Clear grace period when state changes
 		});
 		s.revision++;
 	});
@@ -71,14 +72,29 @@ export async function spinner(
 		  }
 		: undefined;
 
-	// Initialize spinner as idle in the store
+	// Initialize spinner as idle in the store with grace period active
 	spinnerStore.update((s) => {
 		s.spinners.set(spinnerId, {
 			status: "idle",
 			currentStyle: initialStyle,
+			gracePeriodActive: true, // Initially in grace period to avoid symbol flash
 		});
 		s.revision++;
 	});
+
+	// End grace period after 100ms (allows start() to be called without showing idle symbol)
+	setTimeout(() => {
+		spinnerStore.update((s) => {
+			const spinner = s.spinners.get(spinnerId);
+			if (spinner?.gracePeriodActive) {
+				s.spinners.set(spinnerId, {
+					...spinner,
+					gracePeriodActive: false,
+				});
+				s.revision++;
+			}
+		});
+	}, 100);
 
 	// Start the prompt in the background
 	let promptResolve: (() => void) | null = null;
