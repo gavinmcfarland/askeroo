@@ -175,7 +175,21 @@ const job = await spinner("Downloading...", {
 
 await job.start();
 await sleep(2000);
-await job.stop(); // Spinner disappears after completion
+await job.stop(); // Spinner disappears immediately (skips stopped state)
+```
+
+**Note:** When `hideOnCompletion` is `true` and no `submitDelay` is set (or is 0), the spinner will disappear immediately without showing the stopped state. This avoids a brief flash of the completion message.
+
+If you want to show the stopped state briefly before hiding, combine with `submitDelay`:
+
+```typescript
+const job = await spinner("Downloading...", {
+    color: "cyan",
+    hideOnCompletion: true,
+    submitDelay: 1500, // Show stopped state for 1.5 seconds
+});
+
+await job.stop("Downloaded!"); // Shows "Downloaded!" for 1.5s, then hides
 ```
 
 This is useful for temporary status indicators that don't need to remain visible after completion.

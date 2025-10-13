@@ -152,15 +152,36 @@ export const SpinnerDisplay = ({
 		if (spinnerState.status === "stopped" && events.onSubmit) {
 			const delay =
 				options.submitDelay !== undefined ? options.submitDelay : 0;
-			const timer = setTimeout(() => {
+
+			// If hideOnCompletion and no delay, submit immediately
+			if (options.hideOnCompletion && delay === 0) {
 				events.onSubmit({ type: "auto" });
-			}, delay);
-			return () => clearTimeout(timer);
+			} else {
+				const timer = setTimeout(() => {
+					events.onSubmit({ type: "auto" });
+				}, delay);
+				return () => clearTimeout(timer);
+			}
 		}
-	}, [spinnerState.status, node.state, events.onSubmit, options.submitDelay]);
+	}, [
+		spinnerState.status,
+		node.state,
+		events.onSubmit,
+		options.submitDelay,
+		options.hideOnCompletion,
+	]);
 
 	// Hide if hideOnCompletion is true and spinner is completed
 	if (options.hideOnCompletion && node.state === "completed") {
+		return null;
+	}
+
+	// Don't render stopped state if hideOnCompletion is true and there's no delay
+	if (
+		options.hideOnCompletion &&
+		spinnerState.status === "stopped" &&
+		(!options.submitDelay || options.submitDelay === 0)
+	) {
 		return null;
 	}
 
