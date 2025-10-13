@@ -23,7 +23,7 @@ export const SpinnerDisplay = ({
 	events: any;
 }) => {
 	const [spinnerFrame, setSpinnerFrame] = useState(0);
-	const [shouldShow, setShouldShow] = useState(false);
+	const [shouldShowSymbol, setShouldShowSymbol] = useState(false);
 
 	// Use the spinner ID from options
 	const spinnerId =
@@ -36,17 +36,17 @@ export const SpinnerDisplay = ({
 	// Extract data for this spinner
 	const spinnerState = store.spinners.get(spinnerId) || { status: "idle" };
 
-	// Delay showing the idle state to avoid flicker if start() is called immediately
+	// Delay showing the idle symbol to avoid flicker if start() is called immediately
 	useEffect(() => {
-		// If not idle, show immediately
+		// If not idle, show symbol immediately
 		if (spinnerState.status !== "idle") {
-			setShouldShow(true);
+			setShouldShowSymbol(true);
 			return;
 		}
 
-		// For idle state, add a small delay before showing
+		// For idle state, add a small delay before showing symbol
 		const timer = setTimeout(() => {
-			setShouldShow(true);
+			setShouldShowSymbol(true);
 		}, 100);
 
 		return () => clearTimeout(timer);
@@ -185,14 +185,10 @@ export const SpinnerDisplay = ({
 		return null;
 	}
 
-	// Don't render until we're ready to show
-	if (!shouldShow) {
-		return null;
-	}
-
-	const displayText = `${getSymbol(spinnerState.status)} ${getLabel(
-		spinnerState.status
-	)}`;
+	// Build display text with symbol (or blank space to prevent layout shift)
+	const symbol = shouldShowSymbol ? getSymbol(spinnerState.status) : " ";
+	const label = getLabel(spinnerState.status);
+	const displayText = `${symbol} ${label}`;
 	const styledText = applyStyles(displayText);
 
 	return (

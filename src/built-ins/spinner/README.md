@@ -156,12 +156,14 @@ await job.resume("Resuming", { color: "green" });
 
 ### 5. Idle State Optimization
 
-If you start the spinner immediately (within 100ms), the idle state won't briefly flash:
+If you start the spinner immediately (within 100ms), the idle symbol won't briefly flash:
 
 ```typescript
 const job = await spinner("Loading");
-await job.start(); // Goes straight to running, no idle flash
+await job.start(); // Symbol goes straight to running animation, no idle symbol flash
 ```
+
+**Note:** Only the spinner symbol is delayed - the text appears immediately. This provides instant feedback to users while avoiding symbol flicker when `start()` is called quickly.
 
 ### 6. Hide on Completion
 
