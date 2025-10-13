@@ -33,6 +33,7 @@ Built-in plugins that auto-register when imported:
 -   `completed-fields` - Display completed field values
 -   `radio` - Radio button selection prompts
 -   `tasks` - Task list prompts
+-   `spinner` - Loading spinner with controllable states
 -   `group` - Group prompts into logical sections
 -   `ask` - The main ask function with customizable root containers
 

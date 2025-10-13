@@ -39,6 +39,12 @@ export {
 	type TaskLabel,
 } from "./built-ins/tasks/index.js";
 export {
+	spinner,
+	type SpinnerLabel,
+	type SpinnerStatus,
+	type SpinnerState,
+} from "./built-ins/spinner/index.js";
+export {
 	completedFields,
 	type CompletedFieldsOptions,
 } from "./built-ins/completed-fields/index.js";
