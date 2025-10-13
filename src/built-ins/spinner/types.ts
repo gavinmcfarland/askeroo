@@ -17,8 +17,8 @@ export interface SpinnerState {
 }
 
 export interface SpinnerController {
-	start: () => void;
-	pause: () => void;
-	resume: () => void;
+	start: () => Promise<void>;
+	pause: () => Promise<void>;
+	resume: () => Promise<void>;
 	stop: () => Promise<void>;
 }

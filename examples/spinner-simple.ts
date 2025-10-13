@@ -9,13 +9,13 @@ const flow = async () => {
 	const job = await spinner("Loading data");
 
 	await sleep(3000);
-	job.start();
+	await job.start();
 
 	await sleep(3000);
-	job.pause();
+	await job.pause();
 
 	await sleep(3000);
-	job.resume();
+	await job.resume();
 
 	await sleep(3000);
 	await job.stop();

@@ -49,15 +49,21 @@ export async function spinner(
 		spinnerId: spinnerId,
 	});
 
-	// Create controller object with promise-aware stop
+	// Create controller object with async methods
 	const controller: SpinnerController = {
-		start: () => updateSpinnerState(spinnerId, "running"),
-		pause: () => updateSpinnerState(spinnerId, "paused"),
-		resume: () => updateSpinnerState(spinnerId, "running"),
-		stop: () => {
+		start: async () => {
+			updateSpinnerState(spinnerId, "running");
+		},
+		pause: async () => {
+			updateSpinnerState(spinnerId, "paused");
+		},
+		resume: async () => {
+			updateSpinnerState(spinnerId, "running");
+		},
+		stop: async () => {
 			updateSpinnerState(spinnerId, "stopped");
-			// Return the prompt promise so it can be awaited if needed
-			return promptPromise;
+			// Wait for the prompt to complete
+			await promptPromise;
 		},
 	};
 

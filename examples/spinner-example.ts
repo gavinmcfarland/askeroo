@@ -9,13 +9,13 @@ const flow = async () => {
 	// Example 1: Basic spinner with simple label
 	const job1 = await spinner("Loading data");
 
-	job1.start();
+	await job1.start();
 
 	await sleep(800);
-	job1.pause();
+	await job1.pause();
 
 	await sleep(800);
-	job1.resume();
+	await job1.resume();
 
 	await sleep(800);
 	await job1.stop();
@@ -29,13 +29,13 @@ const flow = async () => {
 	});
 
 	await sleep(500);
-	job2.start();
+	await job2.start();
 
 	await sleep(2000);
-	job2.pause();
+	await job2.pause();
 
 	await sleep(1000);
-	job2.resume();
+	await job2.resume();
 
 	await sleep(1500);
 	await job2.stop();
@@ -49,17 +49,17 @@ const flow = async () => {
 	});
 
 	await sleep(300);
-	job3.start();
+	await job3.start();
 
 	await sleep(1500);
-	job3.pause();
+	await job3.pause();
 	await sleep(800);
-	job3.resume();
+	await job3.resume();
 
 	await sleep(1000);
-	job3.pause();
+	await job3.pause();
 	await sleep(600);
-	job3.resume();
+	await job3.resume();
 
 	await sleep(1200);
 	await job3.stop();
