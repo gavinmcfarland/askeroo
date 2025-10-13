@@ -68,6 +68,8 @@ const tools = await multi({
 | --------------- | ----------------------------------------------- |
 | `Up/Down Arrow` | Navigate options                                |
 | `Space`         | Toggle current option                           |
+| `Shift+A`       | Select all options                              |
+| `Shift+D`       | Clear all selections                            |
 | `Return`        | Submit selection                                |
 | `Escape`        | Go back (if allowed)                            |
 | `1-9`           | Quick toggle by number (if `showNumbers: true`) |

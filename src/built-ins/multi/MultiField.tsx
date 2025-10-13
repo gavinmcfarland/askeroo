@@ -281,7 +281,9 @@ export const MultiField = ({
 							<Text color="yellow">escape</Text> go back,{" "}
 						</>
 					)}
-					<Text color="yellow">space</Text> select
+					<Text color="yellow">space</Text> select{" "}
+					{/* <Text color="yellow">shift+a</Text> all,{" "}
+					<Text color="yellow">shift+d</Text> clear */}
 					{options.searchable && (
 						<>
 							, <Text color="yellow">type</Text> to search
@@ -383,6 +385,26 @@ export const MultiField = ({
 							selectedIndex - (options.noneOption ? 1 : 0)
 					  ];
 				if (opt) toggleSelection(opt.value);
+				return;
+			}
+
+			// Shift+A to select all
+			if (key.shift && (input === "a" || input === "A")) {
+				const allValues = filteredOptions.map((opt) => opt.value);
+				setSelectedValues(allValues);
+				setError(null);
+				return;
+			}
+
+			// Shift+D to deselect all
+			if (key.shift && (input === "d" || input === "D")) {
+				// If noneOption is present, set to NONE_VALUE, otherwise clear all
+				if (options.noneOption) {
+					setSelectedValues([NONE_VALUE]);
+				} else {
+					setSelectedValues([]);
+				}
+				setError(null);
 				return;
 			}
 
