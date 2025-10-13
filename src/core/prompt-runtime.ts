@@ -46,6 +46,7 @@ export class PromptRuntime {
 	> = [];
 	private sigintHandler: (() => void) | null = null;
 	private cancelModeActive: boolean = false;
+	private ctrlCPressCount: number = 0;
 
 	// Public BACK token
 	public readonly BACK = BACK;
@@ -651,6 +652,7 @@ export class PromptRuntime {
 			this.sigintHandler = null;
 		}
 		this.cancelCallbacks = [];
+		this.ctrlCPressCount = 0;
 	}
 
 	/**
@@ -683,6 +685,29 @@ export class PromptRuntime {
 	 * Handle Ctrl+C from UI (called by useInput hook in PromptApp)
 	 */
 	handleCtrlC(): void {
+		// Increment Ctrl+C press count
+		this.ctrlCPressCount++;
+
+		// Force quit on second Ctrl+C press
+		if (this.ctrlCPressCount >= 2) {
+			debugLogger.log("FORCE_QUIT", {
+				message: "Second Ctrl+C detected, forcing exit",
+			});
+			console.log("\nForce quitting...");
+			process.exit(1);
+			return;
+		}
+
+		// First Ctrl+C - proceed with graceful cancellation
+		debugLogger.log("FIRST_CTRL_C", {
+			message: "First Ctrl+C detected, running cancel callbacks",
+		});
+
+		// Inform user they can press Ctrl+C again to force quit
+		// if (this.cancelCallbacks.length > 0) {
+		// 	console.log("\n(Press Ctrl+C again to force quit)");
+		// }
+
 		// Prepare results from collected answers
 		const allAnswers = this.state.getAllAnswers();
 		const results: Record<string, any> = {};

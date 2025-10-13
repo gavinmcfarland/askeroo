@@ -166,6 +166,11 @@ The flow replays automatically when the user navigates back, clearing subsequent
     });
     ```
 
+    **Cancellation Behavior:**
+
+    -   **First Ctrl+C**: Triggers `onCancel` callbacks for graceful cleanup. A hint message `"(Press Ctrl+C again to force quit)"` is displayed.
+    -   **Second Ctrl+C**: Forces immediate exit with `process.exit(1)`, bypassing any cleanup. Useful if cleanup is stuck or taking too long.
+
     Multiple cancel callbacks can be registered, and they will all be called when the flow is cancelled:
 
     ```ts

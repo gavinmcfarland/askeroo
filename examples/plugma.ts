@@ -266,12 +266,12 @@ const flow = async () => {
 		const result = await ask(flow, {
 			onCancel: async ({ results, cleanup }) => {
 				const cancel = await spinner("Canceling...", {
-					color: "red",
+					color: "magenta",
 				});
 
 				await cancel.start();
-				await sleep(1000);
-				await cancel.stop("Cancelled", { symbol: "●" });
+				await sleep(600);
+				await cancel.stop("Cancelled");
 				// cleanup(); // Clean up UI first
 				// console.log("Results:", results);
 				process.exit(0); // User controls exit
