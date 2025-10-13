@@ -9,6 +9,7 @@ import {
 	multi,
 	tasks,
 	note,
+	spinner,
 	completedFields,
 } from "../src/index.js";
 
@@ -264,7 +265,13 @@ const flow = async () => {
 	try {
 		const result = await ask(flow, {
 			onCancel: async ({ results, cleanup }) => {
-				await note("[Canceling...]{red}");
+				const cancel = await spinner("Canceling...", {
+					color: "red",
+				});
+
+				await cancel.start();
+				await sleep(1000);
+				await cancel.stop("Cancelled", { symbol: "●" });
 				// cleanup(); // Clean up UI first
 				// console.log("Results:", results);
 				process.exit(0); // User controls exit

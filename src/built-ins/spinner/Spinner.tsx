@@ -8,9 +8,16 @@ import type {
 	SpinnerState,
 	SpinnerLabel,
 	SpinnerStyle,
+	SpinnerSymbol,
 } from "./types.js";
 
-export type { SpinnerOptions, SpinnerStatus, SpinnerState, SpinnerLabel };
+export type {
+	SpinnerOptions,
+	SpinnerStatus,
+	SpinnerState,
+	SpinnerLabel,
+	SpinnerSymbol,
+};
 
 // Main component for the spinner plugin
 export const SpinnerDisplay = ({
@@ -77,6 +84,37 @@ export const SpinnerDisplay = ({
 	};
 
 	const getSymbol = (status: SpinnerStatus): string => {
+		// Check if currentSymbol is set in state
+		const customSymbol = spinnerState.currentSymbol || options.symbol;
+
+		if (customSymbol) {
+			// If it's a string, use it for all states
+			if (typeof customSymbol === "string") {
+				return customSymbol;
+			} else {
+				// It's a SpinnerSymbol object
+				const symbolObj = customSymbol as SpinnerSymbol;
+
+				// Handle running symbol (can be string or array)
+				if (status === "running" && symbolObj.running) {
+					if (Array.isArray(symbolObj.running)) {
+						return symbolObj.running[
+							spinnerFrame % symbolObj.running.length
+						];
+					}
+					return symbolObj.running;
+				}
+
+				// Handle other statuses
+				if (status === "idle" && symbolObj.idle) return symbolObj.idle;
+				if (status === "paused" && symbolObj.paused)
+					return symbolObj.paused;
+				if (status === "stopped" && symbolObj.stopped)
+					return symbolObj.stopped;
+			}
+		}
+
+		// Fall back to default symbols
 		return (
 			{
 				idle: "□",

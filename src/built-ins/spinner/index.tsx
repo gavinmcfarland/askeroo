@@ -13,6 +13,7 @@ export type {
 	SpinnerStatus,
 	SpinnerState,
 	SpinnerStyle,
+	SpinnerSymbol,
 } from "./types.js";
 
 // Track the most recent spinner ID
@@ -39,6 +40,12 @@ function updateSpinnerState(
 			? { ...currentState.currentStyle, ...currentStyle }
 			: currentState.currentStyle;
 
+		// Handle symbol update - if style contains a symbol, update currentSymbol
+		const updatedSymbol =
+			currentStyle?.symbol !== undefined
+				? currentStyle.symbol
+				: currentState.currentSymbol;
+
 		s.spinners.set(spinnerId, {
 			status,
 			currentLabel:
@@ -46,6 +53,7 @@ function updateSpinnerState(
 					? currentLabel
 					: currentState.currentLabel,
 			currentStyle: mergedStyle,
+			currentSymbol: updatedSymbol,
 			gracePeriodActive: false, // Clear grace period when state changes
 		});
 		s.revision++;
@@ -77,6 +85,7 @@ export async function spinner(
 		s.spinners.set(spinnerId, {
 			status: "idle",
 			currentStyle: initialStyle,
+			currentSymbol: options?.symbol,
 			gracePeriodActive: true, // Initially in grace period to avoid symbol flash
 		});
 		s.revision++;
@@ -106,6 +115,7 @@ export async function spinner(
 		dim: options?.dim,
 		hideOnCompletion: options?.hideOnCompletion,
 		submitDelay: options?.submitDelay,
+		symbol: options?.symbol,
 	});
 
 	// Create controller object with async methods

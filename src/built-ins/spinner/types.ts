@@ -5,10 +5,18 @@ export interface SpinnerLabel {
 	stopped?: string;
 }
 
+export interface SpinnerSymbol {
+	idle?: string;
+	running?: string | string[];
+	paused?: string;
+	stopped?: string;
+}
+
 export interface SpinnerStyle {
 	color?: string;
 	bgColor?: string;
 	dim?: boolean;
+	symbol?: string | SpinnerSymbol;
 }
 
 export interface SpinnerOptions {
@@ -19,6 +27,7 @@ export interface SpinnerOptions {
 	dim?: boolean;
 	hideOnCompletion?: boolean;
 	submitDelay?: number;
+	symbol?: string | SpinnerSymbol;
 }
 
 export type SpinnerStatus = "idle" | "running" | "paused" | "stopped";
@@ -28,6 +37,7 @@ export interface SpinnerState {
 	currentLabel?: string;
 	currentStyle?: SpinnerStyle;
 	gracePeriodActive?: boolean;
+	currentSymbol?: string | SpinnerSymbol;
 }
 
 export interface SpinnerController {

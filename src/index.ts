@@ -41,6 +41,7 @@ export {
 export {
 	spinner,
 	type SpinnerLabel,
+	type SpinnerSymbol,
 	type SpinnerStatus,
 	type SpinnerState,
 	type SpinnerStyle,

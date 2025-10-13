@@ -36,6 +36,7 @@ Creates and returns a spinner controller.
     -   `dim` - Make text dimmer
     -   `hideOnCompletion` - Hide spinner after completion
     -   `submitDelay` - Delay in milliseconds before auto-submitting after stop (default: 0)
+    -   `symbol` - Custom symbol(s) for spinner states (string, object, or animated array)
 
 **Returns:** `Promise<SpinnerController>`
 
@@ -68,10 +69,14 @@ The spinner has four states:
 
 ## Visual Indicators
 
+Default symbols:
+
 -   **idle**: Empty square □
 -   **running**: Animated spinner (⠂ - – — – -)
 -   **paused**: Filled circle ●
 -   **stopped**: Filled square ■
+
+You can customize these symbols using the `symbol` option (see Custom Symbols section below).
 
 ## Features
 
@@ -213,6 +218,84 @@ await job.stop("Success!", { color: "green" });
 ```
 
 This is useful for showing success/completion messages that users should see before moving on.
+
+### 8. Custom Symbols
+
+Customize the spinner symbols to match your brand or preference:
+
+#### Simple String Symbol
+
+Replace just the running animation with a single symbol:
+
+```typescript
+const job = await spinner("Loading...", {
+    symbol: "🔄",
+});
+
+await job.start();
+// Shows: 🔄 Loading...
+```
+
+#### State-specific Symbols
+
+Define different symbols for each state:
+
+```typescript
+const job = await spinner("Processing...", {
+    symbol: {
+        idle: "⚪",
+        running: "🔵",
+        paused: "🟡",
+        stopped: "🟢",
+    },
+});
+
+await job.start(); // Shows: 🔵 Processing...
+await job.pause(); // Shows: 🟡 Processing...
+await job.resume(); // Shows: 🔵 Processing...
+await job.stop(); // Shows: 🟢 Processing...
+```
+
+#### Animated Symbols
+
+Create custom animations using an array:
+
+```typescript
+const job = await spinner("Syncing...", {
+    symbol: {
+        running: ["◐", "◓", "◑", "◒"],
+        stopped: "✓",
+    },
+});
+
+await job.start();
+// Animates through: ◐ → ◓ → ◑ → ◒ → ◐ ...
+```
+
+#### Dynamic Symbol Changes
+
+Change symbols on the fly through the style parameter:
+
+```typescript
+const job = await spinner("Downloading...", {
+    symbol: "⬇️",
+});
+
+await job.start();
+await sleep(2000);
+
+await job.start("Uploading...", { symbol: "⬆️" });
+await sleep(2000);
+
+await job.stop("Transfer complete!", { symbol: "✔️" });
+```
+
+**Symbol Options:**
+
+-   **String**: Uses the same symbol for all states (useful for dynamic changes)
+-   **Object**: Define different symbols for each state (`idle`, `running`, `paused`, `stopped`)
+-   **Array** (for `running` state in object): Creates an animated sequence
+-   Symbols merge with existing styles - specify only what changes
 
 ## Complete Examples
 
