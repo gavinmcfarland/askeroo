@@ -7,7 +7,10 @@ function sleep(ms: number) {
 
 const flow = async () => {
 	// Example 1: Basic spinner with simple label
-	const job1 = await spinner("Loading data");
+	const job1 = await spinner("Cancelling...", {
+		color: "red",
+		dim: true,
+	});
 
 	await job1.start();
 
@@ -18,7 +21,9 @@ const flow = async () => {
 	await job1.resume();
 
 	await sleep(800);
-	await job1.stop();
+	await job1.stop("Cancelled!", {
+		dim: false,
+	});
 
 	// Example 2: Spinner with state-specific labels
 	const job2 = await spinner({

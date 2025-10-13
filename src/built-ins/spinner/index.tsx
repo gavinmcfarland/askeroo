@@ -4,7 +4,12 @@ import { spinnerStore } from "./spinner-store.js";
 import type { SpinnerOptions, SpinnerController } from "./types.js";
 
 // Re-export types
-export type { SpinnerLabel, SpinnerStatus, SpinnerState } from "./types.js";
+export type {
+	SpinnerLabel,
+	SpinnerStatus,
+	SpinnerState,
+	SpinnerStyle,
+} from "./types.js";
 
 // Track the most recent spinner ID
 let currentSpinnerId: string | null = null;
@@ -19,16 +24,24 @@ const spinnerInternal = createPrompt<SpinnerOptions, void>({
 function updateSpinnerState(
 	spinnerId: string,
 	status: "idle" | "running" | "paused" | "stopped",
-	currentLabel?: string
+	currentLabel?: string,
+	currentStyle?: SpinnerOptions["style"]
 ) {
 	spinnerStore.update((s) => {
 		const currentState = s.spinners.get(spinnerId) || { status: "idle" };
+
+		// Merge style with existing style instead of replacing
+		const mergedStyle = currentStyle
+			? { ...currentState.currentStyle, ...currentStyle }
+			: currentState.currentStyle;
+
 		s.spinners.set(spinnerId, {
 			status,
 			currentLabel:
 				currentLabel !== undefined
 					? currentLabel
 					: currentState.currentLabel,
+			currentStyle: mergedStyle,
 		});
 		s.revision++;
 	});
@@ -36,7 +49,8 @@ function updateSpinnerState(
 
 // Public API function
 export async function spinner(
-	label?: string | SpinnerOptions["label"]
+	label?: string | SpinnerOptions["label"],
+	style?: SpinnerOptions["style"]
 ): Promise<SpinnerController> {
 	// Generate unique spinner ID
 	const spinnerId = `spinner_${Date.now()}_${Math.random()
@@ -46,7 +60,7 @@ export async function spinner(
 
 	// Initialize spinner as idle in the store
 	spinnerStore.update((s) => {
-		s.spinners.set(spinnerId, { status: "idle" });
+		s.spinners.set(spinnerId, { status: "idle", currentStyle: style });
 		s.revision++;
 	});
 
@@ -55,21 +69,22 @@ export async function spinner(
 	const promptPromise = spinnerInternal({
 		label: label,
 		spinnerId: spinnerId,
+		style: style,
 	});
 
 	// Create controller object with async methods
 	const controller: SpinnerController = {
-		start: async (text?: string) => {
-			updateSpinnerState(spinnerId, "running", text);
+		start: async (text?: string, style?: SpinnerOptions["style"]) => {
+			updateSpinnerState(spinnerId, "running", text, style);
 		},
-		pause: async (text?: string) => {
-			updateSpinnerState(spinnerId, "paused", text);
+		pause: async (text?: string, style?: SpinnerOptions["style"]) => {
+			updateSpinnerState(spinnerId, "paused", text, style);
 		},
-		resume: async (text?: string) => {
-			updateSpinnerState(spinnerId, "running", text);
+		resume: async (text?: string, style?: SpinnerOptions["style"]) => {
+			updateSpinnerState(spinnerId, "running", text, style);
 		},
-		stop: async (text?: string) => {
-			updateSpinnerState(spinnerId, "stopped", text);
+		stop: async (text?: string, style?: SpinnerOptions["style"]) => {
+			updateSpinnerState(spinnerId, "stopped", text, style);
 			// Wait for the prompt to complete
 			await promptPromise;
 		},

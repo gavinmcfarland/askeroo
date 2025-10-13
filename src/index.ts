@@ -43,6 +43,7 @@ export {
 	type SpinnerLabel,
 	type SpinnerStatus,
 	type SpinnerState,
+	type SpinnerStyle,
 } from "./built-ins/spinner/index.js";
 export {
 	completedFields,

@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
+import chalk from "chalk";
 import { spinnerStore } from "./spinner-store.js";
 import type {
 	SpinnerOptions,
 	SpinnerStatus,
 	SpinnerState,
 	SpinnerLabel,
+	SpinnerStyle,
 } from "./types.js";
 
 export type { SpinnerOptions, SpinnerStatus, SpinnerState, SpinnerLabel };
@@ -102,15 +104,41 @@ export const SpinnerDisplay = ({
 		);
 	};
 
-	const getColor = (status: SpinnerStatus): string => {
-		return (
-			{
-				idle: "gray",
-				running: "grey",
-				paused: "grey",
-				stopped: "grey",
-			}[status] || "gray"
-		);
+	const applyStyles = (text: string): string => {
+		// Get current style or fall back to options style
+		const style = spinnerState.currentStyle || options.style;
+
+		if (!style) {
+			return text;
+		}
+
+		let styledText: string = text;
+
+		// Apply color
+		if (style.color && (chalk as any)[style.color]) {
+			const colorFn = (chalk as any)[style.color];
+			if (typeof colorFn === "function") {
+				styledText = colorFn(styledText) as string;
+			}
+		}
+
+		// Apply background color
+		if (style.bgColor) {
+			const bgKey = `bg${style.bgColor
+				.charAt(0)
+				.toUpperCase()}${style.bgColor.slice(1)}`;
+			const bgFn = (chalk as any)[bgKey];
+			if (typeof bgFn === "function") {
+				styledText = bgFn(styledText) as string;
+			}
+		}
+
+		// Apply dim
+		if (style.dim) {
+			styledText = chalk.dim(styledText) as string;
+		}
+
+		return styledText;
 	};
 
 	// Auto-submit when stopped
@@ -127,11 +155,14 @@ export const SpinnerDisplay = ({
 		return null;
 	}
 
+	const displayText = `${getSymbol(spinnerState.status)} ${getLabel(
+		spinnerState.status
+	)}`;
+	const styledText = applyStyles(displayText);
+
 	return (
 		<Box>
-			<Text color={getColor(spinnerState.status)}>
-				{getSymbol(spinnerState.status)} {getLabel(spinnerState.status)}
-			</Text>
+			<Text>{styledText}</Text>
 		</Box>
 	);
 };
