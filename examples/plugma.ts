@@ -19,6 +19,8 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const flow = async () => {
 	await note("[ Plugma ]{bgMagenta} [v2.1.0]{dim}");
 
+	await note("[Press Ctrl+C to cancel]{dim}");
+
 	await completedFields();
 
 	const answers = await group(
@@ -266,11 +268,12 @@ const flow = async () => {
 		const result = await ask(flow, {
 			onCancel: async ({ results, cleanup }) => {
 				const cancel = await spinner("Canceling...", {
-					color: "magenta",
+					color: "yellow",
+					hideOnCompletion: true,
 				});
 
 				await cancel.start();
-				await sleep(600);
+				await sleep(800);
 				await cancel.stop("Cancelled");
 				// cleanup(); // Clean up UI first
 				// console.log("Results:", results);
