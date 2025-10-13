@@ -74,8 +74,41 @@ export const completedFields = createPrompt<CompletedFieldsOptions, void>({
 							return value.join(", ");
 						}
 						if (typeof value === "boolean") {
+							// For confirm fields, try to get the label from options
+							if (
+								props?.options &&
+								Array.isArray(props.options)
+							) {
+								const option = props.options.find(
+									(opt: any) => opt.value === value
+								);
+								return option
+									? option.label
+									: value
+									? "Yes"
+									: "No";
+							}
 							return value ? "Yes" : "No";
 						}
+
+						// Handle falsey values (null, undefined, empty string, 0, false)
+						if (!value && value !== 0 && value !== false) {
+							if (value === null) return "None";
+							if (value === undefined) return "Not set";
+							if (value === "") return "Empty";
+							return "None";
+						}
+
+						// For radio fields, get the label from options
+						if (props?.options && Array.isArray(props.options)) {
+							const option = props.options.find(
+								(opt: any) => opt.value === value
+							);
+							if (option) {
+								return option.label;
+							}
+						}
+
 						return String(value);
 					};
 
