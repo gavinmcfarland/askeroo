@@ -105,10 +105,14 @@ export const SpinnerDisplay = ({
 	};
 
 	const applyStyles = (text: string): string => {
-		// Get current style or fall back to options style
-		const style = spinnerState.currentStyle || options.style;
+		// Get current style from state or fall back to options
+		const style = spinnerState.currentStyle || {
+			color: options.color,
+			bgColor: options.bgColor,
+			dim: options.dim,
+		};
 
-		if (!style) {
+		if (!style.color && !style.bgColor && style.dim === undefined) {
 			return text;
 		}
 
@@ -141,14 +145,24 @@ export const SpinnerDisplay = ({
 		return styledText;
 	};
 
-	// Auto-submit when stopped
+	// Auto-submit when stopped (with optional delay)
 	useEffect(() => {
 		if (node.state !== "active") return;
 
 		if (spinnerState.status === "stopped" && events.onSubmit) {
-			events.onSubmit({ type: "auto" });
+			const delay =
+				options.submitDelay !== undefined ? options.submitDelay : 0;
+			const timer = setTimeout(() => {
+				events.onSubmit({ type: "auto" });
+			}, delay);
+			return () => clearTimeout(timer);
 		}
-	}, [spinnerState.status, node.state, events.onSubmit]);
+	}, [spinnerState.status, node.state, events.onSubmit, options.submitDelay]);
+
+	// Hide if hideOnCompletion is true and spinner is completed
+	if (options.hideOnCompletion && node.state === "completed") {
+		return null;
+	}
 
 	// Don't render until we're ready to show
 	if (!shouldShow) {

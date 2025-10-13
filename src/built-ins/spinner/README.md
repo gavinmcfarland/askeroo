@@ -23,14 +23,19 @@ await ask(flow);
 
 ## API
 
-### `spinner(label?, style?)`
+### `spinner(label?, options?)`
 
 Creates and returns a spinner controller.
 
 **Parameters:**
 
 -   `label` (optional): String or object with state-specific labels
--   `style` (optional): Style object with color, bgColor, and dim properties
+-   `options` (optional): Configuration object with styling and behavior options
+    -   `color` - Text color (any chalk color)
+    -   `bgColor` - Background color
+    -   `dim` - Make text dimmer
+    -   `hideOnCompletion` - Hide spinner after completion
+    -   `submitDelay` - Delay in milliseconds before auto-submitting after stop (default: 0)
 
 **Returns:** `Promise<SpinnerController>`
 
@@ -104,7 +109,7 @@ await job.stop("Connection established!");
 
 ### 3. Styling with Chalk
 
-Apply colors, backgrounds, and dimming:
+Apply colors, backgrounds, and dimming through the options object:
 
 ```typescript
 // Set initial style
@@ -118,15 +123,11 @@ await job.start("Running...", { color: "yellow" });
 await job.stop("Complete!", { color: "green" });
 ```
 
-**SpinnerStyle Interface:**
+**Available Style Options:**
 
-```typescript
-interface SpinnerStyle {
-    color?: string; // Any chalk color: "red", "blue", "green", "cyan", etc.
-    bgColor?: string; // Background: "red", "blue", "yellow", etc.
-    dim?: boolean; // Makes text dimmer
-}
-```
+-   `color` - Any chalk color: "red", "blue", "green", "cyan", etc.
+-   `bgColor` - Background: "red", "blue", "yellow", etc.
+-   `dim` - Makes text dimmer (boolean)
 
 **Available Colors:**
 
@@ -161,6 +162,41 @@ If you start the spinner immediately (within 100ms), the idle state won't briefl
 const job = await spinner("Loading");
 await job.start(); // Goes straight to running, no idle flash
 ```
+
+### 6. Hide on Completion
+
+Hide the spinner after it completes, like other prompts:
+
+```typescript
+const job = await spinner("Downloading...", {
+    color: "cyan",
+    hideOnCompletion: true,
+});
+
+await job.start();
+await sleep(2000);
+await job.stop(); // Spinner disappears after completion
+```
+
+This is useful for temporary status indicators that don't need to remain visible after completion.
+
+### 7. Submit Delay
+
+Add a delay before the spinner auto-submits, allowing users to see the final message:
+
+```typescript
+const job = await spinner("Processing...", {
+    color: "cyan",
+    submitDelay: 1500, // Wait 1.5 seconds after stopping
+});
+
+await job.start();
+await sleep(2000);
+await job.stop("Success!", { color: "green" });
+// "Success!" message visible for 1.5 seconds before continuing
+```
+
+This is useful for showing success/completion messages that users should see before moving on.
 
 ## Complete Examples
 
@@ -199,6 +235,7 @@ const flow = async () => {
     const job = await spinner("Preparing deployment...", {
         color: "blue",
         dim: true,
+        submitDelay: 2000, // Show final message for 2 seconds
     });
 
     await sleep(1000);
@@ -218,6 +255,7 @@ const flow = async () => {
     await job.stop("Deployment successful!", {
         color: "green",
     });
+    // Success message visible for 2 seconds
 
     return "Deployed!";
 };
@@ -229,13 +267,16 @@ await ask(flow);
 
 ```typescript
 const flow = async () => {
-    // First spinner
-    const download = await spinner("Downloading...", { color: "cyan" });
+    // First spinner - hides when complete
+    const download = await spinner("Downloading...", {
+        color: "cyan",
+        hideOnCompletion: true,
+    });
     await download.start();
     await sleep(2000);
     await download.stop("Downloaded!", { color: "green" });
 
-    // Second spinner
+    // Second spinner - stays visible
     const install = await spinner("Installing...", { color: "blue" });
     await install.start();
     await sleep(2000);
@@ -252,6 +293,8 @@ const flow = async () => {
 3. **Set base styles once** - Use style merging for updates
 4. **Meaningful text updates** - Keep users informed of progress
 5. **Use colors semantically** - Green for success, yellow for warnings, red for errors
+6. **Use `hideOnCompletion` for temporary status** - Hide spinners that don't need to remain visible
+7. **Use `submitDelay` for important messages** - Give users time to read completion messages
 
 ## Helper Function
 

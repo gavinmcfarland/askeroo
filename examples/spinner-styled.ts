@@ -7,7 +7,10 @@ function sleep(ms: number) {
 
 const flow = async () => {
 	// Example 1: Spinner with initial style
-	const job1 = await spinner("Processing...", { color: "cyan", dim: false });
+	const job1 = await spinner("Processing...", {
+		color: "cyan",
+		dim: false,
+	});
 
 	await sleep(500);
 	await job1.start();

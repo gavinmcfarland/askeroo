@@ -14,7 +14,11 @@ export interface SpinnerStyle {
 export interface SpinnerOptions {
 	label?: string | SpinnerLabel;
 	spinnerId?: string;
-	style?: SpinnerStyle;
+	color?: string;
+	bgColor?: string;
+	dim?: boolean;
+	hideOnCompletion?: boolean;
+	submitDelay?: number;
 }
 
 export type SpinnerStatus = "idle" | "running" | "paused" | "stopped";
