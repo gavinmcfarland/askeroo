@@ -26,7 +26,10 @@
         "dev": "tsc --watch",
         "example": "node scripts/run-example.js",
         "test": "npm run build && node dist/test.js --",
-        "prepublishOnly": "npm run build"
+        "prepublishOnly": "npm run build",
+        "version": "lerna version",
+        "publish": "lerna publish from-package",
+        "publish:ci": "lerna publish from-package --yes"
     },
     "keywords": [
         "cli",
@@ -53,6 +56,7 @@
         "@types/node": "^22.0.0",
         "@types/react": "^18.2.0",
         "@types/react-dom": "^18.3.7",
+        "lerna": "^9.0.0",
         "typescript": "^5.5.0"
     },
     "engines": {
