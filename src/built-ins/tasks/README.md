@@ -89,7 +89,7 @@ await tasks([
     },
 ]);
 
-// Hidden tasks (still execute but not shown)
+// Hidden tasks (still execute but not shown unless they error/warn)
 await tasks([
     {
         label: "Visible task",
@@ -98,10 +98,18 @@ await tasks([
         },
     },
     {
-        label: "Hidden task",
+        label: "Hidden task (success)",
         visible: false,
         action: async () => {
             console.log("This task runs but is not shown in the UI");
+        },
+    },
+    {
+        label: "Hidden task (error) - will be visible!",
+        visible: false,
+        continueOnError: true,
+        action: async () => {
+            throw new Error("This will be shown because it errored");
         },
     },
 ]);
@@ -134,15 +142,15 @@ await tasks([
 
 ## Options
 
-| Prop              | Type                  | Default  | Description                                                         |
-| ----------------- | --------------------- | -------- | ------------------------------------------------------------------- |
-| `label`           | `string \| TaskLabel` | Required | Task description or dynamic labels                                  |
-| `action`          | `() => Promise<void>` | -        | Task function to execute                                            |
-| `tasks`           | `Task[]`              | -        | Nested subtasks                                                     |
-| `concurrent`      | `boolean`             | `false`  | Execute subtasks in parallel                                        |
-| `continueOnError` | `boolean`             | `false`  | Continue execution on task failure                                  |
-| `visible`         | `boolean`             | `true`   | Whether to display the task (still runs if `false`)                 |
-| `dimmed`          | `boolean`             | `false`  | Dim the task and all its subtasks (applies recursively to children) |
+| Prop              | Type                  | Default  | Description                                                                 |
+| ----------------- | --------------------- | -------- | --------------------------------------------------------------------------- |
+| `label`           | `string \| TaskLabel` | Required | Task description or dynamic labels                                          |
+| `action`          | `() => Promise<void>` | -        | Task function to execute                                                    |
+| `tasks`           | `Task[]`              | -        | Nested subtasks                                                             |
+| `concurrent`      | `boolean`             | `false`  | Execute subtasks in parallel                                                |
+| `continueOnError` | `boolean`             | `false`  | Continue execution on task failure                                          |
+| `visible`         | `boolean`             | `true`   | Whether to display the task (still runs if `false`; shown if error/warning) |
+| `dimmed`          | `boolean`             | `false`  | Dim the task and all its subtasks (applies recursively to children)         |
 
 | Function          | Description            |
 | ----------------- | ---------------------- |

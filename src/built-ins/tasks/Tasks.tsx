@@ -472,8 +472,12 @@ export const TasksDisplay = ({
 		const indent = "  ".repeat(level);
 		const isDimmed = task.dimmed || parentDimmed;
 
-		// If task is not visible, skip rendering but still render children
-		if (task.visible === false) {
+		// If task is not visible and doesn't have error/warning, skip rendering but still render children
+		if (
+			task.visible === false &&
+			state.status !== "error" &&
+			state.status !== "warning"
+		) {
 			return task.tasks?.map((subtask, subIndex) =>
 				renderTask(subtask, subIndex, `${taskId}.`, level, isDimmed)
 			);
@@ -537,8 +541,13 @@ export const TasksDisplay = ({
 				const state = dynStates.get(taskIds[i]);
 				if (!state) return null;
 
-				// Skip rendering if task is not visible
-				if (task.visible === false) return null;
+				// Skip rendering if task is not visible and doesn't have error/warning
+				if (
+					task.visible === false &&
+					state.status !== "error" &&
+					state.status !== "warning"
+				)
+					return null;
 
 				const isDimmed = task.dimmed || false;
 
