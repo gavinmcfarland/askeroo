@@ -15,6 +15,7 @@ export interface Task {
 	continueOnError?: boolean;
 	completeOn?: CompleteOn;
 	visible?: boolean;
+	dimmed?: boolean;
 }
 
 export interface TasksOptions {

@@ -437,16 +437,24 @@ export const TasksDisplay = ({
 	};
 
 	// Helper to render error/warning messages
-	const renderMessages = (state: TaskState, marginLeft: number) => (
+	const renderMessages = (
+		state: TaskState,
+		marginLeft: number,
+		isDimmed = false
+	) => (
 		<>
 			{state.warning && (
 				<Box marginLeft={marginLeft}>
-					<Text color="yellow">{state.warning}</Text>
+					<Text color="yellow" dimColor={isDimmed}>
+						{state.warning}
+					</Text>
 				</Box>
 			)}
 			{state.error && (
 				<Box marginLeft={marginLeft}>
-					<Text color="red">{state.error}</Text>
+					<Text color="red" dimColor={isDimmed}>
+						{state.error}
+					</Text>
 				</Box>
 			)}
 		</>
@@ -456,28 +464,36 @@ export const TasksDisplay = ({
 		task: Task,
 		index: number,
 		parentId = "",
-		level = 0
+		level = 0,
+		parentDimmed = false
 	): React.ReactNode => {
 		const taskId = getTaskId(task, index, parentId);
 		const state = taskStates.get(taskId) || { status: "idle" };
 		const indent = "  ".repeat(level);
+		const isDimmed = task.dimmed || parentDimmed;
 
 		// If task is not visible, skip rendering but still render children
 		if (task.visible === false) {
 			return task.tasks?.map((subtask, subIndex) =>
-				renderTask(subtask, subIndex, `${taskId}.`, level)
+				renderTask(subtask, subIndex, `${taskId}.`, level, isDimmed)
 			);
 		}
 
 		return (
 			<Box key={taskId} flexDirection="column">
-				<Text color={getColor(state.status)}>
+				<Text color={getColor(state.status)} dimColor={isDimmed}>
 					{indent}
 					{getSymbol(state.status)} {getLabel(task, state.status)}
 				</Text>
-				{renderMessages(state, indent.length + 2)}
+				{renderMessages(state, indent.length + 2, isDimmed)}
 				{task.tasks?.map((subtask, subIndex) =>
-					renderTask(subtask, subIndex, `${taskId}.`, level + 1)
+					renderTask(
+						subtask,
+						subIndex,
+						`${taskId}.`,
+						level + 1,
+						isDimmed
+					)
 				)}
 			</Box>
 		);
@@ -524,13 +540,18 @@ export const TasksDisplay = ({
 				// Skip rendering if task is not visible
 				if (task.visible === false) return null;
 
+				const isDimmed = task.dimmed || false;
+
 				return (
 					<Box key={taskIds[i]} flexDirection="column">
-						<Text color={getColor(state.status)}>
+						<Text
+							color={getColor(state.status)}
+							dimColor={isDimmed}
+						>
 							{getSymbol(state.status)}{" "}
 							{getLabel(task, state.status)}
 						</Text>
-						{renderMessages(state, 2)}
+						{renderMessages(state, 2, isDimmed)}
 					</Box>
 				);
 			})

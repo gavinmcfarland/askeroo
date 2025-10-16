@@ -105,18 +105,44 @@ await tasks([
         },
     },
 ]);
+
+// Dimmed tasks (shown but dimmed)
+await tasks([
+    {
+        label: "Normal task",
+        action: async () => {
+            console.log("This task is shown normally");
+        },
+    },
+    {
+        label: "Dimmed task",
+        dimmed: true,
+        action: async () => {
+            console.log("This task and its subtasks are dimmed");
+        },
+        tasks: [
+            {
+                label: "Subtask (also dimmed)",
+                action: async () => {
+                    console.log("Inherits dimming from parent");
+                },
+            },
+        ],
+    },
+]);
 ```
 
 ## Options
 
-| Prop              | Type                  | Default  | Description                                         |
-| ----------------- | --------------------- | -------- | --------------------------------------------------- |
-| `label`           | `string \| TaskLabel` | Required | Task description or dynamic labels                  |
-| `action`          | `() => Promise<void>` | -        | Task function to execute                            |
-| `tasks`           | `Task[]`              | -        | Nested subtasks                                     |
-| `concurrent`      | `boolean`             | `false`  | Execute subtasks in parallel                        |
-| `continueOnError` | `boolean`             | `false`  | Continue execution on task failure                  |
-| `visible`         | `boolean`             | `true`   | Whether to display the task (still runs if `false`) |
+| Prop              | Type                  | Default  | Description                                                         |
+| ----------------- | --------------------- | -------- | ------------------------------------------------------------------- |
+| `label`           | `string \| TaskLabel` | Required | Task description or dynamic labels                                  |
+| `action`          | `() => Promise<void>` | -        | Task function to execute                                            |
+| `tasks`           | `Task[]`              | -        | Nested subtasks                                                     |
+| `concurrent`      | `boolean`             | `false`  | Execute subtasks in parallel                                        |
+| `continueOnError` | `boolean`             | `false`  | Continue execution on task failure                                  |
+| `visible`         | `boolean`             | `true`   | Whether to display the task (still runs if `false`)                 |
+| `dimmed`          | `boolean`             | `false`  | Dim the task and all its subtasks (applies recursively to children) |
 
 | Function          | Description            |
 | ----------------- | ---------------------- |
@@ -142,6 +168,7 @@ interface Task {
     concurrent?: boolean;
     continueOnError?: boolean;
     visible?: boolean;
+    dimmed?: boolean;
 }
 
 interface TaskLabel {
