@@ -14,6 +14,7 @@ export interface Task {
 	concurrent?: boolean;
 	continueOnError?: boolean;
 	completeOn?: CompleteOn;
+	visible?: boolean;
 }
 
 export interface TasksOptions {

@@ -88,17 +88,35 @@ await tasks([
         },
     },
 ]);
+
+// Hidden tasks (still execute but not shown)
+await tasks([
+    {
+        label: "Visible task",
+        action: async () => {
+            console.log("This task is visible");
+        },
+    },
+    {
+        label: "Hidden task",
+        visible: false,
+        action: async () => {
+            console.log("This task runs but is not shown in the UI");
+        },
+    },
+]);
 ```
 
 ## Options
 
-| Prop              | Type                  | Default  | Description                        |
-| ----------------- | --------------------- | -------- | ---------------------------------- |
-| `label`           | `string \| TaskLabel` | Required | Task description or dynamic labels |
-| `action`          | `() => Promise<void>` | -        | Task function to execute           |
-| `tasks`           | `Task[]`              | -        | Nested subtasks                    |
-| `concurrent`      | `boolean`             | `false`  | Execute subtasks in parallel       |
-| `continueOnError` | `boolean`             | `false`  | Continue execution on task failure |
+| Prop              | Type                  | Default  | Description                                         |
+| ----------------- | --------------------- | -------- | --------------------------------------------------- |
+| `label`           | `string \| TaskLabel` | Required | Task description or dynamic labels                  |
+| `action`          | `() => Promise<void>` | -        | Task function to execute                            |
+| `tasks`           | `Task[]`              | -        | Nested subtasks                                     |
+| `concurrent`      | `boolean`             | `false`  | Execute subtasks in parallel                        |
+| `continueOnError` | `boolean`             | `false`  | Continue execution on task failure                  |
+| `visible`         | `boolean`             | `true`   | Whether to display the task (still runs if `false`) |
 
 | Function          | Description            |
 | ----------------- | ---------------------- |
@@ -123,6 +141,7 @@ interface Task {
     tasks?: Task[];
     concurrent?: boolean;
     continueOnError?: boolean;
+    visible?: boolean;
 }
 
 interface TaskLabel {

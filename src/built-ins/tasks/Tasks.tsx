@@ -462,6 +462,13 @@ export const TasksDisplay = ({
 		const state = taskStates.get(taskId) || { status: "idle" };
 		const indent = "  ".repeat(level);
 
+		// If task is not visible, skip rendering but still render children
+		if (task.visible === false) {
+			return task.tasks?.map((subtask, subIndex) =>
+				renderTask(subtask, subIndex, `${taskId}.`, level)
+			);
+		}
+
 		return (
 			<Box key={taskId} flexDirection="column">
 				<Text color={getColor(state.status)}>
@@ -513,6 +520,9 @@ export const TasksDisplay = ({
 			.map((task, i) => {
 				const state = dynStates.get(taskIds[i]);
 				if (!state) return null;
+
+				// Skip rendering if task is not visible
+				if (task.visible === false) return null;
 
 				return (
 					<Box key={taskIds[i]} flexDirection="column">
