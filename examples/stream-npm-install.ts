@@ -1,4 +1,4 @@
-import { ask, note, stream } from "../src/index.js";
+import { ask, note, stream, spawnWithColors } from "../src/index.js";
 import { spawn } from "child_process";
 
 /**
@@ -79,7 +79,7 @@ async function installWithPnpm(packages: string[]) {
 
 	return new Promise<void>((resolve, reject) => {
 		// pnpm uses "add" command (like yarn)
-		const pnpm = spawn("pnpm", ["add", ...packages]);
+		const pnpm = spawnWithColors("pnpm", ["add", ...packages]);
 
 		// Capture stdout
 		pnpm.stdout.on("data", (data) => {
