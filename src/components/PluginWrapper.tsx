@@ -64,8 +64,24 @@ export function PluginWrapper({
 		};
 	}, [props.onSubmit, promptId]);
 
+	// Memoize the wrapped onComplete to automatically use the correct promptId
+	const wrappedOnComplete = useMemo(() => {
+		if (!props.onComplete) return undefined;
+		const originalOnComplete = props.onComplete;
+		const capturedPromptId = promptId;
+
+		return () => {
+			// Call onComplete with the node's promptId, not whatever the component passes
+			originalOnComplete(capturedPromptId);
+		};
+	}, [props.onComplete, promptId]);
+
 	// Transform flat props into structured format
-	const transformedProps = transformPropsToStructure(props, wrappedOnSubmit);
+	const transformedProps = transformPropsToStructure(
+		props,
+		wrappedOnSubmit,
+		wrappedOnComplete
+	);
 
 	// Render plugin component directly
 	return <PluginComponent {...transformedProps} />;
@@ -76,7 +92,8 @@ export function PluginWrapper({
  */
 function transformPropsToStructure(
 	props: Record<string, any>,
-	wrappedOnSubmit?: any
+	wrappedOnSubmit?: any,
+	wrappedOnComplete?: any
 ) {
 	// Define known node properties
 	const nodeProps = [
@@ -96,6 +113,7 @@ function transformPropsToStructure(
 	const eventProps = [
 		"onSubmit",
 		"onBack",
+		"onComplete",
 		"onHintChange",
 		"onValidate",
 		"onNavigate",
@@ -116,9 +134,12 @@ function transformPropsToStructure(
 		}
 	}
 
-	// Use the wrapped onSubmit if provided (it's already memoized)
+	// Use the wrapped callbacks if provided (they're already memoized)
 	if (wrappedOnSubmit) {
 		events.onSubmit = wrappedOnSubmit;
+	}
+	if (wrappedOnComplete) {
+		events.onComplete = wrappedOnComplete;
 	}
 
 	return { node, options, events };

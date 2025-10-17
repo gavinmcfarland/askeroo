@@ -22,6 +22,7 @@ interface RecursiveGroupContainerProps {
 	treeManager: PromptTreeManager;
 	onSubmit?: (value: any) => void;
 	onBack?: () => void;
+	onComplete?: (promptId: string) => void;
 	onHintChange?: (hint: React.ReactNode) => void;
 	hintText?: React.ReactNode; // Hint text for the currently active field
 	showOnlyActiveAndCompleted?: boolean; // Control visibility of pending fields
@@ -34,6 +35,7 @@ export function RecursiveGroupContainer({
 	treeManager,
 	onSubmit,
 	onBack,
+	onComplete,
 	onHintChange,
 	hintText,
 	showOnlyActiveAndCompleted = false,
@@ -215,7 +217,8 @@ export function RecursiveGroupContainer({
 		const renderedChildren = childrenToRender.map((child, index) => {
 			// Determine hint text for this specific child
 			const childHintText = child.active
-				? (hintsByPromptId?.get(child.id) || (child.id === item.id ? hintText : null))
+				? hintsByPromptId?.get(child.id) ||
+				  (child.id === item.id ? hintText : null)
 				: null;
 
 			return (
@@ -225,7 +228,10 @@ export function RecursiveGroupContainer({
 					treeManager={treeManager}
 					onSubmit={isFrozen || child.frozen ? undefined : onSubmit}
 					onBack={isFrozen || child.frozen ? undefined : onBack}
-					onHintChange={isFrozen || child.frozen ? undefined : onHintChange}
+					onComplete={onComplete}
+					onHintChange={
+						isFrozen || child.frozen ? undefined : onHintChange
+					}
 					hintText={childHintText}
 					showOnlyActiveAndCompleted={
 						showOnlyActiveAndCompleted ||
@@ -300,14 +306,20 @@ export function RecursiveGroupContainer({
 			return null;
 		}
 
-		// For showOnlyActiveAndCompleted mode, only show active or completed fields
-		if (showOnlyActiveAndCompleted && !isActive && !isCompleted) {
+		// For showOnlyActiveAndCompleted mode, only show active, completed, or visited fields
+		// Visited-but-not-completed nodes are those with deferred completion (like streams)
+		if (
+			showOnlyActiveAndCompleted &&
+			!isActive &&
+			!isCompleted &&
+			!isVisited
+		) {
 			return null;
 		}
 
 		// Determine hint text for this specific field node
 		const fieldHintText = item.active
-			? (hintsByPromptId?.get(item.id) || hintText)
+			? hintsByPromptId?.get(item.id) || hintText
 			: null;
 
 		// Get initial value
@@ -446,15 +458,27 @@ export function RecursiveGroupContainer({
 					initialValue={getInitialValue()}
 					state={pluginState}
 					completedValue={isCompleted ? item.value : undefined}
-					onSubmit={isActive && !isFrozen && !item.frozen ? onSubmit : () => {}}
-					onBack={isActive && !isFrozen && !item.frozen ? onBack : undefined}
+					onSubmit={
+						isActive && !isFrozen && !item.frozen
+							? onSubmit
+							: () => {}
+					}
+					onBack={
+						isActive && !isFrozen && !item.frozen
+							? onBack
+							: undefined
+					}
+					onComplete={onComplete}
 					allowBack={effectiveAllowBack}
 					flow={flowType}
 					isFirstInGroup={isFirstInGroup}
 					isLastInGroup={isLastInGroup}
 					isFirstRootPrompt={isFirstRootPrompt}
 					enableArrowNavigation={parent?.enableArrowNavigation}
-					{...(isActive && !isFrozen && !item.frozen && onHintChange && { onHintChange })}
+					{...(isActive &&
+						!isFrozen &&
+						!item.frozen &&
+						onHintChange && { onHintChange })}
 				/>
 			);
 		}
@@ -470,19 +494,36 @@ export function RecursiveGroupContainer({
 					initialValue={getInitialValue()}
 					state={pluginState}
 					completedValue={isCompleted ? item.value : undefined}
-					onSubmit={isActive && !isFrozen && !item.frozen ? onSubmit : () => {}}
-					onBack={isActive && !isFrozen && !item.frozen ? onBack : undefined}
+					onSubmit={
+						isActive && !isFrozen && !item.frozen
+							? onSubmit
+							: () => {}
+					}
+					onBack={
+						isActive && !isFrozen && !item.frozen
+							? onBack
+							: undefined
+					}
+					onComplete={onComplete}
 					allowBack={effectiveAllowBack}
 					flow={flowType}
 					isFirstInGroup={isFirstInGroup}
 					isLastInGroup={isLastInGroup}
 					isFirstRootPrompt={isFirstRootPrompt}
 					enableArrowNavigation={parent?.enableArrowNavigation}
-					{...(isActive && !isFrozen && !item.frozen && onHintChange && { onHintChange })}
+					{...(isActive &&
+						!isFrozen &&
+						!item.frozen &&
+						onHintChange && { onHintChange })}
 				/>
 				{/* Show hint text for active fields only when hint text exists */}
 				{/* Don't show hint text for note and other auto-submitting fields since they don't need navigation hints */}
-				{isActive && fieldHintText && item.fieldType !== "note" && !globalRegistry.shouldAutoSubmit(item.fieldType || '') && <HintText>{fieldHintText}</HintText>}
+				{isActive &&
+					fieldHintText &&
+					item.fieldType !== "note" &&
+					!globalRegistry.shouldAutoSubmit(item.fieldType || "") && (
+						<HintText>{fieldHintText}</HintText>
+					)}
 			</Box>
 		);
 	}

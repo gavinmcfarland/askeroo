@@ -93,7 +93,9 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 		return {
 			root: clonedNodeIndex.get(tree.root.id),
 			nodeIndex: clonedNodeIndex,
-			history: tree.history.map((node: any) => clonedNodeIndex.get(node.id)),
+			history: tree.history.map((node: any) =>
+				clonedNodeIndex.get(node.id)
+			),
 		};
 	}, []);
 
@@ -120,10 +122,14 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 
 	// Global Ctrl+C handler
 	useInput((input, key) => {
-		if (key.ctrl && input === 'c') {
+		if (key.ctrl && input === "c") {
 			// Only freeze current prompt if there are cancel callbacks
 			// If no onCancel is defined, let the CLI exit immediately
-			if (runtime && runtime.hasCancelCallbacks && runtime.hasCancelCallbacks()) {
+			if (
+				runtime &&
+				runtime.hasCancelCallbacks &&
+				runtime.hasCancelCallbacks()
+			) {
 				freezeCurrentPrompt();
 			}
 
@@ -323,8 +329,13 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 					// SIMPLIFIED: Runtime provides explicit parent via request.groupName
 					// This is the groupStack context from the runtime (which knows the exact parent)
 					// However, if we're in cancel mode, force all prompts to root level
-					const isInCancelMode = runtime && runtime.isInCancelMode && runtime.isInCancelMode();
-					const explicitParent = isInCancelMode ? null : (request.groupName || null);
+					const isInCancelMode =
+						runtime &&
+						runtime.isInCancelMode &&
+						runtime.isInCancelMode();
+					const explicitParent = isInCancelMode
+						? null
+						: request.groupName || null;
 
 					const addedNode = treeManagerRef.current.addPromptRequest(
 						request,
@@ -340,18 +351,24 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 					if (request.type !== "group") {
 						// Special handling: if there's a frozen prompt, don't deactivate it
 						// Let both the frozen prompt and new prompt be active
-						const activeNode = treeManagerRef.current.getActiveNode();
+						const activeNode =
+							treeManagerRef.current.getActiveNode();
 						if (activeNode && activeNode.frozen) {
 							// Don't navigate away from frozen prompt, just add the new prompt as active too
-							const newNode = treeManagerRef.current.getNode(request.id);
+							const newNode = treeManagerRef.current.getNode(
+								request.id
+							);
 							if (newNode) {
 								newNode.active = true;
 								newNode.visited = true;
 								// Add to history without deactivating the frozen node
-								const currentHistory = treeManagerRef.current.getNavigationPath();
+								const currentHistory =
+									treeManagerRef.current.getNavigationPath();
 								if (!currentHistory.includes(newNode)) {
 									// Manually add to history without using navigateTo
-									treeManagerRef.current.getTree().history.push(newNode);
+									treeManagerRef.current
+										.getTree()
+										.history.push(newNode);
 								}
 							}
 						} else {
@@ -458,7 +475,7 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 
 					try {
 						// Determine submission type based on submitted value
-						// Components submit with format: { type: "auto" | "skip" | "programmatic", value?: any }
+						// Components submit with format: { type: "auto" | "skip" | "programmatic", value?: any, deferCompletion?: boolean }
 						// Regular values (non-objects or objects without type) are treated as manual submissions
 						let submissionType:
 							| "manual"
@@ -466,25 +483,29 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 							| "skipped"
 							| "programmatic" = "manual";
 						let actualValue = action.value;
+						let deferCompletion = false;
 
 						if (
 							typeof action.value === "object" &&
 							action.value !== null &&
 							"type" in action.value
 						) {
-							// New consistent format: { type: "auto", value?: any }
+							// New consistent format: { type: "auto", value?: any, deferCompletion?: boolean }
 							submissionType = action.value.type;
 							actualValue = action.value.value;
+							deferCompletion =
+								action.value.deferCompletion === true;
 						} else {
 							// Regular value = manual submission
 							submissionType = "manual";
 							actualValue = action.value;
 						}
 
+						// Update node - only mark as completed if deferCompletion is false
 						treeManagerRef.current.updateNode(nodeId, {
 							value: actualValue,
 							visited: true,
-							completed: true, // Always mark as completed when submitted
+							completed: !deferCompletion, // Defer completion if requested
 							submissionType: submissionType,
 						});
 					} catch (error) {
@@ -641,6 +662,24 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 		handleFieldAction({ type: "back" });
 	}, [handleFieldAction]);
 
+	// Handler to mark a node as completed (for deferred completion)
+	const handleComplete = useCallback((promptId: string) => {
+		try {
+			const node = treeManagerRef.current.getNode(promptId);
+			if (node && !node.completed) {
+				treeManagerRef.current.updateNode(promptId, {
+					completed: true,
+				});
+				// Trigger re-render
+				setTreeRevision((prev) => prev + 1);
+				notifyTreeChanged();
+				notifyExternalStateChange();
+			}
+		} catch (error) {
+			console.warn("Error marking node as completed:", error);
+		}
+	}, []);
+
 	// Auto-resolve group prompts
 	useEffect(() => {
 		if (currentPrompt?.type === "group" && internalRefs.current.resolver) {
@@ -667,6 +706,7 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 					treeManager={treeManagerRef.current}
 					onSubmit={handleSubmit}
 					onBack={handleBack}
+					onComplete={handleComplete}
 					onHintChange={handleHintChange}
 					hintText={currentHintText}
 					hintsByPromptId={internalRefs.current.hintsByPromptId}
@@ -683,9 +723,5 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 	}
 
 	// Default rendering with RootContainer wrapper
-	return (
-		<RootContainer>
-			{content}
-		</RootContainer>
-	);
+	return <RootContainer>{content}</RootContainer>;
 }

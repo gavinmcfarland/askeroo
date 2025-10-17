@@ -47,58 +47,80 @@ export const StreamDisplay = ({
 		return () => clearInterval(interval);
 	}, [streamState.status]);
 
-	// Auto-complete immediately if autoComplete is true (to avoid blocking runtime)
+	// Auto-submit immediately (to avoid blocking runtime)
 	// This allows the runtime to proceed while the stream continues updating in the background
+	// Use deferCompletion to prevent the node from being marked as completed immediately
 	useEffect(() => {
 		if (node.state === "active" && events.onSubmit) {
-			// Submit immediately to allow runtime to continue
-			events.onSubmit({ type: "auto" });
+			// Submit immediately to allow runtime to continue, but defer completion
+			events.onSubmit({ type: "auto", deferCompletion: true });
 		}
 	}, [node.state, events.onSubmit]);
 
-	// Auto-submit when completed or error (for manually completed streams)
+	// Mark node as completed when stream finishes
 	useEffect(() => {
-		if (node.state !== "active") return;
-
 		if (
 			(streamState.status === "completed" ||
 				streamState.status === "error") &&
-			events.onSubmit
+			events.onComplete
 		) {
-			const delay =
-				options.submitDelay !== undefined ? options.submitDelay : 0;
-
-			// If hideOnCompletion and no delay, submit immediately
-			if (options.hideOnCompletion && delay === 0) {
-				events.onSubmit({ type: "auto" });
-			} else {
+			// If there's a submitDelay, wait for it before marking as complete
+			if (options.submitDelay && options.submitDelay > 0) {
 				const timer = setTimeout(() => {
-					events.onSubmit({ type: "auto" });
-				}, delay);
+					events.onComplete(); // PluginWrapper handles the promptId
+				}, options.submitDelay);
 				return () => clearTimeout(timer);
+			} else {
+				// Mark as complete immediately
+				events.onComplete(); // PluginWrapper handles the promptId
 			}
 		}
-	}, [
-		streamState.status,
-		node.state,
-		events.onSubmit,
-		options.submitDelay,
-		options.hideOnCompletion,
-	]);
+	}, [streamState.status, events.onComplete, options.submitDelay]);
 
-	// Hide if hideOnCompletion is true and stream is completed
+	// Track whether we should hide after delay
+	const [shouldHideAfterDelay, setShouldHideAfterDelay] = useState(false);
+
+	// Handle delayed hiding when stream completes with submitDelay
+	useEffect(() => {
+		// Only applies when hideOnCompletion is true and there's a submitDelay
+		if (
+			!options.hideOnCompletion ||
+			!options.submitDelay ||
+			options.submitDelay === 0
+		) {
+			return;
+		}
+
+		// When stream finishes, wait for submitDelay then trigger hiding
+		if (
+			streamState.status === "completed" ||
+			streamState.status === "error"
+		) {
+			const timer = setTimeout(() => {
+				setShouldHideAfterDelay(true);
+			}, options.submitDelay);
+
+			return () => clearTimeout(timer);
+		}
+	}, [streamState.status, options.submitDelay, options.hideOnCompletion]);
+
+	// Hide if hideOnCompletion is true and conditions are met
 	if (options.hideOnCompletion && node.state === "completed") {
-		return null;
-	}
+		const streamFinished =
+			streamState.status === "completed" ||
+			streamState.status === "error";
 
-	// Don't render completed/error state if hideOnCompletion is true and there's no delay
-	if (
-		options.hideOnCompletion &&
-		(streamState.status === "completed" ||
-			streamState.status === "error") &&
-		(!options.submitDelay || options.submitDelay === 0)
-	) {
-		return null;
+		// If stream finished and either no delay or delay has elapsed
+		if (streamFinished) {
+			// No delay: hide immediately
+			if (!options.submitDelay || options.submitDelay === 0) {
+				return null;
+			}
+			// With delay: hide after delay timer completes
+			if (shouldHideAfterDelay) {
+				return null;
+			}
+		}
 	}
 
 	// Get the lines to display (respect maxLines if set)
