@@ -131,6 +131,57 @@ Mark the stream as errored (shows ✗ symbol).
 await output.error("Build failed!");
 ```
 
+## Non-Blocking Behavior
+
+Streams automatically allow the flow to proceed without blocking, even if you don't call `.complete()` or `.error()`. This means you can `await` stream functions and the runtime will continue to the next prompt while the stream keeps updating in the background.
+
+```typescript
+async function streamLogs() {
+    const output = await stream("Server logs");
+
+    // These updates happen even after the runtime proceeds to the next prompt
+    for (let i = 1; i <= 100; i++) {
+        await output.writeLine(`Log entry ${i}`);
+        await new Promise((r) => setTimeout(r, 100));
+    }
+
+    // Optional: explicitly mark as complete
+    await output.complete("All logs processed");
+}
+
+const flow = async () => {
+    // Await the stream function - runtime proceeds automatically
+    await streamLogs();
+
+    // Flow continues immediately while stream updates above
+    await note("Logs are streaming above...");
+
+    // Other prompts work normally
+    const answer = await text("Enter something:");
+};
+```
+
+**How it works:**
+
+-   When a stream becomes active, it automatically submits to avoid blocking
+-   The stream function continues executing and updating the display
+-   Multiple streams can run simultaneously
+-   Streams remain visible until `.complete()`, `.error()`, or flow completion
+
+**Multiple simultaneous streams:**
+
+```typescript
+const flow = async () => {
+    // Both streams start and update simultaneously
+    await streamLogs();
+    await streamMetrics();
+
+    // Continue with other prompts while both streams update
+    await note("Both streams are running above...");
+    const choice = await select("Choose action:", ["Continue", "Stop"]);
+};
+```
+
 ## Examples
 
 ### Basic Command Output

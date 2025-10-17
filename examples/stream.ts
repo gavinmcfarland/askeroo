@@ -69,6 +69,7 @@ async function streamWithLineNumbers() {
 		maxLines: 10,
 		showLineNumbers: true,
 		prefixSymbol: "▸",
+		hideOnCompletion: true,
 	});
 
 	// Simulate many log entries - only last 10 will be visible
@@ -120,8 +121,7 @@ async function streamWithError() {
 // Run examples
 const flow = async () => {
 	await note("[Stream]{dim}");
-
-	streamWithLineNumbers();
+	await streamWithLineNumbers();
 
 	await note("hello");
 	await simulateNpmInstall();

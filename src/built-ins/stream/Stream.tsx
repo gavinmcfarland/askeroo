@@ -48,23 +48,17 @@ export const StreamDisplay = ({
 	}, [streamState.status]);
 
 	// Auto-complete immediately if autoComplete is true (to avoid blocking runtime)
+	// This allows the runtime to proceed while the stream continues updating in the background
 	useEffect(() => {
-		if (
-			node.state === "active" &&
-			options.autoComplete &&
-			events.onSubmit
-		) {
+		if (node.state === "active" && events.onSubmit) {
 			// Submit immediately to allow runtime to continue
 			events.onSubmit({ type: "auto" });
 		}
-	}, [node.state, options.autoComplete, events.onSubmit]);
+	}, [node.state, events.onSubmit]);
 
-	// Auto-submit when completed or error
+	// Auto-submit when completed or error (for manually completed streams)
 	useEffect(() => {
 		if (node.state !== "active") return;
-
-		// Skip if already auto-completed
-		if (options.autoComplete) return;
 
 		if (
 			(streamState.status === "completed" ||
@@ -90,7 +84,6 @@ export const StreamDisplay = ({
 		events.onSubmit,
 		options.submitDelay,
 		options.hideOnCompletion,
-		options.autoComplete,
 	]);
 
 	// Hide if hideOnCompletion is true and stream is completed
