@@ -17,6 +17,7 @@ let appInstance: {
 	promptFn?: (request: PromptRequest) => Promise<any>;
 	unmount?: () => void;
 	currentGroup?: string;
+	currentTask?: string;
 } = {};
 
 function ensureApp(): Promise<(request: PromptRequest) => Promise<any>> {
@@ -96,6 +97,30 @@ function createUI() {
 			appInstance.currentGroup = undefined;
 		},
 
+		/**
+		 * Show a task in the UI (similar to showGroup for tasks)
+		 */
+		async showTask(
+			label: string | undefined,
+			id: string,
+			taskOptions?: any
+		): Promise<void> {
+			const taskId = id;
+			appInstance.currentTask = taskId;
+			const promptFn = await ensureApp();
+
+			await promptFn({
+				type: "task",
+				id: taskId,
+				label: label,
+				...taskOptions,
+			});
+		},
+
+		clearTask(): void {
+			appInstance.currentTask = undefined;
+		},
+
 		cleanup(): void {
 			if (appInstance.unmount) {
 				debugLogger.log("UI_CLEANUP", "UI cleanup triggered");
@@ -103,6 +128,7 @@ function createUI() {
 				appInstance.promptFn = undefined;
 				appInstance.unmount = undefined;
 				appInstance.currentGroup = undefined;
+				appInstance.currentTask = undefined;
 				debugLogger.cleanup();
 			}
 		},
@@ -168,6 +194,7 @@ function createUI() {
 						opts.label || `${plugin.type} field`
 					),
 				groupName: appInstance.currentGroup,
+				taskName: appInstance.currentTask, // Track parent task
 				...opts, // Spread all options from the plugin
 			};
 

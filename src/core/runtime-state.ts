@@ -22,6 +22,9 @@ export class RuntimeState {
 	private groupHierarchy: string[] = [];
 	private processedGroups: Set<string> = new Set();
 
+	// ===== TASK CONTEXT =====
+	private taskStack: string[] = [];
+
 	// ========== ANSWER MANAGEMENT ==========
 
 	storeAnswer(promptId: string, value: any): void {
@@ -138,6 +141,28 @@ export class RuntimeState {
 
 	clearProcessedGroups(): void {
 		this.processedGroups.clear();
+	}
+
+	// ========== TASK CONTEXT ==========
+
+	enterTask(taskId: string): void {
+		this.taskStack.push(taskId);
+	}
+
+	exitTask(): void {
+		this.taskStack.pop();
+	}
+
+	getCurrentTaskId(): string | undefined {
+		return this.taskStack[this.taskStack.length - 1];
+	}
+
+	isInTaskContext(): boolean {
+		return this.taskStack.length > 0;
+	}
+
+	clearTaskStack(): void {
+		this.taskStack = [];
 	}
 
 	// ========== FLOW EXECUTION STATE ==========

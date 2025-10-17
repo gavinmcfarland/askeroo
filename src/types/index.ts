@@ -18,6 +18,7 @@ export type PromptRequest = {
 	id: string;
 	label?: string;
 	groupName?: string;
+	taskName?: string; // For prompts inside task actions
 	flow?: "progressive" | "phased" | "static";
 	discoveredFields?: Array<{ id: string; label: string; type: string }>;
 	enableArrowNavigation?: boolean;
@@ -48,6 +49,12 @@ export type UI = {
 		groupOptions?: any
 	): Promise<void> | void;
 	clearGroup?(): void;
+	showTask?(
+		label: string | undefined,
+		id: string,
+		taskOptions?: any
+	): Promise<void> | void;
+	clearTask?(): void;
 	cleanup?(): void;
 	// Dynamic UI handlers from plugins
 	[key: string]: any;

@@ -285,6 +285,57 @@ export class PromptRuntime {
 	}
 
 	/**
+	 * Execute a task action with runtime context
+	 * This allows prompts inside the action to be detected and rendered inline
+	 */
+	async executeTaskAction(
+		taskId: string,
+		action: () => Promise<void>
+	): Promise<void> {
+		// Enter task context
+		this.state.enterTask(taskId);
+
+		try {
+			// Execute the action - any prompts inside will be detected
+			await action();
+		} finally {
+			// Always exit task context
+			this.state.exitTask();
+		}
+	}
+
+	/**
+	 * Execute task body (called by task plugin)
+	 * Similar to executeGroupBody but for tasks
+	 */
+	async executeTaskBody(opts: any): Promise<void> {
+		const label =
+			typeof opts.label === "string"
+				? opts.label
+				: opts.label?.idle || "Task";
+		const taskId = opts.taskId || `task_${Date.now()}`;
+
+		// Show the task node in the UI (sets currentTask context)
+		await this.ui.showTask?.(label, taskId, opts);
+
+		try {
+			// Execute the task action if present
+			if (opts.action) {
+				await this.executeTaskAction(taskId, opts.action);
+			}
+
+			// Execute subtasks if present
+			if (opts.tasks && opts.tasks.length > 0) {
+				const { tasks } = await import("../built-ins/tasks/index.js");
+				await tasks(opts.tasks, { concurrent: opts.concurrent });
+			}
+		} finally {
+			// Clear task context
+			this.ui.clearTask?.();
+		}
+	}
+
+	/**
 	 * Re-scan fields for a static group
 	 * Used by UI for field re-rendering
 	 */

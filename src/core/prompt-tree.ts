@@ -4,7 +4,7 @@ import { PromptRequest } from "../types/index.js";
 
 export interface PromptNode {
 	id: string;
-	type: "field" | "group";
+	type: "field" | "group" | "task";
 
 	// Content properties
 	label?: string;
@@ -36,6 +36,7 @@ export interface PromptNode {
 	// Navigation properties
 	allowBack?: boolean;
 	groupName?: string; // For field nodes, which group they belong to
+	taskName?: string; // For prompts inside task actions
 
 	// Submission tracking
 	submissionType?: "manual" | "auto" | "skipped" | "programmatic"; // How this prompt was submitted
@@ -640,6 +641,8 @@ export class PromptTreeManager {
 	): PromptNode {
 		if (request.type === "group") {
 			return this.addGroupRequest(request, explicitParentId);
+		} else if (request.type === "task") {
+			return this.addTaskRequest(request, explicitParentId);
 		} else {
 			return this.addFieldRequest(request, explicitParentId);
 		}
@@ -696,6 +699,56 @@ export class PromptTreeManager {
 	}
 
 	/**
+	 * Add a task to the tree
+	 * @param request - Task request
+	 * @param explicitParentId - Explicit parent from runtime
+	 */
+	private addTaskRequest(
+		request: PromptRequest,
+		explicitParentId?: string | null
+	): PromptNode {
+		// Determine parent
+		let parentId: string | undefined;
+		if (explicitParentId && explicitParentId !== "root") {
+			const parentExists = this.getNode(explicitParentId);
+			if (parentExists) {
+				parentId = explicitParentId;
+			} else {
+				console.warn(
+					`Explicit parent "${explicitParentId}" not found for task, using root`
+				);
+				parentId = "root";
+			}
+		} else {
+			parentId = "root";
+		}
+
+		const parentNode = this.getNode(parentId);
+		const calculatedDepth = parentNode ? parentNode.depth + 1 : 1;
+
+		const taskNode = this.addNode(
+			{
+				id: request.id,
+				type: "task",
+				label: request.label,
+				completed: false,
+				visited: false,
+				active: true, // Tasks are active when created
+				depth: calculatedDepth,
+				hideOnCompletion: request.hideOnCompletion,
+				excludeFromCompleted: request.excludeFromCompleted,
+				allowBack: request.allowBack,
+				autoSubmit: request.autoSubmit,
+				taskName: request.taskName,
+				properties: { ...request },
+			},
+			parentId
+		);
+
+		return taskNode;
+	}
+
+	/**
 	 * Add a field to the tree
 	 * @param request - Field request
 	 * @param explicitParentId - Explicit parent from runtime (which knows groupStack)
@@ -740,6 +793,7 @@ export class PromptTreeManager {
 				allowBack: request.allowBack,
 				autoSubmit: request.autoSubmit,
 				groupName: request.groupName,
+				taskName: request.taskName,
 				properties: { ...request },
 			},
 			parentId

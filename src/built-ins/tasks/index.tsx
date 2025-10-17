@@ -1,9 +1,15 @@
-import { createPrompt } from "../../core/registry.js";
-import { TasksDisplay } from "./Tasks.js";
+import { taskInternal } from "./Task.js";
 import type { Task, TasksOptions } from "./types.js";
 
 // Re-export types
-export type { Task, TaskLabel, CompleteOn } from "./types.js";
+export type {
+	Task,
+	TaskLabel,
+	CompleteOn,
+	TaskStatus,
+	TaskState,
+	TasksOptions,
+} from "./types.js";
 
 // Result types for task execution
 export interface TaskResult {
@@ -33,97 +39,108 @@ export class TaskWarning extends Error {
 	}
 }
 
-// Function to get results from global task state
-async function getTaskResults(): Promise<TasksResult> {
-	// TODO: Implement proper task results collection from taskStore
-	// The previous implementation was non-functional (returned empty data)
-	// For now, return empty results
-	return {
+/**
+ * Execute a list of tasks
+ *
+ * NEW ARCHITECTURE:
+ * Each task becomes a node in the prompt tree, allowing child prompts
+ * (stream, spinner, note) to render inline within the task.
+ *
+ * @param taskList - Array of tasks to execute
+ * @param options - Execution options (concurrent, etc.)
+ */
+export async function tasks(
+	taskList: Task[],
+	options?: { concurrent?: boolean }
+): Promise<TasksResult> {
+	const results: TasksResult = {
 		success: true,
-		totalTasks: 0,
+		totalTasks: taskList.length,
 		completedTasks: 0,
 		failedTasks: 0,
 		warningTasks: 0,
 		results: [],
 	};
-}
 
-// Internal plugin implementation
-const tasksInternal = createPrompt<TasksOptions, TasksResult>({
-	type: "tasks",
-	component: TasksDisplay,
-	// autoSubmit: false (default) - Tasks manage their own submission timing
-});
+	// Helper to execute a single task
+	const executeTask = async (task: Task, index: number) => {
+		const taskId = `task_${Date.now()}_${index}`;
+		const startTime = Date.now();
 
-// Public API function with add method and execution mode options
-export async function tasks(
-	taskList: TasksOptions["tasks"],
-	options?: { concurrent?: boolean }
-): Promise<TasksResult> {
-	await tasksInternal({
-		tasks: taskList,
-		concurrent: options?.concurrent,
-	});
+		try {
+			// Each task becomes a prompt node in the tree
+			await taskInternal({
+				...task,
+				taskId,
+			});
 
-	// Wait for any pending tasks that were added dynamically
-	const { waitForPendingTasks } = await import("./Tasks.js");
-	await waitForPendingTasks();
+			results.completedTasks++;
+			results.results.push({
+				id: taskId,
+				label: typeof task.label === "string" ? task.label : "Task",
+				status: "success",
+				duration: Date.now() - startTime,
+			});
+		} catch (error) {
+			if (error instanceof TaskWarning) {
+				results.warningTasks++;
+				results.results.push({
+					id: taskId,
+					label: typeof task.label === "string" ? task.label : "Task",
+					status: "warning",
+					warning: error.message,
+					duration: Date.now() - startTime,
+				});
+			} else {
+				results.failedTasks++;
+				results.success = false;
+				results.results.push({
+					id: taskId,
+					label: typeof task.label === "string" ? task.label : "Task",
+					status: "error",
+					error:
+						error instanceof Error ? error.message : String(error),
+					duration: Date.now() - startTime,
+				});
 
-	return await getTaskResults();
+				// Rethrow if continueOnError is false
+				if (!task.continueOnError) {
+					throw error;
+				}
+			}
+		}
+	};
+
+	// Execute tasks based on concurrent option
+	if (options?.concurrent) {
+		// Run all tasks concurrently
+		const promises = taskList.map((task, index) =>
+			executeTask(task, index)
+		);
+		await Promise.allSettled(promises);
+	} else {
+		// Run tasks sequentially (default)
+		for (let i = 0; i < taskList.length; i++) {
+			await executeTask(taskList[i], i);
+		}
+	}
+
+	return results;
 }
 
 // Sequential execution method
-tasks.sequential = async function (
-	taskList: TasksOptions["tasks"]
-): Promise<TasksResult> {
+tasks.sequential = async function (taskList: Task[]): Promise<TasksResult> {
 	return tasks(taskList, { concurrent: false });
 };
 
-// Parallel execution method (explicit, though this is default behavior)
-tasks.parallel = async function (
-	taskList: TasksOptions["tasks"]
-): Promise<TasksResult> {
+// Parallel execution method
+tasks.parallel = async function (taskList: Task[]): Promise<TasksResult> {
 	return tasks(taskList, { concurrent: true });
 };
 
-// Standalone function for adding dynamic tasks
-export async function addTask(task: Task): Promise<void> {
-	const { addDynamicTask, hasExistingTasks } = await import("./Tasks.js");
-
-	// Only add task if some already exist, otherwise silently fail
-	if (!hasExistingTasks()) {
-		return;
-	}
-
-	return addDynamicTask(task);
-}
-
-// Function for adding multiple dynamic tasks
-export async function addTasks(
-	taskList: Task[],
-	options?: { concurrent?: boolean }
-): Promise<void> {
-	const { addDynamicTask, hasExistingTasks } = await import("./Tasks.js");
-
-	// Only add tasks if some already exist, otherwise silently fail
-	if (!hasExistingTasks()) {
-		return;
-	}
-
-	if (options?.concurrent === false) {
-		// Sequential execution
-		for (const task of taskList) {
-			await addDynamicTask(task);
-		}
-	} else {
-		// Parallel execution (default)
-		await Promise.allSettled(taskList.map((task) => addDynamicTask(task)));
-	}
-}
-
-// Add the dynamic task addition method to the tasks function
-tasks.add = addTasks;
-
-// NOTE: Task state updates now use the generic PromptStateContext system
-// No initialization needed - prompts automatically get reactive updates
-// See src/core/plugin-state-context.tsx for details
+// Dynamic task addition (deprecated in new architecture)
+// In the new architecture, just call tasks() again with new tasks
+tasks.add = async function (taskOrList: Task | Task[]): Promise<void> {
+	const taskList = Array.isArray(taskOrList) ? taskOrList : [taskOrList];
+	await tasks(taskList);
+};

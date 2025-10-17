@@ -93,7 +93,9 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 		return {
 			root: clonedNodeIndex.get(tree.root.id),
 			nodeIndex: clonedNodeIndex,
-			history: tree.history.map((node: any) => clonedNodeIndex.get(node.id)),
+			history: tree.history.map((node: any) =>
+				clonedNodeIndex.get(node.id)
+			),
 		};
 	}, []);
 
@@ -120,10 +122,14 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 
 	// Global Ctrl+C handler
 	useInput((input, key) => {
-		if (key.ctrl && input === 'c') {
+		if (key.ctrl && input === "c") {
 			// Only freeze current prompt if there are cancel callbacks
 			// If no onCancel is defined, let the CLI exit immediately
-			if (runtime && runtime.hasCancelCallbacks && runtime.hasCancelCallbacks()) {
+			if (
+				runtime &&
+				runtime.hasCancelCallbacks &&
+				runtime.hasCancelCallbacks()
+			) {
 				freezeCurrentPrompt();
 			}
 
@@ -320,11 +326,17 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 
 				// NEW: Add prompt to tree structure and activate it
 				try {
-					// SIMPLIFIED: Runtime provides explicit parent via request.groupName
-					// This is the groupStack context from the runtime (which knows the exact parent)
+					// SIMPLIFIED: Runtime provides explicit parent via request.groupName or request.taskName
+					// This is the groupStack/taskStack context from the runtime (which knows the exact parent)
 					// However, if we're in cancel mode, force all prompts to root level
-					const isInCancelMode = runtime && runtime.isInCancelMode && runtime.isInCancelMode();
-					const explicitParent = isInCancelMode ? null : (request.groupName || null);
+					const isInCancelMode =
+						runtime &&
+						runtime.isInCancelMode &&
+						runtime.isInCancelMode();
+					// Check for task parent first, then group parent
+					const explicitParent = isInCancelMode
+						? null
+						: request.taskName || request.groupName || null;
 
 					const addedNode = treeManagerRef.current.addPromptRequest(
 						request,
@@ -340,18 +352,24 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 					if (request.type !== "group") {
 						// Special handling: if there's a frozen prompt, don't deactivate it
 						// Let both the frozen prompt and new prompt be active
-						const activeNode = treeManagerRef.current.getActiveNode();
+						const activeNode =
+							treeManagerRef.current.getActiveNode();
 						if (activeNode && activeNode.frozen) {
 							// Don't navigate away from frozen prompt, just add the new prompt as active too
-							const newNode = treeManagerRef.current.getNode(request.id);
+							const newNode = treeManagerRef.current.getNode(
+								request.id
+							);
 							if (newNode) {
 								newNode.active = true;
 								newNode.visited = true;
 								// Add to history without deactivating the frozen node
-								const currentHistory = treeManagerRef.current.getNavigationPath();
+								const currentHistory =
+									treeManagerRef.current.getNavigationPath();
 								if (!currentHistory.includes(newNode)) {
 									// Manually add to history without using navigateTo
-									treeManagerRef.current.getTree().history.push(newNode);
+									treeManagerRef.current
+										.getTree()
+										.history.push(newNode);
 								}
 							}
 						} else {
@@ -683,9 +701,5 @@ export function PromptApp({ onReady, runtime }: PromptAppProps) {
 	}
 
 	// Default rendering with RootContainer wrapper
-	return (
-		<RootContainer>
-			{content}
-		</RootContainer>
-	);
+	return <RootContainer>{content}</RootContainer>;
 }
