@@ -6,6 +6,7 @@ export interface StreamOptions {
 	submitDelay?: number;
 	showLineNumbers?: boolean;
 	prefixSymbol?: string; // Symbol to show before each line
+	autoComplete?: boolean; // Auto-complete immediately to avoid blocking runtime
 }
 
 export type StreamStatus = "active" | "completed" | "error";

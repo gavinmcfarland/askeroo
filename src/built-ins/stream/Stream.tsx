@@ -17,7 +17,7 @@ export const StreamDisplay = ({
 }) => {
 	const [spinnerFrame, setSpinnerFrame] = useState(0);
 
-	// Use the stream ID from options
+	// Use the stream ID from options (should always be provided)
 	const streamId =
 		options.streamId ||
 		`stream_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
@@ -27,7 +27,7 @@ export const StreamDisplay = ({
 
 	// Extract data for this stream
 	const streamState = store.streams.get(streamId) || {
-		status: "active",
+		status: "active" as const,
 		lines: [],
 	};
 
@@ -47,9 +47,24 @@ export const StreamDisplay = ({
 		return () => clearInterval(interval);
 	}, [streamState.status]);
 
+	// Auto-complete immediately if autoComplete is true (to avoid blocking runtime)
+	useEffect(() => {
+		if (
+			node.state === "active" &&
+			options.autoComplete &&
+			events.onSubmit
+		) {
+			// Submit immediately to allow runtime to continue
+			events.onSubmit({ type: "auto" });
+		}
+	}, [node.state, options.autoComplete, events.onSubmit]);
+
 	// Auto-submit when completed or error
 	useEffect(() => {
 		if (node.state !== "active") return;
+
+		// Skip if already auto-completed
+		if (options.autoComplete) return;
 
 		if (
 			(streamState.status === "completed" ||
@@ -75,6 +90,7 @@ export const StreamDisplay = ({
 		events.onSubmit,
 		options.submitDelay,
 		options.hideOnCompletion,
+		options.autoComplete,
 	]);
 
 	// Hide if hideOnCompletion is true and stream is completed

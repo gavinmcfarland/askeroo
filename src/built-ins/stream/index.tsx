@@ -89,6 +89,7 @@ export async function stream(
 	});
 
 	// Start the prompt in the background
+	// Set autoComplete flag to make the stream non-blocking
 	const promptPromise = streamInternal({
 		label,
 		streamId,
@@ -97,6 +98,7 @@ export async function stream(
 		submitDelay: finalOptions?.submitDelay,
 		showLineNumbers: finalOptions?.showLineNumbers,
 		prefixSymbol: finalOptions?.prefixSymbol,
+		autoComplete: true, // NEW: Auto-complete to avoid blocking the runtime
 	});
 
 	// Buffer for incomplete lines

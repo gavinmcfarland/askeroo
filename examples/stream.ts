@@ -120,10 +120,11 @@ async function streamWithError() {
 // Run examples
 const flow = async () => {
 	await note("[Stream]{dim}");
-	await simulateNpmInstall();
+
+	streamWithLineNumbers();
 
 	await note("hello");
-	await streamWithLineNumbers();
+	await simulateNpmInstall();
 };
 
 (async () => {
