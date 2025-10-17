@@ -23,7 +23,7 @@ export interface MultiOptions {
 	};
 	showNumbers?: boolean;
 	allowLoop?: boolean;
-	searchable?: boolean;
+	searchable?: boolean | "filter";
 	hintPosition?: "bottom" | "inline" | "side" | "inline-fixed";
 	maxVisible?: number;
 	searchQuery?: string;
@@ -76,9 +76,17 @@ export const MultiField = ({
 	const [validationError, setValidationError] = useState<string | null>(null);
 
 	const [internalSearchQuery, setInternalSearchQuery] = useState("");
+	const [searchCursorPosition, setSearchCursorPosition] = useState(0);
+	const [filterModeActive, setFilterModeActive] = useState(false);
+
+	const hasHiddenSearch = options.searchable === true;
+	const hasFilterMode = options.searchable === "filter";
+	const showSearchInput = hasFilterMode && filterModeActive;
+	const isSearchActive =
+		hasHiddenSearch || (hasFilterMode && filterModeActive);
 
 	const filteredOptions = useMemo(() => {
-		if (!options.searchable || !internalSearchQuery.trim())
+		if (!isSearchActive || !internalSearchQuery.trim())
 			return normalizedOptions;
 		const q = internalSearchQuery.toLowerCase();
 		return normalizedOptions.filter((opt) => {
@@ -90,7 +98,7 @@ export const MultiField = ({
 		});
 	}, [
 		normalizedOptions,
-		options.searchable,
+		isSearchActive,
 		internalSearchQuery,
 		selectedValues,
 	]);
@@ -284,9 +292,14 @@ export const MultiField = ({
 					<Text color="yellow">space</Text> select{" "}
 					{/* <Text color="yellow">shift+a</Text> all,{" "}
 					<Text color="yellow">shift+d</Text> clear */}
-					{options.searchable && (
+					{hasHiddenSearch && (
 						<>
 							, <Text color="yellow">type</Text> to search
+						</>
+					)}
+					{hasFilterMode && (
+						<>
+							, <Text color="yellow">shift+f</Text> filter
 						</>
 					)}
 				</>
@@ -295,7 +308,9 @@ export const MultiField = ({
 	}, [
 		node.state,
 		node.isFirstRootPrompt,
-		options.searchable,
+		hasHiddenSearch,
+		hasFilterMode,
+		showSearchInput,
 		node.allowBack,
 		events.onHintChange,
 	]);
@@ -330,29 +345,33 @@ export const MultiField = ({
 		async (input, key) => {
 			if (submitted || node.state !== "active") return;
 
-			// Search input
+			// Toggle filter mode with Shift+F
 			if (
-				options.searchable &&
-				input &&
-				input !== " " &&
-				input.length === 1 &&
-				!key.ctrl &&
-				!key.meta &&
-				!key.return &&
-				!key.escape &&
-				!key.upArrow &&
-				!key.downArrow &&
-				!key.leftArrow &&
-				!key.rightArrow
+				hasFilterMode &&
+				key.shift &&
+				(input === "f" || input === "F")
 			) {
-				setInternalSearchQuery(internalSearchQuery + input);
+				setFilterModeActive(!filterModeActive);
+				if (filterModeActive) {
+					// Closing filter mode - clear search
+					setInternalSearchQuery("");
+					setSearchCursorPosition(0);
+				}
 				return;
 			}
 
 			// Escape handling
 			if (key.escape) {
-				if (options.searchable && internalSearchQuery.trim()) {
+				if (hasFilterMode && filterModeActive) {
+					// Close filter mode
+					setFilterModeActive(false);
 					setInternalSearchQuery("");
+					setSearchCursorPosition(0);
+					return;
+				}
+				if (isSearchActive && internalSearchQuery.trim()) {
+					setInternalSearchQuery("");
+					setSearchCursorPosition(0);
 					return;
 				}
 				if (
@@ -408,35 +427,139 @@ export const MultiField = ({
 				return;
 			}
 
-			if (
-				options.searchable &&
-				(key.backspace || key.delete || input === "\b")
-			) {
-				setInternalSearchQuery(internalSearchQuery.slice(0, -1));
-				return;
+			// Visible search input - handle cursor movement and editing
+			if (showSearchInput) {
+				// Keyboard shortcuts for visible input
+				if (
+					(key.ctrl && input === "u") ||
+					(key.meta && input === "k")
+				) {
+					setInternalSearchQuery("");
+					setSearchCursorPosition(0);
+					return;
+				}
+				if (key.ctrl && input === "a") {
+					setSearchCursorPosition(0);
+					return;
+				}
+				if (key.ctrl && input === "e") {
+					setSearchCursorPosition(internalSearchQuery.length);
+					return;
+				}
+
+				// Cursor movement with arrows
+				if (key.leftArrow) {
+					setSearchCursorPosition(
+						Math.max(0, searchCursorPosition - 1)
+					);
+					return;
+				}
+				if (key.rightArrow) {
+					setSearchCursorPosition(
+						Math.min(
+							internalSearchQuery.length,
+							searchCursorPosition + 1
+						)
+					);
+					return;
+				}
+
+				// Backspace/delete
+				if (key.backspace || key.delete || input === "\b") {
+					if (searchCursorPosition > 0) {
+						setInternalSearchQuery(
+							internalSearchQuery.slice(
+								0,
+								searchCursorPosition - 1
+							) + internalSearchQuery.slice(searchCursorPosition)
+						);
+						setSearchCursorPosition(searchCursorPosition - 1);
+					}
+					return;
+				}
+
+				// Text input
+				if (
+					input &&
+					input !== " " &&
+					input.length === 1 &&
+					!key.ctrl &&
+					!key.meta &&
+					!key.return &&
+					!key.escape &&
+					!key.upArrow &&
+					!key.downArrow
+				) {
+					setInternalSearchQuery(
+						internalSearchQuery.slice(0, searchCursorPosition) +
+							input +
+							internalSearchQuery.slice(searchCursorPosition)
+					);
+					setSearchCursorPosition(searchCursorPosition + 1);
+					return;
+				}
+
+				// Arrow navigation for options
+				if (key.upArrow) {
+					navigateUp();
+					return;
+				}
+				if (key.downArrow) {
+					navigateDown();
+					return;
+				}
+			} else {
+				// Hidden search input - only for searchable: true
+				if (
+					hasHiddenSearch &&
+					input &&
+					input !== " " &&
+					input.length === 1 &&
+					!key.ctrl &&
+					!key.meta &&
+					!key.return &&
+					!key.escape &&
+					!key.upArrow &&
+					!key.downArrow &&
+					!key.leftArrow &&
+					!key.rightArrow
+				) {
+					setInternalSearchQuery(internalSearchQuery + input);
+					return;
+				}
+
+				if (
+					hasHiddenSearch &&
+					(key.backspace || key.delete || input === "\b")
+				) {
+					setInternalSearchQuery(internalSearchQuery.slice(0, -1));
+					return;
+				}
+
+				// Arrow navigation
+				if (key.leftArrow) {
+					setSelectedIndex(
+						selectedIndex > 0 ? selectedIndex - 1 : totalOptions - 1
+					);
+					return;
+				}
+				if (key.rightArrow) {
+					setSelectedIndex(
+						selectedIndex < totalOptions - 1 ? selectedIndex + 1 : 0
+					);
+					return;
+				}
+				if (key.upArrow) {
+					navigateUp();
+					return;
+				}
+				if (key.downArrow) {
+					navigateDown();
+					return;
+				}
 			}
 
-			if (key.leftArrow) {
-				setSelectedIndex(
-					selectedIndex > 0 ? selectedIndex - 1 : totalOptions - 1
-				);
-				return;
-			}
-			if (key.rightArrow) {
-				setSelectedIndex(
-					selectedIndex < totalOptions - 1 ? selectedIndex + 1 : 0
-				);
-				return;
-			}
-			if (key.upArrow) {
-				navigateUp();
-				return;
-			}
-			if (key.downArrow) {
-				navigateDown();
-				return;
-			}
-
+			// Number selection (works in both modes)
 			if (options.showNumbers) {
 				const num = parseInt(input);
 				if (!isNaN(num) && num >= 1 && num <= totalOptions) {
@@ -484,6 +607,28 @@ export const MultiField = ({
 	return (
 		<Box flexDirection="column">
 			<Text>{label}</Text>
+			{showSearchInput && (
+				<Box>
+					<Text color="cyan">
+						{internalSearchQuery.slice(0, searchCursorPosition)}
+						<Text backgroundColor="grey" color="black">
+							{searchCursorPosition < internalSearchQuery.length
+								? internalSearchQuery[searchCursorPosition]
+								: " "}
+						</Text>
+						{internalSearchQuery.slice(
+							searchCursorPosition +
+								(searchCursorPosition <
+								internalSearchQuery.length
+									? 1
+									: 0)
+						)}
+						{internalSearchQuery.length === 0 &&
+							searchCursorPosition === 0 &&
+							"\u200B"}
+					</Text>
+				</Box>
+			)}
 			{options.hintPosition === "side" ? (
 				<Box flexDirection="row">
 					<Box flexDirection="column" width={25}>
@@ -544,7 +689,7 @@ export const MultiField = ({
 											// Highlight matching text if searching
 											const renderLabel = () => {
 												if (
-													!options.searchable ||
+													!isSearchActive ||
 													!internalSearchQuery.trim()
 												) {
 													return option.label;
@@ -722,7 +867,7 @@ export const MultiField = ({
 								// Highlight matching text if searching
 								const renderLabel = () => {
 									if (
-										!options.searchable ||
+										!isSearchActive ||
 										!internalSearchQuery.trim()
 									) {
 										return option.label;
@@ -844,7 +989,7 @@ export const MultiField = ({
 								// Highlight matching text if searching
 								const renderLabel = () => {
 									if (
-										!options.searchable ||
+										!isSearchActive ||
 										!internalSearchQuery.trim()
 									) {
 										return option.label;
@@ -916,7 +1061,7 @@ export const MultiField = ({
 					);
 				})()
 			)}
-			{options.searchable &&
+			{isSearchActive &&
 				filteredOptions.length === 0 &&
 				internalSearchQuery.trim() && (
 					<Text color="red">

@@ -68,6 +68,7 @@ const flow = async () => {
 			const framework = await radio({
 				label: "Select a framework:",
 				shortLabel: "Framework",
+				searchable: true,
 				options: [
 					{ value: "react", label: "React", color: "red" },
 					{ value: "vue", label: "Vue", color: "green" },
@@ -98,21 +99,8 @@ const flow = async () => {
 				shortLabel: "Addons",
 				label: "Choose addons:",
 				hintPosition: "inline-fixed",
+				searchable: true,
 				options: [
-					{
-						value: "tailwind",
-						label: "Tailwind",
-						hint: "A utility-first CSS framework",
-					},
-					{
-						value: "shadcn",
-						label: "Shadcn",
-						hint: "A library of components for building websites",
-					},
-					{
-						value: "eslint",
-						label: "ESLint",
-					},
 					{
 						value: "prettier",
 						label: "Prettier",
