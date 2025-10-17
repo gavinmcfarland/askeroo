@@ -98,8 +98,8 @@ export function RecursiveGroupContainer({
 
 			// For root level (no flow), show first pending field
 			if (!item.flow && item.id === "root") {
-				// Show completed, active, and first pending
-				if (child.completed || child.active) {
+				// Show completed, active, visited (with deferred completion), and first pending
+				if (child.completed || child.active || child.visited) {
 					return true;
 				}
 				// Show first pending field
@@ -113,8 +113,8 @@ export function RecursiveGroupContainer({
 
 			// Handle different flow types separately
 			if (item.flow === "progressive") {
-				// Progressive flow: show completed, active, and the next pending field
-				if (child.completed || child.active) {
+				// Progressive flow: show completed, active, visited (with deferred completion), and the next pending field
+				if (child.completed || child.active || child.visited) {
 					return true;
 				}
 				// Show the next pending field after all completed ones

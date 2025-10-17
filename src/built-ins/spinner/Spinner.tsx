@@ -166,43 +166,77 @@ export const SpinnerDisplay = ({
 		return styledText;
 	};
 
-	// Auto-submit when stopped (with optional delay)
+	// Auto-submit immediately when active (like streams do)
+	// This allows multiple spinners to run concurrently without blocking each other
+	// Use deferCompletion to prevent the node from being marked as completed until stopped
 	useEffect(() => {
-		if (node.state !== "active") return;
+		if (node.state === "active" && events.onSubmit) {
+			// Submit immediately to allow runtime to continue, but defer completion
+			events.onSubmit({ type: "auto", deferCompletion: true });
+		}
+	}, [node.state, events.onSubmit]);
 
-		if (spinnerState.status === "stopped" && events.onSubmit) {
-			const delay =
-				options.submitDelay !== undefined ? options.submitDelay : 0;
-
-			// If hideOnCompletion and no delay, submit immediately
-			if (options.hideOnCompletion && delay === 0) {
-				events.onSubmit({ type: "auto" });
-			} else {
+	// Mark node as completed when spinner is stopped
+	useEffect(() => {
+		if (spinnerState.status === "stopped" && events.onComplete) {
+			// If there's a submitDelay, wait for it before marking as complete
+			if (options.submitDelay && options.submitDelay > 0) {
 				const timer = setTimeout(() => {
-					events.onSubmit({ type: "auto" });
-				}, delay);
+					events.onComplete(); // PluginWrapper handles the promptId
+				}, options.submitDelay);
 				return () => clearTimeout(timer);
+			} else {
+				// Mark as complete immediately
+				events.onComplete(); // PluginWrapper handles the promptId
 			}
 		}
-	}, [
-		spinnerState.status,
-		node.state,
-		events.onSubmit,
-		options.submitDelay,
-		options.hideOnCompletion,
-	]);
+	}, [spinnerState.status, events.onComplete, options.submitDelay]);
 
-	// Hide if hideOnCompletion is true and spinner is completed
+	// Track whether we should hide after delay (for hideOnCompletion with submitDelay)
+	const [shouldHideAfterDelay, setShouldHideAfterDelay] = useState(false);
+
+	// Handle delayed hiding when spinner stops with submitDelay
+	useEffect(() => {
+		// Only applies when hideOnCompletion is true and there's a submitDelay
+		if (
+			!options.hideOnCompletion ||
+			!options.submitDelay ||
+			options.submitDelay === 0
+		) {
+			return;
+		}
+
+		// When spinner stops, wait for submitDelay then trigger hiding
+		if (spinnerState.status === "stopped") {
+			const timer = setTimeout(() => {
+				setShouldHideAfterDelay(true);
+			}, options.submitDelay);
+
+			return () => clearTimeout(timer);
+		}
+	}, [spinnerState.status, options.submitDelay, options.hideOnCompletion]);
+
+	// Don't render if we're completed and should hide
 	if (options.hideOnCompletion && node.state === "completed") {
-		return null;
+		const spinnerFinished = spinnerState.status === "stopped";
+
+		// If spinner finished and either no delay or delay has elapsed
+		if (spinnerFinished) {
+			// No delay: hide immediately
+			if (!options.submitDelay || options.submitDelay === 0) {
+				return null;
+			}
+			// With delay: hide after delay timer completes
+			if (shouldHideAfterDelay) {
+				return null;
+			}
+		}
 	}
 
-	// Don't render stopped state if hideOnCompletion is true and there's no delay
-	if (
-		options.hideOnCompletion &&
-		spinnerState.status === "stopped" &&
-		(!options.submitDelay || options.submitDelay === 0)
-	) {
+	// Don't render if we're inactive (not active, not completed, just disabled)
+	// AND the spinner is stopped (not running/paused)
+	// This prevents stopped background spinners from showing after submission
+	if (node.state === "disabled" && spinnerState.status === "stopped") {
 		return null;
 	}
 
