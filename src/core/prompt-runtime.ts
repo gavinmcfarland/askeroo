@@ -693,7 +693,7 @@ export class PromptRuntime {
 			debugLogger.log("FORCE_QUIT", {
 				message: "Second Ctrl+C detected, forcing exit",
 			});
-			console.log("\nForce quitting...");
+			// console.log("\nForce quitting...");
 			process.exit(1);
 			return;
 		}
