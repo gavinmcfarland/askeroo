@@ -116,7 +116,7 @@ async function streamWithError() {
 	await output.writeLine("    ● Database › should connect");
 	await output.writeLine("      Connection timeout after 5000ms");
 
-	await output.error("✗ Test suite failed!");
+	await output.error("Test suite failed!");
 }
 
 // Run examples

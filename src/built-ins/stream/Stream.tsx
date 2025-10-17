@@ -117,11 +117,9 @@ export const StreamDisplay = ({
 	return (
 		<Box flexDirection="column">
 			{label && (
-				<Box marginBottom={linesToDisplay.length > 0 ? 1 : 0}>
-					<Text color={getStatusColor(streamState.status)}>
-						{getStatusSymbol(streamState.status)} {label}
-					</Text>
-				</Box>
+				<Text color={getStatusColor(streamState.status)}>
+					{getStatusSymbol(streamState.status)} {label}
+				</Text>
 			)}
 			{linesToDisplay.map((line, index) => {
 				const actualLineNumber = options.maxLines

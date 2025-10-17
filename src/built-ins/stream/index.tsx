@@ -160,7 +160,7 @@ export async function stream(
 			}
 
 			if (finalMessage) {
-				await controller.writeLine(finalMessage);
+				await controller.setLabel(finalMessage);
 			}
 
 			updateStreamState(streamId, { status: "completed" });
@@ -174,7 +174,7 @@ export async function stream(
 			}
 
 			if (errorMessage) {
-				await controller.writeLine(errorMessage);
+				await controller.setLabel(errorMessage);
 			}
 
 			updateStreamState(streamId, { status: "error" });
