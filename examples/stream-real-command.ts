@@ -1,4 +1,4 @@
-import { ask, stream } from "../src/index.js";
+import { ask, stream, note } from "../src/index.js";
 import { spawn } from "child_process";
 
 /**
@@ -67,11 +67,11 @@ async function runTests() {
 // Example usage
 const flow = async () => {
 	// Example 1: List files in current directory
-	console.log("\n=== Listing Files ===\n");
+	await note("\n=== Listing Files ===\n");
 	await listFiles();
 
 	// Example 2: Git status
-	console.log("\n\n=== Git Status ===\n");
+	await note("\n\n=== Git Status ===\n");
 	await gitStatus();
 
 	// Example 3: Install packages (commented out to avoid actually installing)
