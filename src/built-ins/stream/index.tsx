@@ -6,6 +6,12 @@ import type { StreamOptions, StreamController } from "./types.js";
 // Re-export types
 export type { StreamOptions, StreamStatus, StreamState } from "./types.js";
 
+// Re-export color helper
+export {
+	spawnWithColors,
+	type ColoredSpawnResult,
+} from "./spawn-with-colors.js";
+
 // Track the most recent stream ID
 let currentStreamId: string | null = null;
 

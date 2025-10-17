@@ -48,9 +48,11 @@ export {
 } from "./built-ins/spinner/index.js";
 export {
 	stream,
+	spawnWithColors,
 	type StreamOptions,
 	type StreamStatus,
 	type StreamState,
+	type ColoredSpawnResult,
 } from "./built-ins/stream/index.js";
 export {
 	completedFields,

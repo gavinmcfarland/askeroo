@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Box, Text } from "ink";
-import chalk from "chalk";
 import { streamStore } from "./stream-store.js";
 import type { StreamOptions, StreamStatus } from "./types.js";
 
@@ -98,11 +97,18 @@ export const StreamDisplay = ({
 		? streamState.lines.slice(-options.maxLines)
 		: streamState.lines;
 
-	// Determine status symbol
+	// Determine status symbol (without color)
 	const getStatusSymbol = (status: StreamStatus): string => {
-		if (status === "completed") return chalk.green("■");
-		if (status === "error") return chalk.red("✗");
-		return chalk.blue(spinnerFrames[spinnerFrame]); // active - animated
+		if (status === "completed") return "■";
+		if (status === "error") return "✗";
+		return spinnerFrames[spinnerFrame]; // active - animated
+	};
+
+	// Determine status color
+	const getStatusColor = (status: StreamStatus): string => {
+		if (status === "completed") return "green";
+		if (status === "error") return "red";
+		return "blue"; // active
 	};
 
 	// Get label if set
@@ -112,7 +118,7 @@ export const StreamDisplay = ({
 		<Box flexDirection="column">
 			{label && (
 				<Box marginBottom={linesToDisplay.length > 0 ? 1 : 0}>
-					<Text>
+					<Text color={getStatusColor(streamState.status)}>
 						{getStatusSymbol(streamState.status)} {label}
 					</Text>
 				</Box>

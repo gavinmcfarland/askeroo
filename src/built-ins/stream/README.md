@@ -323,13 +323,42 @@ async function dockerBuild(imageName: string) {
 await dockerBuild("my-app:latest");
 ```
 
-## Status Symbols
+## Status Symbols and Colors
 
-The stream automatically shows status symbols in the label:
+The stream automatically shows status symbols in the label with consistent coloring (both symbol and text use the same color):
 
 -   Animated spinner (blue) - Active/streaming (uses same animation as tasks)
 -   `■` (green) - Completed successfully
 -   `✗` (red) - Error occurred
+
+## ANSI Color Preservation
+
+Preserve colors from commands (git, npm, ls, etc.) automatically:
+
+```typescript
+import { stream, spawnWithColors } from "askeroo";
+
+const output = await stream("Git Status");
+
+// Colors preserved automatically - no flags needed!
+const git = spawnWithColors("git", ["status"]);
+
+git.stdout.on("data", (data) => output.write(data.toString()));
+git.on("close", () => output.complete());
+```
+
+**How it works:**
+
+1. Uses `node-pty` if installed (best - real pseudo-TTY)
+2. Falls back to environment variables (good - works for most commands)
+
+**Optional enhancement:**
+
+```bash
+npm install node-pty --save-optional
+```
+
+📚 **Full documentation:** [COLOR_PRESERVATION.md](./COLOR_PRESERVATION.md)
 
 ## Tips
 

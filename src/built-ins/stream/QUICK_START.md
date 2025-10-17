@@ -88,7 +88,8 @@ await ask(flow);
 -   **Scrolling**: Set `maxLines` to show only recent output
 -   **Line numbers**: Optional line numbering
 -   **Prefix symbols**: Add visual indicators
--   **Status symbols**: Automatic status indicators (animated spinner for active, ■ complete, ✗ error)
+-   **Status symbols**: Automatic status indicators with color (blue animated spinner for active, green ■ for complete, red ✗ for error)
+-   **ANSI color preservation**: Use `spawnWithColors()` to automatically preserve command colors (git, npm, ls, etc.)
 
 ## Controller Methods
 

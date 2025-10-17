@@ -1,9 +1,9 @@
-import { ask, stream, note } from "../src/index.js";
-import { spawn } from "child_process";
+import { ask, stream, note, spawnWithColors } from "../src/index.js";
 
 /**
  * Example of streaming real command output
  * This example shows how to capture output from actual shell commands
+ * with automatic ANSI color preservation
  */
 
 async function runCommand(command: string, args: string[], label?: string) {
@@ -15,7 +15,8 @@ async function runCommand(command: string, args: string[], label?: string) {
 	);
 
 	return new Promise<number>((resolve, reject) => {
-		const proc = spawn(command, args);
+		// Use spawnWithColors to preserve ANSI colors from commands
+		const proc = spawnWithColors(command, args);
 
 		proc.stdout.on("data", (data) => {
 			output.write(data.toString());
