@@ -47,6 +47,12 @@ export {
 	type SpinnerStyle,
 } from "./built-ins/spinner/index.js";
 export {
+	stream,
+	type StreamOptions,
+	type StreamStatus,
+	type StreamState,
+} from "./built-ins/stream/index.js";
+export {
 	completedFields,
 	type CompletedFieldsOptions,
 } from "./built-ins/completed-fields/index.js";
