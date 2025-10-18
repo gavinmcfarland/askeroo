@@ -57,6 +57,13 @@ interface SpinnerLabel {
     stopped?: string;
 }
 
+interface SpinnerOptions {
+    label?: string | SpinnerLabel;
+    hideOnCompletion?: boolean;
+    submitDelay?: number;
+    style?: SpinnerStyle;
+}
+
 interface SpinnerSymbol {
     idle?: string;
     running?: string | string[]; // Can be array for animation
@@ -71,29 +78,13 @@ interface SpinnerStyle {
     symbol?: string | SpinnerSymbol;
 }
 
-interface SpinnerOptions {
-    label?: string | SpinnerLabel;
-    hideOnCompletion?: boolean;
-    submitDelay?: number;
-    style?: SpinnerStyle;
-}
-
 interface SpinnerController {
-    start: (text?: string, style?: SpinnerStyle) => Promise<void>;
-    pause: (text?: string, style?: SpinnerStyle) => Promise<void>;
-    resume: (text?: string, style?: SpinnerStyle) => Promise<void>;
-    stop: (text?: string, style?: SpinnerStyle) => Promise<void>;
+    start: (label?: string, style?: SpinnerStyle) => Promise<void>;
+    pause: (label?: string, style?: SpinnerStyle) => Promise<void>;
+    resume: (label?: string, style?: SpinnerStyle) => Promise<void>;
+    stop: (label?: string, style?: SpinnerStyle) => Promise<void>;
 }
 ```
-
-**Controller Methods:**
-
-All controller methods are async and should be awaited. Each method accepts optional `text` and `style` parameters to update the spinner's display:
-
--   `start(text?, style?)` - Start the spinner animation. Style properties (`color`, `bgColor`, `dim`, `symbol`) can be passed to update the appearance
--   `pause(text?, style?)` - Pause the spinner with optional text/style updates
--   `resume(text?, style?)` - Resume the spinner after pause with optional text/style updates
--   `stop(text?, style?)` - Stop the spinner and complete (waits for prompt to finish) with optional text/style updates
 
 ## States
 
@@ -102,7 +93,7 @@ The spinner has four states:
 1. **idle** - Initial state, shown before `start()` is called
 2. **running** - Active spinner animation
 3. **paused** - Paused state
-4. **stopped** - Final state, auto-completes the prompt
+4. **stopped** - Final state
 
 ## Features
 
@@ -155,13 +146,3 @@ const job = await spinner("Syncing...", {
 await job.start();
 // Animates through: ◐ → ◓ → ◑ → ◒ → ◐ ...
 ```
-
-## Best Practices
-
-1. **Always await controller methods** - All methods are async
-2. **Use `stop()` to complete** - This properly closes the prompt
-3. **Set base styles once** - Use style merging for updates
-4. **Meaningful text updates** - Keep users informed of progress
-5. **Use colors semantically** - Green for success, yellow for warnings, red for errors
-6. **Use `hideOnCompletion` for temporary status** - Hide spinners that don't need to remain visible
-7. **Use `submitDelay` for important messages** - Give users time to read completion messages

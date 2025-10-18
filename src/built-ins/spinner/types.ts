@@ -38,8 +38,8 @@ export interface SpinnerState {
 }
 
 export interface SpinnerController {
-	start: (text?: string, style?: SpinnerStyle) => Promise<void>;
-	pause: (text?: string, style?: SpinnerStyle) => Promise<void>;
-	resume: (text?: string, style?: SpinnerStyle) => Promise<void>;
-	stop: (text?: string, style?: SpinnerStyle) => Promise<void>;
+	start: (label?: string, style?: SpinnerStyle) => Promise<void>;
+	pause: (label?: string, style?: SpinnerStyle) => Promise<void>;
+	resume: (label?: string, style?: SpinnerStyle) => Promise<void>;
+	stop: (label?: string, style?: SpinnerStyle) => Promise<void>;
 }

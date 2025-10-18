@@ -29,7 +29,7 @@ const spinnerInternal = createPrompt<SpinnerOptions, void>({
 function updateSpinnerState(
 	spinnerId: string,
 	status: "idle" | "running" | "paused" | "stopped",
-	currentLabel?: string,
+	label?: string,
 	currentStyle?: SpinnerStyle
 ) {
 	spinnerStore.update((s) => {
@@ -49,9 +49,7 @@ function updateSpinnerState(
 		s.spinners.set(spinnerId, {
 			status,
 			currentLabel:
-				currentLabel !== undefined
-					? currentLabel
-					: currentState.currentLabel,
+				label !== undefined ? label : currentState.currentLabel,
 			currentStyle: mergedStyle,
 			currentSymbol: updatedSymbol,
 			gracePeriodActive: false, // Clear grace period when state changes
@@ -111,17 +109,17 @@ export async function spinner(
 
 	// Create controller object with async methods
 	const controller: SpinnerController = {
-		start: async (text?: string, style?: SpinnerStyle) => {
-			updateSpinnerState(spinnerId, "running", text, style);
+		start: async (label?: string, style?: SpinnerStyle) => {
+			updateSpinnerState(spinnerId, "running", label, style);
 		},
-		pause: async (text?: string, style?: SpinnerStyle) => {
-			updateSpinnerState(spinnerId, "paused", text, style);
+		pause: async (label?: string, style?: SpinnerStyle) => {
+			updateSpinnerState(spinnerId, "paused", label, style);
 		},
-		resume: async (text?: string, style?: SpinnerStyle) => {
-			updateSpinnerState(spinnerId, "running", text, style);
+		resume: async (label?: string, style?: SpinnerStyle) => {
+			updateSpinnerState(spinnerId, "running", label, style);
 		},
-		stop: async (text?: string, style?: SpinnerStyle) => {
-			updateSpinnerState(spinnerId, "stopped", text, style);
+		stop: async (label?: string, style?: SpinnerStyle) => {
+			updateSpinnerState(spinnerId, "stopped", label, style);
 			// Wait for the prompt to complete
 			await promptPromise;
 		},
