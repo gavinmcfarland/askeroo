@@ -45,8 +45,6 @@ async function spinner(
         -   `dim?: boolean` - Make text dimmer
         -   `symbol?: string | SpinnerSymbol` - Custom symbol(s) for spinner states
 
-**Returns:** `Promise<SpinnerController>`
-
 ### Types
 
 ```typescript
@@ -85,6 +83,24 @@ interface SpinnerController {
     stop: (label?: string, style?: SpinnerStyle) => Promise<void>;
 }
 ```
+
+## Controller Methods
+
+### `start(label?, style?)`
+
+Start the spinner animation.
+
+### `pause(label?, style?)`
+
+Pause the spinner animation.
+
+### `resume(label?, style?)`
+
+Resume the spinner animation from paused state.
+
+### `stop(label?, style?)`
+
+Stop the spinner and mark as complete.
 
 ## States
 

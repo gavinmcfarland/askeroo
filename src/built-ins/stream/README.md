@@ -54,8 +54,6 @@ async function stream(
     -   `showLineNumbers?: boolean` - Show line numbers
     -   `prefixSymbol?: string` - Symbol prefix for each line
 
-**Returns:** `Promise<StreamController>`
-
 ### Types
 
 ```typescript
@@ -84,65 +82,25 @@ interface StreamController {
 
 Write text to the stream. Text will be buffered until a newline is encountered.
 
-```typescript
-const output = await stream("Processing...");
-output.write("Starting"); // Buffered
-output.write("...\n"); // Flushes "Starting..."
-```
-
 ### `writeLine(text: string)`
 
 Write a complete line to the stream (auto-appends newline behavior).
-
-```typescript
-const output = await stream("Logs");
-await output.writeLine("Line 1");
-await output.writeLine("Line 2");
-```
 
 ### `clear()`
 
 Clear all output lines.
 
-```typescript
-await output.clear();
-```
-
 ### `setLabel(label: string)`
 
 Update the label dynamically.
-
-```typescript
-await output.setLabel("Installing dependencies... (50%)");
-```
 
 ### `complete(finalMessage?: string)`
 
 Mark the stream as completed (shows ✓ symbol).
 
-```typescript
-await output.complete("All done!");
-```
-
 ### `error(errorMessage?: string)`
 
 Mark the stream as errored (shows ✗ symbol).
-
-```typescript
-await output.error("Build failed!");
-```
-
-```typescript
-const flow = async () => {
-    // Both streams start and update simultaneously
-    await streamLogs();
-    await streamMetrics();
-
-    // Continue with other prompts while both streams update
-    await note("Both streams are running above...");
-    const choice = await select("Choose action:", ["Continue", "Stop"]);
-};
-```
 
 ## Examples
 
