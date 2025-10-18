@@ -2,7 +2,7 @@
 
 A prompt for displaying streaming output from external processes or services. Perfect for showing real-time output from commands like npm install, build processes, or any streaming data.
 
-## Basic Usage
+## Usage
 
 ```typescript
 import { stream } from "askeroo";
@@ -12,72 +12,73 @@ import { spawn } from "child_process";
 const output = await stream("Installing packages...");
 
 // Simulate npm install output
-const npmProcess = spawn("npm", ["install"]);
+const npm = spawn("npm", ["install"]);
 
-npmProcess.stdout.on("data", (data) => {
+npm.stdout.on("data", (data) => {
     output.write(data.toString());
 });
 
-npmProcess.stderr.on("data", (data) => {
+npm.stderr.on("data", (data) => {
     output.write(data.toString());
 });
 
-npmProcess.on("close", (code) => {
+npm.on("close", (code) => {
     if (code === 0) {
-        output.complete("✓ Installation complete!");
+        output.complete("Installation complete!");
     } else {
-        output.error(`✗ Installation failed with code ${code}`);
+        output.error(`Installation failed with code ${code}`);
     }
 });
 ```
 
-## API Variations
+## API
 
-The `stream()` function has flexible overloads:
+### `stream(label?, options?)`
+
+Creates and returns a stream controller. This function is async.
 
 ```typescript
-// 1. Label only
-stream("Installing...");
-
-// 2. Label with options
-stream("Installing...", {
-    maxLines: 20,
-    showLineNumbers: true,
-});
-
-// 3. Options only (no label) - use undefined
-stream(undefined, {
-    maxLines: 20,
-    prefixSymbol: "▸",
-});
-
-// 4. Options object (recommended for clarity)
-stream({
-    label: "Installing...", // optional
-    maxLines: 20,
-    showLineNumbers: true,
-});
-
-// 5. No arguments
-stream();
+async function stream(
+    label?: string,
+    options?: StreamOptions
+): Promise<StreamController>;
 ```
 
-## Options
+**Parameters:**
+
+-   `label` (optional): Label shown above the output
+-   `options` (optional): Configuration object
+    -   `maxLines?: number` - Maximum lines to display (older lines scroll off)
+    -   `hideOnCompletion?: boolean` - Hide output when complete
+    -   `submitDelay?: number` - Delay in milliseconds before hiding (default: 0)
+    -   `showLineNumbers?: boolean` - Show line numbers
+    -   `prefixSymbol?: string` - Symbol prefix for each line
+
+**Returns:** `Promise<StreamController>`
+
+### Types
 
 ```typescript
 interface StreamOptions {
-    label?: string; // Label shown above the output
-    maxLines?: number; // Max lines to display (older lines scroll off)
-    hideOnCompletion?: boolean; // Hide output when complete
-    submitDelay?: number; // Delay before hiding (ms)
-    showLineNumbers?: boolean; // Show line numbers
-    prefixSymbol?: string; // Symbol prefix for each line
+    label?: string;
+    maxLines?: number;
+    hideOnCompletion?: boolean;
+    submitDelay?: number;
+    showLineNumbers?: boolean;
+    prefixSymbol?: string;
+}
+
+interface StreamController {
+    write: (text: string) => void;
+    writeLine: (text: string) => Promise<void>;
+    clear: () => Promise<void>;
+    setLabel: (label: string) => Promise<void>;
+    complete: (finalMessage?: string) => Promise<void>;
+    error: (errorMessage?: string) => Promise<void>;
 }
 ```
 
 ## Controller Methods
-
-The `stream()` function returns a controller with these methods:
 
 ### `write(text: string)`
 
@@ -130,45 +131,6 @@ Mark the stream as errored (shows ✗ symbol).
 ```typescript
 await output.error("Build failed!");
 ```
-
-## Non-Blocking Behavior
-
-Streams automatically allow the flow to proceed without blocking, even if you don't call `.complete()` or `.error()`. This means you can `await` stream functions and the runtime will continue to the next prompt while the stream keeps updating in the background.
-
-```typescript
-async function streamLogs() {
-    const output = await stream("Server logs");
-
-    // These updates happen even after the runtime proceeds to the next prompt
-    for (let i = 1; i <= 100; i++) {
-        await output.writeLine(`Log entry ${i}`);
-        await new Promise((r) => setTimeout(r, 100));
-    }
-
-    // Optional: explicitly mark as complete
-    await output.complete("All logs processed");
-}
-
-const flow = async () => {
-    // Await the stream function - runtime proceeds automatically
-    await streamLogs();
-
-    // Flow continues immediately while stream updates above
-    await note("Logs are streaming above...");
-
-    // Other prompts work normally
-    const answer = await text("Enter something:");
-};
-```
-
-**How it works:**
-
--   When a stream becomes active, it automatically submits to avoid blocking
--   The stream function continues executing and updating the display
--   Multiple streams can run simultaneously
--   Streams remain visible until `.complete()`, `.error()`, or flow completion
-
-**Multiple simultaneous streams:**
 
 ```typescript
 const flow = async () => {
@@ -374,14 +336,6 @@ async function dockerBuild(imageName: string) {
 await dockerBuild("my-app:latest");
 ```
 
-## Status Symbols and Colors
-
-The stream automatically shows status symbols in the label with consistent coloring (both symbol and text use the same color):
-
--   Animated spinner (blue) - Active/streaming (uses same animation as tasks)
--   `■` (green) - Completed successfully
--   `✗` (red) - Error occurred
-
 ## ANSI Color Preservation
 
 Preserve colors from commands (git, npm, ls, etc.) automatically:
@@ -410,23 +364,3 @@ npm install node-pty --save-optional
 ```
 
 📚 **Full documentation:** [COLOR_PRESERVATION.md](./COLOR_PRESERVATION.md)
-
-## Tips
-
-1. **Buffering**: Use `write()` for unbuffered output and `writeLine()` when you have complete lines
-2. **Line Limits**: Set `maxLines` for long-running streams to prevent terminal overflow
-3. **Line Numbers**: Enable `showLineNumbers` for debugging or when line references matter
-4. **Prefix Symbols**: Use `prefixSymbol` to add visual structure (like `│`, `▸`, `>`)
-5. **Hide on Success**: Use `hideOnCompletion: true` for operations where only failures matter
-6. **Dynamic Labels**: Update labels with progress percentages using `setLabel()`
-
-## Differences from Spinner
-
-| Feature      | Stream                                  | Spinner                   |
-| ------------ | --------------------------------------- | ------------------------- |
-| Output       | Multiple lines                          | Single line               |
-| Use case     | Command output, logs                    | Progress indication       |
-| Scrolling    | Supports maxLines                       | N/A                       |
-| Line numbers | Optional                                | N/A                       |
-| Buffering    | Text buffering                          | N/A                       |
-| Animation    | Title symbol only (during active state) | Label symbol (all states) |
