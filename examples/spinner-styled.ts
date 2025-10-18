@@ -8,8 +8,10 @@ function sleep(ms: number) {
 const flow = async () => {
 	// Example 1: Spinner with initial style
 	const job1 = await spinner("Processing...", {
-		color: "cyan",
-		dim: false,
+		style: {
+			color: "cyan",
+			dim: false,
+		},
 	});
 
 	await sleep(500);
@@ -19,7 +21,9 @@ const flow = async () => {
 	await job1.stop("Complete!", { color: "green" });
 
 	// Example 2: Changing styles dynamically
-	const job2 = await spinner("Starting task...", { color: "blue" });
+	const job2 = await spinner("Starting task...", {
+		style: { color: "blue" },
+	});
 
 	await sleep(500);
 	await job2.start("Running task...", { color: "yellow" });
@@ -35,8 +39,10 @@ const flow = async () => {
 
 	// Example 3: Using background colors
 	const job3 = await spinner("Important task", {
-		color: "white",
-		bgColor: "blue",
+		style: {
+			color: "white",
+			bgColor: "blue",
+		},
 	});
 
 	await sleep(500);
@@ -47,8 +53,10 @@ const flow = async () => {
 
 	// Example 4: Dim style
 	const job4 = await spinner("Background process...", {
-		color: "gray",
-		dim: true,
+		style: {
+			color: "gray",
+			dim: true,
+		},
 	});
 
 	await sleep(500);

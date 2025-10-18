@@ -8,7 +8,9 @@ function sleep(ms: number) {
 const flow = async () => {
 	// Example 1: Spinner that hides on completion (no delay - skips stopped state)
 	const job1 = await spinner("Downloading file...", {
-		color: "cyan",
+		style: {
+			color: "cyan",
+		},
 		hideOnCompletion: true,
 	});
 
@@ -21,7 +23,9 @@ const flow = async () => {
 
 	// Example 2: Another spinner that shows after completion
 	const job2 = await spinner("Installing packages...", {
-		color: "blue",
+		style: {
+			color: "blue",
+		},
 		hideOnCompletion: false, // Default behavior
 	});
 

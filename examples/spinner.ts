@@ -6,7 +6,9 @@ function sleep(ms: number) {
 }
 
 const flow = async () => {
-	const spinner1 = await spinner("Processing files...", { color: "blue" });
+	const spinner1 = await spinner("Processing files...", {
+		style: { color: "blue" },
+	});
 
 	await spinner1.start();
 
@@ -30,8 +32,10 @@ const flow = async () => {
 
 	// Example 1: Basic spinner with simple label
 	const spinner2 = await spinner("Cancelling...", {
-		color: "red",
-		dim: true,
+		style: {
+			color: "red",
+			dim: true,
+		},
 	});
 
 	await spinner2.start();

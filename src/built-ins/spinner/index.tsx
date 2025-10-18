@@ -72,20 +72,14 @@ export async function spinner(
 	currentSpinnerId = spinnerId;
 
 	// Extract style from options
-	const initialStyle = options
-		? {
-				color: options.color,
-				bgColor: options.bgColor,
-				dim: options.dim,
-		  }
-		: undefined;
+	const initialStyle = options?.style;
 
 	// Initialize spinner as idle in the store with grace period active
 	spinnerStore.update((s) => {
 		s.spinners.set(spinnerId, {
 			status: "idle",
 			currentStyle: initialStyle,
-			currentSymbol: options?.symbol,
+			currentSymbol: options?.style?.symbol,
 			gracePeriodActive: true, // Initially in grace period to avoid symbol flash
 		});
 		s.revision++;
@@ -110,12 +104,9 @@ export async function spinner(
 	const promptPromise = spinnerInternal({
 		label: label,
 		spinnerId: spinnerId,
-		color: options?.color,
-		bgColor: options?.bgColor,
-		dim: options?.dim,
 		hideOnCompletion: options?.hideOnCompletion,
 		submitDelay: options?.submitDelay,
-		symbol: options?.symbol,
+		style: options?.style,
 	});
 
 	// Create controller object with async methods

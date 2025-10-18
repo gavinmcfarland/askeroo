@@ -22,12 +22,9 @@ export interface SpinnerStyle {
 export interface SpinnerOptions {
 	label?: string | SpinnerLabel;
 	spinnerId?: string;
-	color?: string;
-	bgColor?: string;
-	dim?: boolean;
 	hideOnCompletion?: boolean;
 	submitDelay?: number;
-	symbol?: string | SpinnerSymbol;
+	style?: SpinnerStyle;
 }
 
 export type SpinnerStatus = "idle" | "running" | "paused" | "stopped";

@@ -8,8 +8,10 @@ function sleep(ms: number) {
 const flow = async () => {
 	// Simple custom symbol example
 	const job = await spinner("Loading...", {
-		symbol: "🚀",
-		color: "cyan",
+		style: {
+			symbol: "🚀",
+			color: "cyan",
+		},
 		submitDelay: 1000,
 	});
 

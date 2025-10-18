@@ -7,7 +7,9 @@ function sleep(ms: number) {
 
 const flow = async () => {
 	// Create spinner with initial text and style
-	const job = await spinner("Preparing...", { color: "blue" });
+	const job = await spinner("Preparing...", {
+		style: { color: "blue" },
+	});
 
 	await sleep(1000);
 	await job.start("Connecting to server...");

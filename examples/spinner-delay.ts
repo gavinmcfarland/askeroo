@@ -8,7 +8,9 @@ function sleep(ms: number) {
 const flow = async () => {
 	// Example 1: No delay (immediate submit)
 	const job1 = await spinner("Quick task...", {
-		color: "blue",
+		style: {
+			color: "blue",
+		},
 	});
 
 	await job1.start();
@@ -17,7 +19,9 @@ const flow = async () => {
 
 	// Example 2: With submitDelay (pause before submit)
 	const job2 = await spinner("Task with delay...", {
-		color: "cyan",
+		style: {
+			color: "cyan",
+		},
 		submitDelay: 1500, // Wait 1.5 seconds after stopping before submitting
 	});
 
@@ -28,7 +32,9 @@ const flow = async () => {
 
 	// Example 3: Long submitDelay to show success message
 	const job3 = await spinner("Processing...", {
-		color: "yellow",
+		style: {
+			color: "yellow",
+		},
 		submitDelay: 2000, // Wait 2 seconds
 	});
 

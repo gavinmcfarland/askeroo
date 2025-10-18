@@ -11,7 +11,9 @@ const flow = async () => {
 	// Example 1: Simple string symbol (replaces running animation)
 	console.log("Example 1: Simple string symbol");
 	const s1 = await spinner("Loading with custom symbol...", {
-		symbol: "🔄",
+		style: {
+			symbol: "🔄",
+		},
 		submitDelay: 1000,
 	});
 	await s1.start();
@@ -21,11 +23,13 @@ const flow = async () => {
 	// Example 2: Custom symbols for all states
 	console.log("\nExample 2: Custom symbols for all states");
 	const s2 = await spinner("Processing...", {
-		symbol: {
-			idle: "⚪",
-			running: "🔵",
-			paused: "🟡",
-			stopped: "🟢",
+		style: {
+			symbol: {
+				idle: "⚪",
+				running: "🔵",
+				paused: "🟡",
+				stopped: "🟢",
+			},
 		},
 		submitDelay: 1000,
 	});
@@ -40,10 +44,12 @@ const flow = async () => {
 	// Example 3: Animated custom symbols using an array
 	console.log("\nExample 3: Animated custom symbols");
 	const s3 = await spinner("Syncing...", {
-		symbol: {
-			idle: "⭕",
-			running: ["◐", "◓", "◑", "◒"],
-			stopped: "✓",
+		style: {
+			symbol: {
+				idle: "⭕",
+				running: ["◐", "◓", "◑", "◒"],
+				stopped: "✓",
+			},
 		},
 		submitDelay: 1000,
 	});
@@ -54,7 +60,9 @@ const flow = async () => {
 	// Example 4: Changing symbol dynamically via style
 	console.log("\nExample 4: Changing symbol dynamically");
 	const s4 = await spinner("Downloading...", {
-		symbol: "⬇️",
+		style: {
+			symbol: "⬇️",
+		},
 		submitDelay: 1000,
 	});
 	await s4.start();
@@ -66,9 +74,11 @@ const flow = async () => {
 	// Example 5: Moon phases animation
 	console.log("\nExample 5: Moon phases animation");
 	const s5 = await spinner("Waiting for moonlight...", {
-		symbol: {
-			running: ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"],
-			stopped: "🌕",
+		style: {
+			symbol: {
+				running: ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"],
+				stopped: "🌕",
+			},
 		},
 		submitDelay: 1000,
 	});

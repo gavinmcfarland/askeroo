@@ -8,8 +8,10 @@ function sleep(ms: number) {
 const flow = async () => {
 	// Set initial style with color and dim
 	const job = await spinner("Processing...", {
-		color: "red",
-		dim: true,
+		style: {
+			color: "red",
+			dim: true,
+		},
 	});
 
 	await sleep(1000);

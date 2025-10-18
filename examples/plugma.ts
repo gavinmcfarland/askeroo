@@ -257,7 +257,9 @@ const flow = async () => {
 		const result = await ask(flow, {
 			onCancel: async ({ results, cleanup }) => {
 				const cancel = await spinner("Canceling...", {
-					color: "yellow",
+					style: {
+						color: "yellow",
+					},
 					hideOnCompletion: true,
 				});
 

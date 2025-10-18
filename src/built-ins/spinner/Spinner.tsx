@@ -85,7 +85,8 @@ export const SpinnerDisplay = ({
 
 	const getSymbol = (status: SpinnerStatus): string => {
 		// Check if currentSymbol is set in state
-		const customSymbol = spinnerState.currentSymbol || options.symbol;
+		const customSymbol =
+			spinnerState.currentSymbol || options.style?.symbol;
 
 		if (customSymbol) {
 			// If it's a string, use it for all states
@@ -127,13 +128,12 @@ export const SpinnerDisplay = ({
 
 	const applyStyles = (text: string): string => {
 		// Get current style from state or fall back to options
-		const style = spinnerState.currentStyle || {
-			color: options.color,
-			bgColor: options.bgColor,
-			dim: options.dim,
-		};
+		const style = spinnerState.currentStyle || options.style;
 
-		if (!style.color && !style.bgColor && style.dim === undefined) {
+		if (
+			!style ||
+			(!style.color && !style.bgColor && style.dim === undefined)
+		) {
 			return text;
 		}
 
