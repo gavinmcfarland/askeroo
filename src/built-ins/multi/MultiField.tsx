@@ -646,23 +646,32 @@ export const MultiField = ({
 										<Text color="gray">⋯</Text>
 									)}
 									{showNoneOption && (
-										<Text
-											color={
-												selectedIndex === 0
-													? "cyan"
-													: selectedValues.includes(
-															NONE_VALUE
-													  )
-													? "white"
-													: "gray"
-											}
-										>
-											{selectedValues.includes(NONE_VALUE)
-												? "■"
-												: "□"}{" "}
-											{options.showNumbers && "1. "}
-											{options.noneOption!.label}
-										</Text>
+										<Box flexDirection="row">
+											<Text
+												color={
+													selectedIndex === 0
+														? "cyan"
+														: selectedValues.includes(
+																NONE_VALUE
+														  )
+														? "white"
+														: "gray"
+												}
+											>
+												{selectedValues.includes(
+													NONE_VALUE
+												)
+													? "■"
+													: "□"}{" "}
+												{options.showNumbers && "1. "}
+												{options.noneOption!.label}
+											</Text>
+											{selectedIndex === 0 && (
+												<Text color="gray" dimColor>
+													{" ‹"}
+												</Text>
+											)}
+										</Box>
 									)}
 									{visibleOptions.map(
 										(option, visibleIndex) => {
@@ -741,15 +750,25 @@ export const MultiField = ({
 											};
 
 											return (
-												<Text
+												<Box
 													key={option.value}
-													color={color}
+													flexDirection="row"
 												>
-													{isSelected ? "■" : "□"}{" "}
-													{options.showNumbers &&
-														`${displayIndex}. `}
-													{renderLabel()}
-												</Text>
+													<Text color={color}>
+														{isSelected ? "■" : "□"}{" "}
+														{options.showNumbers &&
+															`${displayIndex}. `}
+														{renderLabel()}
+													</Text>
+													{isFocused && (
+														<Text
+															color="gray"
+															dimColor
+														>
+															{" ‹"}
+														</Text>
+													)}
+												</Box>
 											);
 										}
 									)}
@@ -822,7 +841,7 @@ export const MultiField = ({
 							{showStartEllipsis && <Text color="gray">⋯</Text>}
 							{showNoneOption && (
 								<Box flexDirection="row">
-									<Box width={25}>
+									<Box width={25} flexDirection="row">
 										<Text
 											color={
 												selectedIndex === 0
@@ -840,6 +859,11 @@ export const MultiField = ({
 											{options.showNumbers && "1. "}
 											{options.noneOption!.label}
 										</Text>
+										{selectedIndex === 0 && (
+											<Text color="gray" dimColor>
+												{" ‹"}
+											</Text>
+										)}
 									</Box>
 									<Box flexGrow={1}>
 										<Text color="gray">
@@ -917,13 +941,18 @@ export const MultiField = ({
 
 								return (
 									<Box key={option.value} flexDirection="row">
-										<Box width={25}>
+										<Box width={25} flexDirection="row">
 											<Text color={color}>
 												{isSelected ? "■" : "□"}{" "}
 												{options.showNumbers &&
 													`${displayIndex}. `}
 												{renderLabel()}
 											</Text>
+											{isFocused && (
+												<Text color="gray" dimColor>
+													{" ‹"}
+												</Text>
+											)}
 										</Box>
 										<Box flexGrow={1}>
 											<Text color="gray">
@@ -952,23 +981,30 @@ export const MultiField = ({
 						<>
 							{showStartEllipsis && <Text color="gray">⋯</Text>}
 							{showNoneOption && (
-								<Text
-									color={
-										selectedIndex === 0
-											? "cyan"
-											: selectedValues.includes(
-													NONE_VALUE
-											  )
-											? "white"
-											: "gray"
-									}
-								>
-									{selectedValues.includes(NONE_VALUE)
-										? "■"
-										: "□"}{" "}
-									{options.showNumbers && "1. "}
-									{options.noneOption!.label}
-								</Text>
+								<Box flexDirection="row">
+									<Text
+										color={
+											selectedIndex === 0
+												? "cyan"
+												: selectedValues.includes(
+														NONE_VALUE
+												  )
+												? "white"
+												: "gray"
+										}
+									>
+										{selectedValues.includes(NONE_VALUE)
+											? "■"
+											: "□"}{" "}
+										{options.showNumbers && "1. "}
+										{options.noneOption!.label}
+									</Text>
+									{selectedIndex === 0 && (
+										<Text color="gray" dimColor>
+											{" ‹"}
+										</Text>
+									)}
+								</Box>
 							)}
 							{visibleOptions.map((option, visibleIndex) => {
 								const actualIndex = startIndex + visibleIndex;
@@ -1045,6 +1081,11 @@ export const MultiField = ({
 												`${displayIndex}. `}
 											{renderLabel()}
 										</Text>
+										{isFocused && (
+											<Text color="gray" dimColor>
+												{" ‹"}
+											</Text>
+										)}
 										{options.hintPosition === "inline" &&
 											isFocused &&
 											option.hint && (

@@ -274,19 +274,26 @@ export const confirm = createPrompt<ConfirmOptions, any>({
 				{options.hintPosition === "side" ? (
 					// Side layout - two columns, hint only for selected option
 					<Box flexDirection="row">
-						<Box flexDirection="column" width={25}>
+						<Box flexDirection="column">
 							{confirmOptions.map((option, index) => (
-								<Text
+								<Box
 									key={String(option.value)}
-									color={
-										index === selectedIndex
-											? "cyan"
-											: option.color || "gray"
-									}
+									flexDirection="row"
 								>
-									{index === selectedIndex ? "●" : "○"}{" "}
-									{option.label}
-								</Text>
+									<Text
+										color={
+											index === selectedIndex
+												? "cyan"
+												: option.color || "gray"
+										}
+									>
+										{index === selectedIndex ? "●" : "○"}{" "}
+										{option.label}
+									</Text>
+									<Text color="gray" dimColor>
+										{index === selectedIndex ? " ‹" : "  "}
+									</Text>
+								</Box>
 							))}
 						</Box>
 						<Box flexDirection="column" flexGrow={1}>
@@ -301,7 +308,7 @@ export const confirm = createPrompt<ConfirmOptions, any>({
 					</Box>
 				) : (
 					// Original horizontal layout for inline and bottom
-					<Box flexDirection="row" gap={2}>
+					<Box flexDirection="row" gap={1}>
 						{confirmOptions.map((option, index) => (
 							<Box key={String(option.value)} flexDirection="row">
 								<Text
@@ -313,6 +320,9 @@ export const confirm = createPrompt<ConfirmOptions, any>({
 								>
 									{index === selectedIndex ? "●" : "○"}{" "}
 									{option.label}
+								</Text>
+								<Text color="gray" dimColor>
+									{index === selectedIndex ? " ‹" : "  "}
 								</Text>
 								{options.hintPosition === "inline" &&
 									index === selectedIndex &&
