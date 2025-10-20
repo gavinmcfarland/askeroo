@@ -244,8 +244,6 @@ export const TextInput: React.FC<TextInputProps> = ({
 				setCursorPosition(newPos);
 				wordStartCursor.current = newPos; // Update word start for next typing
 				lastWasSpace.current = false; // Reset space tracking
-				// Save state with new cursor position
-				pushToHistory(newPos);
 				return;
 			}
 			if (key.ctrl && input === "e") {
@@ -254,8 +252,6 @@ export const TextInput: React.FC<TextInputProps> = ({
 				setCursorPosition(newPos);
 				wordStartCursor.current = newPos; // Update word start for next typing
 				lastWasSpace.current = false; // Reset space tracking
-				// Save state with new cursor position
-				pushToHistory(newPos);
 				return;
 			}
 
@@ -267,8 +263,6 @@ export const TextInput: React.FC<TextInputProps> = ({
 					setCursorPosition(newPos);
 					wordStartCursor.current = newPos; // Update word start for next typing
 					lastWasSpace.current = false; // Reset space tracking
-					// Save state with new cursor position for undo
-					pushToHistory(newPos);
 					return;
 				}
 				if (key.rightArrow) {
@@ -277,8 +271,6 @@ export const TextInput: React.FC<TextInputProps> = ({
 					setCursorPosition(newPos);
 					wordStartCursor.current = newPos; // Update word start for next typing
 					lastWasSpace.current = false; // Reset space tracking
-					// Save state with new cursor position for undo
-					pushToHistory(newPos);
 					return;
 				}
 			}
