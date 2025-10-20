@@ -74,6 +74,12 @@ export const radio = createPrompt<RadioOptions, string>({
 				  )
 				: options.options || [];
 
+		// Track if any options match the search
+		const hasMatchingOptions =
+			!isSearchActive ||
+			!internalSearchQuery.trim() ||
+			filteredOptions.length > 0;
+
 		useEffect(() => {
 			if (selectedIndex >= filteredOptions.length) {
 				setSelectedIndex(Math.max(0, filteredOptions.length - 1));
@@ -729,7 +735,7 @@ export const radio = createPrompt<RadioOptions, string>({
 						})()
 					)}
 					{isSearchActive &&
-						filteredOptions.length === 0 &&
+						!hasMatchingOptions &&
 						internalSearchQuery.trim() && (
 							<Text color="red">
 								No options match "{internalSearchQuery}"

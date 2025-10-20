@@ -103,6 +103,18 @@ export const MultiField = ({
 		selectedValues,
 	]);
 
+	// Track if any options match the search (excluding just selected items)
+	const hasMatchingOptions = useMemo(() => {
+		if (!isSearchActive || !internalSearchQuery.trim()) return true;
+		const q = internalSearchQuery.toLowerCase();
+		return normalizedOptions.some((opt) => {
+			const matches =
+				opt.label.toLowerCase().includes(q) ||
+				opt.value.toLowerCase().includes(q);
+			return matches;
+		});
+	}, [normalizedOptions, isSearchActive, internalSearchQuery]);
+
 	const totalOptions = filteredOptions.length + (options.noneOption ? 1 : 0);
 
 	// Simple navigation state
@@ -1092,7 +1104,7 @@ export const MultiField = ({
 				})()
 			)}
 			{isSearchActive &&
-				filteredOptions.length === 0 &&
+				!hasMatchingOptions &&
 				internalSearchQuery.trim() && (
 					<Text color="red">
 						No options match "{internalSearchQuery}"
