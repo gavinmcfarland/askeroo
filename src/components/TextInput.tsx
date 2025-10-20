@@ -55,6 +55,8 @@ export const TextInput: React.FC<TextInputProps> = ({
 	const lastSavedCursor = useRef(value.length);
 	const isTypingWord = useRef(false); // Track if user is actively typing a word
 	const wordStartCursor = useRef(value.length); // Track cursor position when word typing started
+	const lastWasSpace = useRef(false); // Track if last character typed was a space
+	const textAfterWordStart = useRef(""); // Track text after cursor when word typing started
 
 	const cursorPosition =
 		externalCursorPosition !== undefined
@@ -125,40 +127,38 @@ export const TextInput: React.FC<TextInputProps> = ({
 	// Undo last change
 	const undo = () => {
 		// First, save the current word if we're typing one
-		// Save the text WITHOUT the word we're currently typing
 		if (isTypingWord.current && historyIndex.current >= 0) {
-			// wordStartCursor already points to the right position (including any space to remove)
-			const textBeforeWord = value.slice(0, wordStartCursor.current);
-			const currentState = {
-				value: textBeforeWord,
-				cursorPosition: wordStartCursor.current,
-			};
-
-			// Check if this state is different from what we're about to undo to
-			const stateToUndoTo =
-				historyIndex.current > 0
-					? history.current[historyIndex.current - 1]
-					: history.current[0];
-			const isDifferentFromUndoTarget =
-				currentState.value !== stateToUndoTo.value ||
-				currentState.cursorPosition !== stateToUndoTo.cursorPosition;
-
-			// Only save if it's different from the last saved AND different from what we're undoing to
+			// Save current state WITH the word first (if not already saved)
 			if (
-				isDifferentFromUndoTarget &&
-				(lastSavedValue.current !== currentState.value ||
-					lastSavedCursor.current !== currentState.cursorPosition)
+				lastSavedValue.current !== value ||
+				lastSavedCursor.current !== cursorPosition
 			) {
 				history.current = history.current.slice(
 					0,
 					historyIndex.current + 1
 				);
-				history.current.push(currentState);
+				history.current.push({
+					value: value,
+					cursorPosition: cursorPosition,
+				});
 				historyIndex.current++;
-				lastSavedValue.current = currentState.value;
-				lastSavedCursor.current = currentState.cursorPosition;
 			}
+
+			// Then undo by one step (which goes back to state before typing the word)
+			if (historyIndex.current > 0) {
+				historyIndex.current--;
+				const prevState = history.current[historyIndex.current];
+				isUndoRedoAction.current = true;
+				isInternalChange.current = true;
+				lastSavedValue.current = prevState.value;
+				lastSavedCursor.current = prevState.cursorPosition;
+				onChange(prevState.value);
+				setCursorPosition(prevState.cursorPosition);
+			}
+
 			isTypingWord.current = false;
+			textAfterWordStart.current = ""; // Reset
+			return; // Don't continue to regular undo
 		}
 
 		// Now undo
@@ -243,6 +243,7 @@ export const TextInput: React.FC<TextInputProps> = ({
 				const newPos = 0;
 				setCursorPosition(newPos);
 				wordStartCursor.current = newPos; // Update word start for next typing
+				lastWasSpace.current = false; // Reset space tracking
 				// Save state with new cursor position
 				pushToHistory(newPos);
 				return;
@@ -252,6 +253,7 @@ export const TextInput: React.FC<TextInputProps> = ({
 				const newPos = value.length;
 				setCursorPosition(newPos);
 				wordStartCursor.current = newPos; // Update word start for next typing
+				lastWasSpace.current = false; // Reset space tracking
 				// Save state with new cursor position
 				pushToHistory(newPos);
 				return;
@@ -264,6 +266,7 @@ export const TextInput: React.FC<TextInputProps> = ({
 					const newPos = Math.max(0, cursorPosition - 1);
 					setCursorPosition(newPos);
 					wordStartCursor.current = newPos; // Update word start for next typing
+					lastWasSpace.current = false; // Reset space tracking
 					// Save state with new cursor position for undo
 					pushToHistory(newPos);
 					return;
@@ -273,6 +276,7 @@ export const TextInput: React.FC<TextInputProps> = ({
 					const newPos = Math.min(value.length, cursorPosition + 1);
 					setCursorPosition(newPos);
 					wordStartCursor.current = newPos; // Update word start for next typing
+					lastWasSpace.current = false; // Reset space tracking
 					// Save state with new cursor position for undo
 					pushToHistory(newPos);
 					return;
@@ -339,13 +343,15 @@ export const TextInput: React.FC<TextInputProps> = ({
 				if (input === " ") {
 					// Save current word before adding space (if we were typing)
 					if (isTypingWord.current) {
-						// First save state WITHOUT the word (for undo of the word)
+						// First save state WITHOUT the word but WITH text after (for undo of the word)
 						const textBeforeWord = value.slice(
 							0,
 							wordStartCursor.current
 						);
+						const restoredValue =
+							textBeforeWord + textAfterWordStart.current;
 						if (
-							lastSavedValue.current !== textBeforeWord ||
+							lastSavedValue.current !== restoredValue ||
 							lastSavedCursor.current !== wordStartCursor.current
 						) {
 							history.current = history.current.slice(
@@ -353,11 +359,11 @@ export const TextInput: React.FC<TextInputProps> = ({
 								historyIndex.current + 1
 							);
 							history.current.push({
-								value: textBeforeWord,
+								value: restoredValue,
 								cursorPosition: wordStartCursor.current,
 							});
 							historyIndex.current++;
-							lastSavedValue.current = textBeforeWord;
+							lastSavedValue.current = restoredValue;
 							lastSavedCursor.current = wordStartCursor.current;
 						}
 
@@ -379,6 +385,28 @@ export const TextInput: React.FC<TextInputProps> = ({
 							lastSavedCursor.current = cursorPosition;
 						}
 						isTypingWord.current = false;
+						// Don't reset textAfterWordStart here - keep it for the next word if typing in middle
+					}
+
+					// If last character was also a space, save current state before adding another
+					// This makes each extra space its own undo point
+					if (lastWasSpace.current) {
+						if (
+							lastSavedValue.current !== value ||
+							lastSavedCursor.current !== cursorPosition
+						) {
+							history.current = history.current.slice(
+								0,
+								historyIndex.current + 1
+							);
+							history.current.push({
+								value: value,
+								cursorPosition: cursorPosition,
+							});
+							historyIndex.current++;
+							lastSavedValue.current = value;
+							lastSavedCursor.current = cursorPosition;
+						}
 					}
 
 					// Add the space
@@ -391,22 +419,34 @@ export const TextInput: React.FC<TextInputProps> = ({
 					onChange(newValue);
 					setCursorPosition(newCursor);
 
-					// Don't save the state with space - it will be saved when next word is typed
-					// Don't update lastSaved refs - they should point to the last actual save
+					// Track that we just typed a space
+					lastWasSpace.current = true;
 					wordStartCursor.current = newCursor; // Update for next word
+
+					// Update textAfterWordStart if we're in the middle of text
+					// Keep what comes after the new cursor position
+					if (newCursor < newValue.length) {
+						textAfterWordStart.current = newValue.slice(newCursor);
+					} else {
+						textAfterWordStart.current = ""; // At end of text
+					}
 				} else {
 					// Regular character - track start of word if just starting
 					if (!isTypingWord.current) {
-						// Check if there's a space immediately before cursor
+						// Only include space before cursor if we JUST typed it (lastWasSpace)
+						// Otherwise, the space was already there and shouldn't be part of the undo
 						if (
+							lastWasSpace.current &&
 							cursorPosition > 0 &&
 							value[cursorPosition - 1] === " "
 						) {
-							// Space before cursor - set wordStartCursor to that space
-							// DON'T save the state with space - undoing should remove space + word
+							// We just typed a space - set wordStartCursor to include it
 							wordStartCursor.current = cursorPosition - 1;
+							// Update textAfterWordStart to what's after cursor NOW
+							textAfterWordStart.current =
+								value.slice(cursorPosition);
 						} else {
-							// No space before - save current state and start tracking word
+							// No space we just typed - save current state and start tracking word
 							if (
 								lastSavedValue.current !== value ||
 								lastSavedCursor.current !== cursorPosition
@@ -424,9 +464,16 @@ export const TextInput: React.FC<TextInputProps> = ({
 								lastSavedCursor.current = cursorPosition;
 							}
 							wordStartCursor.current = cursorPosition;
+							// Save text that comes after cursor (for undoing insertions in middle)
+							textAfterWordStart.current =
+								value.slice(cursorPosition);
 						}
 						isTypingWord.current = true;
 					}
+
+					// Not a space anymore
+					lastWasSpace.current = false;
+
 					isInternalChange.current = true;
 					onChange(
 						value.slice(0, cursorPosition) +
