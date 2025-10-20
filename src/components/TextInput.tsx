@@ -223,19 +223,98 @@ export const TextInput: React.FC<TextInputProps> = ({
 			// Ctrl+U: Clear from beginning to cursor (Unix-style)
 			if (key.ctrl && input === "u") {
 				saveCurrentWord(); // Save current word before clearing
+
+				// Save state BEFORE clearing (if not already saved)
+				if (
+					lastSavedValue.current !== value ||
+					lastSavedCursor.current !== cursorPosition
+				) {
+					history.current = history.current.slice(
+						0,
+						historyIndex.current + 1
+					);
+					history.current.push({
+						value: value,
+						cursorPosition: cursorPosition,
+					});
+					historyIndex.current++;
+					lastSavedValue.current = value;
+					lastSavedCursor.current = cursorPosition;
+				}
+
+				// Clear from beginning to cursor
 				isInternalChange.current = true;
-				onChange(value.slice(cursorPosition));
-				setCursorPosition(0);
-				pushToHistory(); // Save the cleared state
+				const newValue = value.slice(cursorPosition);
+				const newCursor = 0;
+				onChange(newValue);
+				setCursorPosition(newCursor);
+
+				// Save the cleared state
+				const clearedState = {
+					value: newValue,
+					cursorPosition: newCursor,
+				};
+				if (
+					lastSavedValue.current !== clearedState.value ||
+					lastSavedCursor.current !== clearedState.cursorPosition
+				) {
+					history.current = history.current.slice(
+						0,
+						historyIndex.current + 1
+					);
+					history.current.push(clearedState);
+					historyIndex.current++;
+					lastSavedValue.current = clearedState.value;
+					lastSavedCursor.current = clearedState.cursorPosition;
+				}
 				return;
 			}
 			// Ctrl+K (or Meta+K): Clear from cursor to end
 			if ((key.ctrl && input === "k") || (key.meta && input === "k")) {
 				saveCurrentWord(); // Save current word before clearing
+
+				// Save state BEFORE clearing (if not already saved)
+				if (
+					lastSavedValue.current !== value ||
+					lastSavedCursor.current !== cursorPosition
+				) {
+					history.current = history.current.slice(
+						0,
+						historyIndex.current + 1
+					);
+					history.current.push({
+						value: value,
+						cursorPosition: cursorPosition,
+					});
+					historyIndex.current++;
+					lastSavedValue.current = value;
+					lastSavedCursor.current = cursorPosition;
+				}
+
+				// Clear from cursor to end
 				isInternalChange.current = true;
-				onChange(value.slice(0, cursorPosition));
+				const newValue = value.slice(0, cursorPosition);
+				onChange(newValue);
 				setCursorPosition(cursorPosition);
-				pushToHistory(); // Save the cleared state
+
+				// Save the cleared state
+				const clearedState = {
+					value: newValue,
+					cursorPosition: cursorPosition,
+				};
+				if (
+					lastSavedValue.current !== clearedState.value ||
+					lastSavedCursor.current !== clearedState.cursorPosition
+				) {
+					history.current = history.current.slice(
+						0,
+						historyIndex.current + 1
+					);
+					history.current.push(clearedState);
+					historyIndex.current++;
+					lastSavedValue.current = clearedState.value;
+					lastSavedCursor.current = clearedState.cursorPosition;
+				}
 				return;
 			}
 			if (key.ctrl && input === "a") {
@@ -308,12 +387,33 @@ export const TextInput: React.FC<TextInputProps> = ({
 					saveCurrentWord();
 
 					isInternalChange.current = true;
-					onChange(
+					const newValue =
 						value.slice(0, cursorPosition - 1) +
-							value.slice(cursorPosition)
-					);
-					setCursorPosition(cursorPosition - 1);
-					pushToHistory(); // Each backspace is its own history entry
+						value.slice(cursorPosition);
+					const newCursor = cursorPosition - 1;
+					onChange(newValue);
+					setCursorPosition(newCursor);
+
+					// Save the state after backspace with the new cursor position
+					// Note: pushToHistory uses current value/cursor from state,
+					// so we need to update lastSaved refs manually here
+					const currentState = {
+						value: newValue,
+						cursorPosition: newCursor,
+					};
+					if (
+						lastSavedValue.current !== currentState.value ||
+						lastSavedCursor.current !== currentState.cursorPosition
+					) {
+						history.current = history.current.slice(
+							0,
+							historyIndex.current + 1
+						);
+						history.current.push(currentState);
+						historyIndex.current++;
+						lastSavedValue.current = currentState.value;
+						lastSavedCursor.current = currentState.cursorPosition;
+					}
 				}
 				return;
 			}
