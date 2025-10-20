@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Text, Box, useInput } from "ink";
 import { createPrompt } from "../../core/registry.js";
 import { useFieldReset } from "../../hooks/use-auto-submit.js";
+import { TextInput } from "../../components/TextInput.js";
 
 export interface RadioOption {
 	value: string;
@@ -285,82 +286,8 @@ export const radio = createPrompt<RadioOptions, string>({
 					return;
 				}
 
-				// Visible search input - handle cursor movement and editing
+				// Visible search input - arrow navigation for options
 				if (showSearchInput) {
-					// Keyboard shortcuts for visible input
-					if (
-						(key.ctrl && input === "u") ||
-						(key.meta && input === "k")
-					) {
-						setInternalSearchQuery("");
-						setSearchCursorPosition(0);
-						return;
-					}
-					if (key.ctrl && input === "a") {
-						setSearchCursorPosition(0);
-						return;
-					}
-					if (key.ctrl && input === "e") {
-						setSearchCursorPosition(internalSearchQuery.length);
-						return;
-					}
-
-					// Cursor movement with arrows
-					if (key.leftArrow) {
-						setSearchCursorPosition(
-							Math.max(0, searchCursorPosition - 1)
-						);
-						return;
-					}
-					if (key.rightArrow) {
-						setSearchCursorPosition(
-							Math.min(
-								internalSearchQuery.length,
-								searchCursorPosition + 1
-							)
-						);
-						return;
-					}
-
-					// Backspace/delete
-					if (key.backspace || key.delete || input === "\b") {
-						if (searchCursorPosition > 0) {
-							setInternalSearchQuery(
-								internalSearchQuery.slice(
-									0,
-									searchCursorPosition - 1
-								) +
-									internalSearchQuery.slice(
-										searchCursorPosition
-									)
-							);
-							setSearchCursorPosition(searchCursorPosition - 1);
-						}
-						return;
-					}
-
-					// Text input
-					if (
-						input &&
-						input !== " " &&
-						input.length === 1 &&
-						!key.ctrl &&
-						!key.meta &&
-						!key.return &&
-						!key.escape &&
-						!key.upArrow &&
-						!key.downArrow
-					) {
-						setInternalSearchQuery(
-							internalSearchQuery.slice(0, searchCursorPosition) +
-								input +
-								internalSearchQuery.slice(searchCursorPosition)
-						);
-						setSearchCursorPosition(searchCursorPosition + 1);
-						return;
-					}
-
-					// Arrow navigation for options
 					if (key.upArrow || key.downArrow) {
 						const maxIndex = filteredOptions.length - 1;
 						if (key.upArrow) {
@@ -509,6 +436,24 @@ export const radio = createPrompt<RadioOptions, string>({
 			);
 		};
 
+		const navigateUp = () => {
+			const maxIndex = filteredOptions.length - 1;
+			setSelectedIndex(
+				options.allowLoop && selectedIndex === 0
+					? maxIndex
+					: Math.max(0, selectedIndex - 1)
+			);
+		};
+
+		const navigateDown = () => {
+			const maxIndex = filteredOptions.length - 1;
+			setSelectedIndex(
+				options.allowLoop && selectedIndex === maxIndex
+					? 0
+					: Math.min(maxIndex, selectedIndex + 1)
+			);
+		};
+
 		return (
 			<Box flexDirection="column">
 				<Box
@@ -518,30 +463,16 @@ export const radio = createPrompt<RadioOptions, string>({
 					<Text>{options.label}</Text>
 					{showSearchInput && (
 						<Box>
-							<Text color="cyan">
-								{internalSearchQuery.slice(
-									0,
-									searchCursorPosition
-								)}
-								<Text backgroundColor="grey" color="black">
-									{searchCursorPosition <
-									internalSearchQuery.length
-										? internalSearchQuery[
-												searchCursorPosition
-										  ]
-										: " "}
-								</Text>
-								{internalSearchQuery.slice(
-									searchCursorPosition +
-										(searchCursorPosition <
-										internalSearchQuery.length
-											? 1
-											: 0)
-								)}
-								{internalSearchQuery.length === 0 &&
-									searchCursorPosition === 0 &&
-									"\u200B"}
-							</Text>
+							<TextInput
+								value={internalSearchQuery}
+								onChange={setInternalSearchQuery}
+								cursorPosition={searchCursorPosition}
+								onCursorPositionChange={setSearchCursorPosition}
+								isActive={node.state === "active" && !submitted}
+								color="cyan"
+								onUpArrow={navigateUp}
+								onDownArrow={navigateDown}
+							/>
 						</Box>
 					)}
 					{options.hintPosition === "side" ? (

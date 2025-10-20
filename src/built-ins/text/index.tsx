@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Text, Box, useInput } from "ink";
 import { createPrompt } from "../../core/registry.js";
 import { useFieldReset } from "../../hooks/use-auto-submit.js";
+import { TextInput } from "../../components/TextInput.js";
 
 /**
  * User-provided options for the text input plugin
@@ -20,9 +21,6 @@ export const text = createPrompt<TextOptions, string>({
 	component: ({ node, options, events }: any) => {
 		const initialValue = options.initialValue || "";
 		const [value, setValue] = useState(initialValue);
-		const [cursorPosition, setCursorPosition] = useState(
-			initialValue.length
-		);
 		const [submitted, setSubmitted] = useState(false);
 		const [validationError, setValidationError] = useState<string | null>(
 			null
@@ -36,7 +34,6 @@ export const text = createPrompt<TextOptions, string>({
 			if (!disabled) {
 				const initial = options.initialValue || "";
 				setValue(initial);
-				setCursorPosition(initial.length);
 			}
 		}, [options.initialValue, disabled]);
 
@@ -78,38 +75,6 @@ export const text = createPrompt<TextOptions, string>({
 		useInput(
 			async (input, key) => {
 				if (submitted || node.state !== "active") return;
-
-				// Keyboard shortcuts
-				if (
-					(key.ctrl && input === "u") ||
-					(key.meta && input === "k")
-				) {
-					setValue("");
-					setCursorPosition(0);
-					return;
-				}
-				if (key.ctrl && input === "a") {
-					setCursorPosition(0);
-					return;
-				}
-				if (key.ctrl && input === "e") {
-					setCursorPosition(value.length);
-					return;
-				}
-
-				// Cursor movement (not in static group arrow nav mode)
-				if (!(node.flow === "static" && node.enableArrowNavigation)) {
-					if (key.leftArrow) {
-						setCursorPosition(Math.max(0, cursorPosition - 1));
-						return;
-					}
-					if (key.rightArrow) {
-						setCursorPosition(
-							Math.min(value.length, cursorPosition + 1)
-						);
-						return;
-					}
-				}
 
 				// Static group navigation
 				if (node.flow === "static" && node.enableArrowNavigation) {
@@ -155,30 +120,21 @@ export const text = createPrompt<TextOptions, string>({
 					}
 					return;
 				}
-
-				if (key.return) {
-					if (!(await runValidation(value))) return;
-					setSubmitted(true);
-					events.onSubmit?.(value);
-				} else if (key.backspace || key.delete) {
-					if (cursorPosition > 0) {
-						setValue(
-							value.slice(0, cursorPosition - 1) +
-								value.slice(cursorPosition)
-						);
-						setCursorPosition(cursorPosition - 1);
-					}
-				} else if (!key.ctrl && !key.meta && input) {
-					setValue(
-						value.slice(0, cursorPosition) +
-							input +
-							value.slice(cursorPosition)
-					);
-					setCursorPosition(cursorPosition + 1);
-				}
 			},
 			{ isActive: node.state === "active" && !submitted }
 		);
+
+		const handleSubmit = async (val: string) => {
+			if (!(await runValidation(val))) return;
+			setSubmitted(true);
+			events.onSubmit?.(val);
+		};
+
+		const handleEscape = () => {
+			if (node.allowBack && events.onBack && node.flow !== "static") {
+				events.onBack();
+			}
+		};
 
 		if (node.state === "completed") {
 			return (
@@ -216,19 +172,17 @@ export const text = createPrompt<TextOptions, string>({
 					<Box width={node.flow === "static" ? 14 : undefined}>
 						<Text>{options.label}</Text>
 					</Box>
-					<Text color="cyan">
-						{value.slice(0, cursorPosition)}
-						<Text backgroundColor="grey" color="black">
-							{cursorPosition < value.length
-								? value[cursorPosition]
-								: " "}
-						</Text>
-						{value.slice(
-							cursorPosition +
-								(cursorPosition < value.length ? 1 : 0)
-						)}
-						{value.length === 0 && cursorPosition === 0 && "\u200B"}
-					</Text>
+					<TextInput
+						value={value}
+						onChange={setValue}
+						onSubmit={handleSubmit}
+						isActive={node.state === "active" && !submitted}
+						color="cyan"
+						onEscape={handleEscape}
+						disableArrowKeys={
+							node.flow === "static" && node.enableArrowNavigation
+						}
+					/>
 				</Box>
 				{validationError && (
 					<Box>

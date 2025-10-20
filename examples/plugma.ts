@@ -68,7 +68,7 @@ const flow = async () => {
 			const framework = await radio({
 				label: "Select a framework:",
 				shortLabel: "Framework",
-				searchable: true,
+				searchable: "filter",
 				options: [
 					{ value: "react", label: "React", color: "red" },
 					{ value: "vue", label: "Vue", color: "green" },
