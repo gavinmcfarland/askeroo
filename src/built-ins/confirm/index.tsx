@@ -290,9 +290,9 @@ export const confirm = createPrompt<ConfirmOptions, any>({
 										{index === selectedIndex ? "●" : "○"}{" "}
 										{option.label}
 									</Text>
-									<Text color="gray" dimColor>
-										{index === selectedIndex ? " ‹" : "  "}
-									</Text>
+									{/* <Text color="cyan">
+										{index === selectedIndex ? " ⨞" : "  "}
+									</Text> */}
 								</Box>
 							))}
 						</Box>
@@ -308,7 +308,7 @@ export const confirm = createPrompt<ConfirmOptions, any>({
 					</Box>
 				) : (
 					// Original horizontal layout for inline and bottom
-					<Box flexDirection="row" gap={1}>
+					<Box flexDirection="row" gap={2}>
 						{confirmOptions.map((option, index) => (
 							<Box key={String(option.value)} flexDirection="row">
 								<Text
@@ -320,9 +320,6 @@ export const confirm = createPrompt<ConfirmOptions, any>({
 								>
 									{index === selectedIndex ? "●" : "○"}{" "}
 									{option.label}
-								</Text>
-								<Text color="gray" dimColor>
-									{index === selectedIndex ? " ‹" : "  "}
 								</Text>
 								{options.hintPosition === "inline" &&
 									index === selectedIndex &&

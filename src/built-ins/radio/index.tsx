@@ -498,11 +498,7 @@ export const radio = createPrompt<RadioOptions, string>({
 						{options.showNumbers && `${actualIndex + 1}. `}
 						{renderLabel(option, isSelected)}
 					</Text>
-					{isSelected && (
-						<Text color="gray" dimColor>
-							{" ‹"}
-						</Text>
-					)}
+					{/* <Text color="cyan">{isSelected ? " ⨞" : "  "}</Text> */}
 				</>
 			);
 		};
