@@ -104,7 +104,7 @@ export const group = (
 				<Box flexDirection="column">
 					{options.label && (
 						<Box>
-							<Text color="green">{options.label}</Text>
+							<Text color="yellow">{options.label}</Text>
 						</Box>
 					)}
 

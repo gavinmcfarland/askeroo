@@ -151,17 +151,21 @@ export const completedFields = createPrompt<CompletedFieldsOptions, void>({
 			<Box flexDirection="column">
 				{completedFieldsList.map((field) => (
 					<Box key={field.id} gap={1}>
-						<Box width={16}>
+						<Box width={18}>
 							<Text color="gray">
-								{field.meta?.group && (
+								{field.groupLabel && (
 									<Text color="white">
-										{field.meta.group}{" "}
+										{"  "}
+										{field.groupLabel}{" "}
 									</Text>
 								)}
 								{field.shortLabel || field.label}
 							</Text>
 						</Box>
 						<Text color="blue">
+							{field.groupLabel && (
+								<Text color="white">{"  "}</Text>
+							)}
 							{field.formattedValue || field.value}
 						</Text>
 					</Box>

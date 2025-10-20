@@ -116,6 +116,11 @@ const flow = async () => {
 						label: "Playwright",
 						hint: "A testing framework for JavaScript",
 					},
+					{
+						value: "shadcn",
+						label: "shadcn",
+						hint: "Beautifully designed components built with Radix UI",
+					},
 				],
 				noneOption: { label: "None" },
 			});
