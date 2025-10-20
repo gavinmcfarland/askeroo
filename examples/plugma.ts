@@ -168,7 +168,11 @@ const flow = async () => {
 			const typescript = await confirm({
 				shortLabel: "TypeScript",
 				label: "Use TypeScript?",
-				initialValue: true,
+			});
+
+			const test = await text({
+				label: "Test",
+				initialValue: "Test",
 			});
 
 			// Build the final answers object

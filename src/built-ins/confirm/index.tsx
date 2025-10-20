@@ -39,30 +39,18 @@ export const confirm = createPrompt<ConfirmOptions, any>({
 		const confirmOptions: ConfirmOption[] = React.useMemo(() => {
 			if (options.options) return options.options;
 
-			// Default options based on initialValue
+			// Default options - always keep consistent order
 			const defaultOptions = [
 				{ value: true, label: "Yes" },
 				{ value: false, label: "No" },
 			];
 
-			if (options.initialValue !== undefined) {
-				const [initialOption, otherOption] =
-					defaultOptions[0].value === options.initialValue
-						? [defaultOptions[0], defaultOptions[1]]
-						: [defaultOptions[1], defaultOptions[0]];
-				return [otherOption, initialOption];
-			}
-
 			return defaultOptions;
-		}, [options.options, options.initialValue]);
+		}, [options.options]);
 
 		const [selectedIndex, setSelectedIndex] = useState(() => {
-			if (options.initialValue !== undefined && !options.options) {
-				// When using default options and there's an initialValue,
-				// the initial value becomes the second option (index 1)
-				return 1;
-			} else if (options.initialValue !== undefined) {
-				// For custom options, find the index normally
+			if (options.initialValue !== undefined) {
+				// Find the index of the initial value in the options array
 				const index = confirmOptions.findIndex(
 					(option) => option.value === options.initialValue
 				);
@@ -81,13 +69,11 @@ export const confirm = createPrompt<ConfirmOptions, any>({
 
 		useEffect(() => {
 			if (options.initialValue === undefined) return;
-			const index = !options.options
-				? 1
-				: confirmOptions.findIndex(
-						(opt) => opt.value === options.initialValue
-				  );
+			const index = confirmOptions.findIndex(
+				(opt) => opt.value === options.initialValue
+			);
 			if (index >= 0) setSelectedIndex(index);
-		}, [options.initialValue, confirmOptions, options.options]);
+		}, [options.initialValue, confirmOptions]);
 
 		const runValidation = async (val: any): Promise<boolean> => {
 			if (!events.onValidate || node.state !== "active") {
