@@ -57,12 +57,17 @@ const flow = async () => {
 	await sleep(1000);
 
 	// Example 2: Spinner with state-specific labels
-	const spinner3 = await spinner({
-		idle: "Preparing to fetch data",
-		running: "Fetching from API...",
-		paused: "Waiting for rate limit",
-		stopped: "Data fetched successfully",
-	});
+	const spinner3 = await spinner(
+		{
+			idle: "Preparing to fetch data",
+			running: "Fetching from API...",
+			paused: "Waiting for rate limit",
+			stopped: "Data fetched successfully",
+		},
+		{
+			hideOnCompletion: true,
+		}
+	);
 
 	// await sleep(500);
 	await spinner3.start();

@@ -217,19 +217,17 @@ export const SpinnerDisplay = ({
 	}, [spinnerState.status, options.submitDelay, options.hideOnCompletion]);
 
 	// Don't render if we're completed and should hide
-	if (options.hideOnCompletion && node.state === "completed") {
-		const spinnerFinished = spinnerState.status === "stopped";
-
-		// If spinner finished and either no delay or delay has elapsed
-		if (spinnerFinished) {
-			// No delay: hide immediately
-			if (!options.submitDelay || options.submitDelay === 0) {
-				return null;
-			}
-			// With delay: hide after delay timer completes
-			if (shouldHideAfterDelay) {
-				return null;
-			}
+	// Hide when spinner is stopped and hideOnCompletion is true
+	// This works both in normal flows (when node.state === "completed")
+	// and in onCancel flows (where node might stay active)
+	if (options.hideOnCompletion && spinnerState.status === "stopped") {
+		// No delay: hide immediately
+		if (!options.submitDelay || options.submitDelay === 0) {
+			return null;
+		}
+		// With delay: hide after delay timer completes
+		if (shouldHideAfterDelay) {
+			return null;
 		}
 	}
 
