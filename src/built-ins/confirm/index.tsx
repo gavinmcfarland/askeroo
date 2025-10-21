@@ -187,7 +187,7 @@ export const confirm = createPrompt<ConfirmOptions, any>({
 				}
 
 				// Arrow navigation
-				const allowLoop = options.allowLoop ?? true;
+				const allowLoop = options.allowLoop ?? false;
 				if (key.leftArrow || key.upArrow) {
 					setSelectedIndex(
 						allowLoop && selectedIndex === 0

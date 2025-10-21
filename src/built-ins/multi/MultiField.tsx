@@ -126,7 +126,7 @@ export const MultiField = ({
 
 	const navigateUp = () => {
 		const newIndex =
-			options.allowLoop ?? true
+			options.allowLoop ?? false
 				? selectedIndex > 0
 					? selectedIndex - 1
 					: totalOptions - 1
@@ -136,7 +136,7 @@ export const MultiField = ({
 
 	const navigateDown = () => {
 		const newIndex =
-			options.allowLoop ?? true
+			options.allowLoop ?? false
 				? selectedIndex < totalOptions - 1
 					? selectedIndex + 1
 					: 0
@@ -503,15 +503,11 @@ export const MultiField = ({
 
 				// Arrow navigation
 				if (key.leftArrow) {
-					setSelectedIndex(
-						selectedIndex > 0 ? selectedIndex - 1 : totalOptions - 1
-					);
+					navigateUp();
 					return;
 				}
 				if (key.rightArrow) {
-					setSelectedIndex(
-						selectedIndex < totalOptions - 1 ? selectedIndex + 1 : 0
-					);
+					navigateDown();
 					return;
 				}
 				if (key.upArrow) {

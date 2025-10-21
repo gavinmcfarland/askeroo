@@ -305,7 +305,7 @@ export const radio = createPrompt<RadioOptions, string>({
 				if (showSearchInput) {
 					if (key.upArrow || key.downArrow) {
 						const maxIndex = filteredOptions.length - 1;
-						const allowLoop = options.allowLoop ?? true;
+						const allowLoop = options.allowLoop ?? false;
 						if (key.upArrow) {
 							setSelectedIndex(
 								allowLoop && selectedIndex === 0
@@ -354,7 +354,7 @@ export const radio = createPrompt<RadioOptions, string>({
 					// Arrow navigation
 					if (!node.enableArrowNavigation) {
 						const maxIndex = filteredOptions.length - 1;
-						const allowLoop = options.allowLoop ?? true;
+						const allowLoop = options.allowLoop ?? false;
 						if (key.leftArrow || key.upArrow) {
 							setSelectedIndex(
 								allowLoop && selectedIndex === 0
