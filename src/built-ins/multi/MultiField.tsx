@@ -443,21 +443,47 @@ export const MultiField = ({
 				return;
 			}
 
-			// Shift+A to select all
+			// Shift+A to toggle select all
 			if (key.shift && (input === "a" || input === "A")) {
 				const allValues = filteredOptions.map((opt) => opt.value);
-				setSelectedValues(allValues);
+				// Check if all options are currently selected
+				const allSelected = allValues.every((val) =>
+					selectedValues.includes(val)
+				);
+
+				if (allSelected) {
+					// All are selected, deselect all
+					if (options.noneOption) {
+						setSelectedValues([NONE_VALUE]);
+					} else {
+						setSelectedValues([]);
+					}
+				} else {
+					// Not all are selected, select all
+					setSelectedValues(allValues);
+				}
 				setError(null);
 				return;
 			}
 
-			// Shift+D to deselect all
-			if (key.shift && (input === "d" || input === "D")) {
-				// If noneOption is present, set to NONE_VALUE, otherwise clear all
-				if (options.noneOption) {
+			// Shift+I to invert selection
+			if (key.shift && (input === "i" || input === "I")) {
+				const allValues = filteredOptions.map((opt) => opt.value);
+				// Remove NONE_VALUE if present in current selection
+				const currentValues = selectedValues.filter(
+					(v) => v !== NONE_VALUE
+				);
+
+				// Invert: select unselected options, unselect selected options
+				const invertedValues = allValues.filter(
+					(val) => !currentValues.includes(val)
+				);
+
+				// If after inversion we have no selections and noneOption exists, set to NONE
+				if (invertedValues.length === 0 && options.noneOption) {
 					setSelectedValues([NONE_VALUE]);
 				} else {
-					setSelectedValues([]);
+					setSelectedValues(invertedValues);
 				}
 				setError(null);
 				return;
