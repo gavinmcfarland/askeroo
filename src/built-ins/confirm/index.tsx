@@ -37,20 +37,32 @@ export const confirm = createPrompt<ConfirmOptions, any>({
 
 		// Default options if none provided (memoized to prevent re-creation)
 		const confirmOptions: ConfirmOption[] = React.useMemo(() => {
-			if (options.options) return options.options;
-
-			// Default options - always keep consistent order
-			const defaultOptions = [
+			let opts = options.options || [
 				{ value: true, label: "Yes" },
 				{ value: false, label: "No" },
 			];
 
-			return defaultOptions;
-		}, [options.options]);
+			// Reorder options so the one matching initialValue is last
+			if (options.initialValue !== undefined) {
+				const initialIndex = opts.findIndex(
+					(opt: ConfirmOption) => opt.value === options.initialValue
+				);
+				if (initialIndex >= 0 && initialIndex !== opts.length - 1) {
+					// Move the initial value option to the end
+					opts = [
+						...opts.slice(0, initialIndex),
+						...opts.slice(initialIndex + 1),
+						opts[initialIndex],
+					];
+				}
+			}
+
+			return opts;
+		}, [options.options, options.initialValue]);
 
 		const [selectedIndex, setSelectedIndex] = useState(() => {
 			if (options.initialValue !== undefined) {
-				// Find the index of the initial value in the options array
+				// After reordering, the initial value is always at the last position
 				const index = confirmOptions.findIndex(
 					(option) => option.value === options.initialValue
 				);

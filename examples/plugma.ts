@@ -170,6 +170,7 @@ const flow = async () => {
 			const typescript = await confirm({
 				shortLabel: "TypeScript",
 				label: "Use TypeScript?",
+				initialValue: true,
 			});
 
 			const test = await text({
