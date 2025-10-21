@@ -401,6 +401,29 @@ export const MultiField = ({
 				}
 			}
 
+			// Handle Ctrl+A (jump to top) and Ctrl+E (jump to bottom)
+			// Same shortcuts as cursor movement in text inputs
+			if (key.ctrl && input === "a") {
+				const { showNoneOption, startIndex } = getVisibleWindow();
+				// If none option is visible, go to index 0, otherwise go to first visible option
+				setSelectedIndex(
+					showNoneOption
+						? 0
+						: startIndex + (options.noneOption ? 1 : 0)
+				);
+				return;
+			}
+			if (key.ctrl && input === "e") {
+				const { visibleOptions, startIndex } = getVisibleWindow();
+				const lastVisibleOptionIndex =
+					startIndex + visibleOptions.length - 1;
+				// Calculate the actual index in the combined list (accounting for none option)
+				const lastVisibleIndex =
+					lastVisibleOptionIndex + (options.noneOption ? 1 : 0);
+				setSelectedIndex(lastVisibleIndex);
+				return;
+			}
+
 			if (key.return) {
 				const vals = selectedValues.filter((v) => v !== NONE_VALUE);
 				if (!(await runValidation(vals))) return;

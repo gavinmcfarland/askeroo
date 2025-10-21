@@ -266,6 +266,21 @@ export const radio = createPrompt<RadioOptions, string>({
 					}
 				}
 
+				// Handle Ctrl+A (jump to top) and Ctrl+E (jump to bottom)
+				// Same shortcuts as cursor movement in text inputs
+				if (key.ctrl && input === "a") {
+					const { startIndex } = getVisibleOptions();
+					setSelectedIndex(startIndex);
+					return;
+				}
+				if (key.ctrl && input === "e") {
+					const { visibleOptions, startIndex } = getVisibleOptions();
+					const lastVisibleIndex =
+						startIndex + visibleOptions.length - 1;
+					setSelectedIndex(lastVisibleIndex);
+					return;
+				}
+
 				// Handle arrow navigation for groups
 				if (node.enableArrowNavigation && events.onNavigate) {
 					if (key.upArrow && !node.isFirstInGroup) {
@@ -290,15 +305,16 @@ export const radio = createPrompt<RadioOptions, string>({
 				if (showSearchInput) {
 					if (key.upArrow || key.downArrow) {
 						const maxIndex = filteredOptions.length - 1;
+						const allowLoop = options.allowLoop ?? true;
 						if (key.upArrow) {
 							setSelectedIndex(
-								options.allowLoop && selectedIndex === 0
+								allowLoop && selectedIndex === 0
 									? maxIndex
 									: Math.max(0, selectedIndex - 1)
 							);
 						} else {
 							setSelectedIndex(
-								options.allowLoop && selectedIndex === maxIndex
+								allowLoop && selectedIndex === maxIndex
 									? 0
 									: Math.min(maxIndex, selectedIndex + 1)
 							);
@@ -338,9 +354,10 @@ export const radio = createPrompt<RadioOptions, string>({
 					// Arrow navigation
 					if (!node.enableArrowNavigation) {
 						const maxIndex = filteredOptions.length - 1;
+						const allowLoop = options.allowLoop ?? true;
 						if (key.leftArrow || key.upArrow) {
 							setSelectedIndex(
-								options.allowLoop && selectedIndex === 0
+								allowLoop && selectedIndex === 0
 									? maxIndex
 									: Math.max(0, selectedIndex - 1)
 							);
@@ -348,7 +365,7 @@ export const radio = createPrompt<RadioOptions, string>({
 						}
 						if (key.rightArrow || key.downArrow) {
 							setSelectedIndex(
-								options.allowLoop && selectedIndex === maxIndex
+								allowLoop && selectedIndex === maxIndex
 									? 0
 									: Math.min(maxIndex, selectedIndex + 1)
 							);
