@@ -167,6 +167,11 @@ export const MultiField = ({
 			newSelectedValues = filteredValues.includes(optionValue)
 				? filteredValues.filter((v) => v !== optionValue)
 				: [...filteredValues, optionValue];
+
+			// If all options are now unselected and noneOption exists, select it
+			if (newSelectedValues.length === 0 && options.noneOption) {
+				newSelectedValues = [NONE_VALUE];
+			}
 		}
 
 		setSelectedValues(newSelectedValues);
@@ -302,7 +307,7 @@ export const MultiField = ({
 							<Text color="yellow">escape</Text> go back,{" "}
 						</>
 					)}
-					<Text color="yellow">space</Text> select{" "}
+					<Text color="yellow">space</Text> select
 					{/* <Text color="yellow">shift+a</Text> all,{" "}
 					<Text color="yellow">shift+d</Text> clear */}
 					{hasHiddenSearch && (
