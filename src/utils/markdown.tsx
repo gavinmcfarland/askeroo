@@ -56,8 +56,17 @@ function applyChalkStyles(text: string, styles: string): string {
 	// Apply each style using chalk
 	for (const style of styleArray) {
 		try {
+			// Handle background hex colors: bg#RRGGBB
+			if (style.startsWith("bg#")) {
+				const hexColor = style.slice(3); // Remove 'bg#' prefix
+				styledText = chalk.bgHex(hexColor)(styledText);
+			}
+			// Handle foreground hex colors: #RRGGBB
+			else if (style.startsWith("#")) {
+				styledText = chalk.hex(style)(styledText);
+			}
 			// Handle background colors and regular styles
-			if (
+			else if (
 				(chalk as any)[style] &&
 				typeof (chalk as any)[style] === "function"
 			) {

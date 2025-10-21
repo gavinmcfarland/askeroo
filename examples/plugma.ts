@@ -17,7 +17,8 @@ import {
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const flow = async () => {
-	await note("[ Plugma ]{bgMagenta} [v2.1.0]{dim}");
+	// Examples of different color syntax options:
+	await note("[ Plugma ]{bg#883AE2} [v2.1.0]{dim}"); // Hex background color
 
 	await completedFields();
 
