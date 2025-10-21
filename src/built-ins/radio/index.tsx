@@ -238,12 +238,14 @@ export const radio = createPrompt<RadioOptions, string>({
 					key.shift &&
 					(input === "f" || input === "F")
 				) {
-					setFilterModeActive(!filterModeActive);
-					if (filterModeActive) {
-						// Closing filter mode - clear search
+					const wasActive = filterModeActive;
+					// Clear search first, then toggle mode
+					if (wasActive) {
 						setInternalSearchQuery("");
 						setSearchCursorPosition(0);
+						setValidationError(null);
 					}
+					setFilterModeActive(!filterModeActive);
 					return;
 				}
 
@@ -253,6 +255,7 @@ export const radio = createPrompt<RadioOptions, string>({
 						setFilterModeActive(false);
 						setInternalSearchQuery("");
 						setSearchCursorPosition(0);
+						setValidationError(null);
 						return;
 					}
 					if (isSearchActive && internalSearchQuery.trim()) {
@@ -471,6 +474,19 @@ export const radio = createPrompt<RadioOptions, string>({
 			);
 		};
 
+		const handleShiftF = () => {
+			if (hasFilterMode) {
+				const wasActive = filterModeActive;
+				// Clear search first, then toggle mode
+				if (wasActive) {
+					setInternalSearchQuery("");
+					setSearchCursorPosition(0);
+					setValidationError(null);
+				}
+				setFilterModeActive(!filterModeActive);
+			}
+		};
+
 		return (
 			<Box flexDirection="column">
 				<Box
@@ -489,6 +505,7 @@ export const radio = createPrompt<RadioOptions, string>({
 								color="cyan"
 								onUpArrow={navigateUp}
 								onDownArrow={navigateDown}
+								onShiftF={handleShiftF}
 							/>
 						</Box>
 					)}

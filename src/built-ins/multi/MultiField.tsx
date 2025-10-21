@@ -143,6 +143,20 @@ export const MultiField = ({
 				: Math.min(totalOptions - 1, selectedIndex + 1);
 		setSelectedIndex(newIndex);
 	};
+
+	const handleShiftF = () => {
+		if (hasFilterMode) {
+			const wasActive = filterModeActive;
+			// Clear search first, then toggle mode
+			if (wasActive) {
+				setInternalSearchQuery("");
+				setSearchCursorPosition(0);
+				setValidationError(null);
+			}
+			setFilterModeActive(!filterModeActive);
+		}
+	};
+
 	const [submitted, setSubmitted] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -369,12 +383,14 @@ export const MultiField = ({
 				key.shift &&
 				(input === "f" || input === "F")
 			) {
-				setFilterModeActive(!filterModeActive);
-				if (filterModeActive) {
-					// Closing filter mode - clear search
+				const wasActive = filterModeActive;
+				// Clear search first, then toggle mode
+				if (wasActive) {
 					setInternalSearchQuery("");
 					setSearchCursorPosition(0);
+					setValidationError(null);
 				}
+				setFilterModeActive(!filterModeActive);
 				return;
 			}
 
@@ -385,6 +401,7 @@ export const MultiField = ({
 					setFilterModeActive(false);
 					setInternalSearchQuery("");
 					setSearchCursorPosition(0);
+					setValidationError(null);
 					return;
 				}
 				if (isSearchActive && internalSearchQuery.trim()) {
@@ -610,6 +627,7 @@ export const MultiField = ({
 						color="cyan"
 						onUpArrow={navigateUp}
 						onDownArrow={navigateDown}
+						onShiftF={handleShiftF}
 					/>
 				</Box>
 			)}

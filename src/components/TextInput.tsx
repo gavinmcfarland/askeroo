@@ -14,6 +14,7 @@ interface TextInputProps {
 	onUpArrow?: () => void;
 	onDownArrow?: () => void;
 	disableArrowKeys?: boolean;
+	onShiftF?: () => void;
 }
 
 /**
@@ -38,6 +39,7 @@ export const TextInput: React.FC<TextInputProps> = ({
 	onUpArrow,
 	onDownArrow,
 	disableArrowKeys = false,
+	onShiftF,
 }) => {
 	// Use internal state if no external cursor position is provided
 	const [internalCursorPosition, setInternalCursorPosition] = useState(
@@ -201,6 +203,12 @@ export const TextInput: React.FC<TextInputProps> = ({
 
 	useInput(
 		(input, key) => {
+			// Handle Shift+F if callback is provided (for filter toggle)
+			if (onShiftF && key.shift && (input === "f" || input === "F")) {
+				onShiftF();
+				return;
+			}
+
 			// Undo: Ctrl+Z (Windows) or Cmd+Z (Mac)
 			if (
 				(key.ctrl && !key.meta && input === "z" && !key.shift) ||

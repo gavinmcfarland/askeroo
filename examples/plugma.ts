@@ -100,7 +100,7 @@ const flow = async () => {
 				shortLabel: "Addons",
 				label: "Choose addons:",
 				hintPosition: "inline-fixed",
-				searchable: true,
+				searchable: "filter",
 				allowLoop: true,
 				options: [
 					{
