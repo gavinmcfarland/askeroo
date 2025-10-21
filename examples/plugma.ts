@@ -25,6 +25,15 @@ const flow = async () => {
 	const answers = await group(
 		async () => {
 			// Collect prompts individually
+			const type = await radio({
+				label: "Choose a type:",
+				shortLabel: "Type",
+				options: [
+					{ value: "plugin", label: "Plugin" },
+					{ value: "widget", label: "Widget" },
+				],
+			});
+
 			const path = await text({
 				shortLabel: "Path",
 				label: "Where should it be created?",
@@ -55,15 +64,6 @@ const flow = async () => {
 
 					return null;
 				},
-			});
-
-			const type = await radio({
-				label: "Choose a type:",
-				shortLabel: "Type",
-				options: [
-					{ value: "plugin", label: "Plugin" },
-					{ value: "widget", label: "Widget" },
-				],
 			});
 
 			const framework = await radio({
