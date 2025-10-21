@@ -191,8 +191,16 @@ export const radio = createPrompt<RadioOptions, string>({
 
 		useEffect(() => {
 			if (!events.onHintChange) return;
+
+			// Check if there's any hint content to show
+			const hasAnyHint =
+				node.state === "active" &&
+				((!node.isFirstRootPrompt && node.allowBack) ||
+					hasHiddenSearch ||
+					hasFilterMode);
+
 			events.onHintChange(
-				node.state === "active" ? (
+				hasAnyHint ? (
 					<>
 						<Newline />
 						{!node.isFirstRootPrompt && node.allowBack && (

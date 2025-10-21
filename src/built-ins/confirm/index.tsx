@@ -104,10 +104,15 @@ export const confirm = createPrompt<ConfirmOptions, any>({
 
 		useEffect(() => {
 			if (!events.onHintChange) return;
-			events.onHintChange(
+
+			// Only show hint if there's back navigation available
+			const hasHint =
 				node.state === "active" &&
-					!node.isFirstRootPrompt &&
-					node.allowBack ? (
+				!node.isFirstRootPrompt &&
+				node.allowBack;
+
+			events.onHintChange(
+				hasHint ? (
 					<>
 						<Newline />
 						<Text color="yellow">escape</Text> go back

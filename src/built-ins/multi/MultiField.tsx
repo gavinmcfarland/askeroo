@@ -313,6 +313,8 @@ export const MultiField = ({
 
 	useEffect(() => {
 		if (!events.onHintChange) return;
+
+		// Always show hints for multi (space select is always shown)
 		events.onHintChange(
 			node.state === "active" ? (
 				<>
