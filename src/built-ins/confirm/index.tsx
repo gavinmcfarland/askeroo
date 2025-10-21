@@ -186,6 +186,18 @@ export const confirm = createPrompt<ConfirmOptions, any>({
 					return;
 				}
 
+				// Ctrl+A to jump to first option
+				if (key.ctrl && input === "a") {
+					setSelectedIndex(0);
+					return;
+				}
+
+				// Ctrl+E to jump to last option
+				if (key.ctrl && input === "e") {
+					setSelectedIndex(confirmOptions.length - 1);
+					return;
+				}
+
 				// Arrow navigation
 				const allowLoop = options.allowLoop ?? false;
 				if (key.leftArrow || key.upArrow) {
