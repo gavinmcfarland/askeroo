@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Text, Box, useInput } from "ink";
+import { Text, Box, useInput, Newline } from "ink";
 import { PluginComponentProps } from "../../types/index.js";
 import { TextInput } from "../../components/TextInput.js";
 
@@ -316,6 +316,7 @@ export const MultiField = ({
 		events.onHintChange(
 			node.state === "active" ? (
 				<>
+					<Newline />
 					{!node.isFirstRootPrompt && node.allowBack && (
 						<>
 							<Text color="yellow">escape</Text> go back,{" "}

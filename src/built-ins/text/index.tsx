@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Text, Box, useInput } from "ink";
+import { Text, Box, useInput, Newline } from "ink";
 import { createPrompt } from "../../core/registry.js";
 import { useFieldReset } from "../../hooks/use-auto-submit.js";
 import { TextInput } from "../../components/TextInput.js";
@@ -61,6 +61,7 @@ export const text = createPrompt<TextOptions, string>({
 					!node.isFirstRootPrompt &&
 					node.allowBack ? (
 					<>
+						<Newline />
 						<Text color="yellow">escape</Text> go back
 					</>
 				) : null

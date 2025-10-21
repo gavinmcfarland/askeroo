@@ -9,12 +9,7 @@ interface HintTextProps {
 }
 
 function HintText({ children }: HintTextProps) {
-	return (
-		<>
-			<Text> </Text>
-			<Text dimColor>{children}</Text>
-		</>
-	);
+	return <Text dimColor>{children}</Text>;
 }
 
 interface RecursiveGroupContainerProps {

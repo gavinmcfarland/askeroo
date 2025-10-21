@@ -123,6 +123,7 @@ export const group = (
 							<Box
 								flexDirection="column"
 								marginLeft={options.label ? 3 : 0}
+								gap={1}
 							>
 								{node.children}
 							</Box>

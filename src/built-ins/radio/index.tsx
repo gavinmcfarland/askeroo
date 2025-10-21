@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Text, Box, useInput } from "ink";
+import { Text, Box, useInput, Newline } from "ink";
 import { createPrompt } from "../../core/registry.js";
 import { useFieldReset } from "../../hooks/use-auto-submit.js";
 import { TextInput } from "../../components/TextInput.js";
@@ -194,6 +194,7 @@ export const radio = createPrompt<RadioOptions, string>({
 			events.onHintChange(
 				node.state === "active" ? (
 					<>
+						<Newline />
 						{!node.isFirstRootPrompt && node.allowBack && (
 							<>
 								<Text color="yellow">escape</Text> go back
