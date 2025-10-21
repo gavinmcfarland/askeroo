@@ -32,8 +32,11 @@ class RuntimeContextManager {
 	 */
 	getCurrentRuntime(): RuntimeAPI {
 		if (!this.currentRuntime) {
+			const stack = new Error().stack;
 			throw new Error(
-				"No runtime available. Make sure you're calling this from within a runtime context."
+				"No runtime available. Make sure you're calling this from within a runtime context.\n\n" +
+					"Call stack:\n" +
+					stack
 			);
 		}
 		return this.currentRuntime;
