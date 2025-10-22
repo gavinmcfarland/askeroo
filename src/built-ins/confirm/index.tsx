@@ -397,7 +397,7 @@ export const confirm = createPrompt<ConfirmOptions, any>({
 					})()}
 				{validationError && (
 					<Box>
-						<Text color="red">{validationError}</Text>
+						<Text color="red">■ {validationError}</Text>
 					</Box>
 				)}
 			</Box>
