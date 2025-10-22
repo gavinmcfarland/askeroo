@@ -83,6 +83,11 @@ export function PluginWrapper({
 		wrappedOnComplete
 	);
 
+	// Handle user's onSubmit callback separately
+	if (props.userOnSubmit) {
+		transformedProps.options.onSubmit = props.userOnSubmit;
+	}
+
 	// Render plugin component directly
 	return <PluginComponent {...transformedProps} />;
 }
@@ -111,7 +116,6 @@ function transformPropsToStructure(
 
 	// Define known event handlers
 	const eventProps = [
-		"onSubmit",
 		"onBack",
 		"onComplete",
 		"onHintChange",
@@ -135,6 +139,7 @@ function transformPropsToStructure(
 	}
 
 	// Use the wrapped callbacks if provided (they're already memoized)
+	// Note: wrappedOnSubmit is the internal framework callback, not the user's onSubmit
 	if (wrappedOnSubmit) {
 		events.onSubmit = wrappedOnSubmit;
 	}

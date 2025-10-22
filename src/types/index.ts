@@ -236,6 +236,7 @@ export type PluginOptionsWithBuiltins<
 	autoSubmit?: boolean; // Instance-level auto-submit control
 	// Event handlers (can be provided by user)
 	onValidate?: ValidatorFunction<TValue>;
+	onSubmit?: (value: TValue) => TValue | void; // Can return a transformed value or void
 	// Meta
 	meta?: Record<string, any>;
 };

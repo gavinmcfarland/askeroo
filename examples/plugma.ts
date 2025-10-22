@@ -38,6 +38,10 @@ const flow = async () => {
 				shortLabel: "Path",
 				label: "Where should it be created?",
 				initialValue: "./my-plugin",
+				onSubmit: (value) => {
+					console.error(`🎯 Path submitted: "${value}"`);
+					return "./" + value;
+				},
 				onValidate: async (value) => {
 					if (!value.trim()) return "Path cannot be empty";
 					if (value.includes("..")) return "Path cannot contain '..'";

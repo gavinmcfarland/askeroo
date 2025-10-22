@@ -11,6 +11,7 @@ export interface TextOptions {
 	label: string;
 	shortLabel?: string;
 	initialValue?: string;
+	onSubmit?: (value: string) => string | void; // Can return a transformed value or void
 }
 
 // Core text input plugin
@@ -87,13 +88,32 @@ export const text = createPrompt<TextOptions, string>({
 					if (key.downArrow && !node.isLastInGroup) {
 						if (!(await runValidation(value))) return;
 						setSubmitted(true);
-						events.onSubmit?.(value);
+						// Call user's onSubmit callback if provided and use return value if any
+						let finalValue = value;
+						if (options.onSubmit) {
+							const result = options.onSubmit(value);
+							if (result !== undefined) {
+								finalValue = result;
+							}
+						}
+						events.onSubmit?.(finalValue);
 						return;
 					}
 					if (key.upArrow && !node.isFirstInGroup) {
 						if (!(await runValidation(value))) return;
 						setSubmitted(true);
-						events.onSubmit?.({ __preserveAndBack: true, value });
+						// Call user's onSubmit callback if provided and use return value if any
+						let finalValue = value;
+						if (options.onSubmit) {
+							const result = options.onSubmit(value);
+							if (result !== undefined) {
+								finalValue = result;
+							}
+						}
+						events.onSubmit?.({
+							__preserveAndBack: true,
+							value: finalValue,
+						});
 						return;
 					}
 					if (key.downArrow || key.upArrow) return;
@@ -108,15 +128,25 @@ export const text = createPrompt<TextOptions, string>({
 						) {
 							if (!(await runValidation(value))) return;
 							setSubmitted(true);
+							// Call user's onSubmit callback if provided and use return value if any
+							let finalValue = value;
+							if (options.onSubmit) {
+								const result = options.onSubmit(value);
+								if (result !== undefined) {
+									finalValue = result;
+								}
+							}
 							events.onSubmit?.({
 								__preserveAndBack: true,
-								value,
+								value: finalValue,
 							});
 						} else if (
 							node.enableArrowNavigation &&
 							node.isFirstInGroup
 						) {
 							setSubmitted(true);
+							// Note: For __clearGroupAndBack, we don't call user's onSubmit
+							// as this is a special navigation case
 							events.onSubmit?.({ __clearGroupAndBack: true });
 						} else if (node.allowBack && events.onBack) {
 							events.onBack();
@@ -133,7 +163,15 @@ export const text = createPrompt<TextOptions, string>({
 		const handleSubmit = async (val: string) => {
 			if (!(await runValidation(val))) return;
 			setSubmitted(true);
-			events.onSubmit?.(val);
+			// Call user's onSubmit callback if provided and use return value if any
+			let finalValue = val;
+			if (options.onSubmit) {
+				const result = options.onSubmit(val);
+				if (result !== undefined) {
+					finalValue = result;
+				}
+			}
+			events.onSubmit?.(finalValue);
 		};
 
 		const handleEscape = () => {

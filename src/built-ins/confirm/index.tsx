@@ -22,6 +22,7 @@ export interface ConfirmOptions {
 	allowLoop?: boolean;
 	hintPosition?: "bottom" | "inline" | "side";
 	initialValue?: any;
+	onSubmit?: (value: any) => any | void; // Can return a transformed value or void
 	// Built-ins are automatically added via PluginOptionsWithBuiltins:
 	// id?, excludeFromCompleted?, hideOnCompletion?, allowBack?, onValidate?, meta?
 }
@@ -139,10 +140,18 @@ export const confirm = createPrompt<ConfirmOptions, any>({
 					) {
 						if (!(await runValidation(val))) return;
 						setSubmitted(true);
+						// Call user's onSubmit callback if provided and use return value if any
+						let finalValue = val;
+						if (options.onSubmit) {
+							const result = options.onSubmit(val);
+							if (result !== undefined) {
+								finalValue = result;
+							}
+						}
 						events.onSubmit?.(
 							key.downArrow
-								? val
-								: { __preserveAndBack: true, value: val }
+								? finalValue
+								: { __preserveAndBack: true, value: finalValue }
 						);
 						return;
 					}
@@ -156,12 +165,22 @@ export const confirm = createPrompt<ConfirmOptions, any>({
 						if (!node.isFirstInGroup) {
 							if (!(await runValidation(val))) return;
 							setSubmitted(true);
+							// Call user's onSubmit callback if provided and use return value if any
+							let finalValue = val;
+							if (options.onSubmit) {
+								const result = options.onSubmit(val);
+								if (result !== undefined) {
+									finalValue = result;
+								}
+							}
 							events.onSubmit?.({
 								__preserveAndBack: true,
-								value: val,
+								value: finalValue,
 							});
 						} else {
 							setSubmitted(true);
+							// Note: For __clearGroupAndBack, we don't call user's onSubmit
+							// as this is a special navigation case
 							events.onSubmit?.({ __clearGroupAndBack: true });
 						}
 					} else if (node.allowBack && events.onBack) {
@@ -174,7 +193,15 @@ export const confirm = createPrompt<ConfirmOptions, any>({
 					const val = confirmOptions[selectedIndex].value;
 					if (!(await runValidation(val))) return;
 					setSubmitted(true);
-					events.onSubmit?.(val);
+					// Call user's onSubmit callback if provided and use return value if any
+					let finalValue = val;
+					if (options.onSubmit) {
+						const result = options.onSubmit(val);
+						if (result !== undefined) {
+							finalValue = result;
+						}
+					}
+					events.onSubmit?.(finalValue);
 					return;
 				}
 
@@ -200,7 +227,15 @@ export const confirm = createPrompt<ConfirmOptions, any>({
 					setSelectedIndex(idx);
 					if (!(await runValidation(val))) return;
 					setSubmitted(true);
-					events.onSubmit?.(val);
+					// Call user's onSubmit callback if provided and use return value if any
+					let finalValue = val;
+					if (options.onSubmit) {
+						const result = options.onSubmit(val);
+						if (result !== undefined) {
+							finalValue = result;
+						}
+					}
+					events.onSubmit?.(finalValue);
 					return;
 				}
 

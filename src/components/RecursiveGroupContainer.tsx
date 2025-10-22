@@ -443,12 +443,17 @@ export function RecursiveGroupContainer({
 
 		// Special handling for completedFields plugin to avoid Box wrapper when empty
 		if (item.fieldType === "completedFields") {
+			// Extract user's onSubmit callback from properties
+			const { onSubmit: userOnSubmit, ...otherProperties } =
+				item.properties;
+
 			return (
 				<PluginWrapper
 					pluginType={item.fieldType}
 					promptId={item.id} // Pass the prompt ID so auto-submissions can capture it
 					key={`plugin-${item.id}-${item.depth}-${pluginState}`}
-					{...item.properties} // Spread all plugin properties
+					{...otherProperties} // Spread all plugin properties except onSubmit
+					userOnSubmit={userOnSubmit} // Pass user's onSubmit callback separately
 					message={item.properties.message || item.label || ""}
 					initialValue={getInitialValue()}
 					state={pluginState}
@@ -484,7 +489,15 @@ export function RecursiveGroupContainer({
 					pluginType={item.fieldType}
 					promptId={item.id} // Pass the prompt ID so auto-submissions can capture it
 					key={`plugin-${item.id}-${item.depth}-${pluginState}`}
-					{...item.properties} // Spread all plugin properties
+					{...(() => {
+						// Extract user's onSubmit callback from properties
+						const { onSubmit: userOnSubmit, ...otherProperties } =
+							item.properties;
+						return {
+							...otherProperties, // Spread all plugin properties except onSubmit
+							userOnSubmit, // Pass user's onSubmit callback separately
+						};
+					})()}
 					message={item.properties.message || item.label || ""}
 					initialValue={getInitialValue()}
 					state={pluginState}

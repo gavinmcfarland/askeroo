@@ -24,6 +24,7 @@ export interface RadioOptions {
 	hintPosition?: "bottom" | "inline" | "side" | "inline-fixed";
 	maxVisible?: number;
 	initialValue?: string;
+	onSubmit?: (value: string) => string | void; // Can return a transformed value or void
 	// Built-ins are automatically added via PluginOptionsWithBuiltins:
 	// id?, excludeFromCompleted?, hideOnCompletion?, allowBack?, onValidate?, meta?
 }
@@ -309,7 +310,15 @@ export const radio = createPrompt<RadioOptions, string>({
 					const val = filteredOptions[selectedIndex].value;
 					if (!(await runValidation(val))) return;
 					setSubmitted(true);
-					events.onSubmit?.(val);
+					// Call user's onSubmit callback if provided and use return value if any
+					let finalValue = val;
+					if (options.onSubmit) {
+						const result = options.onSubmit(val);
+						if (result !== undefined) {
+							finalValue = result;
+						}
+					}
+					events.onSubmit?.(finalValue);
 					return;
 				}
 
@@ -399,7 +408,15 @@ export const radio = createPrompt<RadioOptions, string>({
 						const val = filteredOptions[idx].value;
 						if (!(await runValidation(val))) return;
 						setSubmitted(true);
-						events.onSubmit?.(val);
+						// Call user's onSubmit callback if provided and use return value if any
+						let finalValue = val;
+						if (options.onSubmit) {
+							const result = options.onSubmit(val);
+							if (result !== undefined) {
+								finalValue = result;
+							}
+						}
+						events.onSubmit?.(finalValue);
 						return;
 					}
 				}

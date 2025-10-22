@@ -28,6 +28,7 @@ export interface MultiOptions {
 	hintPosition?: "bottom" | "inline" | "side" | "inline-fixed";
 	maxVisible?: number;
 	searchQuery?: string;
+	onSubmit?: (value: string[]) => string[] | void; // Can return a transformed value or void
 	// Built-ins are automatically added via PluginOptionsWithBuiltins:
 	// id?, excludeFromCompleted?, hideOnCompletion?, allowBack?, onValidate?, meta?
 }
@@ -453,7 +454,15 @@ export const MultiField = ({
 				const vals = selectedValues.filter((v) => v !== NONE_VALUE);
 				if (!(await runValidation(vals))) return;
 				setSubmitted(true);
-				events.onSubmit?.(vals);
+				// Call user's onSubmit callback if provided and use return value if any
+				let finalValue = vals;
+				if (options.onSubmit) {
+					const result = options.onSubmit(vals);
+					if (result !== undefined) {
+						finalValue = result;
+					}
+				}
+				events.onSubmit?.(finalValue);
 				return;
 			}
 
