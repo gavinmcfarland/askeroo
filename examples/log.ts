@@ -9,8 +9,7 @@ const flow = async () => {
 	await log.success("Backup completed");
 
 	// With markdown support
-	await log.info(`
-		## Installation Complete!
+	await log.info(`## Installation Complete!
 
 		Your application has been **successfully** installed.
 
