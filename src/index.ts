@@ -28,6 +28,15 @@ export {
 export { multi, type MultiOptions } from "./built-ins/multi/index.js";
 export { note } from "./built-ins/note/index.js";
 export {
+	log,
+	logInfo,
+	logWarn,
+	logError,
+	logSuccess,
+	type LogLevel,
+	type LogOptions,
+} from "./built-ins/log/index.js";
+export {
 	radio,
 	type RadioOptions,
 	type RadioOption,
