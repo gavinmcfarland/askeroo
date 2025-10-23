@@ -53,8 +53,8 @@ const logInternal = createPrompt<LogOptions, void>({
 		return (
 			<Box flexDirection="column">
 				<Box flexDirection="row" alignItems="flex-start">
-					<Text color={config.color}>{config.symbol}</Text>
-					<Box marginLeft={1}>
+					<Text color={config.color}>{config.symbol} </Text>
+					<Box flexDirection="column">
 						{parseMarkdown(
 							isMarkdown ? msg.content : msg || "",
 							isMarkdown ? msg.theme : undefined

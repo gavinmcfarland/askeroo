@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { ask, log } from "../src/index.js";
+import { ask, log, note } from "../src/index.js";
 
 const flow = async () => {
 	// Using the log object methods
