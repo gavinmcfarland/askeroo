@@ -57,7 +57,9 @@ const logInternal = createPrompt<LogOptions, void>({
 					<Box flexDirection="column">
 						{parseMarkdown(
 							isMarkdown ? msg.content : msg || "",
-							isMarkdown ? msg.theme : undefined
+							isMarkdown
+								? { ...msg.theme, text: config.color }
+								: { text: config.color }
 						)}
 					</Box>
 				</Box>
