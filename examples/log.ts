@@ -8,16 +8,21 @@ const flow = async () => {
 	await log.error("Connection timeout");
 	await log.success("Backup completed");
 
-	// With markdown support
+	// With markdown support and dimmed text
 	await log.info(`## Installation Complete!
 
 		Your application has been **successfully** installed.
 
-		Next steps:
+		[Next steps]{dim}:
 		-   Run \`npm start\` to begin
 		-   Check the documentation
 		-   Configure your settings
 	`);
+
+	// Test dimmed text with different log levels
+	await log.warn(`[[Warning details]:]{dim} This is dimmed yellow text`);
+	await log.error(`[Error details]{dim}: This is dimmed red text`);
+	await log.success(`[Success details]{dim}: This is dimmed green text`);
 
 	return { status: "completed" };
 };

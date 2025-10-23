@@ -86,13 +86,15 @@ const chalkTokenExtension = {
 	name: "chalkToken",
 	level: "inline" as const,
 	start(src: string) {
-		// Find the first occurrence of [text]{styles} pattern
-		const match = src.match(/\[([^\]]+)\]\{([^}]+)\}/);
+		// Find the first occurrence of [text]{styles} pattern, handling nested brackets
+		const match = src.match(
+			/\[(?:[^\[\]]*\[[^\]]*\])*[^\[\]]*\]\{([^}]+)\}/
+		);
 		return match ? match.index : undefined;
 	},
 	tokenizer(src: string) {
-		// Regex to match [text]{style1 style2} pattern from the start
-		const rule = /^\[([^\]]+)\]\{([^}]+)\}/;
+		// Regex to match [text]{style1 style2} pattern from the start, handling nested brackets
+		const rule = /^\[((?:[^\[\]]*\[[^\]]*\])*[^\[\]]*)\]\{([^}]+)\}/;
 		const match = rule.exec(src);
 		if (match) {
 			return {
@@ -225,8 +227,11 @@ function formatInlineTokens(tokens: any[], theme: any): ReactElement[] {
 				break;
 
 			case "chalkToken":
-				// Apply chalk styles to the text
-				const styledText = applyChalkStyles(token.text, token.styles);
+				// Apply chalk styles to the text, combining with theme color
+				const styledText = applyChalkStyles(
+					token.text,
+					`${theme.text} ${token.styles}`
+				);
 				elements.push(<InkText key={key++}>{styledText}</InkText>);
 				break;
 
