@@ -1136,7 +1136,7 @@ export const MultiField = ({
 			)}
 			{validationError && (
 				<Box>
-					<Text color="red">■ {validationError}</Text>
+					<Text color="red">{validationError}</Text>
 				</Box>
 			)}
 		</Box>
