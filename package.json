@@ -1,6 +1,6 @@
 {
     "name": "askeroo",
-    "version": "0.0.0-alpha.17",
+    "version": "0.0.0-alpha.15",
     "description": "A modern CLI prompt library with flow control, history navigation, and conditional prompts",
     "type": "module",
     "main": "./dist/src/index.js",
@@ -63,5 +63,5 @@
     "engines": {
         "node": ">=18.0.0"
     },
-    "gitHead": "6c177c163fe6ac807211fd69d7c6185d5872b117"
+    "gitHead": "44615c76861298d852bab18e8ec3ab3fe721cf53"
 }
