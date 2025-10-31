@@ -71,7 +71,6 @@ const flow = async () => {
 			const integrationRollout = await multi({
 				label: "Max Visible",
 				options: hiddenSearchIntegrations,
-				searchable: true,
 				maxVisible: 5,
 			});
 
@@ -94,6 +93,13 @@ const flow = async () => {
 				shortLabel: "Datasets",
 				options: filterModeDatasets,
 				noneOption: { label: "None" },
+			});
+
+			const searchable = await multi({
+				label: "Searchable",
+				shortLabel: "Searchable",
+				options: filterModeDatasets,
+				searchable: "filter",
 			});
 		},
 		{ flow: "phased", hideOnCompletion: true }

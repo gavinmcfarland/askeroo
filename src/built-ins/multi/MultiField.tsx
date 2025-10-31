@@ -640,6 +640,7 @@ export const MultiField = ({
 						onUpArrow={navigateUp}
 						onDownArrow={navigateDown}
 						onShiftF={handleShiftF}
+						allowSpace={false}
 					/>
 				</Box>
 			)}

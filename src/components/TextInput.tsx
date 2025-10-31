@@ -15,6 +15,7 @@ interface TextInputProps {
 	onDownArrow?: () => void;
 	disableArrowKeys?: boolean;
 	onShiftF?: () => void;
+	allowSpace?: boolean;
 }
 
 /**
@@ -40,6 +41,7 @@ export const TextInput: React.FC<TextInputProps> = ({
 	onDownArrow,
 	disableArrowKeys = false,
 	onShiftF,
+	allowSpace = true,
 }) => {
 	// Use internal state if no external cursor position is provided
 	const [internalCursorPosition, setInternalCursorPosition] = useState(
@@ -439,6 +441,12 @@ export const TextInput: React.FC<TextInputProps> = ({
 				!key.leftArrow &&
 				!key.rightArrow
 			) {
+				if (input === " " && !allowSpace) {
+					saveCurrentWord();
+					lastWasSpace.current = false;
+					return;
+				}
+
 				// Check if this is a space - word boundary
 				if (input === " ") {
 					// Save current word before adding space (if we were typing)
